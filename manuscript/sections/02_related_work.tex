@@ -1,0 +1,8 @@
+\subsection{Graph Neural Networks for Fraud Detection}
+GNNs \cite{kipf2016semi, velickovic2017graph} effectively capture the homophily and structural patterns indicative of fraud. Recent works have focused on handling class imbalance and camouflaged fraudsters. However, most assume centralized data availability.
+
+\subsection{Federated Learning on Graphs}
+Federated Graph Learning (FGL) extends FL \cite{mcmahan2017communication} to graph data. Major challenges include handling missing links across clients and statistical heterogeneity. Existing FGL frameworks mostly focus on utility and efficiency, often neglecting fairness.
+
+\subsection{Fairness in GNNs}
+Fairness in GNNs is an active research area. Approaches include adversarial debiasing, reweighting, and edge dropping. However, applying these in a federated setting is non-trivial due to the lack of global data visibility. Our work bridges this gap by proposing a distributed fairness mechanism.

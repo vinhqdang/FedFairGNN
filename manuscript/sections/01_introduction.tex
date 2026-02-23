@@ -1,0 +1,12 @@
+Financial fraud detection is a critical application of machine learning, preventing billions of dollars in losses annually. Graph Neural Networks (GNNs) have become the de facto standard for this task due to their ability to model complex relational patterns between users, transactions, and devices. However, traditional GNN approaches require centralized data storage, which violates modern privacy regulations (e.g., GDPR, CCPA) and raises security concerns for financial institutions.
+
+Federated Learning (FL) offers a promising solution by allowing multiple clients (e.g., different banks) to collaboratively train a model without sharing their raw data. While FL privacy is a significant step forward, it introduces new challenges. First, graph data is notoriously non-IID (Independent and Identically Distributed), leading to performance degradation in standard FL aggregation. Second, and crucially, automated fraud detection systems are prone to algorithmic bias, often discriminating against certain demographic groups. In a federated setting, mitigating this bias is harder because the server does not have access to the data to measure or correct fairness directly.
+
+In this paper, we present \textbf{FedFairGNN}, a unified framework that addresses the trilemma of Utility, Privacy, and Fairness in federated graph learning. Our contributions are:
+\begin{enumerate}
+    \item We propose a \textbf{Fairness-Sensitive Edge Reweighting (FSER)} mechanism that operates locally at each client to neutralize structural bias in the graph.
+    \item We design a \textbf{Fairness-Task Gradient Decomposition (FTGD)} strategy that separates fairness-critical gradients from task gradients, applying Differential Privacy (DP) selectively to the former to preserve utility.
+    \item We implement a \textbf{Bi-Objective Frank-Wolfe Aggregation (BFWA)} algorithm at the server, which optimizes the global model to satisfy strict fairness budgets without accessing local data.
+\end{enumerate}
+
+The remainder of this paper is organized as follows. Section \ref{sec:related} reviews related work in graph-based fraud detection and federated learning. Section \ref{sec:method} details the proposed FedFairGNN framework, including the mathematical formulation of FSER, FTGD, and BFWA. Section \ref{sec:experiments} presents the experimental setup and discusses the results on three real-world datasets. Finally, Section \ref{sec:conclusion} concludes the paper and outlines future directions.
