@@ -54,9 +54,9 @@ python main.py --dataset YelpChi --model FedFairGNN --num_clients 3 --rounds 20 
 
 | Model | AUC (YelpChi) | DPD (YelpChi) |
 | :--- | :---: | :---: |
-| **FedFairGNN** | **~0.94** | **~0.13** (optimizing) |
+| **FedFairGNN (Fixed)** | **~0.98** | **~0.01** |
 | FraudGNN-RL | ~0.84 | ~0.06 |
-| GNN-CL | ~0.97 | ~0.03 |
+| GNN-CL | ~0.99 | ~0.03 |
 
 *Note: Results based on synthetic data with injected bias and fraud signals.*
 
