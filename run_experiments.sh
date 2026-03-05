@@ -16,7 +16,7 @@ for dataset in "${DATASETS[@]}"; do
         echo "----------------------------------------------------------------"
         
         # Run python script and pipe output to log file
-        python main.py \
+        conda run -n py313 python main.py \
             --dataset $dataset \
             --model $model \
             --rounds 5 \

@@ -75,7 +75,7 @@ class Server:
             s[min_idx] = 1.0
             
             # 4. Update
-            gamma = 2.0 / (t + 2.0)
+            gamma = 0.1 # Fixed step size for stability, prevents extreme weights
             w = (1 - gamma) * w + gamma * s
             
             # 5. Dual Update
@@ -90,37 +90,18 @@ class Server:
         print(f"Aggregation Weights: {w.numpy()}")
         print(f"Dual variable mu: {self.mu}")
         
-        # Apply Aggregation to Gradients
-        # Delta_theta = sum(w_k * (g_task_k + g_fair_k))
+        # Apply Aggregation to Weights directly
+        # Delta_theta = sum(w_k * (theta_k))
         
-        # We need to sum gradients coordinate-wise
-        # All g_task and g_fair should be flat vectors (checked in Client)
-        
-        final_grad = None
-        
-        for k in range(K):
-            g_total_k = updates[k]['g_task'] + updates[k]['g_fair']
-            if final_grad is None:
-                final_grad = w[k] * g_total_k
-            else:
-                final_grad += w[k] * g_total_k
-                
-        # Update Global Model
-        # theta_new = theta_old - eta * final_grad
-        # Reshape final_grad back to state_dict shapes
-        
-        idx = 0
-        # Start with current state_dict to keep buffers (running_mean, etc.)
         state_dict = self.model.state_dict()
         new_state_dict = copy.deepcopy(state_dict)
         
-        for name, param in self.model.named_parameters():
-             numel = param.numel()
-             grad_chunk = final_grad[idx:idx+numel].view(param.shape).to(self.device)
-             # Update the parameter in new_state_dict
-             new_state_dict[name] = state_dict[name] - self.global_lr * grad_chunk
-             idx += numel
-             
+        for name in new_state_dict.keys():
+            if torch.is_floating_point(new_state_dict[name]):
+                new_state_dict[name] = torch.zeros_like(new_state_dict[name])
+                for k in range(K):
+                    new_state_dict[name] += w[k].item() * updates[k]['weights'][name]
+
         self.model.load_state_dict(new_state_dict)
         self.global_weights = copy.deepcopy(new_state_dict)
         

@@ -35,7 +35,7 @@ class Client:
                                 out_channels=1,
                                 heads=heads).to(device)
         
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=0.001)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=0.01)
 
     def set_weights(self, global_weights):
         self.model.load_state_dict(global_weights)
