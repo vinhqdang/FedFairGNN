@@ -24,6 +24,7 @@ Running the setup script will create a conda environment and install dependencie
 bash environment_setup.sh
 conda activate py313
 ```
+That's all.
 
 ### 2. Run Experiments
 
