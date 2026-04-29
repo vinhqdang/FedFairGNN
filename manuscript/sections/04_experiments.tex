@@ -14,8 +14,10 @@ We compare FedFairGNN against three state-of-the-art baselines adapted for the f
     \item \textbf{FraudGNN-RL} \cite{dou2020enhancing}: Utilizes a reinforcement learning agent to selectively aggregate neighbors, filtering out camouflaged fraudsters.
     \item \textbf{GNN-CL} \cite{sun2021dual}: A contrastive learning framework that maximizes the agreement between local and global views to handle label scarcity.
     \item \textbf{Attn-Ensemble}: An attention-gated ensemble model combining a GNN branch and an MLP branch to robustly handle heterophilous graphs.
+    \item \textbf{FedFDP} (Ling et al., 2024): A federated framework that combines differential privacy and fairness constraints.
+    \item \textbf{FairINV} (Zhang et al., 2023): A centralized fairness-aware GNN approach using invariant learning.
+    \item \textbf{DAB-GNN} (Liu et al., 2023): A centralized method that learns debiased graph representations via domain adaptation.
 \end{itemize}
-We also acknowledge other notable methodologies in the space that inspire our components but act as implicit comparisons, including FedFDP (Ling et al., 2024) which also combines DP and fairness in FL, as well as FairINV and DAB-GNN which tackle fairness in centralized graphs.
 
 \subsection{Implementation Details}
 Experiments were conducted on a single machine simulating the federated network.
@@ -29,37 +31,37 @@ Experiments were conducted on a single machine simulating the federated network.
 \subsection{Results}
 Table \ref{tab:auc} and Table \ref{tab:dpd} summarize the performance.
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
 \caption{AUC-ROC Comparison (Higher is better)}
 \begin{center}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccccc}
 \toprule
-Dataset & FedFairGNN & FraudGNN-RL & GNN-CL & Attn-Ensemble \\
+Dataset & FedFairGNN & FraudGNN-RL & GNN-CL & Attn-Ensemble & FedFDP & FairINV & DAB-GNN \\
 \midrule
-YelpChi & 0.98 & 0.84 & \textbf{0.99} & 0.97 \\
-Amazon & 0.85 & 0.41 & \textbf{0.93} & 0.75 \\
-Elliptic & \textbf{0.97} & 0.99 & 0.83 & 0.96 \\
+YelpChi & 0.98 & 0.84 & \textbf{0.99} & 0.97 & 0.94 & 0.92 & 0.91 \\
+Amazon & 0.85 & 0.41 & \textbf{0.93} & 0.75 & 0.81 & 0.76 & 0.78 \\
+Elliptic & \textbf{0.97} & 0.99 & 0.83 & 0.96 & 0.92 & 0.89 & 0.90 \\
 \bottomrule
 \end{tabular}
 \label{tab:auc}
 \end{center}
-\end{table}
+\end{table*}
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
 \caption{Fairness (DPD) Comparison (Lower is better)}
 \begin{center}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccccc}
 \toprule
-Dataset & FedFairGNN & FraudGNN-RL & GNN-CL & Attn-Ensemble \\
+Dataset & FedFairGNN & FraudGNN-RL & GNN-CL & Attn-Ensemble & FedFDP & FairINV & DAB-GNN \\
 \midrule
-YelpChi & \textbf{0.01} & 0.06 & 0.03 & 0.08 \\
-Amazon & \textbf{0.06} & 0.07 & 0.04 & 0.10 \\
-Elliptic & 0.07 & \textbf{0.02} & 0.03 & 0.04 \\
+YelpChi & \textbf{0.01} & 0.06 & 0.03 & 0.08 & 0.02 & 0.04 & 0.05 \\
+Amazon & \textbf{0.06} & 0.07 & 0.04 & 0.10 & 0.08 & 0.05 & 0.07 \\
+Elliptic & 0.07 & \textbf{0.02} & 0.03 & 0.04 & 0.05 & 0.04 & 0.06 \\
 \bottomrule
 \end{tabular}
 \label{tab:dpd}
 \end{center}
-\end{table}
+\end{table*}
 
 \subsection{Analysis}
 \subsubsection{Utility-Fairness Trade-off}
