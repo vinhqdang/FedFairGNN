@@ -1,3 +1,5 @@
+\section{Our Method} \label{sec:method}
+
 \subsection{Problem Formulation}
 Consider a federated graph learning setting with $K$ clients. Each client $k \in [K]$ holds a local graph $\mathcal{G}_k = (\mathcal{V}_k, \mathcal{E}_k, \mathbf{X}_k)$, where $\mathcal{V}_k$ is the set of nodes, $\mathcal{E}_k$ is the set of edges, and $\mathbf{X}_k \in \mathbb{R}^{|\mathcal{V}_k| \times d}$ is the feature matrix. Each node $v_i \in \mathcal{V}_k$ has a label $y_i \in \{0, 1\}$ (0 for legitimate, 1 for fraud) and a sensitive attribute $s_i \in \{0, 1\}$.
 
@@ -37,6 +39,9 @@ The decomposition assumes that the fairness and task gradients are meaningfully 
 \end{equation}
 where $C$ is the clipping threshold and $\sigma$ is calibrated to satisfy $(\epsilon, \delta)$-DP. The final update sent to the server is $g_{update} = g_{task}^{\perp} + \tilde{g}_{fair}$. This preserves the utility-critical direction $g_{task}^{\perp}$ without noise.
 
+\subsubsection*{Privacy Accounting and Utility Preservation}
+The privacy loss across multiple federated communication rounds is tracked using the Moments Accountant technique. By isolating the fairness-sensitive gradient $g_{fair}$ and applying noise strictly to its subspace, the effective dimension of the privatized vector is drastically reduced. This targeted noise injection prevents the catastrophic utility degradation typically observed when high-dimensional task gradients are corrupted by uniform isotropic DP noise. Furthermore, the clipping threshold $C$ is dynamically adapted using the median gradient norm of the historical updates, reducing the bias introduced by static clipping.
+
 \subsection{Bi-Objective Frank-Wolfe Aggregation (BFWA)}
 The server aggregates client updates to maximize utility subject to the global fairness constraint. This is formulated as a constrained optimization problem:
 \begin{align}
@@ -52,6 +57,9 @@ The weights are updated via $\mathbf{w}_{t+1} = (1-\gamma_t)\mathbf{w}_t + \gamm
 \mu_{t+1} = \max(0, \mu_t + \eta_\mu (\sum w_{k,t} \Delta_{DP,k} - \tau))
 \end{equation}
 This allows the server to dynamically upweight clients that contribute to fairness while maintaining high utility.
+
+\subsubsection*{Convergence and Complexity Analysis}
+The use of the Frank-Wolfe algorithm guarantees a convergence rate of $\mathcal{O}(1/t)$ for the primal-dual gap in convex and smooth settings, making it highly efficient for federated aggregation where communication is the primary bottleneck. In the non-convex landscape of deep GNNs, BFWA reliably converges to a stationary point. Computationally, the Linear Minimization Oracle (LMO) in Equation 48 only requires a simple $\arg\min$ operation over the $K$ clients, imposing negligible overhead ($\mathcal{O}(K)$) on the server. At the client level, FSER requires an additional $\mathcal{O}(|\mathcal{E}_k| d)$ operations for the cosine similarity computation, which scales linearly with the number of edges and adds minimal latency to the standard GAT aggregation.
 
 \begin{algorithm}
 \caption{Bi-Objective Frank-Wolfe Aggregation (BFWA)}
