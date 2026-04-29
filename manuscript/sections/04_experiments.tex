@@ -31,37 +31,47 @@ Experiments were conducted on a single machine simulating the federated network.
 \subsection{Results}
 Table \ref{tab:auc} and Table \ref{tab:dpd} summarize the performance.
 
-\begin{table*}[htbp]
+\begin{table}[htbp]
 \caption{AUC-ROC Comparison (Higher is better)}
 \begin{center}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lccc}
 \toprule
-Dataset & FedFairGNN & FraudGNN-RL & GNN-CL & Attn-Ensemble & FedFDP & FairINV & DAB-GNN \\
+Model & YelpChi & Amazon & Elliptic \\
 \midrule
-YelpChi & 0.98 & 0.84 & \textbf{0.99} & 0.97 & 0.94 & 0.92 & 0.91 \\
-Amazon & 0.85 & 0.41 & \textbf{0.93} & 0.75 & 0.81 & 0.76 & 0.78 \\
-Elliptic & \textbf{0.97} & 0.99 & 0.83 & 0.96 & 0.92 & 0.89 & 0.90 \\
+FraudGNN-RL & 0.84 & 0.41 & 0.99 \\
+GNN-CL & \textbf{0.99} & \textbf{0.93} & 0.83 \\
+Attn-Ensemble & 0.97 & 0.75 & 0.96 \\
+FedFDP & 0.94 & 0.81 & 0.92 \\
+FairINV & 0.92 & 0.76 & 0.89 \\
+DAB-GNN & 0.91 & 0.78 & 0.90 \\
+\midrule
+\textbf{FedFairGNN (Ours)} & 0.98 & 0.85 & \textbf{0.97} \\
 \bottomrule
 \end{tabular}
 \label{tab:auc}
 \end{center}
-\end{table*}
+\end{table}
 
-\begin{table*}[htbp]
+\begin{table}[htbp]
 \caption{Fairness (DPD) Comparison (Lower is better)}
 \begin{center}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lccc}
 \toprule
-Dataset & FedFairGNN & FraudGNN-RL & GNN-CL & Attn-Ensemble & FedFDP & FairINV & DAB-GNN \\
+Model & YelpChi & Amazon & Elliptic \\
 \midrule
-YelpChi & \textbf{0.01} & 0.06 & 0.03 & 0.08 & 0.02 & 0.04 & 0.05 \\
-Amazon & \textbf{0.06} & 0.07 & 0.04 & 0.10 & 0.08 & 0.05 & 0.07 \\
-Elliptic & 0.07 & \textbf{0.02} & 0.03 & 0.04 & 0.05 & 0.04 & 0.06 \\
+FraudGNN-RL & 0.06 & 0.07 & \textbf{0.02} \\
+GNN-CL & 0.03 & 0.04 & 0.03 \\
+Attn-Ensemble & 0.08 & 0.10 & 0.04 \\
+FedFDP & 0.02 & 0.08 & 0.05 \\
+FairINV & 0.04 & 0.05 & 0.04 \\
+DAB-GNN & 0.05 & 0.07 & 0.06 \\
+\midrule
+\textbf{FedFairGNN (Ours)} & \textbf{0.01} & \textbf{0.06} & 0.07 \\
 \bottomrule
 \end{tabular}
 \label{tab:dpd}
 \end{center}
-\end{table*}
+\end{table}
 
 \subsection{Analysis}
 \subsubsection{Utility-Fairness Trade-off}
