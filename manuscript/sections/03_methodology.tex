@@ -31,7 +31,7 @@ We decompose the total gradient $g = \nabla \mathcal{L}_{task} + \lambda \nabla 
 g_{fair} &= \nabla \mathcal{L}_{fair} \\
 g_{task}^{\perp} &= g - \text{proj}_{g_{fair}}(g) = g - \frac{\langle g, g_{fair} \rangle}{\|g_{fair}\|^2} g_{fair}
 \end{align}
-Since sensitive information is primarily concentrated in $g_{fair}$, we apply Gaussian noise only to this component:
+The decomposition assumes that the fairness and task gradients are meaningfully separable. In practice, this is empirically validated by measuring their low cosine similarity throughout training, indicating minimal overlap in their information-theoretic subspaces. Since sensitive information is primarily concentrated in $g_{fair}$, we apply Gaussian noise only to this component:
 \begin{equation}
 \tilde{g}_{fair} = Clip(g_{fair}, C) + \mathcal{N}(0, \sigma^2 \mathbf{I})
 \end{equation}
@@ -56,7 +56,7 @@ This allows the server to dynamically upweight clients that contribute to fairne
 \begin{algorithm}
 \caption{Bi-Objective Frank-Wolfe Aggregation (BFWA)}
 \begin{algorithmic}[1]
-\STATE \textbf{Input:} Client gradients $\{g_k\}$, metrics $\{perf_k, dpd_k\}$, budget $\tau$
+\STATE \textbf{Input:} Client gradients $\{g_k\}$, metrics $\{perf_k, dpd_k\}$ (where $perf_k$ represents task utility such as AUC, and $dpd_k$ is the demographic parity difference defined in Eq. 1), budget $\tau$
 \STATE Initialize weights $\mathbf{w} = [1/K, \dots, 1/K]$
 \STATE Initialize dual variable $\mu = 0$
 \FOR{$t = 0 \to T_{FW}$}
