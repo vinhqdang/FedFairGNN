@@ -1,79 +1,138 @@
-import torch
+"""Performance and fairness metrics.
+
+Performance
+    AUC-ROC, Average Precision (AP), F1, accuracy, FPR@k%TPR.
+Group fairness (binary sensitive attribute S in {0,1})
+    - Demographic Parity Difference (DPD)
+    - Equal Opportunity Difference (EOD)
+    - Equalized Odds (EO)
+All fairness metrics accept *soft* probabilities and an optional decision
+threshold; DPD is reported on soft scores (mean predicted probability gap),
+matching the differentiable training objective, while EOD/EO use hard
+predictions at the threshold, matching their textbook definitions.
+"""
+from __future__ import annotations
+
+from typing import Dict
+
 import numpy as np
-from sklearn.metrics import roc_auc_score, f1_score
+from sklearn.metrics import (
+    average_precision_score,
+    f1_score,
+    roc_auc_score,
+    roc_curve,
+)
 
-def calculate_auc(y_true, y_pred_prob):
-    """
-    Calculate Area Under the ROC Curve.
-    
-    Args:
-        y_true (np.array or torch.Tensor): True binary labels.
-        y_pred_prob (np.array or torch.Tensor): Predicted probabilities (scores).
-        
-    Returns:
-        float: AUC-ROC score.
-    """
-    if isinstance(y_true, torch.Tensor):
-        y_true = y_true.detach().cpu().numpy()
-    if isinstance(y_pred_prob, torch.Tensor):
-        y_pred_prob = y_pred_prob.detach().cpu().numpy()
-        
+
+def _np(x):
+    import torch
+
+    if isinstance(x, torch.Tensor):
+        return x.detach().cpu().numpy()
+    return np.asarray(x)
+
+
+# --------------------------------------------------------------------------- #
+# Performance
+# --------------------------------------------------------------------------- #
+def auc_roc(y_true, y_score) -> float:
+    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
     try:
-        return roc_auc_score(y_true, y_pred_prob)
+        return float(roc_auc_score(y_true, y_score))
     except ValueError:
-        return 0.5  # Handle cases with only one class present
+        return 0.5
 
-def calculate_f1(y_true, y_pred_prob, threshold=0.5):
-    """
-    Calculate F1 Score.
-    
-    Args:
-        y_true (np.array or torch.Tensor): True binary labels.
-        y_pred_prob (np.array or torch.Tensor): Predicted probabilities.
-        threshold (float): Classification threshold.
-        
-    Returns:
-        float: F1 score.
-    """
-    if isinstance(y_true, torch.Tensor):
-        y_true = y_true.detach().cpu().numpy()
-    if isinstance(y_pred_prob, torch.Tensor):
-        y_pred_prob = y_pred_prob.detach().cpu().numpy()
-        
-    y_pred = (y_pred_prob >= threshold).astype(int)
-    return f1_score(y_true, y_pred)
 
-def calculate_dpd(y_pred_prob, sensitive_attr):
-    """
-    Calculate Demographic Parity Difference (DPD).
-    DPD = |P(Y_hat=1 | S=0) - P(Y_hat=1 | S=1)|
-    Using soft probabilities (mean prediction) as a proxy for rate.
-    
-    Args:
-        y_pred_prob (torch.Tensor): Predicted probabilities.
-        sensitive_attr (torch.Tensor): Sensitive attributes (binary 0/1).
-        
-    Returns:
-        float: DPD value.
-    """
-    if isinstance(y_pred_prob, np.ndarray):
-        y_pred_prob = torch.tensor(y_pred_prob)
-    if isinstance(sensitive_attr, np.ndarray):
-        sensitive_attr = torch.tensor(sensitive_attr)
-        
-    # Ensure they are on the same device and type
-    y_pred_prob = y_pred_prob.float().view(-1)
-    sensitive_attr = sensitive_attr.view(-1)
-    
-    # Masks
-    mask_0 = (sensitive_attr == 0)
-    mask_1 = (sensitive_attr == 1)
-    
-    if mask_0.sum() == 0 or mask_1.sum() == 0:
-        return 0.0  # Cannot compute if one group is missing
-        
-    mean_0 = y_pred_prob[mask_0].mean()
-    mean_1 = y_pred_prob[mask_1].mean()
-    
-    dpd = torch.abs(mean_0 - mean_1)
-    return dpd.item()
+def average_precision(y_true, y_score) -> float:
+    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    try:
+        return float(average_precision_score(y_true, y_score))
+    except ValueError:
+        return float(y_true.mean())
+
+
+def f1(y_true, y_score, threshold: float = 0.5) -> float:
+    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    y_pred = (y_score >= threshold).astype(int)
+    try:
+        return float(f1_score(y_true, y_pred))
+    except ValueError:
+        return 0.0
+
+
+def accuracy(y_true, y_score, threshold: float = 0.5) -> float:
+    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    return float(((y_score >= threshold).astype(int) == y_true).mean())
+
+
+def fpr_at_tpr(y_true, y_score, target_tpr: float = 0.8) -> float:
+    """False-positive rate at a target true-positive rate (operational metric)."""
+    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    if len(np.unique(y_true)) < 2:
+        return 0.0
+    fpr, tpr, _ = roc_curve(y_true, y_score)
+    idx = np.searchsorted(tpr, target_tpr)
+    idx = min(idx, len(fpr) - 1)
+    return float(fpr[idx])
+
+
+# --------------------------------------------------------------------------- #
+# Fairness
+# --------------------------------------------------------------------------- #
+def demographic_parity_difference(y_score, sensitive, threshold=None) -> float:
+    """|E[score | S=0] - E[score | S=1]| (soft) or rate gap (if threshold set)."""
+    y_score, s = _np(y_score).ravel(), _np(sensitive).ravel()
+    v = (y_score >= threshold).astype(float) if threshold is not None else y_score
+    m0, m1 = s == 0, s == 1
+    if m0.sum() == 0 or m1.sum() == 0:
+        return 0.0
+    return float(abs(v[m0].mean() - v[m1].mean()))
+
+
+def equal_opportunity_difference(y_true, y_score, sensitive, threshold=0.5) -> float:
+    """|TPR(S=0) - TPR(S=1)|  (fairness on the positive class only)."""
+    y_true, y_score, s = _np(y_true).ravel(), _np(y_score).ravel(), _np(sensitive).ravel()
+    y_pred = (y_score >= threshold).astype(int)
+
+    def tpr(group):
+        pos = (y_true == 1) & group
+        return y_pred[pos].mean() if pos.sum() > 0 else 0.0
+
+    return float(abs(tpr(s == 0) - tpr(s == 1)))
+
+
+def equalized_odds(y_true, y_score, sensitive, threshold=0.5) -> float:
+    """max(|TPR gap|, |FPR gap|) across groups."""
+    y_true, y_score, s = _np(y_true).ravel(), _np(y_score).ravel(), _np(sensitive).ravel()
+    y_pred = (y_score >= threshold).astype(int)
+
+    def rate(group, label, pred):
+        m = (y_true == label) & group
+        return (y_pred[m] == pred).mean() if m.sum() > 0 else 0.0
+
+    tpr_gap = abs(rate(s == 0, 1, 1) - rate(s == 1, 1, 1))
+    fpr_gap = abs(rate(s == 0, 0, 1) - rate(s == 1, 0, 1))
+    return float(max(tpr_gap, fpr_gap))
+
+
+def all_metrics(y_true, y_score, sensitive, threshold: float = 0.5) -> Dict[str, float]:
+    """Convenience: compute the full metric suite in one call."""
+    return {
+        "auc": auc_roc(y_true, y_score),
+        "ap": average_precision(y_true, y_score),
+        "f1": f1(y_true, y_score, threshold),
+        "acc": accuracy(y_true, y_score, threshold),
+        "fpr@80tpr": fpr_at_tpr(y_true, y_score, 0.8),
+        "dpd": demographic_parity_difference(y_score, sensitive),
+        "eod": equal_opportunity_difference(y_true, y_score, sensitive, threshold),
+        "eo": equalized_odds(y_true, y_score, sensitive, threshold),
+    }
+
+
+# Backwards-compatible aliases (older code / notebooks referenced these names)
+calculate_auc = auc_roc
+calculate_f1 = f1
+
+
+def calculate_dpd(y_score, sensitive) -> float:
+    return demographic_parity_difference(y_score, sensitive)

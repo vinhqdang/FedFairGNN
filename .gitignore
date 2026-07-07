@@ -208,3 +208,16 @@ __marimo__/
 
 # macOS
 .DS_Store
+
+# --- FedFairGNN project-specific ---
+# Downloaded / cached datasets (regenerated on demand by src/data)
+data/raw/
+data/processed/
+# Experiment outputs (regenerated from code; figures/tables checked in selectively)
+results/
+logs/
+# Secrets (never commit credentials)
+kaggle.json
+.kaggle/
+*.key
+secrets.*
