@@ -32,11 +32,18 @@ def _np(x):
     return np.asarray(x)
 
 
+def _scores(x):
+    """Sanitised probability scores: a diverged (NaN/inf) model -> 0.5 so that
+    metrics report degraded performance instead of raising (important for the
+    robustness study, where attacks can blow up predictions)."""
+    return np.nan_to_num(_np(x).ravel().astype(float), nan=0.5, posinf=1.0, neginf=0.0)
+
+
 # --------------------------------------------------------------------------- #
 # Performance
 # --------------------------------------------------------------------------- #
 def auc_roc(y_true, y_score) -> float:
-    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    y_true, y_score = _np(y_true).ravel(), _scores(y_score)
     try:
         return float(roc_auc_score(y_true, y_score))
     except ValueError:
@@ -44,7 +51,7 @@ def auc_roc(y_true, y_score) -> float:
 
 
 def average_precision(y_true, y_score) -> float:
-    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    y_true, y_score = _np(y_true).ravel(), _scores(y_score)
     try:
         return float(average_precision_score(y_true, y_score))
     except ValueError:
@@ -52,7 +59,7 @@ def average_precision(y_true, y_score) -> float:
 
 
 def f1(y_true, y_score, threshold: float = 0.5) -> float:
-    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    y_true, y_score = _np(y_true).ravel(), _scores(y_score)
     y_pred = (y_score >= threshold).astype(int)
     try:
         return float(f1_score(y_true, y_pred))
@@ -61,13 +68,13 @@ def f1(y_true, y_score, threshold: float = 0.5) -> float:
 
 
 def accuracy(y_true, y_score, threshold: float = 0.5) -> float:
-    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    y_true, y_score = _np(y_true).ravel(), _scores(y_score)
     return float(((y_score >= threshold).astype(int) == y_true).mean())
 
 
 def fpr_at_tpr(y_true, y_score, target_tpr: float = 0.8) -> float:
     """False-positive rate at a target true-positive rate (operational metric)."""
-    y_true, y_score = _np(y_true).ravel(), _np(y_score).ravel()
+    y_true, y_score = _np(y_true).ravel(), _scores(y_score)
     if len(np.unique(y_true)) < 2:
         return 0.0
     fpr, tpr, _ = roc_curve(y_true, y_score)
@@ -81,7 +88,7 @@ def fpr_at_tpr(y_true, y_score, target_tpr: float = 0.8) -> float:
 # --------------------------------------------------------------------------- #
 def demographic_parity_difference(y_score, sensitive, threshold=None) -> float:
     """|E[score | S=0] - E[score | S=1]| (soft) or rate gap (if threshold set)."""
-    y_score, s = _np(y_score).ravel(), _np(sensitive).ravel()
+    y_score, s = _scores(y_score), _np(sensitive).ravel()
     v = (y_score >= threshold).astype(float) if threshold is not None else y_score
     m0, m1 = s == 0, s == 1
     if m0.sum() == 0 or m1.sum() == 0:
@@ -91,7 +98,7 @@ def demographic_parity_difference(y_score, sensitive, threshold=None) -> float:
 
 def equal_opportunity_difference(y_true, y_score, sensitive, threshold=0.5) -> float:
     """|TPR(S=0) - TPR(S=1)|  (fairness on the positive class only)."""
-    y_true, y_score, s = _np(y_true).ravel(), _np(y_score).ravel(), _np(sensitive).ravel()
+    y_true, y_score, s = _np(y_true).ravel(), _scores(y_score), _np(sensitive).ravel()
     y_pred = (y_score >= threshold).astype(int)
 
     def tpr(group):
@@ -103,7 +110,7 @@ def equal_opportunity_difference(y_true, y_score, sensitive, threshold=0.5) -> f
 
 def equalized_odds(y_true, y_score, sensitive, threshold=0.5) -> float:
     """max(|TPR gap|, |FPR gap|) across groups."""
-    y_true, y_score, s = _np(y_true).ravel(), _np(y_score).ravel(), _np(sensitive).ravel()
+    y_true, y_score, s = _np(y_true).ravel(), _scores(y_score), _np(sensitive).ravel()
     y_pred = (y_score >= threshold).astype(int)
 
     def rate(group, label, pred):
