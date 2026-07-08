@@ -20,7 +20,7 @@ METHODS = ["fedavg-gat", "fairsin", "favgnn", "dp-fedavg",
            "fedfairgnn-nodp", "fedfairgnn"]
 
 
-def main(rounds: int = 20, num_clients: int = 3, seeds=(0,)):
+def main(rounds: int = 15, num_clients: int = 3, seeds=(0,)):
     import torch
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger = ResultLogger("results")
@@ -31,12 +31,12 @@ def main(rounds: int = 20, num_clients: int = 3, seeds=(0,)):
             cfg = ExperimentConfig(dataset="ogbn_products", seed=s, device=device,
                                    num_clients=num_clients, rounds=rounds, local_epochs=1,
                                    hidden_channels=128, sampling=True, batch_size=4096,
-                                   num_neighbors=(15, 10), eval_max_nodes=100000)
+                                   num_neighbors=(10, 5), eval_max_nodes=100000)
             apply_method(cfg, m)
             cfg.sampling = True                     # ensure sampling stays on
             print(f"[start] {m} ...", flush=True)
             t = time.time()
-            run_id, final = run_one(cfg, logger, tag="ogbn")
+            run_id, final = run_one(cfg, logger, tag="ogbn", verbose=True)
             if final is None:
                 print(f"  {m}: already done, skipped", flush=True)
             else:
