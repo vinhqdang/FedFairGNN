@@ -346,13 +346,23 @@ def load_ogbn_products(root="data", seed=42) -> Data:
     split = ds.get_idx_split()
     y_class = d.y.view(-1)
 
-    # rare-category positive label (bottom 20% of classes by frequency)
+    # Balanced, LEARNABLE binary target: assign whole categories to the positive
+    # class greedily until ~50% of nodes are covered. Because the label is a
+    # (coarsened) function of the true product category, a GNN can actually
+    # learn it (unlike an arbitrary rare-class split), giving a meaningful AUC.
     counts = torch.bincount(y_class)
-    order = torch.argsort(counts)                       # ascending frequency
-    rare = set(order[: max(1, int(0.2 * len(counts)))].tolist())
-    y = torch.tensor([1.0 if int(c) in rare else 0.0 for c in y_class], dtype=torch.float32)
+    order = torch.argsort(counts, descending=True)
+    pos_classes, covered, half = set(), 0, d.num_nodes / 2.0
+    for c in order.tolist():
+        pos_classes.add(c); covered += int(counts[c])
+        if covered >= half:
+            break
+    y = torch.zeros(d.num_nodes, dtype=torch.float32)
+    mask_pos = torch.zeros(len(counts), dtype=torch.bool)
+    mask_pos[list(pos_classes)] = True
+    y = mask_pos[y_class].float()
 
-    # structural sensitive proxy: degree above median
+    # Structural sensitive proxy: high- vs low-degree node (median split).
     deg = degree(d.edge_index[0], num_nodes=d.num_nodes)
     sensitive = (deg > deg.median()).long()
 

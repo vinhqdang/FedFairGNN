@@ -17,10 +17,10 @@ from experiments.methods import apply_method
 from experiments.run_experiment import run_one
 
 METHODS = ["fedavg-gat", "fairsin", "favgnn", "dp-fedavg",
-           "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
+           "fedfairgnn-nodp", "fedfairgnn"]
 
 
-def main(rounds: int = 6, num_clients: int = 3, seeds=(0,)):
+def main(rounds: int = 20, num_clients: int = 3, seeds=(0,)):
     import torch
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger = ResultLogger("results")
