@@ -25,6 +25,8 @@ from experiments.run_experiment import run_one
 ROUNDS = {"german": 60, "bail": 50, "credit": 40, "elliptic": 25, "synthetic": 40}
 CLIENTS = {"german": 3, "bail": 5, "credit": 5, "elliptic": 10, "synthetic": 5}
 SEEDS = [0, 1, 2]
+# fewer seeds on the expensive large datasets (still mean+/-std)
+DS_SEEDS = {"german": [0, 1, 2], "bail": [0, 1, 2], "credit": [0, 1], "elliptic": [0, 1]}
 
 
 def cfg_for(method, dataset, seed, **ov):
@@ -39,26 +41,27 @@ def cfg_for(method, dataset, seed, **ov):
 
 
 def jobs_main():
+    # fast datasets first so the core comparison lands early
     methods = FAIR_BASELINES + ["dp-fedavg", "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
-    for ds in ["german", "credit", "bail"]:
+    for ds in ["german", "bail", "credit"]:
         for m in methods:
-            for s in SEEDS:
+            for s in DS_SEEDS[ds]:
                 yield cfg_for(m, ds, s), ""
-    # Elliptic (large, crypto) -- key methods only, 2 seeds
+    # Elliptic (large, crypto) -- key methods only
     for m in ["fedavg-gat", "fairsin", "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]:
-        for s in SEEDS[:2]:
+        for s in DS_SEEDS["elliptic"]:
             yield cfg_for(m, "elliptic", s), ""
 
 
 def jobs_ablation():
-    for ds in ["german", "bail", "credit"]:
+    for ds in ["german", "bail"]:      # 2 datasets suffice for component ablation
         for m in ["fedavg-gat", "ours-nofser", "ours-nobfwa", "fedfairgnn-nodp"]:
             for s in SEEDS:
                 yield cfg_for(m, ds, s), "abl"
 
 
 def jobs_privacy():
-    for ds in ["bail", "credit"]:
+    for ds in ["bail"]:                # privacy-utility curve on Bail
         for eps in [0.5, 1.0, 2.0, 4.0, 8.0, 16.0]:
             for m in ["fedfairgnn", "dp-fedavg"]:
                 yield cfg_for(m, ds, 0, dp_enabled=True, dp_epsilon=eps), f"eps{eps}"
@@ -72,17 +75,18 @@ def jobs_pareto():
 
 def jobs_robustness():
     ds = "bail"
-    # aggregator x attack at fixed 2/ n Byzantine
+    K = 6
+    # aggregator x attack at fixed 2/K Byzantine
     for agg in ROBUST_AGGREGATORS:
         for atk in ["gaussian", "fairness_poison", "alie"]:
             c = cfg_for("fedfairgnn-nodp", ds, 0, aggregator=agg,
-                        attack=atk, num_byzantine=2, num_clients=10)
+                        attack=atk, num_byzantine=2, num_clients=K)
             yield c, f"rob_{agg}_{atk}"
     # Byzantine-count sweep for the key defenders under gaussian
     for agg in ["fedavg", "bfwa", "krum", "robust_bfwa"]:
-        for b in [0, 1, 2, 3, 4]:
+        for b in [0, 1, 2, 3]:
             c = cfg_for("fedfairgnn-nodp", ds, 0, aggregator=agg,
-                        attack="gaussian" if b else "none", num_byzantine=b, num_clients=10)
+                        attack="gaussian" if b else "none", num_byzantine=b, num_clients=K)
             yield c, f"byz_{agg}_{b}"
 
 
