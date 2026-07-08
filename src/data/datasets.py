@@ -327,6 +327,8 @@ def load_ogbn_products(root="data", seed=42) -> Data:
     """
     from ogb.nodeproppred import PygNodePropPredDataset
     from torch_geometric.utils import degree
+    import ogb.utils.url as _ogburl
+    _ogburl.decide_download = lambda url: True   # auto-confirm (non-interactive)
 
     ds = PygNodePropPredDataset(name="ogbn-products", root=os.path.join(root, "raw", "ogb"))
     d = ds[0]
