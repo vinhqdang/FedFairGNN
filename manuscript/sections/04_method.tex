@@ -54,9 +54,25 @@ fairness and privacy add no communication overhead.}
 
 \subsection{Fairness-Sensitive Edge Reweighting (FSER)}
 \label{sec:fser}
-In a homophilous graph, nodes of sensitive group $A$ structurally tied to
-positive (risky) neighbours are flagged even absent genuine signal. FSER adds a
-learnable correction to graph attention. For edge $(i,j)$ with head embeddings
+
+\paragraph{Intuition.}
+Message passing is the source of a GNN's power and, for fairness, of its
+peril. Each layer updates a node by mixing in its neighbours' representations,
+so a node inherits the statistical fate of the company it keeps. When the graph
+is homophilous along a protected attribute---members of one group
+disproportionately connected to one another, or to flagged neighbours---the
+network quietly encodes group membership into every embedding, and the
+downstream classifier can exploit it without ever being told the sensitive
+attribute. The insidious part is that not all such edges are harmful: an edge
+between two genuinely fraudulent accounts should be trusted, even if they belong
+to different demographic groups. What we want to suppress is the specific
+pattern of a \emph{cross-group} edge whose endpoints look alike only because the
+model has learned to represent the protected attribute---a similarity that is
+demographic rather than behavioural. FSER makes this distinction learnable.
+
+\paragraph{Mechanism.}
+FSER adds a learnable correction to graph attention. For edge $(i,j)$ with head
+embeddings
 $\mathbf{h}_i,\mathbf{h}_j$, the standard attention logit
 $e_{ij}=\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{h}_i\Vert\mathbf{h}_j])$ is
 corrected by a \emph{fairness risk score}
@@ -74,6 +90,24 @@ audits how much attention mass FSER removes from cross-group edges.
 
 \subsection{Fairness-Targeted Gradient Decomposition (FTGD)}
 \label{sec:ftgd}
+
+\paragraph{The DP-SGD dilemma.}
+Differentially private SGD is the standard way to keep a client's data from
+leaking through its updates, and in principle it is exactly what we need. In
+practice it is a poor fit here. DP-SGD clips the entire gradient to a norm bound
+$C$ and adds isotropic Gaussian noise to every one of the $|\theta|$
+coordinates; the total noise injected therefore grows like $\sigma\sqrt{|\theta|}$.
+For the large over-parameterised networks of vision and language this is
+tolerable, because the signal is spread across many redundant directions. The
+compact GNNs used on tabular financial graphs are the opposite regime: a few
+tens of thousands of parameters, every one of them carrying signal. At any
+privacy level strong enough to be meaningful, the noise required simply
+overwhelms the gradient, and accuracy collapses toward chance
+(Section~\ref{sec:exp-privacy} quantifies this). Blindly privatising the whole
+gradient is thus self-defeating. The question FTGD asks is: \emph{do we actually
+need to?}
+
+\paragraph{Objective.}
 The local objective is $\mathcal{L}=\mathcal{L}_{\text{task}}+\lambda\,
 \mathcal{L}_{\text{fair}}$, with weighted BCE task loss and the differentiable
 soft demographic-parity penalty
@@ -119,8 +153,18 @@ $\epsilon$ over $TE$ steps using the accountant above.
 
 \subsection{Bi-objective Frank--Wolfe Aggregation (BFWA)}
 \label{sec:bfwa}
-FedAvg lets a client with skewed local data propagate bias globally. BFWA frames
-aggregation as maximising weighted utility under a hard fairness budget:
+
+\paragraph{Why aggregation is a fairness lever.}
+FSER and FTGD act inside each client, but the client cannot see the global
+picture: a silo whose local data is demographically skewed will, in good faith,
+produce an update that pulls the global model toward its own bias, and plain
+FedAvg---which weights clients only by sample count---will faithfully propagate
+that bias to everyone. The server, by contrast, sees every client's reported
+fairness and does control the weights. This makes aggregation the natural place
+to enforce a \emph{global} fairness guarantee, and it lets a human operator set
+an explicit, auditable budget on how much disparity the deployed model may
+exhibit. BFWA turns that budget into a hard constraint. It frames aggregation as
+maximising weighted utility subject to a cap on the weighted fairness gap:
 \begin{equation}
 \max_{\mathbf{w}\in\Delta_K}\ \textstyle\sum_k w_k\,\mathrm{Perf}_k
 \quad\text{s.t.}\quad \textstyle\sum_k w_k\,\dpd_k\le\tau,
