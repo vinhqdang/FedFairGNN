@@ -221,3 +221,12 @@ kaggle.json
 .kaggle/
 *.key
 secrets.*
+
+# LaTeX build artifacts
+manuscript/*.aux
+manuscript/*.bbl
+manuscript/*.blg
+manuscript/*.out
+manuscript/*.log
+manuscript/sections/*.aux
+results_matrix.log

@@ -1,0 +1,41 @@
+\section{Discussion, Limitations, and Broader Impact}
+\label{sec:discussion}
+
+\paragraph{Why FTGD works.}
+The privacy result rests on a structural fact rather than a tuning trick: in a
+fairness-regularised model the sensitive attribute is a sufficient-statistic
+bottleneck---it touches the objective only through $(\mu_0,\mu_1)$. Privatising
+a two-dimensional statistic instead of a $|\theta|$-dimensional gradient avoids
+the $\sqrt{|\theta|}$ noise scaling that makes DP-SGD impractical on compact
+GNNs. The same principle applies to any group-fairness regulariser expressible
+through low-dimensional group statistics, so FTGD is reusable beyond GNNs.
+
+\paragraph{Limitations.}
+(1) FTGD's guarantee protects the demographic-parity signal, i.e.\ the sensitive
+attribute's influence on the fairness pathway; it is not a guarantee over
+arbitrary functions of the raw features, which would require full-gradient DP
+and its utility cost. We state this scope explicitly. (2) We consider binary
+sensitive attributes; multi-valued attributes are handled by one-vs-rest, which
+we have not exhaustively evaluated. (3) The Elliptic sensitive attribute is an
+operational temporal proxy, not a protected demographic; results there should be
+read as subgroup-disparity analysis, not demographic fairness. (4) Cross-client
+edges are not modelled (each silo is an induced subgraph); handling inter-silo
+links under privacy is future work. (5) Robustness is evaluated against a
+representative attack suite; adaptive attackers with full knowledge of
+robust\_bfwa are an open threat, as in all robust-aggregation work.
+
+\paragraph{Broader impact.}
+Fraud, credit, and AML systems make consequential decisions about people.
+Enforcing fairness and privacy reduces the risk of discriminatory or
+privacy-violating deployment, but no technical fairness metric captures all
+notions of justice; $\tau$ should be set with domain and legal input, and the
+sensitive-attribute proxies used for auditing must be governed carefully. By
+releasing a reproducible, regulation-aligned framework we aim to lower the
+barrier to responsible deployment (SDG~9) rather than to certify any particular
+system as "fair''.
+
+\paragraph{Reproducibility.}
+All datasets are public and downloaded on demand; all randomness is seeded;
+privacy accounting, metrics, and aggregation rules are unit-tested; and every
+table and figure in this paper is regenerated from logged runs by a single
+script. The code, configurations, and logs are released.

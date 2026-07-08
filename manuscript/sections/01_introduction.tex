@@ -1,12 +1,84 @@
-Financial fraud detection is a critical application of machine learning, preventing billions of dollars in losses annually. Graph Neural Networks (GNNs) have become the de facto standard for this task due to their ability to model complex relational patterns between users, transactions, and devices. However, traditional GNN approaches require centralized data storage, which violates modern privacy regulations (e.g., GDPR, CCPA) and raises security concerns for financial institutions.
+\section{Introduction}
+\label{sec:intro}
 
-Federated Learning (FL) offers a promising solution by allowing multiple clients (e.g., different banks) to collaboratively train a model without sharing their raw data. While FL privacy is a significant step forward, it introduces new challenges. First, graph data is notoriously non-IID (Independent and Identically Distributed), leading to performance degradation in standard FL aggregation. Second, and crucially, automated fraud detection systems are prone to algorithmic bias, often discriminating against certain demographic groups. In a federated setting, mitigating this bias is harder because the server does not have access to the data to measure or correct fairness directly.
+High-stakes decisions in finance and public administration---credit approval,
+fraud and anti-money-laundering (AML) screening, pretrial risk---are
+increasingly mediated by machine-learning models operating over
+\emph{relational} data. Graph Neural Networks (GNNs) are the de facto tool for
+these tasks because fraud, default, and recidivism propagate along
+relationships between users, accounts, and transactions
+\citep{kipf2016semi,velickovic2017graph,dou2020enhancing}. In practice the
+relevant graph is fragmented across institutions---different banks, exchanges,
+or agencies---each legally barred from pooling raw records under regimes such as
+the GDPR. Federated Learning (FL) \citep{mcmahan2017communication} resolves this
+by training a shared model through the exchange of model updates rather than
+data.
 
-In this paper, we present \textbf{FedFairGNN}, a unified framework that addresses the trilemma of Utility, Privacy, and Fairness in federated graph learning. Our contributions are:
+However, deployability is no longer defined by accuracy alone. The European
+Commission's Ethics Guidelines for Trustworthy AI, the EU AI Act, and the U.S.
+NIST AI Risk Management Framework all require that automated decision systems be
+\emph{fair}, \emph{privacy-preserving}, \emph{robust}, \emph{transparent}, and
+\emph{accountable}. Federated graph learning strains every one of these axes
+simultaneously. \textbf{Fairness}: GNN message passing amplifies structural
+bias, so that members of a demographic group connected to risky neighbours are
+flagged disproportionately, and the server cannot measure this directly because
+it never sees the data. \textbf{Privacy}: model updates leak information about
+local records, yet the standard remedy---differentially private
+SGD---injects isotropic noise across every parameter and, on the compact GNNs
+used here, destroys utility (Section~\ref{sec:exp-privacy}). \textbf{Robustness}:
+a single malicious or malfunctioning client can corrupt the global model, and
+we show that fairness mechanisms open a \emph{new} attack surface---a client can
+report fabricated fairness statistics to capture a fairness-aware aggregator.
+\textbf{Transparency}: relational models are opaque, complicating the audits
+that regulation demands.
+
+Prior work treats these properties in isolation: fair GNNs assume centralised
+data \citep{dai2021say,yang2024fairsin,lee2025dabgnn}; fair FL largely targets
+tabular or image data \citep{ezzeldin2023fairfed,li2020fair}; robust aggregation
+ignores fairness \citep{blanchard2017krum,yin2018byzantine}. To our knowledge no
+method jointly delivers fairness, differential privacy, and Byzantine robustness
+for federated GNNs, and none has been evaluated on large-scale crypto graphs.
+
+We close this gap with \textbf{FedFairGNN}, a unified framework whose
+contributions are:
+
 \begin{enumerate}
-    \item We propose a \textbf{Fairness-Sensitive Edge Reweighting (FSER)} mechanism that operates locally at each client to neutralize structural bias in the graph.
-    \item We design a \textbf{Fairness-Task Gradient Decomposition (FTGD)} strategy that separates fairness-critical gradients from task gradients, applying Differential Privacy (DP) selectively to the former to preserve utility.
-    \item We implement a \textbf{Bi-Objective Frank-Wolfe Aggregation (BFWA)} algorithm at the server, which optimizes the global model to satisfy strict fairness budgets without accessing local data.
+\item \textbf{Fairness-Sensitive Edge Reweighting (FSER)}: a learnable
+attention correction that identifies and suppresses biased cross-group edges
+during message passing, mitigating structural discrimination at its source
+(Section~\ref{sec:fser}).
+
+\item \textbf{Fairness-Targeted Gradient Decomposition (FTGD)}: the observation
+that the sensitive attribute enters the model \emph{only} through the
+demographic-parity statistics lets us obtain $(\epsilon,\delta)$-differential
+privacy by privatising two bounded-sensitivity scalars rather than the full
+gradient. This makes privacy essentially free---where DP-FedAvg collapses
+utility---and we prove the guarantee via a self-contained R\'enyi-DP accountant
+(Section~\ref{sec:ftgd}).
+
+\item \textbf{Bi-objective Frank--Wolfe Aggregation (BFWA)} and a
+\textbf{Byzantine-robust variant}: server-side constrained optimisation enforces
+a hard fairness budget during aggregation, while distance-based screening
+defends against poisoning---including a novel fairness-poisoning attack we
+introduce (Sections~\ref{sec:bfwa},~\ref{sec:exp-robust}).
+
+\item \textbf{A trustworthiness instrumentation layer}: predictive uncertainty
+and calibration, GNN attention explanations with fairness attribution, a
+transparent composite \emph{trust score}, sustainability accounting, and an
+explicit EU~AI~Act / NIST~RMF compliance mapping with an auto-generated model
+card (Sections~\ref{sec:method-trust},~\ref{sec:trust}).
+
+\item \textbf{A comprehensive, reproducible evaluation} on five real datasets
+spanning credit, recidivism, social, and large-scale crypto (Elliptic Bitcoin,
+$203{,}769$ nodes) domains, against ten baselines including recent
+fairness-aware federated and graph methods. FedFairGNN attains the best overall
+trust trade-off; every reported number is regenerated from logged runs.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section \ref{sec:related} reviews related work in graph-based fraud detection and federated learning. Section \ref{sec:method} details the proposed FedFairGNN framework, including the mathematical formulation of FSER, FTGD, and BFWA. Section \ref{sec:experiments} presents the experimental setup and discusses the results on three real-world datasets. Finally, Section \ref{sec:conclusion} concludes the paper and outlines future directions.
+By advancing trustworthy, infrastructure-grade collaborative AI, this work
+supports UN Sustainable Development Goal~9. The remainder of the paper reviews
+related work (Section~\ref{sec:related}), formalises the setting
+(Section~\ref{sec:prelim}), details the method (Section~\ref{sec:method}),
+reports experiments (Section~\ref{sec:experiments}), analyses trustworthiness
+and compliance (Section~\ref{sec:trust}), and discusses limitations
+(Section~\ref{sec:discussion}).

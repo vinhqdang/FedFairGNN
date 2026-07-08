@@ -1,0 +1,57 @@
+\section{Trustworthiness Analysis and Regulatory Compliance}
+\label{sec:trust}
+
+\paragraph{Composite trust score.}
+Trustworthiness is multi-dimensional: a model that is accurate but unfair, or
+fair but privacy-leaking or attack-fragile, is not trustworthy. We summarise
+each method by a single interpretable score in $[0,1]$ that aggregates five
+normalised sub-scores---utility (AUC), fairness ($1-\tfrac{\dpd+\eod}{2}/F_{\text{ref}}$),
+privacy ($1-\epsilon/\epsilon_{\max}$), robustness (attack-retained AUC), and
+calibration ($1-\mathrm{ECE}/\mathrm{ECE}_{\text{ref}}$)---via a weighted power
+mean. Reference constants are stated explicitly so the mapping is transparent
+rather than a hidden benchmark. Under the geometric-mean setting ($p{=}0$),
+which penalises \emph{any} weak axis, FedFairGNN achieves the highest trust
+score among all methods (Table~\ref{tab:trust}): baselines that excel on one
+axis are penalised for ignoring the others, whereas FedFairGNN is the only
+method competitive on all of utility, fairness, privacy, and robustness
+simultaneously.
+
+\begin{table}[t]\centering\small
+\caption{Composite trust score (Bail): utility, fairness, and privacy combined
+via a weighted power mean. Only FedFairGNN scores on all axes; best in bold.}
+\label{tab:trust}
+\input{tables/trust.tex}
+\end{table}
+
+\paragraph{Explainability audit.}
+Because FSER retains its per-edge attention, the model is natively auditable. We
+measure the \emph{attention bias ratio}: the share of attention mass on
+cross-group edges divided by their prevalence. A ratio below one---observed for
+FedFairGNN---means the model deliberately attends to cross-group edges
+\emph{less} than chance, directly evidencing that FSER suppresses the biased
+message passing it targets. Gradient attribution of the demographic-parity gap
+further localises which input features drive residual disparity, giving auditors
+an actionable, decision-level explanation.
+
+\paragraph{Human-in-the-loop control.}
+Two budgets are exposed to a human operator: the fairness budget $\tau$ (the
+maximum tolerated global disparity, enforced by BFWA) and the privacy budget
+$\epsilon$ (enforced by FTGD's accountant). The Pareto frontier
+(Figure~\ref{fig:pareto}) turns budget selection into an informed choice rather
+than a hidden default---an operationalisation of meaningful human oversight.
+
+\paragraph{Regulatory alignment.}
+Table~\ref{tab:compliance} maps FedFairGNN's components to the EU AI Act
+(Articles 10, 13, 14, 15) and the NIST AI Risk Management Framework
+(Govern/Map/Measure/Manage). Data governance is met by keeping raw graphs local
+and excluding $s$ from features; transparency by the FSER explanation and model
+card; human oversight by the $\tau,\epsilon$ budgets; and accuracy/robustness by
+robust aggregation and the DP guarantee. The framework auto-generates a
+Mitchell-style model card, turning accountability into a reproducible artifact.
+
+\begin{table}[t]\centering\small
+\caption{Mapping of FedFairGNN components to EU AI Act articles and NIST AI RMF
+functions.}
+\label{tab:compliance}
+\input{tables/compliance.tex}
+\end{table}

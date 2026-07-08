@@ -1,54 +1,67 @@
-\documentclass[journal]{IEEEtran}
-\usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
+% Trustworthy Federated Graph Learning -- manuscript for
+% Springer Discover Artificial Intelligence,
+% Collection: "Trustworthy and Responsible Federated Learning".
+%
+% Written in a portable single-column journal format (compiles with a standard
+% TeX Live installation). At revision the content maps directly onto the
+% Springer Nature sn-jnl class (\documentclass[sn-mathphys]{sn-jnl}); section
+% structure and float usage are kept compatible.
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
 \usepackage{graphicx}
-\usepackage{textcomp}
-\usepackage{xcolor}
-\usepackage{url}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{caption}
+\usepackage{subcaption}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black,
+            urlcolor=blue!50!black}
 
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Rc}{\textbf{[R]}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\title{\textbf{Trustworthy Federated Graph Neural Networks:\\
+Unifying Fairness, Privacy, Robustness, and Explainability\\
+for High-Stakes Risk Detection}}
+
+\author{Vinh Dang\thanks{Corresponding author: \texttt{dqvinh87@gmail.com}}}
+\date{}
 
 \begin{document}
-
-\title{FedFairGNN: A Privacy-Preserving and Fairness-Aware Federated Graph Neural Network for Fraud Detection}
-
-\author{Vinh Dang
-\thanks{V. Dang is with the Department of Computer Science.}}
-
 \maketitle
 
 \begin{abstract}
 \input{sections/00_abstract}
 \end{abstract}
 
-\begin{IEEEkeywords}
-Federated Learning, Graph Neural Networks, Fairness, Privacy, Fraud Detection.
-\end{IEEEkeywords}
+\noindent\textbf{Keywords:} Federated learning; Graph neural networks;
+Algorithmic fairness; Differential privacy; Byzantine robustness;
+Explainable AI; Trust metrics; Regulatory compliance.
 
-\section{Introduction}
 \input{sections/01_introduction}
-
-\section{Related Work}
-\label{sec:related}
 \input{sections/02_related_work}
+\input{sections/03_preliminaries}
+\input{sections/04_method}
+\input{sections/05_experiments}
+\input{sections/06_trust_compliance}
+\input{sections/07_discussion}
+\input{sections/08_conclusion}
 
-\section{Methodology}
-\label{sec:method}
-\input{sections/03_methodology}
-
-\section{Experiments}
-\label{sec:experiments}
-\input{sections/04_experiments}
-
-\section{Conclusion}
-\label{sec:conclusion}
-\input{sections/05_conclusion}
-
-\bibliographystyle{IEEEtran}
+\bibliographystyle{plainnat}
 \bibliography{ref}
 
 \end{document}

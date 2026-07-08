@@ -1,0 +1,171 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Setup}
+\paragraph{Datasets.}
+We use five real datasets with \emph{genuine} sensitive attributes
+(Table~\ref{tab:datasets}): \textbf{German} (credit; gender), \textbf{Credit}
+(default; age), and \textbf{Bail} (recidivism; race)---the standard fair-GNN
+benchmarks used by our fairness baselines; \textbf{Pokec} (social; region); and
+\textbf{Elliptic} (Bitcoin AML; $203{,}769$ transactions,
+$234{,}355$ edges), a large-scale \emph{crypto} graph on which we are, to our
+knowledge, the first to study group fairness, using an operational early/late
+temporal subgroup as a documented proxy. Data are partitioned across clients by
+a Dirichlet($\alpha{=}0.5$) label split with a small floor to avoid degenerate
+silos.
+
+\begin{table}[t]\centering\small
+\caption{Datasets. $^\dagger$Elliptic uses an operational early/late temporal
+subgroup as a documented proxy (not a protected demographic).}
+\label{tab:datasets}
+\input{tables/datasets.tex}
+\end{table}
+
+\paragraph{Baselines.}
+We compare against ten methods spanning the axes reviewers expect: non-fair
+backbones FedAvg-GCN/GAT; fair-GNN methods FairGNN \citep{dai2021say} and FairSIN
+\citep{yang2024fairsin} (run federated); fairness-aware FL aggregation FairFed
+\citep{ezzeldin2023fairfed}, q-FedAvg \citep{li2020fair}, FedFB, and the
+federated fair-GNN F$^2$GNN \citep{f2gnn2023}; and the DP baseline DP-FedAvg
+\citep{mcmahan2018learning}. Ours appears as FedFairGNN (with FTGD-DP),
+FedFairGNN~(no~DP), and FedFairGNN-Robust.
+
+\paragraph{Protocol.}
+All methods share a 2-layer GNN ($d_h{=}64$), AdamW ($\eta{=}0.01$), $E{=}2$
+local epochs, and dataset-specific rounds. We report mean\,$\pm$\,std over three
+seeds on the pooled global test set. Unless stated, DP targets $\epsilon{=}8$,
+$\delta{=}10^{-5}$; the fairness budget is $\tau{=}0.05$. Every table and figure
+is regenerated from logged runs by \texttt{experiments/report.py}.
+
+\subsection{Main comparison: fairness--utility}
+\label{sec:exp-main}
+Tables~\ref{tab:main-auc}--\ref{tab:main-eod} report utility (AUC), demographic
+parity, and equal-opportunity gaps. FedFairGNN attains the strongest
+\emph{fairness}--utility trade-off: it substantially reduces $\dpd$ and $\eod$
+relative to the non-fair backbones while keeping AUC competitive with the best
+baseline, and it does so \emph{under} an $(\epsilon{=}8)$-DP guarantee that the
+other fairness methods do not provide. On Elliptic---beyond the reach of the
+centralised fairness baselines---FedFairGNN delivers the best fairness at
+comparable detection accuracy, demonstrating that trustworthy federated fraud
+detection scales to hundreds of thousands of nodes.
+
+\begin{table}[t]\centering\small
+\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds;
+best per column in bold. FedFairGNN is the only method that is fair
+\emph{and} private (top group are non-private).}
+\label{tab:main-auc}
+\input{tables/main_auc.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Demographic Parity Difference (DPD, lower is fairer).}
+\label{tab:main-dpd}
+\input{tables/main_dpd.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Equal Opportunity Difference (EOD, lower is fairer).}
+\label{tab:main-eod}
+\input{tables/main_eod.tex}
+\end{table}
+
+\subsection{Ablation}
+\label{sec:exp-ablation}
+Table~\ref{tab:ablation} isolates each component. Adding FSER reduces disparity
+through message passing; adding BFWA further tightens the global fairness gap by
+constraining aggregation; the full model best balances the two. This confirms
+that the client-side (FSER) and server-side (BFWA) mechanisms are complementary.
+
+\begin{table}[t]\centering\small
+\caption{Ablation of FedFairGNN components (no DP). AUC / DPD per dataset.}
+\label{tab:ablation}
+\input{tables/ablation.tex}
+\end{table}
+
+\subsection{Privacy--utility: FTGD vs.\ full-gradient DP}
+\label{sec:exp-privacy}
+Figure~\ref{fig:privacy} sweeps the privacy budget $\epsilon$. FTGD retains
+essentially full utility and fairness across $\epsilon\in[0.5,16]$, because it
+privatises only the two-dimensional fairness statistic. In contrast, DP-FedAvg's
+isotropic gradient noise collapses AUC toward chance at small $\epsilon$. This is
+the central privacy result: \emph{FedFairGNN provides sensitive-attribute
+differential privacy at negligible cost}, where the standard mechanism is
+unusable on compact GNNs.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/privacy_bail.pdf}
+\caption{Utility (left) and fairness (right) versus privacy budget $\epsilon$ on
+Bail. FTGD (FedFairGNN) is flat across $\epsilon$; DP-FedAvg degrades sharply as
+privacy tightens.}
+\label{fig:privacy}
+\end{figure}
+
+\subsection{Fairness--utility Pareto frontier}
+Figure~\ref{fig:pareto} traces the frontier as the fairness weight $\lambda$
+varies, letting an operator select an operating point---an instance of the
+human-in-the-loop control our framework exposes.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/pareto.pdf}
+\caption{Fairness--utility trade-off as $\lambda$ varies. Down-left is better
+(low DPD, high AUC).}
+\label{fig:pareto}
+\end{figure}
+
+\subsection{Robustness to Byzantine and fairness-poisoning attacks}
+\label{sec:exp-robust}
+Table~\ref{tab:robustness} reports utility retained under Gaussian, ALIE, and
+fairness-poisoning attacks with $2/10$ malicious clients, across aggregators;
+Figure~\ref{fig:robust} sweeps the number of Byzantine clients. FedAvg and plain
+BFWA collapse under attack, and---critically---plain BFWA is \emph{captured} by
+the fairness-poisoning attack that fabricates fairness statistics.
+FedFairGNN-Robust (robust\_bfwa) preserves utility and fairness by screening
+malicious updates before applying the fairness constraint, matching or exceeding
+dedicated robust aggregators while remaining fair.
+
+\begin{table}[t]\centering\small
+\caption{Utility (AUC) retained under attack ($2/10$ Byzantine clients),
+by aggregator. Higher is more robust; best per attack in bold.}
+\label{tab:robustness}
+\input{tables/robustness.tex}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/robustness_byz.pdf}
+\caption{AUC under Gaussian attack versus number of Byzantine clients (of 10).
+Robust aggregation retains utility as corruption grows.}
+\label{fig:robust}
+\end{figure}
+
+\subsection{Uncertainty, calibration, and convergence}
+Table~\ref{tab:efficiency} reports ECE, Brier score, and the group-conditional
+uncertainty gap; FedFairGNN remains well-calibrated and does not concentrate
+uncertainty on one group. Figure~\ref{fig:convergence} shows stable joint
+convergence of utility and both fairness metrics---FTGD's clean task pathway
+avoids the variance spikes typical of DP-FedAvg.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/convergence.pdf}
+\caption{FedFairGNN convergence on Bail: AUC rises while DPD/EOD fall and
+stabilise below the budget.}
+\label{fig:convergence}
+\end{figure}
+
+\subsection{Scalability and sustainability}
+Table~\ref{tab:efficiency} also reports communication and efficiency. FedFairGNN
+transmits only model weights, so its per-round communication equals FedAvg's;
+fairness and privacy therefore incur \emph{no} communication overhead. The
+method scales to $K{=}20$ clients and to the $200$k-node Elliptic graph on
+commodity CPU hardware.
+
+\begin{table}[t]\centering\small
+\caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
+(lower better), group uncertainty gap, per-round communication, and energy
+proxy. FedFairGNN matches FedAvg's communication footprint.}
+\label{tab:efficiency}
+\input{tables/efficiency.tex}
+\end{table}

@@ -1,8 +1,70 @@
-\subsection{Graph Neural Networks for Fraud Detection}
-GNNs \cite{kipf2016semi, velickovic2017graph} effectively capture the homophily and structural patterns indicative of fraud. Recent works have focused on handling class imbalance and camouflaged fraudsters. However, most assume centralized data availability.
+\section{Related Work}
+\label{sec:related}
 
-\subsection{Federated Learning on Graphs}
-Federated Graph Learning (FGL) extends FL \cite{mcmahan2017communication} to graph data. Major challenges include handling missing links across clients and statistical heterogeneity. Existing FGL frameworks mostly focus on utility and efficiency, often neglecting fairness.
+\paragraph{Fairness in graph neural networks.}
+GNNs inherit and amplify bias through homophilous message passing. Remedies
+include adversarial debiasing (FairGNN \citep{dai2021say}), counterfactual and
+stability regularisation (NIFTY \citep{agarwal2021nifty}), pre-processing that
+minimises inter-group distributional distance (EDITS \citep{dong2022edits}),
+sensitive-information neutralisation via heterogeneous neighbours (FairSIN
+\citep{yang2024fairsin}), re-balancing through counterfactual mixup (FairGB
+\citep{li2024fairgb}), invariant learning across inferred sensitive partitions
+(FairINV \citep{zhu2024fairinv}), and disentangled debiasing (DAB-GNN
+\citep{lee2025dabgnn}). All assume \emph{centralised} data. Our FSER is closest
+in spirit to the edge-reweighting variants of FairSIN and to distribution-aware
+reweighting \citep{fnrgnn2025}, but operates inside a federated, private, and
+robust pipeline.
 
-\subsection{Fairness in GNNs}
-Fairness in GNNs is an active research area. Approaches include adversarial debiasing, reweighting, and edge dropping. However, applying these in a federated setting is non-trivial due to the lack of global data visibility. Our work bridges this gap by proposing a distributed fairness mechanism.
+\paragraph{Fairness in federated learning.}
+Two notions coexist. \emph{Client (performance) fairness} equalises accuracy
+across clients: q-FedAvg \citep{li2020fair} up-weights high-loss clients.
+\emph{Group fairness} equalises outcomes across demographic groups: FairFed
+\citep{ezzeldin2023fairfed} adjusts aggregation weights by each client's local
+fairness gap; FedFB ports FairBatch to FL; PUFFLE \citep{corbucci2024puffle}
+blends a demographic-parity loss with DP-SGD under a target-disparity
+controller; FedFACT \citep{fedfact2025} gives provable global-and-local group
+fairness. These target tabular or image data. For \emph{graphs}, F$^2$GNN
+\citep{f2gnn2023} combines a fairness-weighted aggregation with structure-aware
+group-balance weights, and very recent work (FairGFL, 2025) adds DP to federated
+fair GNNs. We compare against FairFed, q-FedAvg, FedFB, and F$^2$GNN, and against
+FairSIN run federated.
+
+\paragraph{Differential privacy in FL.}
+DP-FedAvg \citep{mcmahan2018learning} clips per-client updates and adds Gaussian
+noise; privacy is tracked with the moments accountant / R\'enyi DP
+\citep{mironov2017renyi,abadi2016deep}. On the compact GNNs used for tabular
+graphs, isotropic gradient noise at meaningful $\epsilon$ overwhelms the signal
+(Section~\ref{sec:exp-privacy}). FedFDP \citep{ling2024feddp} adapts clipping to
+fairness but still privatises the whole gradient. FTGD instead privatises only
+the \emph{sufficient statistics} of the fairness term, exploiting the fact that
+the sensitive attribute never enters the task loss---a targeted mechanism whose
+$(\epsilon,\delta)$ guarantee follows from the Gaussian mechanism and
+post-processing immunity.
+
+\paragraph{Byzantine-robust aggregation.}
+Krum and Multi-Krum \citep{blanchard2017krum}, coordinate-wise median and
+trimmed mean \citep{yin2018byzantine}, Bulyan \citep{mhamdi2018hidden}, and
+trust-bootstrapping schemes such as FLTrust \citep{cao2021fltrust} defend
+against malicious updates under attacks including sign-flipping,
+model-replacement \citep{bagdasaryan2020backdoor}, ALIE \citep{baruch2019little},
+and IPM \citep{xie2019fall}. None targets fairness. Recently, fairness-poisoning
+attacks emerged---EAB-FL \citep{eabfl2024} and fairness-constrained
+manipulation---that \emph{increase} disparity while preserving accuracy, evading
+both robust and fairness-aware defences. We reproduce a fairness-poisoning
+threat and defend with a robust fairness-constrained aggregator.
+
+\paragraph{Explainability, uncertainty, and trust metrics.}
+GNN explainers attribute predictions to edges/features; we use the FSER
+attention itself as a native, audit-ready explanation and add gradient-based
+attribution of the \emph{disparity}. Predictive uncertainty via MC-dropout
+\citep{gal2016dropout} and calibration (ECE, Brier) quantify confidence
+reliability. Composite trust scoring for FL is nascent; we contribute a
+transparent power-mean aggregation over utility, fairness, privacy, robustness,
+and calibration. Finally, we align the system to the EU AI Act and NIST AI RMF,
+operationalising accountability as an auditable artifact rather than prose.
+
+\paragraph{Positioning.}
+No prior method unifies fairness, differential privacy, and Byzantine robustness
+for federated GNNs, nor evaluates on large-scale crypto graphs. FedFairGNN does
+both, and reports the full trustworthiness picture---including uncertainty,
+explainability, sustainability, and regulatory mapping---under one framework.

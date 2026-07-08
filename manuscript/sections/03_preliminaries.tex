@@ -1,0 +1,60 @@
+\section{Preliminaries and Problem Setting}
+\label{sec:prelim}
+
+\paragraph{Cross-silo federated graph learning.}
+There are $K$ institutions (clients). Client $k$ holds a private graph
+$\mathcal{G}_k=(\mathcal{V}_k,\mathcal{E}_k,\mathbf{X}_k,\mathbf{y}_k,\mathbf{s}_k)$
+with node features $\mathbf{X}_k\in\R^{n_k\times d}$, binary task labels
+$\mathbf{y}_k\in\{0,1\}^{n_k}$ (e.g.\ fraud/default/recidivism), and a binary
+\emph{sensitive attribute} $\mathbf{s}_k\in\{0,1\}^{n_k}$ (e.g.\ gender, age,
+race). Raw graphs never leave the client. A server coordinates $T$
+communication rounds; each round clients perform $E$ local epochs and transmit
+model parameters, which the server aggregates. We evaluate the global model on
+the pooled held-out test nodes of all clients. Statistical heterogeneity is
+modelled by a symmetric Dirichlet($\alpha$) split over labels, the standard FL
+non-IID model \citep{hsu2019measuring}; smaller $\alpha$ is more skewed.
+
+\paragraph{Group fairness.}
+For predicted probabilities $\hat{y}$ and sensitive attribute $s$ we report
+three group-fairness metrics (lower is fairer):
+\begin{align}
+\dpd &= \big|\,\E[\hat{y}\mid s{=}0]-\E[\hat{y}\mid s{=}1]\,\big|
+        &&\text{(Demographic Parity Difference)},\\
+\eod &= \big|\,\mathrm{TPR}_{s=0}-\mathrm{TPR}_{s=1}\,\big|
+        &&\text{(Equal Opportunity Difference)},\\
+\Delta_{\mathrm{EOdds}} &= \max\big(|\Delta\mathrm{TPR}|,\,|\Delta\mathrm{FPR}|\big)
+        &&\text{(Equalized Odds)} .
+\end{align}
+$\dpd$ is computed on soft scores (matching the differentiable training term);
+$\eod$ and Equalized Odds use thresholded predictions.
+
+\paragraph{Differential privacy.}
+A randomised mechanism $\mathcal{M}$ is $(\epsilon,\delta)$-differentially
+private if for all adjacent datasets $D,D'$ and all outputs $S$,
+$\Pr[\mathcal{M}(D)\in S]\le e^{\epsilon}\Pr[\mathcal{M}(D')\in S]+\delta$
+\citep{dwork2014algorithmic}. We protect the \emph{sensitive attribute}:
+adjacency is defined by flipping one node's $s_i$. The Gaussian mechanism adds
+$\mathcal{N}(0,\sigma^2)$ noise calibrated to the $L_2$ sensitivity of the
+released quantity; composition across rounds is tracked with R\'enyi DP
+\citep{mironov2017renyi}. For the Gaussian mechanism with noise multiplier
+$z=\sigma/\Delta$, the R\'enyi divergence of order $\alpha$ is
+$\epsilon_{\mathrm{RDP}}(\alpha)=\alpha/(2z^2)$; over $T$ releases it composes as
+$T\alpha/(2z^2)$, and the tight conversion to $(\epsilon,\delta)$-DP is
+$\epsilon=\min_{\alpha>1}\big[\epsilon_{\mathrm{RDP}}(\alpha)+\log(1/\delta)/(\alpha-1)\big]$.
+
+\paragraph{Threat model for robustness.}
+Up to $f<K/2$ clients are Byzantine and may send arbitrary updates. We consider
+data poisoning (label flipping), classical model poisoning (Gaussian, sign-flip,
+scaling/model-replacement \citep{bagdasaryan2020backdoor}), the strong
+omniscient attacks ALIE \citep{baruch2019little} and IPM \citep{xie2019fall},
+and a \emph{fairness-poisoning} attack: a malicious client transmits a biased,
+scaled update while reporting fabricated fairness/utility statistics
+($\dpd\!\approx\!0$, high AUC) to capture a fairness-aware aggregator. The
+server is honest but curious and never accesses raw data.
+
+\paragraph{Objective.}
+We seek a global model that jointly (i) maximises task utility (AUC-ROC), (ii)
+minimises group unfairness, (iii) satisfies a target $(\epsilon,\delta)$-DP for
+the sensitive attribute, and (iv) retains utility and fairness under Byzantine
+corruption---the trustworthiness trade-off that motivates
+Section~\ref{sec:method}.

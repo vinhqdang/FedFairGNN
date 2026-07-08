@@ -231,13 +231,136 @@ def fig_convergence(rows):
     print("[fig] convergence.pdf")
 
 
+DATASETS_STATIC = [
+    ("German", "1{,}000", "43{,}484", "26", "Gender", "0.70", "credit risk"),
+    ("Credit", "30{,}000", "2{,}843{,}716", "12", "Age", "0.78", "default"),
+    ("Bail", "18{,}876", "623{,}740", "17", "Race (WHITE)", "0.38", "recidivism"),
+    ("Elliptic", "203{,}769", "234{,}355", "165", "Time period$^\\dagger$", "0.02", "illicit (crypto)"),
+]
+
+
+def table_datasets():
+    lines = ["\\begin{tabular}{lrrrlcl}", "\\toprule",
+             "Dataset & Nodes & Edges & Feat. & Sensitive attr. & Pos.\\ rate & Task \\\\",
+             "\\midrule"]
+    for name, n, e, d, s, pr, task in DATASETS_STATIC:
+        lines.append(f"{name} & {n} & {e} & {d} & {s} & {pr} & {task} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    with open(os.path.join(TAB, "datasets.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print("[table] datasets.tex")
+
+
+def table_robustness(rows):
+    rows = [r for r in rows if "rob_" in r["run_id"]]
+    if not rows:
+        return
+    aggs = ["fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"]
+    attacks = ["gaussian", "alie", "fairness_poison"]
+    A = {}
+    for r in rows:
+        for agg in aggs:
+            for atk in attacks:
+                if f"rob_{agg}_{atk}" in r["run_id"]:
+                    A[(agg, atk)] = r.get("final_auc")
+    if not A:
+        return
+    pretty_atk = {"gaussian": "Gaussian", "alie": "ALIE", "fairness_poison": "Fair-poison"}
+    lines = ["\\begin{tabular}{l" + "c" * len(attacks) + "}", "\\toprule",
+             "Aggregator & " + " & ".join(pretty_atk[a] for a in attacks) + " \\\\", "\\midrule"]
+    # best (highest retained AUC) per attack column
+    best = {a: max((A[(g, a)] for g in aggs if (g, a) in A), default=None) for a in attacks}
+    for agg in aggs:
+        cells = []
+        for a in attacks:
+            v = A.get((agg, a))
+            if v is None:
+                cells.append("--")
+            else:
+                cells.append(f"\\textbf{{{v:.3f}}}" if best[a] and abs(v - best[a]) < 1e-9 else f"{v:.3f}")
+        name = "\\textbf{robust\\_bfwa (ours)}" if agg == "robust_bfwa" else agg.replace("_", "\\_")
+        lines.append(f"{name} & " + " & ".join(cells) + " \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    with open(os.path.join(TAB, "robustness.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print("[table] robustness.tex")
+
+
+def table_trust(rows):
+    """Composite trust score per method on Bail from logged metrics."""
+    from src.trust.trust_score import trust_score, sub_scores
+    ds = "bail"
+    methods = ["fedavg-gat", "fairgnn", "fairsin", "fairfed", "f2gnn",
+               "dp-fedavg", "fedfairgnn-nodp", "fedfairgnn"]
+    A = agg([r for r in rows if r["dataset"] == ds and "__abl" not in r["run_id"]
+             and "rob_" not in r["run_id"] and "byz_" not in r["run_id"]],
+            ("exp_name",), "auc")
+    D = agg([r for r in rows if r["dataset"] == ds], ("exp_name",), "dpd")
+    E = agg([r for r in rows if r["dataset"] == ds], ("exp_name",), "eod")
+    # epsilon per method (from summary config)
+    eps_map = {}
+    for r in rows:
+        if r["dataset"] == ds and r.get("dp_enabled"):
+            eps_map[r["exp_name"]] = r.get("dp_epsilon")
+    lines = ["\\begin{tabular}{lccccc}", "\\toprule",
+             "Method & AUC & DPD & EOD & $\\epsilon$ & Trust \\\\", "\\midrule"]
+    best_trust, best_m = -1, None
+    trust_vals = {}
+    for m in methods:
+        if (m,) not in A:
+            continue
+        met = {"auc": A[(m,)][0], "dpd": D.get((m,), (0,))[0], "eod": E.get((m,), (0,))[0]}
+        eps = eps_map.get(m)
+        t = trust_score(met, p=1.0, epsilon=eps)
+        trust_vals[m] = (met, eps, t)
+        if t > best_trust:
+            best_trust, best_m = t, m
+    for m in methods:
+        if m not in trust_vals:
+            continue
+        met, eps, t = trust_vals[m]
+        name = PRETTY.get(m, m)
+        tt = f"\\textbf{{{t:.3f}}}" if m == best_m else f"{t:.3f}"
+        epss = f"{eps:.0f}" if eps else "--"
+        lines.append(f"{name} & {met['auc']:.3f} & {met['dpd']:.3f} & {met['eod']:.3f} & {epss} & {tt} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    with open(os.path.join(TAB, "trust.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print("[table] trust.tex")
+
+
+def _esc(s):
+    return str(s).replace("&", "\\&").replace("_", "\\_").replace("%", "\\%")
+
+
+def table_compliance():
+    from src.trust.compliance import compliance_matrix
+    cm = compliance_matrix()
+    lines = ["\\begin{tabular}{p{0.30\\textwidth}p{0.62\\textwidth}}", "\\toprule",
+             "Requirement & Addressed by \\\\", "\\midrule",
+             "\\multicolumn{2}{l}{\\emph{EU AI Act}} \\\\"]
+    for r in cm["eu_ai_act"]:
+        lines.append(f"{_esc(r['requirement'])} & {_esc(r['how_addressed'])} \\\\")
+    lines.append("\\midrule\n\\multicolumn{2}{l}{\\emph{NIST AI RMF}} \\\\")
+    for r in cm["nist_ai_rmf"]:
+        lines.append(f"{_esc(r['requirement'])} & {_esc(r['how_addressed'])} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    with open(os.path.join(TAB, "compliance.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print("[table] compliance.tex")
+
+
 def main():
     rows = load()
     print(f"[report] {len(rows)} runs loaded")
+    table_datasets()
+    table_compliance()
     if not rows:
         return
     table_main(rows)
     table_ablation(rows)
+    table_robustness(rows)
+    table_trust(rows)
     fig_privacy(rows)
     fig_pareto(rows)
     fig_robustness(rows)

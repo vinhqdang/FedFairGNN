@@ -1,0 +1,135 @@
+\section{The FedFairGNN Framework}
+\label{sec:method}
+
+FedFairGNN augments federated GNN training with three components acting at
+complementary points---inside message passing (FSER), at the local gradient
+(FTGD), and at server aggregation (BFWA)---plus a trustworthiness
+instrumentation layer. Figure-free overview: each round, the server broadcasts
+$\theta_{t-1}$; each client runs $E$ FSER-GNN local epochs with FTGD to obtain a
+privatised update; the server aggregates updates under a fairness budget with
+BFWA (optionally Byzantine-robust) to obtain $\theta_t$.
+
+\subsection{Fairness-Sensitive Edge Reweighting (FSER)}
+\label{sec:fser}
+In a homophilous graph, nodes of sensitive group $A$ structurally tied to
+positive (risky) neighbours are flagged even absent genuine signal. FSER adds a
+learnable correction to graph attention. For edge $(i,j)$ with head embeddings
+$\mathbf{h}_i,\mathbf{h}_j$, the standard attention logit
+$e_{ij}=\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{h}_i\Vert\mathbf{h}_j])$ is
+corrected by a \emph{fairness risk score}
+\begin{equation}
+\phi_{ij}=\mathbb{I}(s_i\neq s_j)\cdot\max\!\big(0,\cos(\mathbf{h}_i,\mathbf{h}_j)\big),
+\qquad
+\tilde{e}_{ij}=e_{ij}-\beta^{(l)}\phi_{ij},
+\end{equation}
+so that \emph{cross-group} edges between similarly-embedded nodes---the pattern
+most responsible for propagating demographic bias---are down-weighted after the
+per-node softmax. The suppression strength $\beta^{(l)}\!\ge\!0$ is learned per
+layer (clamped to $[0,5]$). Because $\phi_{ij}$ and the resulting attention are
+retained, FSER is also \emph{self-explaining}: Section~\ref{sec:exp-explain}
+audits how much attention mass FSER removes from cross-group edges.
+
+\subsection{Fairness-Targeted Gradient Decomposition (FTGD)}
+\label{sec:ftgd}
+The local objective is $\mathcal{L}=\mathcal{L}_{\text{task}}+\lambda\,
+\mathcal{L}_{\text{fair}}$, with weighted BCE task loss and the differentiable
+soft demographic-parity penalty
+$\mathcal{L}_{\text{fair}}=|\mu_0-\mu_1|$, where
+$\mu_g=\frac{1}{n_g}\sum_{i:s_i=g}\hat{y}_i$ is the group-$g$ mean prediction.
+
+\paragraph{Key observation.}
+The sensitive attribute $s$ enters the entire update \emph{only} through the two
+scalars $(\mu_0,\mu_1)$; the task loss is a function of $(\mathbf{X},\mathbf{y})$
+alone. Therefore, to achieve DP with respect to $s$, it suffices to privatise
+$(\mu_0,\mu_1)$---two bounded-sensitivity scalars---rather than the full
+$|\theta|$-dimensional gradient.
+
+\paragraph{Mechanism.}
+Flipping one node's group membership changes $(\mu_0,\mu_1)$ by at most
+$\Delta=\sqrt{1/n_0^2+1/n_1^2}$ in $L_2$. We release
+$\tilde{\mu}_g=\mu_g+\mathcal{N}(0,(z\Delta)^2)$ with noise multiplier $z$, form
+$\mathcal{L}_{\text{fair}}=|\tilde{\mu}_0-\tilde{\mu}_1|$, and backpropagate.
+Additionally, to reduce task/fairness gradient conflict we orthogonalise the
+task gradient against the fairness gradient (gradient surgery) before the step.
+
+\begin{proposition}[Privacy of FTGD]
+Each local FTGD epoch is $(\alpha,\alpha/(2z^2))$-RDP with respect to the
+sensitive attribute. Over $T\!\cdot\!E$ epochs the mechanism is
+$(\alpha,\,TE\,\alpha/(2z^2))$-RDP, and hence
+$(\min_{\alpha>1}[TE\,\alpha/(2z^2)+\log(1/\delta)/(\alpha-1)],\delta)$-DP.
+\end{proposition}
+\begin{proof}[Proof sketch]
+Releasing $(\tilde{\mu}_0,\tilde{\mu}_1)$ is the Gaussian mechanism at
+sensitivity $\Delta$ and noise $z\Delta$, giving noise multiplier $z$ and RDP
+$\alpha/(2z^2)$ \citep{mironov2017renyi}. Every subsequent quantity---the
+fairness gradient, the model update, all future predictions---is a
+data-independent (given the noised statistics) function, so post-processing
+immunity preserves the guarantee. RDP composes additively across the $TE$
+releases; the conversion is standard.
+\end{proof}
+
+Because $z$ can be large while $z\Delta$ stays tiny (as $\Delta\!\sim\!1/n_g$),
+strong privacy costs almost no utility---in stark contrast to full-gradient
+DP-SGD, whose isotropic noise scales with $\sqrt{|\theta|}$
+(Section~\ref{sec:exp-privacy}). We calibrate $z$ once for the target
+$\epsilon$ over $TE$ steps using the accountant above.
+
+\subsection{Bi-objective Frank--Wolfe Aggregation (BFWA)}
+\label{sec:bfwa}
+FedAvg lets a client with skewed local data propagate bias globally. BFWA frames
+aggregation as maximising weighted utility under a hard fairness budget:
+\begin{equation}
+\max_{\mathbf{w}\in\Delta_K}\ \textstyle\sum_k w_k\,\mathrm{Perf}_k
+\quad\text{s.t.}\quad \textstyle\sum_k w_k\,\dpd_k\le\tau,
+\end{equation}
+solved by Frank--Wolfe on the simplex with a dual variable $\mu$ for the
+constraint: at inner step $t$, $\nabla_k=-\mathrm{Perf}_k+\mu\,\dpd_k$, the
+linear-minimisation oracle puts all mass on $\argmin_k\nabla_k$, the iterate
+updates as $\mathbf{w}\!\leftarrow\!(1-\gamma_t)\mathbf{w}+\gamma_t\mathbf{e}_{k^*}$
+with $\gamma_t=2/(t+2)$, and $\mu\!\leftarrow\!\max(0,\mu+\eta(\sum_k w_k\dpd_k-\tau))$.
+A weight floor prevents any single client from dominating. The oracle is $O(K)$,
+adding negligible server overhead.
+
+\paragraph{Byzantine-robust variant (robust\_bfwa).}
+Metric-based weighting is vulnerable to fairness poisoning (a client lying that
+$\dpd_k\!\approx\!0$). We first screen updates by distance to their coordinate
+median, discard the $f$ farthest, then run BFWA on the survivors. This composes
+Byzantine screening with the fairness constraint, defending against both
+classical and fairness-poisoning attacks (Section~\ref{sec:exp-robust}). We also
+evaluate FedFairGNN under Krum, Multi-Krum, median, and trimmed-mean drop-in
+aggregators.
+
+\begin{algorithm}[t]
+\caption{FedFairGNN (one communication round $t$)}
+\label{alg:fedfairgnn}
+\begin{algorithmic}[1]
+\State Server broadcasts $\theta_{t-1}$ to all clients
+\For{each client $k$ in parallel}
+  \State $\theta_k\gets\theta_{t-1}$
+  \For{$E$ local epochs}
+    \State forward with FSER; compute $\mathcal{L}_{\text{task}}$, $(\mu_0,\mu_1)$
+    \State privatise $\tilde{\mu}_g=\mu_g+\mathcal{N}(0,(z\Delta)^2)$; \ $\mathcal{L}_{\text{fair}}=|\tilde{\mu}_0-\tilde{\mu}_1|$
+    \State orthogonalise task vs.\ fairness gradient; step; clamp $\beta$
+  \EndFor
+  \State send update $g_k=\theta_{t-1}-\theta_k$ and metrics $(\mathrm{Perf}_k,\dpd_k)$
+\EndFor
+\State (robust) screen out $f$ updates farthest from the coordinate median
+\State compute BFWA weights $\mathbf{w}$ under budget $\tau$; \ $\theta_t=\theta_{t-1}-\sum_k w_k g_k$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Trustworthiness instrumentation}
+\label{sec:method-trust}
+FedFairGNN reports the full trust picture. \textbf{Uncertainty}: MC-dropout gives
+per-node predictive std and entropy, and a group-conditional \emph{uncertainty
+gap}; calibration is measured by ECE and Brier score.
+\textbf{Explainability}: FSER attention yields an edge-level audit (cross- vs.\
+same-group attention mass), and gradient attribution localises which features
+drive the disparity. \textbf{Trust score}: a transparent weighted power-mean of
+normalised utility, fairness, privacy, robustness, and calibration sub-scores;
+the geometric-mean setting ($p{=}0$) penalises any single weak axis.
+\textbf{Sustainability}: model size, communication volume, forward FLOPs, and an
+energy/CO$_2$ proxy---FedFairGNN transmits weights only (the FTGD statistics add
+$O(1)$ scalars), so its footprint equals FedAvg's. \textbf{Compliance}: an
+explicit EU~AI~Act / NIST~RMF mapping and an auto-generated model card
+(Section~\ref{sec:trust}).
