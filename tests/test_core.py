@@ -95,9 +95,16 @@ def test_trust_score_bounds():
 
 
 def test_trust_geomean_penalises_zero_axis():
+    # hold privacy fixed (eps) so the comparison isolates the fairness axis
     good = {"auc": 0.9, "dpd": 0.0, "eod": 0.0}
     unfair = {"auc": 0.9, "dpd": 0.5, "eod": 0.5}
-    assert compute_trust(good, p=0.0) > compute_trust(unfair, p=0.0)
+    assert compute_trust(good, p=0.0, epsilon=1.0) > compute_trust(unfair, p=0.0, epsilon=1.0)
+
+
+def test_no_privacy_scores_zero_privacy_axis():
+    from src.trust.trust_score import sub_scores
+    assert sub_scores({"auc": 0.9, "dpd": 0.01, "eod": 0.01})["privacy"] == 0.0
+    assert sub_scores({"auc": 0.9, "dpd": 0.01, "eod": 0.01}, epsilon=1.0)["privacy"] > 0.5
 
 
 # ------------------------- data & partition ------------------------ #

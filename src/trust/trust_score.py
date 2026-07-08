@@ -50,9 +50,12 @@ def sub_scores(metrics: Dict[str, float], *, epsilon: Optional[float] = None,
     eod = metrics.get("eod", 0.0)
     s = {"utility": _clip01(auc),
          "fairness": _clip01(1.0 - ((dpd + eod) / 2.0) / F_REF)}
+    # Privacy is ALWAYS scored: a method that applies no differential privacy
+    # provides zero privacy (epsilon = infinity), so it must not be rewarded by
+    # simply omitting the axis. This is what makes the composite favour methods
+    # that are trustworthy on *every* dimension, not just the ones they target.
     eps = epsilon if epsilon is not None else metrics.get("epsilon")
-    if eps is not None and np.isfinite(eps):
-        s["privacy"] = _clip01(1.0 - eps / EPS_MAX)
+    s["privacy"] = _clip01(1.0 - eps / EPS_MAX) if (eps is not None and np.isfinite(eps)) else 0.0
     if clean_auc:
         s["robustness"] = _clip01(auc / clean_auc)
     e = ece if ece is not None else metrics.get("ece")
