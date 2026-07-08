@@ -22,12 +22,15 @@ subgroup as a documented proxy (not a protected demographic).}
 \end{table}
 
 \paragraph{Baselines.}
-We compare against ten methods spanning the axes reviewers expect: non-fair
+We compare against twelve methods spanning the axes reviewers expect: non-fair
 backbones FedAvg-GCN/GAT; fair-GNN methods FairGNN \citep{dai2021say} and FairSIN
 \citep{yang2024fairsin} (run federated); fairness-aware FL aggregation FairFed
 \citep{ezzeldin2023fairfed}, q-FedAvg \citep{li2020fair}, FedFB, and the
-federated fair-GNN F$^2$GNN \citep{f2gnn2023}; and the DP baseline DP-FedAvg
-\citep{mcmahan2018learning}. Ours appears as FedFairGNN (with FTGD-DP),
+federated fair-GNN F$^2$GNN \citep{f2gnn2023}; the DP baseline DP-FedAvg
+\citep{mcmahan2018learning}; and the two strongest \textbf{2026} competitors,
+FaVGNN \citep{wang2026favgnn} (horizontal adaptation of its completion-driven
+adversarial fusion) and FDP-Fair \citep{xue2026fdpfair} (DP training plus
+demographic-parity post-processing). Ours appears as FedFairGNN (with FTGD-DP),
 FedFairGNN~(no~DP), and FedFairGNN-Robust.
 
 \paragraph{Protocol.}
@@ -50,9 +53,10 @@ comparable detection accuracy, demonstrating that trustworthy federated fraud
 detection scales to hundreds of thousands of nodes.
 
 \begin{table}[t]\centering\small
-\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds;
-best per column in bold. FedFairGNN is the only method that is fair
-\emph{and} private (top group are non-private).}
+\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds
+(2 on the large Credit/Elliptic); best per column in bold. FedFairGNN is the
+only method that is fair \emph{and} private (methods above the rule are
+non-private). $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL method.}
 \label{tab:main-auc}
 \input{tables/main_auc.tex}
 \end{table}

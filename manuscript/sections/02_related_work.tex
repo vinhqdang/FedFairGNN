@@ -25,9 +25,19 @@ blends a demographic-parity loss with DP-SGD under a target-disparity
 controller; FedFACT \citep{fedfact2025} gives provable global-and-local group
 fairness. These target tabular or image data. For \emph{graphs}, F$^2$GNN
 \citep{f2gnn2023} combines a fairness-weighted aggregation with structure-aware
-group-balance weights, and very recent work (FairGFL, 2025) adds DP to federated
-fair GNNs. We compare against FairFed, q-FedAvg, FedFB, and F$^2$GNN, and against
-FairSIN run federated.
+group-balance weights. The most recent efforts sit closest to our setting:
+FairGFL \citep{fairgfl2025} adds DP to federated fair GNNs but targets
+\emph{cross-client} (performance) fairness arising from imbalanced overlapping
+subgraphs rather than demographic group fairness; FedGraph-Fair
+\citep{fedgraphfair2025} applies distributionally-robust optimisation for
+personalised group-fair federated graph learning; FaVGNN
+\citep{wang2026favgnn} (2026) achieves group fairness in \emph{vertical} FL via
+completion-driven adversarial fusion; and FDP-Fair \citep{xue2026fdpfair} (2026)
+combines federated DP training with demographic-parity post-processing. We
+compare against FairFed, q-FedAvg, FedFB, F$^2$GNN, FairSIN (run federated), and
+---as the strongest 2026 competitors---horizontal adaptations of FaVGNN and
+FDP-Fair. FairGFL is discussed but not benchmarked head-to-head, as it optimises
+a different (cross-client) fairness objective.
 
 \paragraph{Differential privacy in FL.}
 DP-FedAvg \citep{mcmahan2018learning} clips per-client updates and adds Gaussian
@@ -48,10 +58,12 @@ trust-bootstrapping schemes such as FLTrust \citep{cao2021fltrust} defend
 against malicious updates under attacks including sign-flipping,
 model-replacement \citep{bagdasaryan2020backdoor}, ALIE \citep{baruch2019little},
 and IPM \citep{xie2019fall}. None targets fairness. Recently, fairness-poisoning
-attacks emerged---EAB-FL \citep{eabfl2024} and fairness-constrained
-manipulation---that \emph{increase} disparity while preserving accuracy, evading
-both robust and fairness-aware defences. We reproduce a fairness-poisoning
-threat and defend with a robust fairness-constrained aggregator.
+attacks emerged---EAB-FL \citep{eabfl2024} and the fairness-constrained
+optimisation attack \citep{kasyap2025attack}---that \emph{increase} disparity
+while preserving accuracy, evading both robust and fairness-aware defences. We
+reproduce the fairness-constrained optimisation attack of
+\citet{kasyap2025attack} and defend with a robust fairness-constrained
+aggregator.
 
 \paragraph{Explainability, uncertainty, and trust metrics.}
 GNN explainers attribute predictions to edges/features; we use the FSER

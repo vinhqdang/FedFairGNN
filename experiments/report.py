@@ -38,6 +38,7 @@ PRETTY = {
     "f2gnn": "F$^2$GNN", "dp-fedavg": "DP-FedAvg", "fedfairgnn-nodp": "FedFairGNN (no DP)",
     "fedfairgnn": "\\textbf{FedFairGNN}", "ours-robust": "FedFairGNN-Robust",
     "ours-nofser": "w/o FSER", "ours-nobfwa": "w/o BFWA",
+    "favgnn": "FaVGNN$^{\\ast}$ (2026)", "fdp-fair": "FDP-Fair (2026)",
 }
 DS_PRETTY = {"german": "German", "credit": "Credit", "bail": "Bail",
              "elliptic": "Elliptic", "pokec_z": "Pokec-z"}
@@ -87,7 +88,8 @@ def table_main(rows):
             and "rob_" not in r["run_id"] and "byz_" not in r["run_id"]
             and "K" not in r["run_id"].split("__")[-1] and "part_" not in r["run_id"]]
     methods = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl",
-               "f2gnn", "dp-fedavg", "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
+               "f2gnn", "favgnn", "fdp-fair", "dp-fedavg",
+               "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
     datasets = ["german", "credit", "bail", "elliptic"]
     for metric, lower in [("auc", False), ("dpd", True), ("eod", True)]:
         A = agg(rows, ("exp_name", "dataset"), metric)
@@ -113,7 +115,7 @@ def table_main(rows):
                 else:
                     cells.append("--")
             lines.append(f"{PRETTY.get(m, m)} & " + " & ".join(cells) + " \\\\")
-            if m == "f2gnn":
+            if m == "fdp-fair":
                 lines.append("\\midrule")
         lines += ["\\bottomrule", "\\end{tabular}"]
         with open(os.path.join(TAB, f"main_{metric}.tex"), "w") as f:
