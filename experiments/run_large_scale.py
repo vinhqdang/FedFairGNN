@@ -20,11 +20,12 @@ METHODS = ["fedavg-gat", "fairsin", "favgnn", "dp-fedavg",
            "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
 
 
-def main(rounds: int = 15, num_clients: int = 5, seeds=(0,)):
+def main(rounds: int = 6, num_clients: int = 3, seeds=(0,)):
     import torch
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger = ResultLogger("results")
-    print(f"[large-scale] ogbn-products on {device}; {len(METHODS)} methods x {len(seeds)} seeds")
+    print(f"[large-scale] ogbn-products on {device}; {len(METHODS)} methods x "
+          f"{len(seeds)} seeds; rounds={rounds} K={num_clients}", flush=True)
     for s in seeds:
         for m in METHODS:
             cfg = ExperimentConfig(dataset="ogbn_products", seed=s, device=device,
@@ -33,10 +34,11 @@ def main(rounds: int = 15, num_clients: int = 5, seeds=(0,)):
                                    num_neighbors=(15, 10))
             apply_method(cfg, m)
             cfg.sampling = True                     # ensure sampling stays on
+            print(f"[start] {m} ...", flush=True)
             t = time.time()
             run_id, final = run_one(cfg, logger, tag="ogbn")
             if final is None:
-                print(f"  {m}: already done, skipped")
+                print(f"  {m}: already done, skipped", flush=True)
             else:
                 print(f"  {m}: AUC={final.get('auc',0):.3f} DPD={final.get('dpd',0):.3f} "
                       f"EOD={final.get('eod',0):.3f} ({time.time()-t:.0f}s)", flush=True)
