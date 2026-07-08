@@ -2,6 +2,7 @@
 \label{sec:experiments}
 
 \subsection{Setup}
+\label{sec:setup}
 \paragraph{Datasets.}
 We use five real datasets with \emph{genuine} sensitive attributes
 (Table~\ref{tab:datasets}): \textbf{German} (credit; gender), \textbf{Credit}
@@ -21,17 +22,74 @@ subgroup as a documented proxy (not a protected demographic).}
 \input{tables/datasets.tex}
 \end{table}
 
-\paragraph{Baselines.}
-We compare against twelve methods spanning the axes reviewers expect: non-fair
-backbones FedAvg-GCN/GAT; fair-GNN methods FairGNN \cite{dai2021say} and FairSIN
-\cite{yang2024fairsin} (run federated); fairness-aware FL aggregation FairFed
-\cite{ezzeldin2023fairfed}, q-FedAvg \cite{li2020fair}, FedFB, and the
-federated fair-GNN F$^2$GNN \cite{f2gnn2023}; the DP baseline DP-FedAvg
-\cite{mcmahan2018learning}; and the two strongest \textbf{2026} competitors,
-FaVGNN \cite{wang2026favgnn} (horizontal adaptation of its completion-driven
-adversarial fusion) and FDP-Fair \cite{xue2026fdpfair} (DP training plus
-demographic-parity post-processing). Ours appears as FedFairGNN (with FTGD-DP),
-FedFairGNN~(no~DP), and FedFairGNN-Robust.
+\subsection{Baselines and their reimplementation}
+\label{sec:baselines}
+We benchmark against twelve methods chosen to cover every axis of the trust
+problem and every competing school of thought, plus our own variants. Because a
+fair comparison requires that all methods run in the \emph{same} federated
+graph pipeline, we reimplemented each within our framework; we describe each
+faithfully and flag any adaptation. All share the 2-layer GNN backbone,
+optimiser, and training budget of Section~\ref{sec:setup} unless a method's
+definition requires otherwise.
+
+\begin{description}
+\item[Non-fair backbones.] \textbf{FedAvg-GCN} and \textbf{FedAvg-GAT}
+\cite{kipf2016semi,velickovic2017graph,mcmahan2017communication} are the
+standard graph convolutional and attention networks trained with vanilla FedAvg.
+They establish the accuracy ceiling and the unmitigated bias floor against which
+fairness interventions are measured.
+
+\item[Fair GNNs (run federated).] \textbf{FairGNN} \cite{dai2021say} attaches an
+adversary that predicts the sensitive attribute from the node embedding and
+trains the encoder to fool it (a gradient-reversal minimax), which we run at each
+client with FedAvg aggregation. \textbf{FairSIN} \cite{yang2024fairsin}
+neutralises sensitive information by augmenting each node with the mean features
+of its \emph{heterogeneous} (different-group) neighbours, falling back to an MLP
+estimate where no such neighbour exists; we implement the FairSIN-F variant.
+These are the strongest centralised fair-GNN ideas transplanted to the federated
+setting, and FairSIN in particular is the closest published analogue to FSER
+(feature-space rather than edge-space debiasing).
+
+\item[Fairness-aware FL aggregation.] \textbf{FairFed} \cite{ezzeldin2023fairfed}
+starts from sample-size weights and adjusts each client's weight by the gap
+between its local fairness metric and the mean gap, down-weighting clients that
+worsen global fairness. \textbf{q-FedAvg} \cite{li2020fair} reweights clients by
+a power $q$ of their loss to equalise performance across clients (client, not
+group, fairness---included to represent that school). \textbf{FedFB} ports
+FairBatch-style group reweighting to the local objective. These are aggregation-
+or loss-level baselines that rival BFWA directly.
+
+\item[Federated fair GNN.] \textbf{F\textsuperscript{2}GNN} \cite{f2gnn2023}
+combines a model-fairness aggregation weight (favouring low-disparity clients)
+with a structure-aware group-balance weight, fused by a temperature-scaled
+softmax---the most direct federated-graph-fairness competitor.
+
+\item[Differential privacy.] \textbf{DP-FedAvg} \cite{mcmahan2018learning} clips
+the full client gradient to norm $C$ and adds isotropic Gaussian noise,
+accounted with the same R\'enyi-DP composition we use for FTGD. It is the crucial
+control that isolates the value of FTGD's targeted mechanism at matched
+$\epsilon$.
+
+\item[2026 competitors.] \textbf{FaVGNN} \cite{wang2026favgnn} is, in the
+original, a \emph{vertical}-FL method whose client side performs
+completion-driven adversarial fusion; since our setting is horizontal and all
+sensitive attributes are observed, we port its two transferable client-side
+components---heterogeneous-neighbour feature fusion and adversarial sensitive
+debiasing---and label the result a horizontal adaptation. \textbf{FDP-Fair}
+\cite{xue2026fdpfair} trains under differential privacy and then calibrates
+group-specific decision offsets on held-out data to enforce demographic parity;
+we implement its two-step DP-then-post-process recipe. Together these are the
+most recent methods occupying our niche.
+
+\item[Ours.] \textbf{FedFairGNN} (FSER + FTGD-DP + BFWA), \textbf{FedFairGNN~(no
+DP)} (the same without privacy noise, to isolate the fairness mechanism), and
+\textbf{FedFairGNN-Robust} (BFWA replaced by the Byzantine-robust variant).
+\end{description}
+
+We additionally reproduce the fairness-poisoning optimisation attack of
+\cite{kasyap2025attack} and, in the robustness study, the classical Krum,
+Multi-Krum, coordinate-median and trimmed-mean aggregators
+\cite{blanchard2017krum,yin2018byzantine} as robustness baselines.
 
 \paragraph{Protocol.}
 All methods share a 2-layer GNN ($d_h{=}64$), AdamW ($\eta{=}0.01$), $E{=}2$
@@ -43,14 +101,37 @@ is regenerated from logged runs by \texttt{experiments/report.py}.
 \subsection{Main comparison: fairness--utility}
 \label{sec:exp-main}
 Tables~\ref{tab:main-auc}--\ref{tab:main-eod} report utility (AUC), demographic
-parity, and equal-opportunity gaps. FedFairGNN attains the strongest
-\emph{fairness}--utility trade-off: it substantially reduces $\dpd$ and $\eod$
-relative to the non-fair backbones while keeping AUC competitive with the best
-baseline, and it does so \emph{under} an $(\epsilon{=}8)$-DP guarantee that the
-other fairness methods do not provide. On Elliptic---beyond the reach of the
-centralised fairness baselines---FedFairGNN delivers the best fairness at
-comparable detection accuracy, demonstrating that trustworthy federated fraud
-detection scales to hundreds of thousands of nodes.
+parity, and equal-opportunity gaps for all methods on all datasets. Three
+patterns recur across datasets and reward a closer reading.
+
+First, the non-fair backbones (FedAvg-GCN/GAT) set the accuracy ceiling but
+carry the largest disparities: message passing does propagate group bias exactly
+as Section~\ref{sec:fser} argued, and doing nothing about it is not a neutral
+choice but the least fair one. Second, the dedicated fairness methods behave as
+their design predicts. Aggregation-level methods (FairFed, F\textsuperscript{2}GNN)
+and representation-level methods (FairGNN, FairSIN) both reduce $\dpd$ and
+$\eod$ appreciably, and on the smallest dataset (German) the best-tuned of them
+can match or slightly edge out FedFairGNN on a \emph{single} fairness metric in
+isolation. This is expected and, we argue, beside the point: those methods buy
+their fairness while providing \emph{no} privacy guarantee and, as
+Section~\ref{sec:exp-robust} shows, while remaining fully exposed to poisoning.
+Third, and most importantly, FedFairGNN delivers a fairness--utility trade-off
+that is competitive with the best of these specialised methods \emph{while
+simultaneously} carrying an $(\epsilon{=}8)$-DP guarantee for the sensitive
+attribute---something none of the fairness baselines offer. The proper reading
+of the main tables is therefore not cell-by-cell but holistic: FedFairGNN is the
+only method that is never far from the frontier on \emph{any} axis, which is
+precisely what the composite trust score of Section~\ref{sec:trust} formalises.
+
+The contrast with DP-FedAvg is especially telling. At the same
+$\epsilon$, the only other private method in the table collapses in utility
+(Section~\ref{sec:exp-privacy}), so ``adding privacy'' the standard way is not a
+viable option for these models---making FedFairGNN's near-free privacy a
+qualitative, not merely quantitative, advantage. Finally, on Elliptic---a
+$200$k-node cryptocurrency graph beyond the reach of every centralised fairness
+baseline---FedFairGNN attains the best subgroup fairness at detection accuracy
+comparable to the non-fair backbone, demonstrating that trustworthy federated
+fraud detection scales to real, industrial-size graphs.
 
 \begin{table}[t]\centering\small
 \caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds

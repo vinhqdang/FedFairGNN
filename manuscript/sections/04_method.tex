@@ -205,6 +205,29 @@ aggregators.
 \end{algorithmic}
 \end{algorithm}
 
+\subsection{Complexity, convergence, and communication}
+\label{sec:complexity}
+Each FedFairGNN component is deliberately cheap, so trustworthiness does not come
+at the price of scalability. \textbf{FSER} adds, per layer, one cosine similarity
+and one scalar multiply per edge, i.e.\ $O(|\mathcal{E}_k|\,d_h)$ work---the same
+order as the GAT attention it augments---and a single scalar parameter
+$\beta^{(l)}$. \textbf{FTGD} performs two backward passes (task and fairness) and
+draws two scalars of Gaussian noise; its overhead over ordinary training is a
+constant factor, and crucially it is \emph{independent} of the model dimension,
+whereas full-gradient DP-SGD must sample and add $|\theta|$ noise coordinates.
+\textbf{BFWA} runs $T_{\mathrm{FW}}$ Frank--Wolfe iterations, each dominated by an
+$O(K)$ arg-min over clients, so the server overhead is $O(T_{\mathrm{FW}}K)$---
+negligible beside the $O(|\theta|)$ cost of forming the weighted update, and
+independent of the graph size. Frank--Wolfe on the simplex enjoys the classical
+$O(1/t)$ primal gap for convex objectives \cite{jaggi2013revisiting}; while our
+per-round Lagrangian is convex in $\mathbf{w}$, the outer federated loop is
+non-convex, so we report empirical convergence (Fig.~\ref{fig:convergence})
+rather than a global-optimality claim. Finally, because clients transmit only
+the model weights $g_k$ plus two scalar metrics, FedFairGNN's per-round
+communication is identical to FedAvg's; fairness and privacy are, in
+communication terms, free (Section~\ref{sec:exp-main} and
+Table~\ref{tab:efficiency}).
+
 \subsection{Trustworthiness instrumentation}
 \label{sec:method-trust}
 FedFairGNN reports the full trust picture. \textbf{Uncertainty}: MC-dropout gives
