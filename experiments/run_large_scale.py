@@ -31,7 +31,7 @@ def main(rounds: int = 20, num_clients: int = 3, seeds=(0,)):
             cfg = ExperimentConfig(dataset="ogbn_products", seed=s, device=device,
                                    num_clients=num_clients, rounds=rounds, local_epochs=1,
                                    hidden_channels=128, sampling=True, batch_size=4096,
-                                   num_neighbors=(15, 10))
+                                   num_neighbors=(15, 10), eval_max_nodes=100000)
             apply_method(cfg, m)
             cfg.sampling = True                     # ensure sampling stays on
             print(f"[start] {m} ...", flush=True)

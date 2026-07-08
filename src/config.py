@@ -56,6 +56,9 @@ class ExperimentConfig:
     sampling: bool = False
     batch_size: int = 2048
     num_neighbors: tuple = (15, 10)  # neighbours sampled per GNN layer
+    eval_max_nodes: int = 0          # cap test nodes used per evaluation (0 = all);
+                                     # a random subsample keeps evaluation tractable on
+                                     # million-node graphs whose test split is enormous
 
     # ---- federated optimisation ----
     rounds: int = 100

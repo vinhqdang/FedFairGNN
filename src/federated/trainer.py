@@ -79,11 +79,24 @@ class FederatedTrainer:
         self.ref_model.eval()
         offs = self._group_offsets() if getattr(self.cfg, "postproc_fair", False) else None
         ys, ps, ss = [], [], []
-        for d in self.clients_data:
+        cap = getattr(self.cfg, "eval_max_nodes", 0)
+        per_client_cap = cap // max(1, len(self.clients_data)) if cap else 0
+        for ci, d in enumerate(self.clients_data):
             d = d.to(self.device)
             mask = d.test_mask
             if mask.sum() == 0:
                 continue
+            # On million-node graphs the test split alone can be millions of
+            # nodes; evaluating it every round dominates wall-clock. Cap it to a
+            # fixed random subsample (stable across rounds via a seeded generator,
+            # so the convergence curve is not noisy).
+            if per_client_cap and int(mask.sum()) > per_client_cap:
+                idx = mask.nonzero(as_tuple=True)[0]
+                g = torch.Generator().manual_seed(self.cfg.seed * 1000 + ci)
+                perm = torch.randperm(idx.numel(), generator=g)[:per_client_cap]
+                keep = idx[perm.to(idx.device)]
+                mask = torch.zeros_like(d.test_mask)
+                mask[keep] = True
             if self.cfg.sampling:
                 yy, pred, sm = sampled_predict(self.ref_model, d, mask, self.cfg, self.device)
                 ys.append(yy); ps.append(pred.cpu() if offs is None else pred); ss.append(sm)
