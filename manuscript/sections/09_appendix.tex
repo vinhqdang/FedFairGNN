@@ -1,0 +1,79 @@
+\begin{appendices}
+
+\section{Hyperparameters and training protocol}
+\label{app:hyper}
+Table~\ref{tab:hyper} lists every hyperparameter used, with the value and the
+range we explored. All methods share the backbone, optimiser, and federated
+budget; method-specific hyperparameters (adversary learning rate for FairGNN,
+$q$ for q-FedAvg, $\beta$-step for FairFed, post-processing for FDP-Fair) use the
+values recommended by their originating papers. Seeds are fixed
+($\{0,1,2\}$); differentially private runs are intrinsically stochastic, and we
+therefore report mean\,$\pm$\,standard deviation.
+
+\begin{table}[h]
+\centering\small
+\caption{Hyperparameters. ``Explored'' gives the sweep range where applicable.}
+\label{tab:hyper}
+\begin{tabular}{lll}
+\toprule
+Hyperparameter & Default & Explored \\
+\midrule
+GNN layers $L$ & 2 & $\{2,3\}$ \\
+Hidden dimension $d_h$ & 64 & $\{32,64,128\}$ \\
+Attention heads (FSER/GAT) & 4 & $\{1,4\}$ \\
+Dropout & 0.3 & $\{0.2,0.3,0.5\}$ \\
+Local optimiser & AdamW & --- \\
+Local learning rate $\eta$ & 0.01 & $\{10^{-3},10^{-2}\}$ \\
+Weight decay & $10^{-5}$ & --- \\
+Local epochs $E$ & 2 & $\{1,2,3\}$ \\
+Communication rounds $T$ & 40--60 & per dataset \\
+Clients $K$ & 3--10 & $\{3,5,10,20\}$ \\
+Partition & Dirichlet($\alpha{=}0.5$) & $\alpha\in\{0.1,0.5,1.0\}$ \\
+Fairness weight $\lambda$ & 1.0 & $\{0,0.25,0.5,1,2,4\}$ \\
+Fairness budget $\tau$ & 0.05 & $\{0.01,0.05,0.1\}$ \\
+DP $\epsilon$ & 8 & $\{0.5,1,2,4,8,16\}$ \\
+DP $\delta$ & $10^{-5}$ & --- \\
+DP clip $C$ & 1.0 & --- \\
+Frank--Wolfe iters $T_{\mathrm{FW}}$ & 20 & --- \\
+Dual step $\eta_\mu$ & 0.1 & --- \\
+MC-dropout samples & 20 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Dataset construction and sensitive attributes}
+\label{app:data}
+\textbf{German, Credit, Bail} follow the standard NIFTY preprocessing: edges are
+symmetrised, features are $z$-score standardised, and the sensitive attribute is
+excluded from the node feature matrix (so the model cannot read it directly).
+Sensitive attributes are gender (German), age (Credit), and race (Bail); targets
+are good-credit, no-default, and (non-)recidivism respectively. \textbf{Pokec}
+uses region as the sensitive attribute and working-field as the target.
+\textbf{Elliptic} is the public Bitcoin transaction graph; illicit transactions
+are the positive class, and the unlabelled majority of nodes is retained for
+message passing but excluded from loss and metrics. As Elliptic carries no
+protected demographic attribute, we construct a transparent operational proxy:
+early- versus late-period transactions, split at the median of the $49$
+anonymised time steps, so that we study whether an AML model disproportionately
+flags one market period---a genuine temporal-drift concern in deployed
+compliance systems. We stress this is a subgroup-disparity analysis, not a
+protected-demographic claim.
+
+Clients receive induced subgraphs under a Dirichlet($\alpha$) label partition
+with a small per-client class floor that prevents degenerate single-class silos;
+each client inherits the global train/validation/test masks for its nodes, and
+the global model is evaluated on the pooled test nodes across all clients.
+
+\section{Reproducibility}
+\label{app:repro}
+All datasets are public and downloaded on demand into a local cache; all
+randomness is seeded; the privacy accountant, metrics, and aggregation rules are
+covered by an offline unit-test suite run in continuous integration; and every
+table and figure in this paper is regenerated from logged runs by a single
+script (\texttt{experiments/report.py}). The full experiment matrix---main
+comparison, ablation, privacy sweep, fairness--utility Pareto frontier,
+Byzantine-robustness study, scalability, and partition-sensitivity---is driven
+by a resumable runner (\texttt{experiments/run\_matrix.py}). Code, config, and
+logs are released.
+
+\end{appendices}
