@@ -203,3 +203,52 @@ class FairGNN(nn.Module):
             return torch.tensor(0.0)
         s_logit = self.adversary(self._emb).squeeze(-1)[mask]
         return F.binary_cross_entropy_with_logits(s_logit, sensitive_attr[mask].float())
+
+
+class FairSIN(nn.Module):
+    """FairSIN (Yang et al., AAAI 2024) -- Sensitive Information Neutralisation.
+
+    Faithful lightweight variant (FairSIN-F): each node's features are
+    augmented with the mean features of its *heterogeneous* neighbours (those
+    with a different sensitive attribute); nodes lacking heterogeneous
+    neighbours fall back to an MLP estimate of that signal. The augmented
+    features are fed to a GCN. This neutralises sensitive information by
+    injecting cross-group signal before message passing -- the feature-space
+    analogue of our edge-space FSER.
+    """
+
+    def __init__(self, in_channels, hidden_channels=64, out_channels=1,
+                 num_layers=2, dropout=0.3, coef=1.0, **_):
+        super().__init__()
+        self.dropout = dropout
+        self.coef = coef
+        self.estimator = nn.Sequential(
+            nn.Linear(in_channels, hidden_channels), nn.ReLU(),
+            nn.Linear(hidden_channels, in_channels))
+        self.convs = nn.ModuleList([GCNConv(in_channels, hidden_channels)])
+        for _ in range(num_layers - 1):
+            self.convs.append(GCNConv(hidden_channels, hidden_channels))
+        self.classifier = nn.Linear(hidden_channels, out_channels)
+
+    def _hetero_feature(self, x, edge_index, s):
+        src, dst = edge_index
+        hetero = (s[src] != s[dst])
+        agg = torch.zeros_like(x)
+        cnt = torch.zeros(x.size(0), device=x.device)
+        if hetero.any():
+            d, sr = dst[hetero], src[hetero]
+            agg.index_add_(0, d, x[sr])
+            cnt.index_add_(0, d, torch.ones(hetero.sum(), device=x.device))
+        has = cnt > 0
+        f = torch.where(has.unsqueeze(1), agg / cnt.clamp(min=1).unsqueeze(1),
+                        self.estimator(x))
+        return f
+
+    def forward(self, x, edge_index, sensitive_attr=None, mc=False, logits=False):
+        train = self.training or mc
+        if sensitive_attr is not None:
+            x = x + self.coef * self._hetero_feature(x, edge_index, sensitive_attr)
+        for conv in self.convs:
+            x = F.dropout(F.relu(conv(x, edge_index)), p=self.dropout, training=train)
+        out = self.classifier(x).squeeze(-1)
+        return out if logits else torch.sigmoid(out)

@@ -94,7 +94,8 @@ class FederatedTrainer:
             self.cfg.aggregator, updates, metas,
             tau=self.cfg.fairness_budget, fw_iters=self.cfg.fw_iterations,
             dual_step=self.cfg.dual_step_size, trimmed_beta=self.cfg.trimmed_beta,
-            krum_f=max(self.cfg.krum_f, len(self.byzantine_ids)))
+            krum_f=max(self.cfg.krum_f, len(self.byzantine_ids)),
+            q_ffl=self.cfg.q_ffl, fairfed_beta=self.cfg.fairfed_beta)
         self.global_flat = self.global_flat - g_agg
 
         rec = {"round": t + 1, **{f"g_{k}": v for k, v in self.evaluate_global().items()}}

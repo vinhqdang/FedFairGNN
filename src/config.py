@@ -75,6 +75,14 @@ class ExperimentConfig:
     dp_epsilon: float = 8.0
     dp_delta: float = 1e-5
     dp_clip: float = 1.0
+    dp_mode: str = "auto"            # auto | none | ftgd | gradient
+    #   ftgd     : privatise fairness statistics (ours)
+    #   gradient : standard full-gradient DP-SGD (DP-FedAvg baseline)
+
+    # ---- generic fairness (for baselines that add a local DP penalty) ----
+    local_fairness: bool = False     # add soft-DPD penalty for non-fedfairgnn models
+    q_ffl: float = 2.0               # q for q-FedAvg client-fairness aggregation
+    fairfed_beta: float = 1.0        # FairFed fairness-gap step
 
     # ---- robustness (attack simulation) ----
     attack: str = "none"             # none | label_flip | gaussian | scaling | fairness_poison

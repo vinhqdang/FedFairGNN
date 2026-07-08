@@ -1,13 +1,14 @@
 """Model factory."""
 from __future__ import annotations
 
-from .gnn import FedFairGNN, GCN, GAT, FairGNN, FSERLayer
+from .gnn import FedFairGNN, GCN, GAT, FairGNN, FairSIN, FSERLayer
 
 _REGISTRY = {
     "fedfairgnn": FedFairGNN,
     "gcn": GCN,
     "gat": GAT,
     "fairgnn": FairGNN,
+    "fairsin": FairSIN,
 }
 
 
@@ -26,4 +27,4 @@ def build_model(name: str, in_channels: int, config=None):
     return _REGISTRY[name](**kwargs)
 
 
-__all__ = ["build_model", "FedFairGNN", "GCN", "GAT", "FairGNN", "FSERLayer"]
+__all__ = ["build_model", "FedFairGNN", "GCN", "GAT", "FairGNN", "FairSIN", "FSERLayer"]

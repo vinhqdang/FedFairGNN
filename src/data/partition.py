@@ -44,14 +44,23 @@ def _uniform(n: int, k: int, gen) -> List[torch.Tensor]:
     return [perm[i::k] for i in range(k)]
 
 
-def _dirichlet(values: np.ndarray, k: int, alpha: float, gen) -> List[torch.Tensor]:
-    """Assign nodes to clients so each client's class mix ~ Dirichlet(alpha)."""
+def _dirichlet(values: np.ndarray, k: int, alpha: float, gen,
+               floor: float = 0.05) -> List[torch.Tensor]:
+    """Assign nodes to clients so each client's class mix ~ Dirichlet(alpha).
+
+    A small per-client proportion floor guarantees every client receives some
+    of every class (avoiding degenerate single-class silos that make local AUC
+    undefined and destabilise metric-based aggregation), while preserving the
+    Dirichlet heterogeneity that FL papers rely on.
+    """
     rng = np.random.default_rng(int(torch.randint(0, 2**31 - 1, (1,), generator=gen).item()))
     client_idx: List[List[int]] = [[] for _ in range(k)]
     for cls in np.unique(values):
         idx = np.where(values == cls)[0]
         rng.shuffle(idx)
         props = rng.dirichlet(alpha * np.ones(k))
+        props = (1 - floor * k) * props + floor          # mix in a uniform floor
+        props = props / props.sum()
         cuts = (np.cumsum(props) * len(idx)).astype(int)[:-1]
         for c, part in enumerate(np.split(idx, cuts)):
             client_idx[c].extend(part.tolist())

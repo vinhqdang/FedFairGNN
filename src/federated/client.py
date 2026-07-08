@@ -61,12 +61,21 @@ class Client:
         self.model = build_model(config.model, data.x.shape[1], config).to(device)
         self.is_fair = config.model == "fedfairgnn"
         self.is_adv = config.model == "fairgnn"
+        self.local_fair = self.is_fair or config.local_fairness
 
-        # DP noise scale (FTGD): calibrate multiplier for target epsilon over
-        # all local privatised steps, so cumulative accounting hits dp_epsilon.
+        # resolve DP mode
+        if not config.dp_enabled:
+            self.dp_mode = "none"
+        elif config.dp_mode == "auto":
+            self.dp_mode = "ftgd" if self.local_fair else "gradient"
+        else:
+            self.dp_mode = config.dp_mode
+
+        # DP noise multiplier: calibrate for target epsilon over all local
+        # privatised steps, so cumulative RDP accounting hits dp_epsilon.
         self.noise_multiplier = 0.0
         self.dp_sigma = 0.0
-        if self.is_fair and config.dp_enabled:
+        if self.dp_mode != "none":
             total_steps = max(1, config.rounds * config.local_epochs)
             self.noise_multiplier = calibrate_noise_multiplier(
                 config.dp_epsilon, total_steps, config.dp_delta)
@@ -99,13 +108,51 @@ class Client:
         for _ in range(cfg.local_epochs):
             if self.is_adv:
                 self._adv_step(opt, adv_opt, x, ei, s, y, m)
-            elif self.is_fair:
+            elif self.dp_mode == "ftgd":
                 self._ftgd_step(opt, x, ei, s, y, m)
+            elif self.dp_mode == "gradient":
+                self._dp_fedavg_step(opt, x, ei, s, y, m)   # DP-FedAvg baseline
+            elif self.local_fair:
+                self._fair_step(opt, x, ei, s, y, m)
             else:
                 opt.zero_grad()
                 pred = self.model(x, ei, s)[m]
                 _weighted_bce(pred, y[m].float()).backward()
                 opt.step()
+
+    def _fair_step(self, opt, x, ei, s, y, m):
+        """Task + soft-DPD penalty, no privacy (generic fair baseline)."""
+        opt.zero_grad()
+        pred = self.model(x, ei, s)[m]
+        loss = _weighted_bce(pred, y[m].float()) + self.cfg.fairness_weight * _soft_dpd(pred, s[m])
+        loss.backward()
+        opt.step()
+        if self.is_fair:
+            self.model.clamp_beta()
+
+    def _dp_fedavg_step(self, opt, x, ei, s, y, m):
+        """Standard full-gradient DP-SGD (DP-FedAvg baseline): clip the entire
+        gradient to C and add isotropic Gaussian noise. Contrast for FTGD --
+        this noises all |theta| coordinates and typically wrecks utility."""
+        opt.zero_grad()
+        pred = self.model(x, ei, s)[m]
+        loss = _weighted_bce(pred, y[m].float())
+        if self.local_fair:
+            loss = loss + self.cfg.fairness_weight * _soft_dpd(pred, s[m])
+        loss.backward()
+        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
+                       for p in self.model.parameters()])
+        g = g / max(1.0, float(g.norm(2) / self.cfg.dp_clip))
+        g = g + torch.randn_like(g) * self.dp_sigma
+        idx = 0
+        for p in self.model.parameters():
+            n = p.numel()
+            if p.grad is not None:
+                p.grad.copy_(g[idx:idx + n].view_as(p))
+            idx += n
+        opt.step()
+        if self.is_fair:
+            self.model.clamp_beta()
 
     def _ftgd_step(self, opt, x, ei, s, y, m):
         """FTGD: split the objective into an S-independent task pathway
@@ -185,5 +232,8 @@ class Client:
 
     def meta(self) -> Dict[str, float]:
         v = self.evaluate("val")
+        s = self.data.sensitive_attr[self.data.train_mask]
         return {"n": int(self.data.train_mask.sum()), "perf": v["auc"],
-                "dpd": v["dpd"], "eod": v["eod"], "eo": v["eo"]}
+                "dpd": v["dpd"], "eod": v["eod"], "eo": v["eo"],
+                "loss": 1.0 - v["auc"],
+                "group1_rate": float((s == 1).float().mean()) if len(s) else 0.5}

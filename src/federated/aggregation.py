@@ -72,16 +72,48 @@ def krum_scores(updates: List[torch.Tensor], f: int) -> torch.Tensor:
 # --------------------------------------------------------------------------- #
 def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
               *, tau: float = 0.05, fw_iters: int = 20, dual_step: float = 0.1,
-              trimmed_beta: float = 0.1, krum_f: int = 1) -> Tuple[torch.Tensor, Dict]:
+              trimmed_beta: float = 0.1, krum_f: int = 1,
+              q_ffl: float = 2.0, fairfed_beta: float = 1.0) -> Tuple[torch.Tensor, Dict]:
     K = len(updates)
     n = torch.tensor([m.get("n", 1) for m in meta], dtype=torch.float32)
     perf = torch.tensor([m.get("perf", 0.5) for m in meta], dtype=torch.float32)
     dpd = torch.tensor([m.get("dpd", 0.0) for m in meta], dtype=torch.float32)
+    loss = torch.tensor([m.get("loss", 1.0 - m.get("perf", 0.5)) for m in meta], dtype=torch.float32)
     stack = torch.stack([u.flatten() for u in updates])
     info: Dict = {"method": method}
 
     if method == "fedavg":
         w = n / n.sum()
+        agg = (w[:, None] * stack).sum(0)
+        info["weights"] = w.tolist()
+
+    elif method == "fairfed":
+        # FairFed (Ezzeldin et al., AAAI 2023): start from data-size weights and
+        # down-weight clients whose local fairness gap exceeds the mean gap.
+        mean_gap = dpd.mean()
+        w = n / n.sum()
+        w = w - fairfed_beta * (dpd - mean_gap)
+        w = torch.clamp(w, min=0.0)
+        w = w / w.sum() if w.sum() > 0 else n / n.sum()
+        agg = (w[:, None] * stack).sum(0)
+        info["weights"] = w.tolist()
+
+    elif method == "qffl":
+        # q-FedAvg (Li et al., ICLR 2020): up-weight high-loss clients for
+        # client-level (performance) fairness.
+        w = (loss.clamp(min=1e-6)) ** q_ffl
+        w = w / w.sum()
+        agg = (w[:, None] * stack).sum(0)
+        info["weights"] = w.tolist()
+
+    elif method == "f2gnn":
+        # F2GNN (Meng et al.): softmax aggregation combining a model-fairness
+        # weight (lower DPD -> higher weight) and a data-balance weight (group
+        # balance per client), temperature-scaled.
+        gbal = torch.tensor([1.0 - abs(2.0 * m.get("group1_rate", 0.5) - 1.0) for m in meta])
+        gamma_f = torch.softmax(-dpd / 0.1, dim=0)
+        gamma_e = torch.softmax(gbal / 0.1, dim=0)
+        w = torch.softmax((0.5 * gamma_e + gamma_f) / 0.1, dim=0)
         agg = (w[:, None] * stack).sum(0)
         info["weights"] = w.tolist()
 
@@ -133,4 +165,5 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
 
 
 ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"}
-ALL_METHODS = {"fedavg", "bfwa"} | ROBUST_METHODS
+FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn"}
+ALL_METHODS = {"fedavg"} | FAIR_METHODS | ROBUST_METHODS
