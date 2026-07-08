@@ -332,8 +332,16 @@ def load_ogbn_products(root="data", seed=42) -> Data:
     import ogb.nodeproppred.dataset_pyg as _dp
     _u.decide_download = lambda url: True
     _dp.decide_download = lambda url: True
+    # torch >=2.6 defaults weights_only=True, which breaks loading OGB's
+    # processed data; OGB is a trusted source, so force full unpickling.
+    _orig_load = torch.load
+    def _load(*a, **k):
+        k.setdefault("weights_only", False)
+        return _orig_load(*a, **k)
+    torch.load = _load
 
     ds = PygNodePropPredDataset(name="ogbn-products", root=os.path.join(root, "raw", "ogb"))
+    torch.load = _orig_load
     d = ds[0]
     split = ds.get_idx_split()
     y_class = d.y.view(-1)
