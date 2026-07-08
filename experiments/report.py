@@ -90,7 +90,7 @@ def table_main(rows):
     methods = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl",
                "f2gnn", "favgnn", "fdp-fair", "dp-fedavg",
                "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
-    datasets = ["german", "credit", "bail", "elliptic"]
+    datasets = ["german", "bail", "credit", "pokec_z", "elliptic"]
     for metric, lower in [("auc", False), ("dpd", True), ("eod", True)]:
         A = agg(rows, ("exp_name", "dataset"), metric)
         present_ds = [d for d in datasets if any((m, d) in A for m in methods)]
@@ -235,8 +235,9 @@ def fig_convergence(rows):
 
 DATASETS_STATIC = [
     ("German", "1{,}000", "43{,}484", "26", "Gender", "0.70", "credit risk"),
-    ("Credit", "30{,}000", "2{,}843{,}716", "12", "Age", "0.78", "default"),
     ("Bail", "18{,}876", "623{,}740", "17", "Race (WHITE)", "0.38", "recidivism"),
+    ("Credit", "30{,}000", "2{,}843{,}716", "12", "Age", "0.78", "default"),
+    ("Pokec-z", "67{,}796", "1{,}235{,}916", "276", "Region", "0.08", "working field"),
     ("Elliptic", "203{,}769", "234{,}355", "165", "Time period$^\\dagger$", "0.02", "illicit (crypto)"),
 ]
 

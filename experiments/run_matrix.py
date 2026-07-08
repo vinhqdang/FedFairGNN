@@ -22,11 +22,12 @@ from experiments.methods import (METHODS, apply_method, FAIR_BASELINES,
 from experiments.run_experiment import run_one
 
 # per-dataset training budget (rounds, clients) -- sized for CPU feasibility
-ROUNDS = {"german": 60, "bail": 50, "credit": 40, "elliptic": 25, "synthetic": 40}
-CLIENTS = {"german": 3, "bail": 5, "credit": 5, "elliptic": 10, "synthetic": 5}
+ROUNDS = {"german": 60, "bail": 50, "credit": 40, "elliptic": 25, "pokec_z": 30, "synthetic": 40}
+CLIENTS = {"german": 3, "bail": 5, "credit": 5, "elliptic": 10, "pokec_z": 10, "synthetic": 5}
 SEEDS = [0, 1, 2]
 # fewer seeds on the expensive large datasets (still mean+/-std)
-DS_SEEDS = {"german": [0, 1, 2], "bail": [0, 1, 2], "credit": [0, 1], "elliptic": [0, 1]}
+DS_SEEDS = {"german": [0, 1, 2], "bail": [0, 1, 2], "credit": [0, 1],
+            "elliptic": [0, 1], "pokec_z": [0, 1]}
 
 
 def cfg_for(method, dataset, seed, **ov):
@@ -43,7 +44,7 @@ def cfg_for(method, dataset, seed, **ov):
 def jobs_main():
     # fast datasets first so the core comparison lands early
     methods = FAIR_BASELINES + ["dp-fedavg", "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
-    for ds in ["german", "bail", "credit"]:
+    for ds in ["german", "bail", "credit", "pokec_z"]:
         for m in methods:
             for s in DS_SEEDS[ds]:
                 yield cfg_for(m, ds, s), ""
@@ -68,7 +69,7 @@ def jobs_privacy():
 
 
 def jobs_pareto():
-    for ds in ["german", "bail"]:
+    for ds in ["german", "bail", "pokec_z"]:
         for lam in [0.0, 0.25, 0.5, 1.0, 2.0, 4.0]:
             yield cfg_for("fedfairgnn-nodp", ds, 0, fairness_weight=lam), f"lam{lam}"
 
