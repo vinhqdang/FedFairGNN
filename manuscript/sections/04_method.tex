@@ -1,13 +1,56 @@
 \section{The FedFairGNN Framework}
 \label{sec:method}
 
-FedFairGNN augments federated GNN training with three components acting at
-complementary points---inside message passing (FSER), at the local gradient
-(FTGD), and at server aggregation (BFWA)---plus a trustworthiness
-instrumentation layer. Figure-free overview: each round, the server broadcasts
-$\theta_{t-1}$; each client runs $E$ FSER-GNN local epochs with FTGD to obtain a
-privatised update; the server aggregates updates under a fairness budget with
-BFWA (optionally Byzantine-robust) to obtain $\theta_t$.
+The design philosophy behind FedFairGNN is that trustworthiness should be
+engineered where each threat originates, not retrofitted afterwards. Structural
+bias is born inside message passing, so we correct it there; the sensitive
+attribute leaks through the gradient, so we privatise exactly the part of the
+gradient that carries it; bias and poisoning are amplified at aggregation, so we
+constrain and screen the aggregation step. The framework therefore places three
+lightweight interventions at the three natural control points of federated graph
+training and wraps them in a measurement layer that renders the result
+auditable. Figure~\ref{fig:architecture} gives the end-to-end picture: in each
+round the server broadcasts the global parameters $\theta_{t-1}$; every client
+runs $E$ local epochs of an FSER-augmented GNN and, through FTGD, returns an
+update whose sensitive-attribute footprint is differentially private; the server
+then screens the updates for Byzantine behaviour and aggregates the survivors
+with BFWA under a hard fairness budget to produce $\theta_t$. We now develop each
+component, motivating it before formalising it.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  server/.style={draw,rounded corners,fill=blue!8,minimum width=8.2cm,minimum height=1.15cm,align=center},
+  client/.style={draw,rounded corners,fill=green!8,minimum width=3.5cm,minimum height=1.6cm,align=center},
+  trust/.style={draw,dashed,rounded corners,fill=orange!7,minimum width=8.2cm,minimum height=0.95cm,align=center},
+  arr/.style={-{Latex[length=2mm]},thick},
+]
+\node[server] (srv) {\textbf{Server}\\ Byzantine screening $\rightarrow$
+  \textbf{BFWA} (Frank--Wolfe, budget $\tau$) \\
+  $\theta_t=\theta_{t-1}-\sum_k w_k g_k$};
+\node[client] (c1) [below left=1.5cm and 0.4cm of srv]
+  {\textbf{Client 1}\\[1pt] \textbf{FSER}-GNN\\ \textbf{FTGD} (stat.-level DP)};
+\node[client] (ck) [below right=1.5cm and 0.4cm of srv]
+  {\textbf{Client $K$}\\[1pt] \textbf{FSER}-GNN\\ \textbf{FTGD} (stat.-level DP)};
+\node at ($(c1)!0.5!(ck)$) {\large $\cdots$};
+\node[trust] (tr) [below=2.9cm of srv]
+  {\textbf{Trust layer}: uncertainty/calibration $\cdot$ FSER attention
+   explanations $\cdot$ trust score $\cdot$ sustainability $\cdot$ EU~AI~Act / NIST mapping};
+\draw[arr] (srv.west) -- ++(-0.6,0) |- (c1.north west) node[midway,above,xshift=-6mm]{$\theta_{t-1}$};
+\draw[arr] (srv.east) -- ++(0.6,0) |- (ck.north east);
+\draw[arr] (c1.north east) -- ++(0.4,0) |- (srv.south west) node[midway,below,xshift=6mm]{$g_k,\mathrm{Perf}_k,\dpd_k$};
+\draw[arr] (ck.north west) -- ++(-0.4,0) |- (srv.south east);
+\draw[arr,orange!60!black] (c1.south) -- (c1.south|-tr.north);
+\draw[arr,orange!60!black] (ck.south) -- (ck.south|-tr.north);
+\end{tikzpicture}
+\caption{FedFairGNN architecture. Three interventions act at complementary
+control points---FSER inside client message passing, FTGD at the local gradient,
+and BFWA (with Byzantine screening) at server aggregation---while a trust layer
+instruments the whole system for audit. Only model weights are transmitted, so
+fairness and privacy add no communication overhead.}
+\label{fig:architecture}
+\end{figure}
 
 \subsection{Fairness-Sensitive Edge Reweighting (FSER)}
 \label{sec:fser}
