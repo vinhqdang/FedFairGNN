@@ -1,18 +1,17 @@
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \toprule
-Method & German & Credit \\
+Method & German & Credit & Bail \\
 \midrule
-FedAvg-GCN & 0.694\,$\pm$\,0.050 & 0.762\,$\pm$\,0.005 \\
-FedAvg-GAT & \textbf{0.709\,$\pm$\,0.073} & \textbf{0.765\,$\pm$\,0.000} \\
-FairGNN & 0.593\,$\pm$\,0.088 & -- \\
-FairSIN & 0.694\,$\pm$\,0.045 & -- \\
-FairFed & 0.682\,$\pm$\,0.054 & -- \\
-q-FedAvg & 0.689\,$\pm$\,0.065 & -- \\
-F$^2$GNN & 0.704\,$\pm$\,0.049 & -- \\
-\midrule
-DP-FedAvg & 0.573\,$\pm$\,0.020 & -- \\
-FedFairGNN (no DP) & 0.638\,$\pm$\,0.027 & -- \\
-\textbf{FedFairGNN} & 0.639\,$\pm$\,0.039 & -- \\
-FedFairGNN-Robust & 0.666\,$\pm$\,0.030 & -- \\
+FedAvg-GCN & 0.694\,$\pm$\,0.050 & 0.762\,$\pm$\,0.005 & 0.967\,$\pm$\,0.003 \\
+FedAvg-GAT & \textbf{0.709\,$\pm$\,0.073} & 0.765\,$\pm$\,0.000 & 0.972\,$\pm$\,0.001 \\
+FairGNN & 0.593\,$\pm$\,0.088 & 0.727\,$\pm$\,0.001 & 0.942\,$\pm$\,0.019 \\
+FairSIN & 0.694\,$\pm$\,0.045 & 0.761\,$\pm$\,0.002 & 0.958\,$\pm$\,0.002 \\
+FairFed & 0.682\,$\pm$\,0.054 & 0.755\,$\pm$\,0.000 & 0.964\,$\pm$\,0.004 \\
+q-FedAvg & 0.689\,$\pm$\,0.065 & \textbf{0.766\,$\pm$\,0.002} & 0.965\,$\pm$\,0.006 \\
+F$^2$GNN & 0.704\,$\pm$\,0.049 & 0.753\,$\pm$\,0.000 & 0.972\,$\pm$\,0.004 \\
+DP-FedAvg & 0.573\,$\pm$\,0.020 & 0.481\,$\pm$\,0.040 & 0.505\,$\pm$\,0.077 \\
+FedFairGNN (no DP) & 0.638\,$\pm$\,0.027 & 0.752\,$\pm$\,0.008 & \textbf{0.988\,$\pm$\,0.001} \\
+\textbf{FedFairGNN} & 0.639\,$\pm$\,0.039 & -- & 0.985\,$\pm$\,0.006 \\
+FedFairGNN-Robust & 0.666\,$\pm$\,0.030 & -- & 0.983\,$\pm$\,0.004 \\
 \bottomrule
 \end{tabular}
