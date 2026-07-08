@@ -27,10 +27,10 @@ from .attacks import flip_labels
 def sampled_predict(model, data, mask, cfg, device):
     """Mini-batch inference over `mask` via NeighborLoader; returns pooled
     (y, pred, sensitive) on the seed nodes. For graphs too large for full-batch."""
-    from torch_geometric.loader import NeighborLoader
+    from ..data.sampler import SimpleNeighborLoader
     model.eval()
-    loader = NeighborLoader(data, num_neighbors=list(cfg.num_neighbors),
-                            input_nodes=mask, batch_size=cfg.batch_size, shuffle=False)
+    loader = SimpleNeighborLoader(data, num_neighbors=cfg.num_neighbors,
+                                  input_nodes=mask, batch_size=cfg.batch_size, shuffle=False)
     ys, ps, ss = [], [], []
     for b in loader:
         b = b.to(device); bs = b.batch_size
@@ -112,12 +112,12 @@ class Client:
 
     # ----- neighbor-sampling helpers (for graphs too large for full-batch) -----
     def _loader(self, mask, shuffle):
-        from torch_geometric.loader import NeighborLoader
+        from ..data.sampler import SimpleNeighborLoader
         d = self.data.clone()
         d.y = self._y
-        return NeighborLoader(d, num_neighbors=list(self.cfg.num_neighbors),
-                              input_nodes=mask, batch_size=self.cfg.batch_size,
-                              shuffle=shuffle)
+        return SimpleNeighborLoader(d, num_neighbors=self.cfg.num_neighbors,
+                                    input_nodes=mask, batch_size=self.cfg.batch_size,
+                                    shuffle=shuffle)
 
     def _train_sampled(self, opt, adv_opt):
         cfg = self.cfg
