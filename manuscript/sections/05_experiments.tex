@@ -256,14 +256,18 @@ are all local or $O(K)$ operations, so they compose directly with standard
 mini-batch neighbor sampling \cite{hamilton2017graphsage}: each client trains on
 sampled subgraphs, FSER reweights the sampled edges, FTGD privatises the
 per-batch group statistics, and BFWA is unchanged. We stress that ogbn-products
-is a \emph{scalability} stress-test rather than a fairness benchmark---its binary
-target (rare-category detection) and sensitive attribute (a high- vs.\
-low-degree structural subgroup) are documented proxies (Appendix~\ref{app:data})
----so we read these results as evidence that trustworthy federated graph learning
-runs at industrial scale, not as a demographic-fairness claim. On this graph
-FedFairGNN preserves its fairness improvement over the non-fair backbone at
-detection accuracy competitive with it, confirming that the mechanisms carry
-over from thousands to millions of nodes under sampling.
+is purely a \emph{scalability} feasibility test, not a fairness benchmark: its
+binary target and sensitive attribute are arbitrary structural proxies
+(Appendix~\ref{app:data}), so we deliberately draw \emph{no} accuracy or
+fairness conclusions from it. What it establishes is operational: the full
+FedFairGNN pipeline---FSER message passing, FTGD statistic privatisation, and
+BFWA aggregation---trains end-to-end on a $2.4$M-node, $61$M-edge graph on a
+single commodity GPU (NVIDIA T4) under neighbor sampling, with each client
+processing sampled subgraphs rather than the full graph. This confirms that the
+method's per-client and $O(K)$ server operations impose no barrier to
+industrial-scale deployment; the fairness and privacy claims of this paper rest
+entirely on the five real datasets above, where the sensitive attributes are
+genuine.
 
 \begin{table}[t]\centering\small
 \caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
