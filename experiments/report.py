@@ -353,6 +353,39 @@ def table_compliance():
     print("[table] compliance.tex")
 
 
+def table_large_scale(rows):
+    """Large-scale ogbn-products results: AUC / DPD / EOD / wall-clock per method."""
+    rows = [r for r in rows if r.get("dataset") == "ogbn_products"]
+    if not rows:
+        return
+    methods = ["fedavg-gat", "fairsin", "favgnn", "dp-fedavg",
+               "fedfairgnn-nodp", "fedfairgnn"]
+    Aa = agg(rows, ("exp_name",), "auc")
+    Ad = agg(rows, ("exp_name",), "dpd")
+    Ae = agg(rows, ("exp_name",), "eod")
+    Aw = agg(rows, ("exp_name",), "wall_s")
+    present = [m for m in methods if (m,) in Aa]
+    if not present:
+        return
+    # best per column among present methods
+    best_auc = max(present, key=lambda m: Aa[(m,)][0])
+    best_dpd = min(present, key=lambda m: Ad[(m,)][0]) if all((m,) in Ad for m in present) else None
+    best_eod = min(present, key=lambda m: Ae[(m,)][0]) if all((m,) in Ae for m in present) else None
+    lines = ["\\begin{tabular}{lcccc}", "\\toprule",
+             "Method & AUC $\\uparrow$ & DPD $\\downarrow$ & EOD $\\downarrow$ & Time/run (s) \\\\",
+             "\\midrule"]
+    for m in present:
+        auc = fmt(*Aa[(m,)], bold=(m == best_auc))
+        dpd = fmt(*Ad[(m,)], bold=(m == best_dpd)) if (m,) in Ad else "--"
+        eod = fmt(*Ae[(m,)], bold=(m == best_eod)) if (m,) in Ae else "--"
+        wall = f"{Aw[(m,)][0]:.0f}" if (m,) in Aw else "--"
+        lines.append(f"{PRETTY.get(m, m)} & {auc} & {dpd} & {eod} & {wall} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    with open(os.path.join(TAB, "large_scale.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print(f"[table] large_scale.tex ({len(present)} methods)")
+
+
 def main():
     rows = load()
     print(f"[report] {len(rows)} runs loaded")
@@ -361,6 +394,7 @@ def main():
     if not rows:
         return
     table_main(rows)
+    table_large_scale(rows)
     table_ablation(rows)
     table_robustness(rows)
     table_trust(rows)
