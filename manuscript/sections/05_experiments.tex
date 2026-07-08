@@ -247,6 +247,24 @@ fairness and privacy therefore incur \emph{no} communication overhead. The
 method scales to $K{=}20$ clients and to the $200$k-node Elliptic graph on
 commodity CPU hardware.
 
+\paragraph{Scaling to millions of nodes.}
+To verify that the framework is not confined to graphs that fit in memory, we
+additionally run it on \textbf{ogbn-products} \cite{hu2020ogb}---an Amazon
+co-purchase graph of $2.4$M nodes and $61$M edges, an order of magnitude larger
+than Elliptic and far beyond full-batch training. FedFairGNN's three components
+are all local or $O(K)$ operations, so they compose directly with standard
+mini-batch neighbor sampling \cite{hamilton2017graphsage}: each client trains on
+sampled subgraphs, FSER reweights the sampled edges, FTGD privatises the
+per-batch group statistics, and BFWA is unchanged. We stress that ogbn-products
+is a \emph{scalability} stress-test rather than a fairness benchmark---its binary
+target (rare-category detection) and sensitive attribute (a high- vs.\
+low-degree structural subgroup) are documented proxies (Appendix~\ref{app:data})
+---so we read these results as evidence that trustworthy federated graph learning
+runs at industrial scale, not as a demographic-fairness claim. On this graph
+FedFairGNN preserves its fairness improvement over the non-fair backbone at
+detection accuracy competitive with it, confirming that the mechanisms carry
+over from thousands to millions of nodes under sampling.
+
 \begin{table}[t]\centering\small
 \caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
 (lower better), group uncertainty gap, per-round communication, and energy

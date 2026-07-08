@@ -59,6 +59,14 @@ flags one market period---a genuine temporal-drift concern in deployed
 compliance systems. We stress this is a subgroup-disparity analysis, not a
 protected-demographic claim.
 
+\textbf{ogbn-products} is used only for the scalability study. As it carries no
+protected attribute and a 47-way category label, we construct documented
+proxies: the binary target is membership in the rarest 20\% of categories
+(a rare-class detection task), and the sensitive attribute is a high- vs.\
+low-degree split at the median node degree (a structural connectivity subgroup).
+Training uses neighbor sampling (fan-out $15,10$; batch size $4096$); the
+official OGB split is used for train/validation/test.
+
 Clients receive induced subgraphs under a Dirichlet($\alpha$) label partition
 with a small per-client class floor that prevents degenerate single-class silos;
 each client inherits the global train/validation/test masks for its nodes, and

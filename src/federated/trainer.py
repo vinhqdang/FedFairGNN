@@ -20,7 +20,7 @@ from ..utils.metrics import all_metrics
 from ..trust.privacy import PrivacyAccountant
 from .aggregation import aggregate
 from .attacks import poison_updates
-from .client import Client, flatten_state, load_flat_state
+from .client import Client, flatten_state, load_flat_state, sampled_predict
 
 
 class FederatedTrainer:
@@ -83,6 +83,14 @@ class FederatedTrainer:
             d = d.to(self.device)
             mask = d.test_mask
             if mask.sum() == 0:
+                continue
+            if self.cfg.sampling:
+                yy, pred, sm = sampled_predict(self.ref_model, d, mask, self.cfg, self.device)
+                ys.append(yy); ps.append(pred.cpu() if offs is None else pred); ss.append(sm)
+                if offs is not None:
+                    pred = (pred + torch.where(sm == 0, pred.new_tensor(offs[0]),
+                                               pred.new_tensor(offs[1]))).clamp(0, 1)
+                    ps[-1] = pred
                 continue
             pred = self.ref_model(d.x, d.edge_index, d.sensitive_attr)[mask]
             sm = d.sensitive_attr[mask]

@@ -52,6 +52,11 @@ class ExperimentConfig:
     heads: int = 4
     dropout: float = 0.3
 
+    # ---- mini-batch neighbor sampling (for graphs too large for full-batch) ----
+    sampling: bool = False
+    batch_size: int = 2048
+    num_neighbors: tuple = (15, 10)  # neighbours sampled per GNN layer
+
     # ---- federated optimisation ----
     rounds: int = 100
     local_epochs: int = 3

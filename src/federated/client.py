@@ -23,6 +23,22 @@ from ..trust.privacy import calibrate_noise_multiplier
 from .attacks import flip_labels
 
 
+@torch.no_grad()
+def sampled_predict(model, data, mask, cfg, device):
+    """Mini-batch inference over `mask` via NeighborLoader; returns pooled
+    (y, pred, sensitive) on the seed nodes. For graphs too large for full-batch."""
+    from torch_geometric.loader import NeighborLoader
+    model.eval()
+    loader = NeighborLoader(data, num_neighbors=list(cfg.num_neighbors),
+                            input_nodes=mask, batch_size=cfg.batch_size, shuffle=False)
+    ys, ps, ss = [], [], []
+    for b in loader:
+        b = b.to(device); bs = b.batch_size
+        out = model(b.x, b.edge_index, b.sensitive_attr)[:bs]
+        ys.append(b.y[:bs].cpu()); ps.append(out.cpu()); ss.append(b.sensitive_attr[:bs].cpu())
+    return torch.cat(ys), torch.cat(ps), torch.cat(ss)
+
+
 def flatten_state(state: Dict[str, torch.Tensor]) -> torch.Tensor:
     return torch.cat([v.flatten() for v in state.values()])
 
@@ -94,6 +110,72 @@ class Client:
     def set_flat(self, flat: torch.Tensor) -> None:
         load_flat_state(self.model, flat.to(self.device))
 
+    # ----- neighbor-sampling helpers (for graphs too large for full-batch) -----
+    def _loader(self, mask, shuffle):
+        from torch_geometric.loader import NeighborLoader
+        d = self.data.clone()
+        d.y = self._y
+        return NeighborLoader(d, num_neighbors=list(self.cfg.num_neighbors),
+                              input_nodes=mask, batch_size=self.cfg.batch_size,
+                              shuffle=shuffle)
+
+    def _train_sampled(self, opt, adv_opt):
+        cfg = self.cfg
+        loader = self._loader(self.data.train_mask, shuffle=True)
+        for _ in range(cfg.local_epochs):
+            for b in loader:
+                b = b.to(self.device)
+                bs = b.batch_size
+                seed = slice(0, bs)
+                y_s = b.y[seed].float(); s_s = b.sensitive_attr[seed]
+                if self.is_adv:
+                    adv_opt.zero_grad(); self.model(b.x, b.edge_index, b.sensitive_attr)
+                    self.model.adv_loss(b.sensitive_attr, torch.arange(bs, device=self.device)).backward()
+                    adv_opt.step()
+                    opt.zero_grad()
+                    pred = self.model(b.x, b.edge_index, b.sensitive_attr)[seed]
+                    task = _weighted_bce(pred, y_s)
+                    adv2 = self.model.adv_loss(b.sensitive_attr, torch.arange(bs, device=self.device))
+                    (task - cfg.fairness_weight * adv2).backward(); opt.step()
+                elif self.dp_mode == "ftgd":
+                    self._ftgd_batch(opt, b.x, b.edge_index, b.sensitive_attr, y_s, s_s, bs)
+                else:
+                    opt.zero_grad()
+                    pred = self.model(b.x, b.edge_index, b.sensitive_attr)[seed]
+                    loss = _weighted_bce(pred, y_s)
+                    if self.local_fair:
+                        loss = loss + cfg.fairness_weight * _soft_dpd(pred, s_s)
+                    if self.dp_mode == "gradient":
+                        loss.backward()
+                        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
+                                       for p in self.model.parameters()])
+                        g = g / max(1.0, float(g.norm(2) / cfg.dp_clip)) + torch.randn_like(g) * self.dp_sigma
+                        i = 0
+                        for p in self.model.parameters():
+                            n = p.numel()
+                            if p.grad is not None: p.grad.copy_(g[i:i+n].view_as(p))
+                            i += n
+                    else:
+                        loss.backward()
+                    opt.step()
+            if self.is_fair:
+                self.model.clamp_beta()
+
+    def _ftgd_batch(self, opt, x, ei, s, y_s, s_s, bs):
+        opt.zero_grad()
+        pred = self.model(x, ei, s)[:bs]
+        task = _weighted_bce(pred, y_s)
+        n0 = int((s_s == 0).sum()); n1 = int((s_s == 1).sum())
+        mu0 = pred[s_s == 0].mean() if n0 else pred.sum() * 0.0
+        mu1 = pred[s_s == 1].mean() if n1 else pred.sum() * 0.0
+        if self.dp_sigma > 0 and n0 and n1:
+            sens = (1.0 / n0 ** 2 + 1.0 / n1 ** 2) ** 0.5
+            mu0 = mu0 + torch.randn(()) * self.noise_multiplier * sens
+            mu1 = mu1 + torch.randn(()) * self.noise_multiplier * sens
+        (task + self.cfg.fairness_weight * torch.abs(mu0 - mu1)).backward()
+        opt.step()
+        self.model.clamp_beta()
+
     # ----- training -----
     def train(self) -> None:
         cfg = self.cfg
@@ -102,6 +184,9 @@ class Client:
         adv_opt = (torch.optim.Adam(self.model.adversary.parameters(), lr=cfg.local_lr)
                    if self.is_adv else None)
         self.model.train()
+        if cfg.sampling:
+            self._train_sampled(opt, adv_opt)
+            return
         m = self.data.train_mask
         x, ei, s, y = self.data.x, self.data.edge_index, self.data.sensitive_attr, self._y
 
@@ -238,8 +323,12 @@ class Client:
     def evaluate(self, split="val") -> Dict[str, float]:
         self.model.eval()
         mask = getattr(self.data, f"{split}_mask")
-        pred = self.model(self.data.x, self.data.edge_index, self.data.sensitive_attr)[mask]
-        out = all_metrics(self.data.y[mask], pred, self.data.sensitive_attr[mask])
+        if self.cfg.sampling:
+            y, pred, s = sampled_predict(self.model, self.data, mask, self.cfg, self.device)
+        else:
+            pred = self.model(self.data.x, self.data.edge_index, self.data.sensitive_attr)[mask]
+            y, s = self.data.y[mask], self.data.sensitive_attr[mask]
+        out = all_metrics(y, pred, s)
         out["n"] = int(mask.sum())
         return out
 

@@ -309,6 +309,52 @@ def load_pokec_n(root="data", seed=42) -> Data:
     return _load_pokec("pokec_n", root, seed)
 
 
+def load_ogbn_products(root="data", seed=42) -> Data:
+    """ogbn-products (Hu et al., 2020): a 2.4M-node, 61M-edge Amazon co-purchase
+    graph -- used here as a pure *scalability* stress-test (requires neighbor
+    sampling; no full-batch training is possible). It is not a fairness
+    benchmark: we construct clearly-documented proxies so the framework can be
+    exercised at scale.
+
+      target (proxy):    positive = product belongs to a rare category (bottom
+                         20% of the 47 categories by frequency) -- a rare-class
+                         detection task in the spirit of fraud.
+      sensitive (proxy): high- vs low-degree node (split at the median degree)
+                         -- a structural connectivity subgroup.
+
+    Results on this dataset should be read as evidence that FedFairGNN *scales*,
+    not as a demographic-fairness claim.
+    """
+    from ogb.nodeproppred import PygNodePropPredDataset
+    from torch_geometric.utils import degree
+
+    ds = PygNodePropPredDataset(name="ogbn-products", root=os.path.join(root, "raw", "ogb"))
+    d = ds[0]
+    split = ds.get_idx_split()
+    y_class = d.y.view(-1)
+
+    # rare-category positive label (bottom 20% of classes by frequency)
+    counts = torch.bincount(y_class)
+    order = torch.argsort(counts)                       # ascending frequency
+    rare = set(order[: max(1, int(0.2 * len(counts)))].tolist())
+    y = torch.tensor([1.0 if int(c) in rare else 0.0 for c in y_class], dtype=torch.float32)
+
+    # structural sensitive proxy: degree above median
+    deg = degree(d.edge_index[0], num_nodes=d.num_nodes)
+    sensitive = (deg > deg.median()).long()
+
+    n = d.num_nodes
+    train = torch.zeros(n, dtype=torch.bool); val = torch.zeros(n, dtype=torch.bool)
+    test = torch.zeros(n, dtype=torch.bool)
+    train[split["train"]] = True; val[split["valid"]] = True; test[split["test"]] = True
+
+    data = Data(x=d.x, edge_index=d.edge_index, y=y, sensitive_attr=sensitive,
+                train_mask=train, val_mask=val, test_mask=test)
+    data.meta = DatasetMeta("ogbn_products", "degree(high/low)", "rare_category",
+                            "rare-category product")
+    return data
+
+
 _LOADERS = {
     "german": load_german,
     "credit": load_credit,
@@ -316,6 +362,7 @@ _LOADERS = {
     "elliptic": load_elliptic,
     "pokec_z": load_pokec_z,
     "pokec_n": load_pokec_n,
+    "ogbn_products": load_ogbn_products,
     "synthetic": load_synthetic,
 }
 
