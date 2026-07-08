@@ -248,26 +248,70 @@ method scales to $K{=}20$ clients and to the $200$k-node Elliptic graph on
 commodity CPU hardware.
 
 \paragraph{Scaling to millions of nodes.}
+\label{sec:scaling}
 To verify that the framework is not confined to graphs that fit in memory, we
 additionally run it on \textbf{ogbn-products} \cite{hu2020ogb}---an Amazon
-co-purchase graph of $2.4$M nodes and $61$M edges, an order of magnitude larger
-than Elliptic and far beyond full-batch training. FedFairGNN's three components
-are all local or $O(K)$ operations, so they compose directly with standard
-mini-batch neighbor sampling \cite{hamilton2017graphsage}: each client trains on
-sampled subgraphs, FSER reweights the sampled edges, FTGD privatises the
-per-batch group statistics, and BFWA is unchanged. We stress that ogbn-products
-is purely a \emph{scalability} feasibility test, not a fairness benchmark: its
-binary target and sensitive attribute are arbitrary structural proxies
-(Appendix~\ref{app:data}), so we deliberately draw \emph{no} accuracy or
-fairness conclusions from it. What it establishes is operational: the full
-FedFairGNN pipeline---FSER message passing, FTGD statistic privatisation, and
-BFWA aggregation---trains end-to-end on a $2.4$M-node, $61$M-edge graph on a
-single commodity GPU (NVIDIA T4) under neighbor sampling, with each client
-processing sampled subgraphs rather than the full graph. This confirms that the
-method's per-client and $O(K)$ server operations impose no barrier to
-industrial-scale deployment; the fairness and privacy claims of this paper rest
-entirely on the five real datasets above, where the sensitive attributes are
-genuine.
+co-purchase graph of $2.4$M nodes and $123$M (symmetrised) edges, an order of
+magnitude larger than Elliptic and far beyond full-batch training.
+FedFairGNN's three components are all local or $O(K)$ operations, so they
+compose directly with standard mini-batch neighbor sampling
+\cite{hamilton2017graphsage}: each client trains on sampled subgraphs, FSER
+reweights the sampled edges, FTGD privatises the per-batch group statistics,
+and BFWA is unchanged. As on Elliptic, ogbn-products carries no protected
+demographic attribute, so both its binary target and its sensitive attribute
+are documented structural proxies (Appendix~\ref{app:data}): we therefore
+report these numbers as evidence that the method \emph{trains and behaves
+sensibly at scale}, not as a demographic-fairness claim---that claim rests on
+the five real datasets above.
+
+Table~\ref{tab:large-scale} reports all six methods trained end-to-end on the
+full $2.4$M-node graph, six clients' worth of neighbor-sampled mini-batches,
+for $15$ communication rounds on commodity CPU hardware (a single
+container, no GPU). Three findings stand out. First, utility is genuinely
+learnable at this scale: FedAvg-GAT, FairSIN, and both FedFairGNN variants all
+converge to AUC $0.86$--$0.89$, confirming that FSER message passing, FTGD
+statistic privatisation, and BFWA aggregation compose correctly with
+mini-batch sampling rather than degrading into noise. Second,
+\textbf{DP-FedAvg's utility collapses to AUC $0.556$}---far below its
+performance on the five smaller datasets (Table~\ref{tab:main-auc})---showing
+that naïve per-parameter DP noise, tolerable on models with a few thousand
+parameters, becomes actively harmful once mini-batch gradient variance is
+already high; this is exactly the failure mode FTGD's 2D statistic
+privatisation (Section~\ref{sec:ftgd}) is designed to avoid, and FedFairGNN's
+own DP variant confirms it: it loses only $0.001$ AUC ($0.862$ vs.\ $0.861$
+without DP) relative to its non-private counterpart at $\varepsilon\approx 8.0$,
+versus DP-FedAvg's $0.32$ absolute-AUC collapse. Third,
+\textbf{FaVGNN's adversarial training diverges under sampling at this scale}:
+after four healthy rounds (AUC rising to $0.83$) its discriminator overwhelms
+the encoder and the classifier collapses to a near-constant prediction (final
+AUC $0.495$, chance level), with the corresponding DPD/EOD of $0.000$ reported
+in Table~\ref{tab:large-scale} being a spurious side effect of that collapse,
+not a fairness achievement---we flag this explicitly ($^{\dagger}$) rather
+than let a broken run masquerade as a fair one. This is a genuine
+generalisation limitation of adversarial debiasing under the noisier,
+smaller-batch gradients that mini-batch sampling induces on million-node
+graphs, and (to our knowledge) has not been previously reported for FaVGNN;
+we view stabilising adversarial FL objectives under sampling as useful future
+work rather than a flaw specific to our comparison. FedFairGNN's per-round
+wall-clock is $2.4$--$2.5\times$ FedAvg's (Table~\ref{tab:large-scale},
+last column) on this CPU configuration, the price of FSER's edge-reweighted
+message passing and BFWA's Frank--Wolfe iterations at this scale; this
+overhead is amortised and communication-free (Table~\ref{tab:efficiency}), and
+would shrink substantially under GPU-batched sparse operations, which we
+leave to future engineering work. Overall, this confirms that the method's
+per-client and $O(K)$ server operations impose no barrier to industrial-scale
+deployment, while also surfacing genuine scale-dependent failure modes
+(naïve DP, adversarial instability) that a purely small-scale evaluation
+would have missed.
+
+\begin{table}[t]\centering\small
+\caption{Million-node scaling study (ogbn-products, $2.4$M nodes, $123$M
+edges, $K{=}3$ clients, $15$ rounds, CPU). $^{\ast}$2026 baseline.
+$^{\dagger}$DPD/EOD is a spurious artefact of a collapsed (near-chance)
+classifier, not a genuine fairness result---see discussion above.}
+\label{tab:large-scale}
+\input{tables/large_scale.tex}
+\end{table}
 
 \begin{table}[t]\centering\small
 \caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier

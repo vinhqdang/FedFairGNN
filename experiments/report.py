@@ -367,17 +367,27 @@ def table_large_scale(rows):
     present = [m for m in methods if (m,) in Aa]
     if not present:
         return
-    # best per column among present methods
+    # A collapsed (near-chance) model reports spuriously perfect DPD/EOD --
+    # it predicts (near-)constant scores, so its group gap is trivially zero.
+    # Exclude such runs from the fairness "best" comparison so the table does
+    # not reward divergence.
+    COLLAPSE_AUC = 0.6
+    healthy = [m for m in present if Aa[(m,)][0] >= COLLAPSE_AUC]
     best_auc = max(present, key=lambda m: Aa[(m,)][0])
-    best_dpd = min(present, key=lambda m: Ad[(m,)][0]) if all((m,) in Ad for m in present) else None
-    best_eod = min(present, key=lambda m: Ae[(m,)][0]) if all((m,) in Ae for m in present) else None
+    best_dpd = (min(healthy, key=lambda m: Ad[(m,)][0])
+                if healthy and all((m,) in Ad for m in healthy) else None)
+    best_eod = (min(healthy, key=lambda m: Ae[(m,)][0])
+                if healthy and all((m,) in Ae for m in healthy) else None)
     lines = ["\\begin{tabular}{lcccc}", "\\toprule",
              "Method & AUC $\\uparrow$ & DPD $\\downarrow$ & EOD $\\downarrow$ & Time/run (s) \\\\",
              "\\midrule"]
     for m in present:
+        collapsed = Aa[(m,)][0] < COLLAPSE_AUC
         auc = fmt(*Aa[(m,)], bold=(m == best_auc))
         dpd = fmt(*Ad[(m,)], bold=(m == best_dpd)) if (m,) in Ad else "--"
         eod = fmt(*Ae[(m,)], bold=(m == best_eod)) if (m,) in Ae else "--"
+        if collapsed:
+            dpd += "$^{\\dagger}$"; eod += "$^{\\dagger}$"
         wall = f"{Aw[(m,)][0]:.0f}" if (m,) in Aw else "--"
         lines.append(f"{PRETTY.get(m, m)} & {auc} & {dpd} & {eod} & {wall} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]

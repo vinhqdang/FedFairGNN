@@ -59,13 +59,23 @@ flags one market period---a genuine temporal-drift concern in deployed
 compliance systems. We stress this is a subgroup-disparity analysis, not a
 protected-demographic claim.
 
-\textbf{ogbn-products} is used only for the scalability study. As it carries no
-protected attribute and a 47-way category label, we construct documented
-proxies: the binary target is membership in the rarest 20\% of categories
-(a rare-class detection task), and the sensitive attribute is a high- vs.\
-low-degree split at the median node degree (a structural connectivity subgroup).
-Training uses neighbor sampling (fan-out $15,10$; batch size $4096$); the
-official OGB split is used for train/validation/test.
+\textbf{ogbn-products} is used for the million-node scaling study
+(Section~\ref{sec:scaling}). It carries no protected demographic attribute, so
+we construct documented structural proxies rather than treat any column as a
+sensitive attribute: the binary target greedily coarsens the 47-way product
+category into two balanced super-classes (largest categories assigned to the
+positive class until $\approx\!50\%$ of nodes are covered), giving a task a
+GNN can genuinely learn while remaining a deterministic function of the
+official label---not an arbitrary split; the sensitive attribute is a
+high- vs.\ low-degree split at the median node degree (a structural
+connectivity subgroup, analogous to core–periphery position in a co-purchase
+graph). Training uses neighbor sampling (fan-out $10,5$; batch size $4096$);
+the official OGB split is used for train/validation/test. The test split
+alone contains $2.2$M nodes, so both per-round monitoring and the final
+reported metrics evaluate a fixed random sub-sample of $100$k test nodes
+(seeded, so identical across rounds and comparable across methods) rather
+than the full test set, keeping evaluation cost from dominating training
+cost at this scale.
 
 Clients receive induced subgraphs under a Dirichlet($\alpha$) label partition
 with a small per-client class floor that prevents degenerate single-class silos;
