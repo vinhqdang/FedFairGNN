@@ -25,15 +25,20 @@ class SimpleNeighborLoader:
         if input_nodes.dtype == torch.bool:
             input_nodes = input_nodes.nonzero(as_tuple=True)[0]
         self.seeds = input_nodes
-        # CSR over the (already undirected) edge_index, sorted by source
+        # CSR over the (already undirected) edge_index, sorted by source.
+        # All CSR tensors live on the graph's device so indexing by GPU node
+        # ids is valid.
         ei = data.edge_index
+        self.device = ei.device
         n = data.num_nodes
+        self.n = n
         order = torch.argsort(ei[0])
         self.col = ei[1][order].contiguous()
         deg = torch.bincount(ei[0], minlength=n)
-        self.rowptr = torch.zeros(n + 1, dtype=torch.long)
+        self.rowptr = torch.zeros(n + 1, dtype=torch.long, device=self.device)
         self.rowptr[1:] = torch.cumsum(deg, 0)
         self.deg = deg
+        self.seeds = self.seeds.to(self.device)
 
     def __len__(self):
         return (len(self.seeds) + self.bs - 1) // self.bs
@@ -59,10 +64,8 @@ class SimpleNeighborLoader:
         return src, dst
 
     def _sample(self, seeds):
-        device = seeds.device
-        for t in (self.col, self.rowptr, self.deg):
-            if t.device != device:
-                pass  # kept on same device as data.x by caller
+        device = self.device
+        seeds = seeds.to(device)
         node_list = [seeds]
         src_all, dst_all = [], []
         frontier = seeds
