@@ -1,56 +1,61 @@
-% Trustworthy Federated Graph Learning -- manuscript for
-% Springer Discover Artificial Intelligence,
-% Collection: "Trustworthy and Responsible Federated Learning".
-%
-% Written in a portable single-column journal format (compiles with a standard
-% TeX Live installation). At revision the content maps directly onto the
-% Springer Nature sn-jnl class (\documentclass[sn-mathphys]{sn-jnl}); section
-% structure and float usage are kept compatible.
-\documentclass[11pt]{article}
+%% Springer Nature LaTeX template (sn-jnl) -- Math & Physical Sciences style.
+%% Prepared for Springer Discover Artificial Intelligence,
+%% Collection: "Trustworthy and Responsible Federated Learning".
+\documentclass[sn-mathphys,Numbered]{sn-jnl}
 
-\usepackage[a4paper,margin=1in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,mathtools}
-\usepackage{amsthm}
-\newtheorem{proposition}{Proposition}
-\usepackage{graphicx}
-\usepackage{booktabs}
-\usepackage{multirow}
-\usepackage{xcolor}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\usepackage[numbers,sort&compress]{natbib}
-\usepackage{hyperref}
-\usepackage{url}
-\usepackage{caption}
-\usepackage{subcaption}
-\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black,
-            urlcolor=blue!50!black}
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+\usepackage{tikz}%
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
+\usepackage{subcaption}%
+
+\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%
+\newtheorem{proposition}[theorem]{Proposition}%
+\theoremstyle{thmstyletwo}%
+\newtheorem{remark}{Remark}%
+\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}%
+
+\raggedbottom
 
 \newcommand{\dpd}{\mathrm{DPD}}
 \newcommand{\eod}{\mathrm{EOD}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\E}{\mathbb{E}}
-\newcommand{\Rc}{\textbf{[R]}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
-\title{\textbf{Trustworthy Federated Graph Neural Networks:\\
-Unifying Fairness, Privacy, Robustness, and Explainability\\
-for High-Stakes Risk Detection}}
-
-\author{Vinh Dang\thanks{Corresponding author: \texttt{dqvinh87@gmail.com}}}
-\date{}
-
 \begin{document}
+
+\title[Trustworthy Federated Graph Neural Networks]{Trustworthy Federated Graph
+Neural Networks: Unifying Fairness, Privacy, Robustness, and Explainability for
+High-Stakes Risk Detection}
+
+\author*[1]{\fnm{Vinh} \sur{Dang}}\email{dqvinh87@gmail.com}
+
+\affil*[1]{\orgdiv{Department of Computer Science}, \orgname{Independent
+Researcher}, \orgaddress{\country{Vietnam}}}
+
+\abstract{\input{sections/00_abstract}}
+
+\keywords{Federated learning, Graph neural networks, Algorithmic fairness,
+Differential privacy, Byzantine robustness, Explainable AI, Trust metrics,
+Regulatory compliance}
+
 \maketitle
-
-\begin{abstract}
-\input{sections/00_abstract}
-\end{abstract}
-
-\noindent\textbf{Keywords:} Federated learning; Graph neural networks;
-Algorithmic fairness; Differential privacy; Byzantine robustness;
-Explainable AI; Trust metrics; Regulatory compliance.
 
 \input{sections/01_introduction}
 \input{sections/02_related_work}
@@ -61,7 +66,6 @@ Explainable AI; Trust metrics; Regulatory compliance.
 \input{sections/07_discussion}
 \input{sections/08_conclusion}
 
-\bibliographystyle{plainnat}
 \bibliography{ref}
 
 \end{document}

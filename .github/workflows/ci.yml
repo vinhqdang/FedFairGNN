@@ -21,4 +21,4 @@ jobs:
           pip install torch_geometric
           pip install numpy scipy scikit-learn pandas matplotlib networkx pytest
       - name: Run tests (offline, synthetic data)
-        run: pytest -q
+        run: python -m pytest -q
