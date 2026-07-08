@@ -83,6 +83,7 @@ class ExperimentConfig:
     local_fairness: bool = False     # add soft-DPD penalty for non-fedfairgnn models
     q_ffl: float = 2.0               # q for q-FedAvg client-fairness aggregation
     fairfed_beta: float = 1.0        # FairFed fairness-gap step
+    postproc_fair: bool = False      # FDP-Fair: post-hoc group-offset calibration for DP
 
     # ---- robustness (attack simulation) ----
     attack: str = "none"             # none | label_flip | gaussian | scaling | fairness_poison

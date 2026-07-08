@@ -54,9 +54,30 @@ class FederatedTrainer:
 
     # ----- global evaluation on pooled test nodes -----
     @torch.no_grad()
+    def _group_offsets(self):
+        """FDP-Fair post-processing: per-group additive offset that equalises
+        group mean scores, calibrated on the pooled validation set."""
+        vs, ss = [], []
+        for d in self.clients_data:
+            d = d.to(self.device)
+            m = d.val_mask
+            if m.sum() == 0:
+                continue
+            vs.append(self.ref_model(d.x, d.edge_index, d.sensitive_attr)[m].cpu())
+            ss.append(d.sensitive_attr[m].cpu())
+        if not vs:
+            return 0.0, 0.0
+        p = torch.cat(vs); s = torch.cat(ss)
+        tgt = float(p.mean())
+        o0 = tgt - float(p[s == 0].mean()) if (s == 0).any() else 0.0
+        o1 = tgt - float(p[s == 1].mean()) if (s == 1).any() else 0.0
+        return o0, o1
+
+    @torch.no_grad()
     def evaluate_global(self) -> Dict[str, float]:
         load_flat_state(self.ref_model, self.global_flat.to(self.device))
         self.ref_model.eval()
+        offs = self._group_offsets() if getattr(self.cfg, "postproc_fair", False) else None
         ys, ps, ss = [], [], []
         for d in self.clients_data:
             d = d.to(self.device)
@@ -64,7 +85,11 @@ class FederatedTrainer:
             if mask.sum() == 0:
                 continue
             pred = self.ref_model(d.x, d.edge_index, d.sensitive_attr)[mask]
-            ys.append(d.y[mask].cpu()); ps.append(pred.cpu()); ss.append(d.sensitive_attr[mask].cpu())
+            sm = d.sensitive_attr[mask]
+            if offs is not None:
+                pred = (pred + torch.where(sm == 0, pred.new_tensor(offs[0]),
+                                           pred.new_tensor(offs[1]))).clamp(0, 1)
+            ys.append(d.y[mask].cpu()); ps.append(pred.cpu()); ss.append(sm.cpu())
         if not ys:
             return {}
         y = torch.cat(ys); p = torch.cat(ps); s = torch.cat(ss)

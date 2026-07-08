@@ -54,9 +54,12 @@ def poison_updates(attack: str, updates: List[torch.Tensor], metas: List[dict],
             z = 1.5
             g = bmean - z * bstd
         elif attack == "fairness_poison":
-            # transmit a biased/large update, but lie about fairness+utility
-            g = g * (1.0 + intensity) + torch.randn_like(g) * 0.1
+            # The bias is already baked into the (honestly-shaped) update by the
+            # attacker's local training that maximised the fairness gap (see
+            # Client.train). Here the attacker only *lies* about its reported
+            # fairness/utility so a fairness-aware server up-weights it.
             metas[i]["dpd"] = 0.0
+            metas[i]["eod"] = 0.0
             metas[i]["perf"] = 0.99
         updates[i] = g.view_as(updates[i])
     return updates, metas

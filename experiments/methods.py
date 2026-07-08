@@ -24,6 +24,15 @@ METHODS = {
     # --- federated fair-GNN peer ---
     "f2gnn":        dict(model="gat", aggregator="f2gnn", local_fairness=True, dp_enabled=False),
 
+    # --- 2026 competitors ---
+    # FaVGNN (Wang & Jin, Information Fusion 2026): horizontal adaptation of the
+    # completion-driven adversarial fusion (hetero-feature fusion + adversary).
+    "favgnn":       dict(model="favgnn", aggregator="fedavg", dp_enabled=False),
+    # FDP-Fair (Xue & Yu, arXiv 2603.24392, 2026): DP training + demographic-
+    # parity post-processing (group-offset calibration).
+    "fdp-fair":     dict(model="gcn", aggregator="fedavg", local_fairness=False,
+                         dp_enabled=True, dp_mode="gradient", postproc_fair=True),
+
     # --- privacy+fairness baseline (full-gradient DP-SGD, PUFFLE/FedFDP family) ---
     "dp-fedavg":    dict(model="gcn", aggregator="fedavg", local_fairness=True,
                          dp_enabled=True, dp_mode="gradient"),

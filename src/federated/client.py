@@ -60,7 +60,7 @@ class Client:
         self.byzantine = byzantine
         self.model = build_model(config.model, data.x.shape[1], config).to(device)
         self.is_fair = config.model == "fedfairgnn"
-        self.is_adv = config.model == "fairgnn"
+        self.is_adv = config.model in ("fairgnn", "favgnn")
         self.local_fair = self.is_fair or config.local_fairness
 
         # resolve DP mode
@@ -104,6 +104,19 @@ class Client:
         self.model.train()
         m = self.data.train_mask
         x, ei, s, y = self.data.x, self.data.edge_index, self.data.sensitive_attr, self._y
+
+        # Fairness-poisoning attacker (Kasyap et al., 2025): train the local
+        # objective l(w) - lambda * M_fair to *amplify* the demographic-parity
+        # gap while preserving accuracy, then lie about its fairness metric
+        # (handled in attacks.poison_updates) to capture a fairness-aware server.
+        if self.byzantine and cfg.attack == "fairness_poison":
+            for _ in range(cfg.local_epochs):
+                opt.zero_grad()
+                pred = self.model(x, ei, s)[m]
+                loss = _weighted_bce(pred, y[m].float()) \
+                    - cfg.attack_intensity * _soft_dpd(pred, s[m])
+                loss.backward(); opt.step()
+            return
 
         for _ in range(cfg.local_epochs):
             if self.is_adv:

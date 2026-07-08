@@ -102,10 +102,19 @@ def jobs_partition():
             yield c, f"part_{part}_{a}"
 
 
+def jobs_competitors2026():
+    # 2026 competitors on the fast real datasets (+ crypto where feasible)
+    for ds in ["german", "bail"]:
+        for m in ["favgnn", "fdp-fair"]:
+            for s in DS_SEEDS[ds]:
+                yield cfg_for(m, ds, s), "c2026"
+
+
 STUDIES = {
     "main": jobs_main, "ablation": jobs_ablation, "privacy": jobs_privacy,
     "pareto": jobs_pareto, "robustness": jobs_robustness,
     "scalability": jobs_scalability, "partition": jobs_partition,
+    "competitors2026": jobs_competitors2026,
 }
 
 

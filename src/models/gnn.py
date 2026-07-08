@@ -252,3 +252,59 @@ class FairSIN(nn.Module):
             x = F.dropout(F.relu(conv(x, edge_index)), p=self.dropout, training=train)
         out = self.classifier(x).squeeze(-1)
         return out if logits else torch.sigmoid(out)
+
+
+class FaVGNN(nn.Module):
+    """Horizontal adaptation of FaVGNN (Wang & Jin, Information Fusion 2026).
+
+    The original method is a *vertical* FL framework; its client-side
+    "completion-driven adversarial fusion" combines (i) heterogeneous-neighbour
+    feature fusion and (ii) adversarial sensitive-attribute debiasing. We port
+    those two client-side components to our horizontal cross-silo setting (all
+    sensitive attributes observed, so the sensitive-completion network is
+    dropped) as a fair-representation baseline. Trained via the adversarial
+    (minimax) path -- shares FairGNN's interface so the client reuses _adv_step.
+    """
+
+    def __init__(self, in_channels, hidden_channels=64, out_channels=1,
+                 num_layers=2, dropout=0.3, coef=0.5, **_):
+        super().__init__()
+        self.dropout = dropout
+        self.coef = coef
+        self.enc = nn.ModuleList([GCNConv(in_channels, hidden_channels)])
+        for _ in range(num_layers - 1):
+            self.enc.append(GCNConv(hidden_channels, hidden_channels))
+        self.classifier = nn.Linear(hidden_channels, out_channels)
+        self.adversary = nn.Sequential(
+            nn.Linear(hidden_channels, hidden_channels), nn.ReLU(),
+            nn.Linear(hidden_channels, 1))
+        self._emb = None
+
+    def _hetero_fuse(self, x, edge_index, s):
+        src, dst = edge_index
+        hetero = (s[src] != s[dst])
+        agg = torch.zeros_like(x); cnt = torch.zeros(x.size(0), device=x.device)
+        if hetero.any():
+            agg.index_add_(0, dst[hetero], x[src[hetero]])
+            cnt.index_add_(0, dst[hetero], torch.ones(int(hetero.sum()), device=x.device))
+        return x + self.coef * torch.where(
+            (cnt > 0).unsqueeze(1), agg / cnt.clamp(min=1).unsqueeze(1), torch.zeros_like(x))
+
+    def encode(self, x, edge_index, s, train):
+        if s is not None:
+            x = self._hetero_fuse(x, edge_index, s)
+        for conv in self.enc:
+            x = F.dropout(F.relu(conv(x, edge_index)), p=self.dropout, training=train)
+        return x
+
+    def forward(self, x, edge_index, sensitive_attr=None, mc=False, logits=False):
+        train = self.training or mc
+        self._emb = self.encode(x, edge_index, sensitive_attr, train)
+        out = self.classifier(self._emb).squeeze(-1)
+        return out if logits else torch.sigmoid(out)
+
+    def adv_loss(self, sensitive_attr, mask):
+        if self._emb is None:
+            return torch.tensor(0.0)
+        s_logit = self.adversary(self._emb).squeeze(-1)[mask]
+        return F.binary_cross_entropy_with_logits(s_logit, sensitive_attr[mask].float())
