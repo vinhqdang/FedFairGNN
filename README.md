@@ -1,75 +1,92 @@
-# FedFairGNN Benchmark
+# FedFairGNN: Trustworthy Federated Graph Neural Networks
 
-Implementation of **FairFedGNN: Fairness-Constrained Federated Graph Neural Network for Fraud Detection**, benchmarked against state-of-the-art baselines on real-world datasets.
+Reference implementation for the manuscript **"Trustworthy Federated Graph
+Neural Networks: Unifying Fairness, Privacy, Robustness, and Explainability for
+High-Stakes Risk Detection"** (prepared for *Springer Discover Artificial
+Intelligence*, collection *Trustworthy and Responsible Federated Learning*).
 
-## 📌 Overview
+FedFairGNN trains a fraud/risk-detection GNN across institutions that cannot
+share raw graph data, and is simultaneously **fair**, **differentially
+private**, **Byzantine-robust**, **explainable**, and **regulation-aligned**.
+Every number and figure in the paper is regenerated from logged runs — nothing
+is hand-authored.
 
-This project implements a privacy-preserving and fairness-aware federated learning framework for graph fraud detection. It includes:
--   **FedFairGNN**: The core algorithm featuring:
-    -   **FSER**: Fairness-Sensitive Edge Reweighting.
-    -   **FTGD**: Fairness-Task Gradient Decomposition with DP.
-    -   **BFWA**: Bi-Objective Frank-Wolfe Aggregation.
--   **Baselines**:
-    -   `FraudGNN-RL`: RL-based neighbor selection.
-    -   `GNN-CL`: Contrastive Learning GNN.
-    -   `Attn-Ensemble`: Attention-gated ensemble.
--   **Datasets**: Synthetic benchmarks mimicking YelpChi, Amazon, and Elliptic properties.
+## Method
 
-## 🚀 Getting Started
+| Component | Where | What it does |
+|-----------|-------|--------------|
+| **FSER** — Fairness-Sensitive Edge Reweighting | client, in message passing | learnable attention correction that suppresses biased cross-group edges |
+| **FTGD** — Fairness-Targeted Gradient Decomposition | client, per step | $(\epsilon,\delta)$-DP by privatising only the 2-D demographic-parity statistic — privacy nearly free vs. full-gradient DP-SGD |
+| **BFWA** — Bi-objective Frank–Wolfe Aggregation | server | enforces a hard fairness budget $\tau$ during aggregation; `robust_bfwa` adds Byzantine screening |
+| **Trust layer** | evaluation | MC-dropout uncertainty + calibration, FSER attention explanations, composite trust score, sustainability, EU AI Act / NIST RMF compliance + model card |
 
-### 1. Requirements
+## Datasets (downloaded on demand, cached under `data/raw/`)
 
-Running the setup script will create a conda environment and install dependencies.
-```bash
-bash environment_setup.sh
-conda activate py313
-```
-That's all.
+| Dataset | Nodes | Sensitive attr. | Domain |
+|---------|------:|-----------------|--------|
+| German  | 1,000 | gender | credit risk |
+| Credit  | 30,000 | age | default |
+| Bail    | 18,876 | race | recidivism |
+| Pokec-z/n | ~67k | region | social |
+| **Elliptic** | **203,769** | time period (proxy) | **crypto AML** |
 
-### 2. Run Experiments
+Real fairness benchmarks (German/Credit/Bail via NIFTY, Pokec via FairGNN) plus
+the large-scale Elliptic Bitcoin graph; a documented synthetic testbed supports
+controlled bias-injection ablations.
 
-To run the full benchmark suite (all models on all datasets):
-```bash
-bash run_experiments.sh
-```
-
-Logs will be saved in `logs/` directory.
-
-### 3. Usage (Main Script)
-
-You can run individual experiments using `main.py`:
+## Install
 
 ```bash
-python main.py --dataset YelpChi --model FedFairGNN --num_clients 3 --rounds 20 --heads 4
+pip install torch --index-url https://download.pytorch.org/whl/cpu   # CPU wheels
+pip install -r requirements.txt
 ```
 
-**Arguments:**
--   `--dataset`: `YelpChi`, `Amazon`, `Elliptic`
--   `--model`: `FedFairGNN`, `FraudGNN_RL`, `GNN_CL`, `Attn_Ensemble`
--   `--num_clients`: Number of clients (default: 3)
--   `--rounds`: Communication rounds (default: 20)
--   `--fairness_budget`: Fairness constraint tau (default: 0.05)
--   `--heads`: Attention heads (default: 1, recommend 4 for FedFairGNN)
+Everything runs on CPU (Elliptic's 204k nodes train at ~1 s/epoch).
 
-## 📊 Results Summary
+## Quick start
 
-| Model | AUC (YelpChi) | DPD (YelpChi) |
-| :--- | :---: | :---: |
-| **FedFairGNN (Fixed)** | **~0.98** | **~0.01** |
-| FraudGNN-RL | ~0.84 | ~0.06 |
-| GNN-CL | ~0.99 | ~0.03 |
+```bash
+# single run
+python -m experiments.run_experiment --method fedfairgnn --dataset bail --seed 0
 
-*Note: Results based on synthetic data with injected bias and fraud signals.*
+# full experiment matrix (resumable; logs to results/)
+python -m experiments.run_matrix --study main,ablation,privacy,robustness
 
-## 📂 Structure
+# regenerate all manuscript tables + figures from logged results
+python -m experiments.report
+python -m experiments.trust_eval        # calibration/sustainability + model card
+```
 
--   `src/models`: Model definitions (FedFairGNN, Baselines).
--   `src/federated`: Federated learning components (Client, Server, BFWA, FTGD).
--   `src/utils`: Data loading and metrics.
--   `main.py`: Entry point.
--   `train.py`: Federated training loop.
+Methods available to `--method`: `fedavg-gcn`, `fedavg-gat`, `fairgnn`,
+`fairsin`, `fairfed`, `qffl`, `fedfb`, `f2gnn`, `dp-fedavg`, `fedfairgnn`,
+`fedfairgnn-nodp`, `ours-robust`, and ablations. Aggregators: `fedavg`, `bfwa`,
+`krum`, `multikrum`, `median`, `trimmed_mean`, `robust_bfwa`. Attacks: `none`,
+`label_flip`, `gaussian`, `scaling`, `sign_flip`, `ipm`, `alie`,
+`fairness_poison`.
 
-## 👤 Author
+## Repository layout
 
-**Vinh Dang**
-Email: dqvinh87@gmail.com
+```
+src/
+  config.py              ExperimentConfig + deterministic seeding
+  data/                  real dataset loaders + Dirichlet/community partitioning
+  models/                FSER-GAT (FedFairGNN), GCN, GAT, FairGNN, FairSIN
+  federated/             client (FTGD), trainer, aggregation rules, attacks
+  trust/                 privacy (RDP), uncertainty, explainability, trust score,
+                         sustainability, compliance
+  utils/                 metrics (AUC/AP/F1/DPD/EOD/EO), result logging
+experiments/             method presets, single-run + matrix runners, reporting
+tests/                   offline pytest suite (run: pytest -q)
+manuscript/              LaTeX sources; tables/figures generated by report.py
+```
+
+## Reproducibility
+
+- All randomness seeded; results reported as mean ± std over seeds.
+- Privacy accounting, metrics, and aggregation rules are unit-tested (CI on push).
+- `experiments/report.py` regenerates every table/figure in the paper from
+  `results/summary.jsonl`.
+
+## Author
+
+**Vinh Dang** — `dqvinh87@gmail.com`

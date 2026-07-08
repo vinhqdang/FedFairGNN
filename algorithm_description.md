@@ -5,6 +5,18 @@
 > An engineer should be able to implement FairFedGNN from scratch using only this document.  
 > No external references are required.
 
+> **Update (v2, journal extension).** The FTGD privacy mechanism in §5 has been
+> revised. The original spec added *isotropic* Gaussian noise to the full
+> $|\theta|$-dimensional fairness gradient, which — because DP noise norm scales
+> as $\sigma\sqrt{|\theta|}$ — destroys utility on compact GNNs at meaningful
+> $\epsilon$. The implemented (and published) FTGD instead privatises only the
+> **two-dimensional demographic-parity statistic** $(\mu_0,\mu_1)$ that the
+> sensitive attribute flows through, with $L_2$ sensitivity $\sqrt{1/n_0^2+1/n_1^2}$.
+> By post-processing immunity this yields the same $(\epsilon,\delta)$-DP for the
+> sensitive attribute at negligible utility cost. See `src/federated/client.py`
+> (`_ftgd_step`) and `src/trust/privacy.py` (RDP accountant) for the authoritative
+> implementation, and the manuscript §4.2 for the guarantee.
+
 ---
 
 ## Table of Contents
