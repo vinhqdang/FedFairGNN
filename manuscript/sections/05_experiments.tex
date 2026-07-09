@@ -211,6 +211,34 @@ that the client-side (FSER) and server-side (BFWA) mechanisms are complementary.
 \input{tables/ablation.tex}
 \end{table}
 
+\subsection{Does a server-side fairness correction add anything on top of BFWA?}
+\label{sec:exp-equfl}
+A live literature review turned up a very recent (April 2026) server-side
+debiasing mechanism, EquFL \cite{yu2026equfl}, which adds a fairness-gradient
+correction $\gamma\cdot g_0$ to the aggregated update each round, with $g_0$
+the gradient of a fairness surrogate evaluated on a held-out set; the original
+paper proves this composes additively with \emph{any} aggregation rule,
+including Byzantine-robust ones. We implemented it (\texttt{server\_calib} in
+the trainer, using our existing pooled validation split rather than EquFL's
+synthetic-data workaround, since our server already has legitimate access to
+pooled validation statistics for the FDP-Fair/FedFACT post-processing
+baselines) and stacked it on top of BFWA to test whether it improves
+TrustFedGNN further. A reduced-round, single-seed probe looked promising---a
+clean, monotonic fairness/utility dial on Bail as $\gamma$ increased---but
+\emph{did not survive full-protocol, multi-seed validation}: at the reported
+training length, mean AUC/DPD moved by less than seed noise on Bail
+($0.9876{\to}0.9882$ AUC, $0.0746{\to}0.0703$ DPD across 3 seeds) and moved in
+the \emph{wrong} direction on Elliptic ($0.9433{\to}0.9389$ AUC,
+$0.0135{\to}0.0273$ DPD across 2 seeds). The coherent explanation is that
+EquFL's correction targets residual bias left by aggregators with no built-in
+fairness mechanism (its own experiments are against FedAvg and unconstrained
+robust rules); BFWA's Frank--Wolfe fairness budget already drives that
+residual to near zero by convergence, leaving no bias for an additional
+correction to fix---so stacking the two adds noise rather than signal. We
+report this as a negative result rather than omit it: it is evidence that
+FSER+BFWA's built-in fairness mechanism is already sufficient on its own,
+without needing an additional server-side correction pass.
+
 \subsection{Privacy--utility: FTGD vs.\ full-gradient DP}
 \label{sec:exp-privacy}
 Figure~\ref{fig:privacy} sweeps the privacy budget $\epsilon$. FTGD retains

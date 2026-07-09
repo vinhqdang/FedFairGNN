@@ -24,10 +24,13 @@ fairness gap; FedFB ports FairBatch to FL; PUFFLE \cite{corbucci2024puffle}
 blends a demographic-parity loss with DP-SGD under a target-disparity
 controller; FedFACT \cite{fedfact2025} gives provable global-and-local group
 fairness via a Lagrangian saddle point over a shared global dual variable and
-per-client local duals; and Bendoukha et al.\ \cite{bendoukha2025popets}
+per-client local duals; Bendoukha et al.\ \cite{bendoukha2025popets}
 (PoPETs'25) make FairFed's weighting homomorphically computable, replacing its
 $\exp(-\beta|\cdot|)$ term with an FHE-friendly degree-2 polynomial and
-aggregating under threshold CKKS. These target tabular or image data. For
+aggregating under threshold CKKS; and EquFL \cite{yu2026equfl} (2026) adds a
+server-side fairness-gradient correction on top of an arbitrary aggregation
+rule, provably compatible with Byzantine-robust ones. These target tabular or
+image data. For
 \emph{graphs}, F$^2$GNN \cite{f2gnn2023} combines a fairness-weighted
 aggregation with structure-aware group-balance weights. The most recent
 efforts sit closest to our setting: FairGFL \cite{fairgfl2025} adds DP to
