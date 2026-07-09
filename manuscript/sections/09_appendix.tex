@@ -41,6 +41,50 @@ MC-dropout samples & 20 & --- \\
 \end{tabular}
 \end{table}
 
+\section{Baseline reimplementation fidelity}
+\label{app:baselines}
+Five 2025--2026 competitors (FairGFL \cite{fairgfl2025}, FedGraph-Fair
+\cite{fedgraphfair2025}, PUFFLE \cite{corbucci2024puffle}, FedFACT
+\cite{fedfact2025}, and the PoPETs'25 FairFed variant
+\cite{bendoukha2025popets}) were reimplemented from their published algorithm
+descriptions rather than from released code (none ship a public
+graph-federated implementation). Each paper's mechanism only partially
+transfers to this paper's single global-model, star-topology,
+Dirichlet-partitioned-single-graph setting; Table~\ref{tab:baseline-fidelity}
+states exactly what was kept and what was dropped or approximated for each, so
+that no reported number is over-claimed relative to the original method.
+FairGFL, FaVGNN, and FDP-Fair are likewise reimplemented (Section~\ref{sec:related});
+full fidelity notes for all reimplemented baselines, including the exact
+equations reproduced from each source, are maintained alongside the code
+(\texttt{docs/BASELINES\_AND\_SOURCES.md}).
+
+\begin{table}[h]\centering\small
+\caption{What each 2025--2026 baseline's reimplementation keeps vs.\ drops.}
+\label{tab:baseline-fidelity}
+\begin{tabular}{p{2.1cm}p{4.6cm}p{4.6cm}}
+\toprule
+Baseline & Kept & Dropped / approximated \\
+\midrule
+FairGFL & weight $\propto 1/(1{+}O_i)$ aggregation rule & $O_i$ (multi-graph
+node/edge overlap) proxied by sample-count deviation from the mean, since our
+setting has one Dirichlet-partitioned graph, not separate per-client graphs \\
+FedGraph-Fair & minimax/DRO dual $\lambda$ reweighting high-loss clients &
+personalised per-client models mixed via a learned peer-similarity graph
+(orthogonal decentralised-communication contribution) \\
+PUFFLE & momentum controller auto-tuning the fairness weight toward a target
+disparity, + DP-SGD & the third privacy channel (noised group-count sharing
+for clients missing a demographic group) -- unneeded here since every client
+observes both groups \\
+FedFACT & closed-form global+local offset (exact reduction of the paper's
+optimum for binary demographic parity) & general multiclass cost-matrix
+calibration and the iterative dual-ascent solver \\
+PoPETs'25 & degree-2-polynomial FairFed weighting (the FHE-friendly surrogate
+itself) & threshold-CKKS secure aggregation and its noise-as-DP analysis
+(cryptographic infrastructure, no numeric effect once computed in the clear) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Dataset construction and sensitive attributes}
 \label{app:data}
 \textbf{German, Credit, Bail} follow the standard NIFTY preprocessing: edges are

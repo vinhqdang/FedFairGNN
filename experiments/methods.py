@@ -33,7 +33,25 @@ METHODS = {
     "fdp-fair":     dict(model="gcn", aggregator="fedavg", local_fairness=False,
                          dp_enabled=True, dp_mode="gradient", postproc_fair=True),
 
-    # --- privacy+fairness baseline (full-gradient DP-SGD, PUFFLE/FedFDP family) ---
+    # --- 2025 competitors (uploaded PDFs, reimplemented; see docs/BASELINES_AND_SOURCES.md) ---
+    # FairGFL (arXiv 2512.23235, 2025): overlap-aware aggregation reweighting.
+    "fairgfl":      dict(model="gcn", aggregator="fairgfl", local_fairness=False, dp_enabled=False),
+    # FedGraph-Fair (Khan, Information Sciences 2026): minimax/DRO dual-ascent
+    # reweighting toward high-loss clients (personalisation/graph-mixing dropped).
+    "fedgraphfair": dict(model="gcn", aggregator="fedgraphfair", local_fairness=False, dp_enabled=False),
+    # PUFFLE (Corbucci et al., ECML-PKDD 2024): auto-tuned fairness weight via
+    # a momentum controller tracking a target disparity, + DP-SGD.
+    "puffle":       dict(model="gcn", aggregator="fedavg", local_fairness=True,
+                         dp_enabled=True, dp_mode="puffle"),
+    # FedFACT (Zhang et al., NeurIPS 2025): two-level global+local group-
+    # fairness post-processing (closed-form mean-matching special case).
+    "fedfact":      dict(model="gcn", aggregator="fedavg", local_fairness=False,
+                         dp_enabled=False, fedfact_post=True),
+    # PoPETs'25 (Bendoukha et al.): FHE-friendly FairFed (statistical core only;
+    # the threshold-CKKS cryptography is not reimplemented).
+    "popets-fairfed": dict(model="gcn", aggregator="popets_fairfed", local_fairness=False, dp_enabled=False),
+
+    # --- privacy+fairness baseline (full-gradient DP-SGD) ---
     "dp-fedavg":    dict(model="gcn", aggregator="fedavg", local_fairness=True,
                          dp_enabled=True, dp_mode="gradient"),
 

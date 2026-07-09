@@ -103,6 +103,11 @@ class Client:
             m = self.data.train_mask
             self._y[m] = flip_labels(self._y[m])
 
+        # PUFFLE (Corbucci et al., ECML-PKDD'24): per-client momentum-controller
+        # state for the auto-tuned fairness weight (see _puffle_step).
+        self._puffle_lambda = 0.0
+        self._puffle_velocity = 0.0
+
     # ----- weight I/O -----
     def get_flat(self) -> torch.Tensor:
         return flatten_state(self.model.state_dict()).cpu()
@@ -208,6 +213,8 @@ class Client:
                 self._adv_step(opt, adv_opt, x, ei, s, y, m)
             elif self.dp_mode == "ftgd":
                 self._ftgd_step(opt, x, ei, s, y, m)
+            elif self.dp_mode == "puffle":
+                self._puffle_step(opt, x, ei, s, y, m)
             elif self.dp_mode == "gradient":
                 self._dp_fedavg_step(opt, x, ei, s, y, m)   # DP-FedAvg baseline
             elif self.local_fair:
@@ -302,6 +309,41 @@ class Client:
             idx += n
         opt.step()
         self.model.clamp_beta()
+
+    def _puffle_step(self, opt, x, ei, s, y, m):
+        """PUFFLE (Corbucci et al., ECML-PKDD'24): a per-round auto-tuned
+        fairness weight lambda, driven by a momentum feedback-control loop
+        that steers the (DP-noised) local demographic-parity gap toward a
+        target disparity T -- replacing this codebase's static
+        fairness_weight scalar -- combined with standard DP-SGD clipping and
+        noise (Algorithm 1). The paper's third privacy channel (noised group-
+        count statistics shared for group-imbalanced clients) is not
+        reimplemented; see docs/BASELINES_AND_SOURCES.md."""
+        cfg = self.cfg
+        opt.zero_grad()
+        pred = self.model(x, ei, s)[m]
+        dpl = _soft_dpd(pred, s[m])
+        dpl_val = float(dpl.detach())
+        if self.dp_sigma > 0:
+            dpl_val += float(torch.randn(()) * self.noise_multiplier * cfg.dp_clip)
+        delta = cfg.puffle_target_dpd - dpl_val
+        self._puffle_velocity = cfg.puffle_momentum * self._puffle_velocity + delta
+        self._puffle_lambda = min(1.0, max(0.0, self._puffle_lambda - cfg.puffle_rho * self._puffle_velocity))
+
+        loss = (1.0 - self._puffle_lambda) * _weighted_bce(pred, y[m].float()) \
+            + self._puffle_lambda * dpl
+        loss.backward()
+        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
+                       for p in self.model.parameters()])
+        g = g / max(1.0, float(g.norm(2) / cfg.dp_clip))
+        g = g + torch.randn_like(g) * self.dp_sigma
+        idx = 0
+        for p in self.model.parameters():
+            n = p.numel()
+            if p.grad is not None:
+                p.grad.copy_(g[idx:idx + n].view_as(p))
+            idx += n
+        opt.step()
 
     def _adv_step(self, opt, adv_opt, x, ei, s, y, m):
         # 1) train adversary to predict S from (detached) embedding

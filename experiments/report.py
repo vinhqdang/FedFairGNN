@@ -39,6 +39,9 @@ PRETTY = {
     "fedfairgnn": "\\textbf{FedFairGNN}", "ours-robust": "FedFairGNN-Robust",
     "ours-nofser": "w/o FSER", "ours-nobfwa": "w/o BFWA",
     "favgnn": "FaVGNN$^{\\ast}$ (2026)", "fdp-fair": "FDP-Fair (2026)",
+    "fairgfl": "FairGFL (2025)", "fedgraphfair": "FedGraph-Fair (2026)",
+    "puffle": "PUFFLE", "fedfact": "FedFACT (2025)",
+    "popets-fairfed": "PoPETs'25 FairFed",
 }
 DS_PRETTY = {"german": "German", "credit": "Credit", "bail": "Bail",
              "elliptic": "Elliptic", "pokec_z": "Pokec-z"}
@@ -88,7 +91,8 @@ def table_main(rows):
             and "rob_" not in r["run_id"] and "byz_" not in r["run_id"]
             and "K" not in r["run_id"].split("__")[-1] and "part_" not in r["run_id"]]
     methods = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl",
-               "f2gnn", "favgnn", "fdp-fair", "dp-fedavg",
+               "f2gnn", "favgnn", "fdp-fair", "fairgfl", "fedgraphfair", "puffle",
+               "fedfact", "popets-fairfed", "dp-fedavg",
                "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
     datasets = ["german", "bail", "credit", "pokec_z", "elliptic"]
     for metric, lower in [("auc", False), ("dpd", True), ("eod", True)]:
@@ -115,7 +119,7 @@ def table_main(rows):
                 else:
                     cells.append("--")
             lines.append(f"{PRETTY.get(m, m)} & " + " & ".join(cells) + " \\\\")
-            if m == "fdp-fair":
+            if m == "popets-fairfed":
                 lines.append("\\midrule")
         lines += ["\\bottomrule", "\\end{tabular}"]
         with open(os.path.join(TAB, f"main_{metric}.tex"), "w") as f:

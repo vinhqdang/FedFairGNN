@@ -51,6 +51,7 @@ class FederatedTrainer:
             self.clients[0].noise_multiplier, delta=config.dp_delta) \
             if self.clients and self.clients[0].dp_sigma > 0 else None
         self.history: List[Dict] = []
+        self._agg_state: Dict = {}   # persists stateful-aggregator state (e.g. fedgraphfair's lambda)
 
     # ----- global evaluation on pooled test nodes -----
     @torch.no_grad()
@@ -74,10 +75,43 @@ class FederatedTrainer:
         return o0, o1
 
     @torch.no_grad()
+    def _fedfact_offsets(self):
+        """FedFACT post-processing: a shared global offset lambda (identical to
+        FDP-Fair's, computed over all pooled clients) plus a per-client local
+        offset mu_k computed from that client's own validation split only and
+        never aggregated -- mirroring the paper's two-level global+local group
+        fairness calibration (Prop. 2/Theorem 5), restricted to the linear/DP
+        special case where the optimal dual reduces to closed-form mean-
+        matching. See docs/BASELINES_AND_SOURCES.md."""
+        lam = self._group_offsets()
+        mus = []
+        for d in self.clients_data:
+            d = d.to(self.device)
+            m = d.val_mask
+            if m.sum() == 0:
+                mus.append((0.0, 0.0)); continue
+            p = self.ref_model(d.x, d.edge_index, d.sensitive_attr)[m].cpu()
+            s = d.sensitive_attr[m].cpu()
+            ltgt = float(p.mean())
+            m0 = ltgt - float(p[s == 0].mean()) if (s == 0).any() else 0.0
+            m1 = ltgt - float(p[s == 1].mean()) if (s == 1).any() else 0.0
+            mus.append((m0, m1))
+        return lam, mus
+
+    @torch.no_grad()
     def evaluate_global(self) -> Dict[str, float]:
         load_flat_state(self.ref_model, self.global_flat.to(self.device))
         self.ref_model.eval()
-        offs = self._group_offsets() if getattr(self.cfg, "postproc_fair", False) else None
+        postproc = getattr(self.cfg, "postproc_fair", False)
+        fedfact = getattr(self.cfg, "fedfact_post", False)
+        offs_per_client = None
+        if postproc:
+            g = self._group_offsets()
+            offs_per_client = [g] * len(self.clients_data)
+        elif fedfact:
+            lam, mus = self._fedfact_offsets()
+            scale = self.cfg.fedfact_local_scale
+            offs_per_client = [(lam[0] + scale * mu[0], lam[1] + scale * mu[1]) for mu in mus]
         ys, ps, ss = [], [], []
         cap = getattr(self.cfg, "eval_max_nodes", 0)
         per_client_cap = cap // max(1, len(self.clients_data)) if cap else 0
@@ -86,6 +120,7 @@ class FederatedTrainer:
             mask = d.test_mask
             if mask.sum() == 0:
                 continue
+            offs = offs_per_client[ci] if offs_per_client is not None else None
             # On million-node graphs the test split alone can be millions of
             # nodes; evaluating it every round dominates wall-clock. Cap it to a
             # fixed random subsample (stable across rounds via a seeded generator,
@@ -141,7 +176,8 @@ class FederatedTrainer:
             tau=self.cfg.fairness_budget, fw_iters=self.cfg.fw_iterations,
             dual_step=self.cfg.dual_step_size, trimmed_beta=self.cfg.trimmed_beta,
             krum_f=max(self.cfg.krum_f, len(self.byzantine_ids)),
-            q_ffl=self.cfg.q_ffl, fairfed_beta=self.cfg.fairfed_beta)
+            q_ffl=self.cfg.q_ffl, fairfed_beta=self.cfg.fairfed_beta,
+            state=self._agg_state)
         self.global_flat = self.global_flat - g_agg
 
         rec = {"round": t + 1, **{f"g_{k}": v for k, v in self.evaluate_global().items()}}

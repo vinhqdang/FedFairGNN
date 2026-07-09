@@ -93,6 +93,13 @@ class ExperimentConfig:
     fairfed_beta: float = 1.0        # FairFed fairness-gap step
     postproc_fair: bool = False      # FDP-Fair: post-hoc group-offset calibration for DP
 
+    # ---- 2025/2026 baseline-specific knobs ----
+    puffle_target_dpd: float = 0.05  # PUFFLE: target disparity T the lambda controller tracks
+    puffle_momentum: float = 0.9     # PUFFLE: controller momentum
+    puffle_rho: float = 0.5          # PUFFLE: controller step size
+    fedfact_post: bool = False       # FedFACT: two-level (global lambda + local mu_k) post-hoc offset
+    fedfact_local_scale: float = 1.0 # FedFACT: weight on the per-client local offset vs the global one
+
     # ---- robustness (attack simulation) ----
     attack: str = "none"             # none | label_flip | gaussian | scaling | fairness_poison
     num_byzantine: int = 0

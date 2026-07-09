@@ -23,21 +23,28 @@ across clients: q-FedAvg \cite{li2020fair} up-weights high-loss clients.
 fairness gap; FedFB ports FairBatch to FL; PUFFLE \cite{corbucci2024puffle}
 blends a demographic-parity loss with DP-SGD under a target-disparity
 controller; FedFACT \cite{fedfact2025} gives provable global-and-local group
-fairness. These target tabular or image data. For \emph{graphs}, F$^2$GNN
-\cite{f2gnn2023} combines a fairness-weighted aggregation with structure-aware
-group-balance weights. The most recent efforts sit closest to our setting:
-FairGFL \cite{fairgfl2025} adds DP to federated fair GNNs but targets
-\emph{cross-client} (performance) fairness arising from imbalanced overlapping
-subgraphs rather than demographic group fairness; FedGraph-Fair
-\cite{fedgraphfair2025} applies distributionally-robust optimisation for
-personalised group-fair federated graph learning; FaVGNN
+fairness via a Lagrangian saddle point over a shared global dual variable and
+per-client local duals; and Bendoukha et al.\ \cite{bendoukha2025popets}
+(PoPETs'25) make FairFed's weighting homomorphically computable, replacing its
+$\exp(-\beta|\cdot|)$ term with an FHE-friendly degree-2 polynomial and
+aggregating under threshold CKKS. These target tabular or image data. For
+\emph{graphs}, F$^2$GNN \cite{f2gnn2023} combines a fairness-weighted
+aggregation with structure-aware group-balance weights. The most recent
+efforts sit closest to our setting: FairGFL \cite{fairgfl2025} adds DP to
+federated fair GNNs but targets \emph{cross-client} (performance) fairness
+arising from imbalanced overlapping subgraphs rather than demographic group
+fairness; FedGraph-Fair \cite{fedgraphfair2025} applies distributionally-robust
+optimisation for personalised group-fair federated graph learning; FaVGNN
 \cite{wang2026favgnn} (2026) achieves group fairness in \emph{vertical} FL via
 completion-driven adversarial fusion; and FDP-Fair \cite{xue2026fdpfair} (2026)
 combines federated DP training with demographic-parity post-processing. We
-compare against FairFed, q-FedAvg, FedFB, F$^2$GNN, FairSIN (run federated), and
----as the strongest 2026 competitors---horizontal adaptations of FaVGNN and
-FDP-Fair. FairGFL is discussed but not benchmarked head-to-head, as it optimises
-a different (cross-client) fairness objective.
+compare against FairFed, q-FedAvg, FedFB, F$^2$GNN, FairSIN (run federated),
+the strongest 2026 competitors (horizontal adaptations of FaVGNN and FDP-Fair),
+and---reimplementing each paper's core statistical mechanism to the extent it
+transfers to a single-graph, star-topology federation
+(Appendix~\ref{app:baselines})---FairGFL, FedGraph-Fair, PUFFLE, FedFACT, and
+the PoPETs'25 FairFed variant, none of which had a public head-to-head against
+a fairness-aware federated \emph{GNN} prior to this comparison.
 
 \paragraph{Differential privacy in FL.}
 DP-FedAvg \cite{mcmahan2018learning} clips per-client updates and adds Gaussian
@@ -115,6 +122,8 @@ F\textsuperscript{2}GNN \cite{f2gnn2023} & \checkmark & \checkmark & \checkmark 
 FairGFL \cite{fairgfl2025}         & \checkmark & \checkmark & $\sim$     & \checkmark &            &            &  \\
 FaVGNN \cite{wang2026favgnn}       & \checkmark & \checkmark & \checkmark & \checkmark &            &            &  \\
 FDP-Fair \cite{xue2026fdpfair}     & \checkmark &      & \checkmark & \checkmark &            &            &  \\
+FedGraph-Fair \cite{fedgraphfair2025} & \checkmark & \checkmark & \checkmark &  &            &            &  \\
+PoPETs'25 \cite{bendoukha2025popets} & \checkmark &   & \checkmark & \checkmark &            &            &  \\
 \midrule
 \textbf{FedFairGNN (ours)} & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
 \bottomrule

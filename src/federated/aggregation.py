@@ -16,6 +16,14 @@ Rules
     trimmed_mean  coordinate-wise beta-trimmed mean (Yin et al. 2018).
     robust_bfwa   distance-screen Byzantine updates, then BFWA on survivors
                   with the fairness constraint (ours; robust + fair).
+    fairgfl       weight ~ 1/(1+heterogeneity); heterogeneity proxied by a
+                  client's sample-count deviation from the mean (Khan-style
+                  overlap-ratio reweighting; see docs/BASELINES_AND_SOURCES.md).
+    fedgraphfair  minimax/DRO dual-ascent reweighting toward high-loss clients,
+                  simplex-projected, with lambda persisted across rounds.
+    popets_fairfed FHE-friendly FairFed: degree-2 polynomial in place of
+                  exp(-beta|.|) so the weighting stays homomorphically
+                  computable (the crypto itself is not reimplemented).
 """
 from __future__ import annotations
 
@@ -73,7 +81,8 @@ def krum_scores(updates: List[torch.Tensor], f: int) -> torch.Tensor:
 def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
               *, tau: float = 0.05, fw_iters: int = 20, dual_step: float = 0.1,
               trimmed_beta: float = 0.1, krum_f: int = 1,
-              q_ffl: float = 2.0, fairfed_beta: float = 1.0) -> Tuple[torch.Tensor, Dict]:
+              q_ffl: float = 2.0, fairfed_beta: float = 1.0,
+              state: Dict = None) -> Tuple[torch.Tensor, Dict]:
     K = len(updates)
     n = torch.tensor([m.get("n", 1) for m in meta], dtype=torch.float32)
     perf = torch.tensor([m.get("perf", 0.5) for m in meta], dtype=torch.float32)
@@ -146,6 +155,57 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         agg = stack[sel].mean(0)
         info["selected"] = sel
 
+    elif method == "fairgfl":
+        # FairGFL (Khan-family overlap-aware reweighting): weight ~
+        # 1/(1+overlap_ratio). We proxy the paper's node/edge overlap ratio
+        # (a multi-graph-federated quantity we don't have) with each client's
+        # normalised deviation from the mean sample count -- a client whose
+        # local data looks atypical is analogous to one with an atypical
+        # overlap profile. See docs/BASELINES_AND_SOURCES.md.
+        het = (n - n.mean()).abs() / (n.mean() + 1e-8)
+        w = 1.0 / (1.0 + het)
+        w = w / w.sum()
+        agg = (w[:, None] * stack).sum(0)
+        info["weights"] = w.tolist()
+
+    elif method == "fedgraphfair":
+        # FedGraph-Fair (Khan, Information Sciences 2026): the minimax/DRO
+        # core -- a simplex-projected dual weight lambda dual-ascended toward
+        # clients whose loss exceeds an adaptive cap kappa_max, persisted
+        # across rounds via `state`. The paper's personalised-model/graph-
+        # mixing layer is not reproduced (single global model here); see
+        # docs/BASELINES_AND_SOURCES.md.
+        lam = state.get("fedgraphfair_lambda") if state is not None else None
+        if lam is None or lam.numel() != K:
+            lam = torch.full((K,), 1.0 / K)
+        kappa_max = float(loss.mean())
+        lam = lam + dual_step * (loss - kappa_max)
+        lam = torch.clamp(lam, min=0.0)
+        lam = lam / lam.sum() if lam.sum() > 0 else torch.full((K,), 1.0 / K)
+        if state is not None:
+            state["fedgraphfair_lambda"] = lam
+        agg = (lam[:, None] * stack).sum(0)
+        info["weights"] = lam.tolist()
+        info["kappa_max"] = kappa_max
+
+    elif method == "popets_fairfed":
+        # PoPETs'25 (Bendoukha et al.): FairFed's weighting made FHE-friendly
+        # by replacing exp(-beta|F_i-F_g|) with a degree-2 polynomial (a sign/
+        # abs-free surrogate a threshold-CKKS scheme can evaluate). We
+        # reproduce only this statistical weighting core; the paper's actual
+        # contribution -- a multi-key homomorphic-encryption aggregation
+        # protocol -- is systems/crypto infrastructure with no effect on the
+        # cleartext numeric result and is not reimplemented (see
+        # docs/BASELINES_AND_SOURCES.md).
+        F_g = float((n * dpd).sum() / n.sum())
+        poly = -fairfed_beta * (dpd - F_g) ** 2 + 1.0
+        poly = torch.clamp(poly, min=0.0)
+        w_hat = (n / n.sum()) * poly
+        w = w_hat / w_hat.sum() if w_hat.sum() > 0 else n / n.sum()
+        agg = (w[:, None] * stack).sum(0)
+        info["weights"] = w.tolist()
+        info["F_g"] = F_g
+
     elif method == "robust_bfwa":
         # Stage 1: screen out the krum_f updates farthest from the geometric
         # median direction (Byzantine screening).
@@ -165,5 +225,5 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
 
 
 ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"}
-FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn"}
+FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn", "fairgfl", "fedgraphfair", "popets_fairfed"}
 ALL_METHODS = {"fedavg"} | FAIR_METHODS | ROBUST_METHODS

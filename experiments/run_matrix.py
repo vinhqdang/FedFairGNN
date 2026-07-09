@@ -111,11 +111,22 @@ def jobs_competitors2026():
                 yield cfg_for(m, ds, s), "c2026"
 
 
+def jobs_competitors2025b():
+    # 2025/2026 competitors reimplemented from uploaded PDFs (FairGFL,
+    # FedGraph-Fair, PUFFLE, FedFACT, PoPETs) -- same datasets/seeds as
+    # competitors2026 for a like-for-like comparison.
+    for ds in ["german", "bail"]:
+        for m in ["fairgfl", "fedgraphfair", "puffle", "fedfact", "popets-fairfed"]:
+            for s in DS_SEEDS[ds]:
+                yield cfg_for(m, ds, s), "c2025b"
+
+
 STUDIES = {
     "main": jobs_main, "ablation": jobs_ablation, "privacy": jobs_privacy,
     "pareto": jobs_pareto, "robustness": jobs_robustness,
     "scalability": jobs_scalability, "partition": jobs_partition,
     "competitors2026": jobs_competitors2026,
+    "competitors2025b": jobs_competitors2025b,
 }
 
 

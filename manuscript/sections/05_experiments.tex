@@ -81,6 +81,30 @@ group-specific decision offsets on held-out data to enforce demographic parity;
 we implement its two-step DP-then-post-process recipe. Together these are the
 most recent methods occupying our niche.
 
+\item[2025--2026 head-to-head.] Five further recent methods are reimplemented
+from their published algorithm descriptions and benchmarked directly (none
+release a public federated-graph implementation; Appendix~\ref{app:baselines}
+states exactly what each reimplementation keeps and drops). \textbf{FairGFL}
+\cite{fairgfl2025} reweights aggregation by an overlap-ratio proxy (here, a
+client's sample-count deviation from the mean, since our single-graph
+partition has no literal multi-graph overlap). \textbf{FedGraph-Fair}
+\cite{fedgraphfair2025} contributes a minimax/distributionally-robust dual
+weight that up-weights high-loss clients (we reproduce this core, dropping its
+orthogonal personalised-model/graph-mixing layer). \textbf{PUFFLE}
+\cite{corbucci2024puffle} replaces a static fairness weight with a momentum
+feedback controller that auto-tunes it toward a target demographic-parity
+gap, combined with DP-SGD. \textbf{FedFACT} \cite{fedfact2025} generalises
+FDP-Fair's single group-offset to a two-level global-\emph{and}-local
+correction (a shared offset plus a per-client offset that is never
+aggregated); we implement the closed-form special case for binary
+demographic parity, an exact reduction of the paper's own optimum for that
+case. \textbf{PoPETs'25 FairFed} \cite{bendoukha2025popets} is FairFed's
+weighting rule made homomorphically computable by replacing its
+$\exp(-\beta|\cdot|)$ term with a degree-2 polynomial; we reproduce this
+statistical core (the paper's actual contribution---a threshold-CKKS secure
+aggregation protocol---has no effect on the cleartext numeric result and is
+not reimplemented).
+
 \item[Ours.] \textbf{FedFairGNN} (FSER + FTGD-DP + BFWA), \textbf{FedFairGNN~(no
 DP)} (the same without privacy noise, to isolate the fairness mechanism), and
 \textbf{FedFairGNN-Robust} (BFWA replaced by the Byzantine-robust variant).
@@ -123,6 +147,24 @@ of the main tables is therefore not cell-by-cell but holistic: FedFairGNN is the
 only method that is never far from the frontier on \emph{any} axis, which is
 precisely what the composite trust score of Section~\ref{sec:trust} formalises.
 
+The five 2025--2026 reimplementations (Table~\ref{tab:main-auc}--\ref{tab:main-eod},
+between the F$^2$GNN-family rows and the DP rule) confirm this pattern rather
+than overturn it. FairGFL, FedGraph-Fair, and the PoPETs'25 FairFed variant
+all land in the same AUC/DPD band as FairFed and F$^2$GNN---sensible, since
+all four are variations on aggregation reweighting---while FedFACT's two-level
+offset achieves the lowest DPD among non-private methods on Bail ($0.015$,
+Table~\ref{tab:main-dpd}), consistent with its provable-calibration design.
+PUFFLE is the one outlier worth naming directly: its momentum controller, left
+to auto-tune against the target disparity we configured, drives $\lambda$
+aggressively toward $1$ and reaches the lowest DPD/EOD of \emph{any} method on
+Bail ($0.001$) but at a real utility cost ($\mathrm{AUC}{=}0.61$, more than
+$0.35$ below the non-fair backbones)---an aggressive point on the
+fairness--utility frontier rather than a free lunch, and a useful illustration
+of why FedFairGNN's \emph{constrained} formulation (BFWA's hard budget $\tau$,
+Section~\ref{sec:bfwa}) is preferable to an unconstrained auto-tuned penalty:
+the constraint lets us fix how much fairness we buy, rather than letting a
+controller find out by overshooting.
+
 The contrast with DP-FedAvg is especially telling. At the same
 $\epsilon$, the only other private method in the table collapses in utility
 (Section~\ref{sec:exp-privacy}), so ``adding privacy'' the standard way is not a
@@ -137,7 +179,9 @@ fraud detection scales to real, industrial-size graphs.
 \caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds
 (2 on the large Credit/Elliptic); best per column in bold. FedFairGNN is the
 only method that is fair \emph{and} private (methods above the rule are
-non-private). $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL method.}
+non-private). $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL
+method. FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026
+reimplementations with approximated fidelity (Appendix~\ref{app:baselines}).}
 \label{tab:main-auc}
 \input{tables/main_auc.tex}
 \end{table}
