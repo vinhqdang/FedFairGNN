@@ -68,6 +68,11 @@ METHODS = {
     "ours-nofser":      dict(model="gat",         aggregator="bfwa", local_fairness=True, dp_enabled=False),
     "ours-nobfwa":      dict(model="trustfedgnn", aggregator="fedavg", dp_enabled=False),
     "ours-robust":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
+    # + EquFL-style server-side fairness calibration (Yu et al. 2026) stacked
+    # on top of FSER+BFWA -- see docs/BASELINES_AND_SOURCES.md. New method
+    # key (not "fedfairgnn-nodp") so existing cached results are untouched;
+    # only kept as the reported configuration if it's a genuine improvement.
+    "trustfedgnn-plus": dict(model="trustfedgnn", aggregator="bfwa", dp_enabled=False, server_calib=True),
 }
 
 # robust aggregators to sweep in the Byzantine study (backbone = ours)

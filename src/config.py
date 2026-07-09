@@ -100,6 +100,11 @@ class ExperimentConfig:
     fedfact_post: bool = False       # FedFACT: two-level (global lambda + local mu_k) post-hoc offset
     fedfact_local_scale: float = 1.0 # FedFACT: weight on the per-client local offset vs the global one
 
+    # ---- EquFL (Yu et al., arXiv:2601.05352, 2026): server-side fairness calibration ----
+    server_calib: bool = False           # add a server-side fairness-gradient correction each round
+    server_calib_start_frac: float = 0.5 # start calibrating after this fraction of rounds (EquFL default)
+    server_calib_gamma: float = 1.0      # weight on the calibration gradient g0
+
     # ---- robustness (attack simulation) ----
     attack: str = "none"             # none | label_flip | gaussian | scaling | fairness_poison
     num_byzantine: int = 0

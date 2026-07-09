@@ -20,7 +20,7 @@ from ..utils.metrics import all_metrics
 from ..trust.privacy import PrivacyAccountant
 from .aggregation import aggregate
 from .attacks import poison_updates
-from .client import Client, flatten_state, load_flat_state, sampled_predict
+from .client import Client, flatten_state, load_flat_state, sampled_predict, _soft_dpd
 
 
 class FederatedTrainer:
@@ -151,6 +151,45 @@ class FederatedTrainer:
         y = torch.cat(ys); p = torch.cat(ps); s = torch.cat(ss)
         return all_metrics(y, p, s)
 
+    def _server_calibration_grad(self):
+        """EquFL (Yu, Zhao, Zhang, Gao, Quan, Liu & Fang, arXiv:2601.05352,
+        Apr 2026): a server-side fairness correction. Computes g0 = grad_w
+        soft-DPD(w, D_val_pooled) at the current global model w^t, using the
+        pooled validation set across clients as the server's calibration
+        data (the paper instead condenses a synthetic dataset from model
+        checkpoints because its server has no legitimate data access at
+        all; our server already has legitimate access to pooled validation
+        statistics for the FDP-Fair/FedFACT post-processing baselines, so we
+        use that directly rather than approximating it). The paper proves
+        this composes with *any* aggregation rule -- including Byzantine-
+        robust ones (Median, Trimmed-mean, Multi-Krum) -- so it is added
+        additively on top of BFWA/robust_bfwa without changing their logic.
+        """
+        load_flat_state(self.ref_model, self.global_flat.to(self.device))
+        self.ref_model.zero_grad(set_to_none=True)
+        self.ref_model.eval()   # deterministic forward; no dropout noise in the correction
+        preds, senss = [], []
+        for d in self.clients_data:
+            d = d.to(self.device)
+            m = d.val_mask
+            if m.sum() == 0:
+                continue
+            preds.append(self.ref_model(d.x, d.edge_index, d.sensitive_attr)[m])
+            senss.append(d.sensitive_attr[m])
+        if not preds:
+            return None
+        pred = torch.cat(preds); s = torch.cat(senss)
+        fair_loss = _soft_dpd(pred, s)
+        named = [(n, p) for n, p in self.ref_model.named_parameters() if p.requires_grad]
+        grads = torch.autograd.grad(fair_loss, [p for _, p in named], allow_unused=True)
+        grad_map = {n: g for (n, _), g in zip(named, grads)}
+        sd = self.ref_model.state_dict()
+        parts = []
+        for k, v in sd.items():
+            g = grad_map.get(k)
+            parts.append(g.detach().flatten() if g is not None else torch.zeros_like(v).flatten())
+        return torch.cat(parts).cpu()
+
     # ----- one communication round -----
     def _round(self, t: int) -> Dict:
         updates, metas = [], []
@@ -178,6 +217,12 @@ class FederatedTrainer:
             krum_f=max(self.cfg.krum_f, len(self.byzantine_ids)),
             q_ffl=self.cfg.q_ffl, fairfed_beta=self.cfg.fairfed_beta,
             state=self._agg_state)
+
+        if self.cfg.server_calib and (t + 1) >= self.cfg.rounds * self.cfg.server_calib_start_frac:
+            g0 = self._server_calibration_grad()
+            if g0 is not None:
+                g_agg = g_agg + self.cfg.server_calib_gamma * g0
+
         self.global_flat = self.global_flat - g_agg
 
         rec = {"round": t + 1, **{f"g_{k}": v for k, v in self.evaluate_global().items()}}
