@@ -1,7 +1,7 @@
-\section{The FedFairGNN Framework}
+\section{The TrustFedGNN Framework}
 \label{sec:method}
 
-The design philosophy behind FedFairGNN is that trustworthiness should be
+The design philosophy behind TrustFedGNN is that trustworthiness should be
 engineered where each threat originates, not retrofitted afterwards. Structural
 bias is born inside message passing, so we correct it there; the sensitive
 attribute leaks through the gradient, so we privatise exactly the part of the
@@ -44,7 +44,7 @@ component, motivating it before formalising it.
 \draw[arr,orange!60!black] (c1.south) -- (c1.south|-tr.north);
 \draw[arr,orange!60!black] (ck.south) -- (ck.south|-tr.north);
 \end{tikzpicture}
-\caption{FedFairGNN architecture. Three interventions act at complementary
+\caption{TrustFedGNN architecture. Three interventions act at complementary
 control points---FSER inside client message passing, FTGD at the local gradient,
 and BFWA (with Byzantine screening) at server aggregation---while a trust layer
 instruments the whole system for audit. Only model weights are transmitted, so
@@ -183,11 +183,11 @@ $\dpd_k\!\approx\!0$). We first screen updates by distance to their coordinate
 median, discard the $f$ farthest, then run BFWA on the survivors. This composes
 Byzantine screening with the fairness constraint, defending against both
 classical and fairness-poisoning attacks (Section~\ref{sec:exp-robust}). We also
-evaluate FedFairGNN under Krum, Multi-Krum, median, and trimmed-mean drop-in
+evaluate TrustFedGNN under Krum, Multi-Krum, median, and trimmed-mean drop-in
 aggregators.
 
 \begin{algorithm}[t]
-\caption{FedFairGNN (one communication round $t$)}
+\caption{TrustFedGNN (one communication round $t$)}
 \label{alg:fedfairgnn}
 \begin{algorithmic}[1]
 \State Server broadcasts $\theta_{t-1}$ to all clients
@@ -207,7 +207,7 @@ aggregators.
 
 \subsection{Complexity, convergence, and communication}
 \label{sec:complexity}
-Each FedFairGNN component is deliberately cheap, so trustworthiness does not come
+Each TrustFedGNN component is deliberately cheap, so trustworthiness does not come
 at the price of scalability. \textbf{FSER} adds, per layer, one cosine similarity
 and one scalar multiply per edge, i.e.\ $O(|\mathcal{E}_k|\,d_h)$ work---the same
 order as the GAT attention it augments---and a single scalar parameter
@@ -223,14 +223,14 @@ $O(1/t)$ primal gap for convex objectives \cite{jaggi2013revisiting}; while our
 per-round Lagrangian is convex in $\mathbf{w}$, the outer federated loop is
 non-convex, so we report empirical convergence (Fig.~\ref{fig:convergence})
 rather than a global-optimality claim. Finally, because clients transmit only
-the model weights $g_k$ plus two scalar metrics, FedFairGNN's per-round
+the model weights $g_k$ plus two scalar metrics, TrustFedGNN's per-round
 communication is identical to FedAvg's; fairness and privacy are, in
 communication terms, free (Section~\ref{sec:exp-main} and
 Table~\ref{tab:efficiency}).
 
 \subsection{Trustworthiness instrumentation}
 \label{sec:method-trust}
-FedFairGNN reports the full trust picture. \textbf{Uncertainty}: MC-dropout gives
+TrustFedGNN reports the full trust picture. \textbf{Uncertainty}: MC-dropout gives
 per-node predictive std and entropy, and a group-conditional \emph{uncertainty
 gap}; calibration is measured by ECE and Brier score.
 \textbf{Explainability}: FSER attention yields an edge-level audit (cross- vs.\
@@ -239,7 +239,7 @@ drive the disparity. \textbf{Trust score}: a transparent weighted power-mean of
 normalised utility, fairness, privacy, robustness, and calibration sub-scores;
 the geometric-mean setting ($p{=}0$) penalises any single weak axis.
 \textbf{Sustainability}: model size, communication volume, forward FLOPs, and an
-energy/CO$_2$ proxy---FedFairGNN transmits weights only (the FTGD statistics add
+energy/CO$_2$ proxy---TrustFedGNN transmits weights only (the FTGD statistics add
 $O(1)$ scalars), so its footprint equals FedAvg's. \textbf{Compliance}: an
 explicit EU~AI~Act / NIST~RMF mapping and an auto-generated model card
 (Section~\ref{sec:trust}).

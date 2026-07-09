@@ -1,6 +1,6 @@
 """Compute calibration/uncertainty + sustainability + composite trust for key
 methods on Bail, and write manuscript/tables/efficiency.tex. Also emits an
-EU AI Act / NIST model card for the flagship FedFairGNN run.
+EU AI Act / NIST model card for the flagship TrustFedGNN run.
 
     python -m experiments.trust_eval
 """
@@ -21,7 +21,7 @@ os.makedirs(TAB, exist_ok=True)
 
 METHODS = ["fedavg-gat", "dp-fedavg", "fedfairgnn-nodp", "fedfairgnn"]
 PRETTY = {"fedavg-gat": "FedAvg-GAT", "dp-fedavg": "DP-FedAvg",
-          "fedfairgnn-nodp": "FedFairGNN (no DP)", "fedfairgnn": "\\textbf{FedFairGNN}"}
+          "fedfairgnn-nodp": "TrustFedGNN (no DP)", "fedfairgnn": "\\textbf{TrustFedGNN}"}
 
 
 def run(method, rounds=40):

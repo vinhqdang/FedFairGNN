@@ -128,7 +128,7 @@ def test_partition_covers_all_nodes_and_both_classes():
 def test_models_forward_probabilities():
     d = load_synthetic(seed=0, num_nodes=200, d=8)
     cfg = ExperimentConfig(hidden_channels=16, num_layers=2, heads=2)
-    for name in ["gcn", "gat", "fedfairgnn", "fairgnn", "fairsin"]:
+    for name in ["gcn", "gat", "trustfedgnn", "fairgnn", "fairsin"]:
         model = build_model(name, 8, cfg)
         out = model(d.x, d.edge_index, d.sensitive_attr)
         assert out.shape[0] == 200

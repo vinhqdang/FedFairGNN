@@ -1,6 +1,6 @@
 # Baseline reimplementation fidelity & sources to verify
 
-We compare FedFairGNN against SOTA fairness / federated / robust methods. To be
+We compare TrustFedGNN against SOTA fairness / federated / robust methods. To be
 transparent about reproduction fidelity (and to flag sources we could not
 retrieve automatically), this document records each baseline's status.
 

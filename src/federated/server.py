@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import copy
-from src.models.fedfairgnn import FedFairGNN
+from src.models.trustfedgnn import TrustFedGNN
 
 class Server:
     def __init__(self, in_channels, device='cpu', fairness_budget=0.05, 
@@ -23,7 +23,7 @@ class Server:
         self.fw_iterations = fw_iterations
         
         # Initialize Global Model
-        self.model = FedFairGNN(in_channels=in_channels, 
+        self.model = TrustFedGNN(in_channels=in_channels, 
                                 hidden_channels=128, 
                                 out_channels=1,
                                 heads=heads).to(device)

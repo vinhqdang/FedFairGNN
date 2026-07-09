@@ -322,7 +322,7 @@ def load_ogbn_products(root="data", seed=42) -> Data:
       sensitive (proxy): high- vs low-degree node (split at the median degree)
                          -- a structural connectivity subgroup.
 
-    Results on this dataset should be read as evidence that FedFairGNN *scales*,
+    Results on this dataset should be read as evidence that TrustFedGNN *scales*,
     not as a demographic-fairness claim.
     """
     from ogb.nodeproppred import PygNodePropPredDataset

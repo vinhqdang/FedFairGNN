@@ -4,20 +4,20 @@ from train import FederatedTrainer
 from src.utils.data_utils import DataUtils
 
 def main():
-    parser = argparse.ArgumentParser(description='FedFairGNN Benchmark')
+    parser = argparse.ArgumentParser(description='TrustFedGNN Benchmark')
     
     # Experiment Settings
     parser.add_argument('--dataset', type=str, default='YelpChi', 
                         choices=['YelpChi', 'Amazon', 'Elliptic'],
                         help='Dataset name')
-    parser.add_argument('--model', type=str, default='FedFairGNN', 
-                        choices=['FedFairGNN', 'FraudGNN_RL', 'GNN_CL', 'Attn_Ensemble'],
+    parser.add_argument('--model', type=str, default='TrustFedGNN', 
+                        choices=['TrustFedGNN', 'FraudGNN_RL', 'GNN_CL', 'Attn_Ensemble'],
                         help='Model name')
     parser.add_argument('--num_clients', type=int, default=3, help='Number of federated clients')
     parser.add_argument('--rounds', type=int, default=20, help='Communication rounds')
     parser.add_argument('--local_epochs', type=int, default=2, help='Local epochs per round')
     
-    # FedFairGNN Hyperparams
+    # TrustFedGNN Hyperparams
     parser.add_argument('--fairness_budget', type=float, default=0.05, help='Tau: Fairness budget')
     parser.add_argument('--fairness_weight', type=float, default=1.0, help='Lambda: Fairness loss weight')
     parser.add_argument('--dp_epsilon', type=float, default=10.0, help='Privacy budget (higher=less noise)')

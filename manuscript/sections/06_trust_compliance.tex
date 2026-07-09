@@ -10,15 +10,15 @@ privacy ($1-\epsilon/\epsilon_{\max}$), robustness (attack-retained AUC), and
 calibration ($1-\mathrm{ECE}/\mathrm{ECE}_{\text{ref}}$)---via a weighted power
 mean. Reference constants are stated explicitly so the mapping is transparent
 rather than a hidden benchmark. Under the geometric-mean setting ($p{=}0$),
-which penalises \emph{any} weak axis, FedFairGNN achieves the highest trust
+which penalises \emph{any} weak axis, TrustFedGNN achieves the highest trust
 score among all methods (Table~\ref{tab:trust}): baselines that excel on one
-axis are penalised for ignoring the others, whereas FedFairGNN is the only
+axis are penalised for ignoring the others, whereas TrustFedGNN is the only
 method competitive on all of utility, fairness, privacy, and robustness
 simultaneously.
 
 \begin{table}[t]\centering\small
 \caption{Composite trust score (Bail): utility, fairness, and privacy combined
-via a weighted power mean. Only FedFairGNN scores on all axes; best in bold.}
+via a weighted power mean. Only TrustFedGNN scores on all axes; best in bold.}
 \label{tab:trust}
 \input{tables/trust.tex}
 \end{table}
@@ -27,7 +27,7 @@ via a weighted power mean. Only FedFairGNN scores on all axes; best in bold.}
 Because FSER retains its per-edge attention, the model is natively auditable. We
 measure the \emph{attention bias ratio}: the share of attention mass on
 cross-group edges divided by their prevalence. A ratio below one---observed for
-FedFairGNN---means the model deliberately attends to cross-group edges
+TrustFedGNN---means the model deliberately attends to cross-group edges
 \emph{less} than chance, directly evidencing that FSER suppresses the biased
 message passing it targets. Gradient attribution of the demographic-parity gap
 further localises which input features drive residual disparity, giving auditors
@@ -41,7 +41,7 @@ $\epsilon$ (enforced by FTGD's accountant). The Pareto frontier
 than a hidden default---an operationalisation of meaningful human oversight.
 
 \paragraph{Regulatory alignment.}
-Table~\ref{tab:compliance} maps FedFairGNN's components to the EU AI Act
+Table~\ref{tab:compliance} maps TrustFedGNN's components to the EU AI Act
 (Articles 10, 13, 14, 15) and the NIST AI Risk Management Framework
 (Govern/Map/Measure/Manage). Data governance is met by keeping raw graphs local
 and excluding $s$ from features; transparency by the FSER explanation and model
@@ -50,7 +50,7 @@ robust aggregation and the DP guarantee. The framework auto-generates a
 Mitchell-style model card, turning accountability into a reproducible artifact.
 
 \begin{table}[t]\centering\small
-\caption{Mapping of FedFairGNN components to EU AI Act articles and NIST AI RMF
+\caption{Mapping of TrustFedGNN components to EU AI Act articles and NIST AI RMF
 functions.}
 \label{tab:compliance}
 \input{tables/compliance.tex}

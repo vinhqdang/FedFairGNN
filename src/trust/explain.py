@@ -2,7 +2,7 @@
 
 Two complementary explanations:
 
-1. Edge-attribution via FSER attention. FedFairGNN already exposes per-edge
+1. Edge-attribution via FSER attention. TrustFedGNN already exposes per-edge
    attention (averaged over heads/layers). We surface the edges the model
    attends to most, and -- crucially for a *fairness* audit -- report how much
    attention mass sits on cross-group vs same-group edges, showing that FSER

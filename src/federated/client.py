@@ -4,7 +4,7 @@ Handles three training modes behind one interface:
   * plain          -- weighted BCE task loss (GCN/GAT).
   * fair + FTGD    -- task + soft-DPD fairness loss; the gradient is split into
                       task/fairness subspaces and Gaussian DP noise is added
-                      *only* to the (clipped) fairness component (FedFairGNN).
+                      *only* to the (clipped) fairness component (TrustFedGNN).
   * adversarial    -- FairGNN minimax debiasing.
 
 A Byzantine client optionally flips its local labels (data poisoning); update-
@@ -75,7 +75,7 @@ class Client:
         self.device = device
         self.byzantine = byzantine
         self.model = build_model(config.model, data.x.shape[1], config).to(device)
-        self.is_fair = config.model == "fedfairgnn"
+        self.is_fair = config.model == "trustfedgnn"
         self.is_adv = config.model in ("fairgnn", "favgnn")
         self.local_fair = self.is_fair or config.local_fairness
 

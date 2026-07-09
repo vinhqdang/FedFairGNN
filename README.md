@@ -1,11 +1,11 @@
-# FedFairGNN: Trustworthy Federated Graph Neural Networks
+# TrustFedGNN: Trustworthy Federated Graph Neural Networks
 
 Reference implementation for the manuscript **"Trustworthy Federated Graph
 Neural Networks: Unifying Fairness, Privacy, Robustness, and Explainability for
 High-Stakes Risk Detection"** (prepared for *Springer Discover Artificial
 Intelligence*, collection *Trustworthy and Responsible Federated Learning*).
 
-FedFairGNN trains a fraud/risk-detection GNN across institutions that cannot
+TrustFedGNN trains a fraud/risk-detection GNN across institutions that cannot
 share raw graph data, and is simultaneously **fair**, **differentially
 private**, **Byzantine-robust**, **explainable**, and **regulation-aligned**.
 Every number and figure in the paper is regenerated from logged runs — nothing
@@ -70,7 +70,7 @@ Methods available to `--method`: `fedavg-gcn`, `fedavg-gat`, `fairgnn`,
 src/
   config.py              ExperimentConfig + deterministic seeding
   data/                  real dataset loaders + Dirichlet/community partitioning
-  models/                FSER-GAT (FedFairGNN), GCN, GAT, FairGNN, FairSIN
+  models/                FSER-GAT (TrustFedGNN), GCN, GAT, FairGNN, FairSIN
   federated/             client (FTGD), trainer, aggregation rules, attacks
   trust/                 privacy (RDP), uncertainty, explainability, trust score,
                          sustainability, compliance

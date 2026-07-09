@@ -105,9 +105,9 @@ statistical core (the paper's actual contribution---a threshold-CKKS secure
 aggregation protocol---has no effect on the cleartext numeric result and is
 not reimplemented).
 
-\item[Ours.] \textbf{FedFairGNN} (FSER + FTGD-DP + BFWA), \textbf{FedFairGNN~(no
+\item[Ours.] \textbf{TrustFedGNN} (FSER + FTGD-DP + BFWA), \textbf{TrustFedGNN~(no
 DP)} (the same without privacy noise, to isolate the fairness mechanism), and
-\textbf{FedFairGNN-Robust} (BFWA replaced by the Byzantine-robust variant).
+\textbf{TrustFedGNN-Robust} (BFWA replaced by the Byzantine-robust variant).
 \end{description}
 
 We additionally reproduce the fairness-poisoning optimisation attack of
@@ -135,15 +135,15 @@ choice but the least fair one. Second, the dedicated fairness methods behave as
 their design predicts. Aggregation-level methods (FairFed, F\textsuperscript{2}GNN)
 and representation-level methods (FairGNN, FairSIN) both reduce $\dpd$ and
 $\eod$ appreciably, and on the smallest dataset (German) the best-tuned of them
-can match or slightly edge out FedFairGNN on a \emph{single} fairness metric in
+can match or slightly edge out TrustFedGNN on a \emph{single} fairness metric in
 isolation. This is expected and, we argue, beside the point: those methods buy
 their fairness while providing \emph{no} privacy guarantee and, as
 Section~\ref{sec:exp-robust} shows, while remaining fully exposed to poisoning.
-Third, and most importantly, FedFairGNN delivers a fairness--utility trade-off
+Third, and most importantly, TrustFedGNN delivers a fairness--utility trade-off
 that is competitive with the best of these specialised methods \emph{while
 simultaneously} carrying an $(\epsilon{=}8)$-DP guarantee for the sensitive
 attribute---something none of the fairness baselines offer. The proper reading
-of the main tables is therefore not cell-by-cell but holistic: FedFairGNN is the
+of the main tables is therefore not cell-by-cell but holistic: TrustFedGNN is the
 only method that is never far from the frontier on \emph{any} axis, which is
 precisely what the composite trust score of Section~\ref{sec:trust} formalises.
 
@@ -160,7 +160,7 @@ aggressively toward $1$ and reaches the lowest DPD/EOD of \emph{any} method on
 Bail ($0.001$) but at a real utility cost ($\mathrm{AUC}{=}0.61$, more than
 $0.35$ below the non-fair backbones)---an aggressive point on the
 fairness--utility frontier rather than a free lunch, and a useful illustration
-of why FedFairGNN's \emph{constrained} formulation (BFWA's hard budget $\tau$,
+of why TrustFedGNN's \emph{constrained} formulation (BFWA's hard budget $\tau$,
 Section~\ref{sec:bfwa}) is preferable to an unconstrained auto-tuned penalty:
 the constraint lets us fix how much fairness we buy, rather than letting a
 controller find out by overshooting.
@@ -168,16 +168,16 @@ controller find out by overshooting.
 The contrast with DP-FedAvg is especially telling. At the same
 $\epsilon$, the only other private method in the table collapses in utility
 (Section~\ref{sec:exp-privacy}), so ``adding privacy'' the standard way is not a
-viable option for these models---making FedFairGNN's near-free privacy a
+viable option for these models---making TrustFedGNN's near-free privacy a
 qualitative, not merely quantitative, advantage. Finally, on Elliptic---a
 $200$k-node cryptocurrency graph beyond the reach of every centralised fairness
-baseline---FedFairGNN attains the best subgroup fairness at detection accuracy
+baseline---TrustFedGNN attains the best subgroup fairness at detection accuracy
 comparable to the non-fair backbone, demonstrating that trustworthy federated
 fraud detection scales to real, industrial-size graphs.
 
 \begin{table}[t]\centering\small
 \caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds
-(2 on the large Credit/Elliptic); best per column in bold. FedFairGNN is the
+(2 on the large Credit/Elliptic); best per column in bold. TrustFedGNN is the
 only method that is fair \emph{and} private (methods above the rule are
 non-private). $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL
 method. FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026
@@ -206,7 +206,7 @@ constraining aggregation; the full model best balances the two. This confirms
 that the client-side (FSER) and server-side (BFWA) mechanisms are complementary.
 
 \begin{table}[t]\centering\small
-\caption{Ablation of FedFairGNN components (no DP). AUC / DPD per dataset.}
+\caption{Ablation of TrustFedGNN components (no DP). AUC / DPD per dataset.}
 \label{tab:ablation}
 \input{tables/ablation.tex}
 \end{table}
@@ -217,7 +217,7 @@ Figure~\ref{fig:privacy} sweeps the privacy budget $\epsilon$. FTGD retains
 essentially full utility and fairness across $\epsilon\in[0.5,16]$, because it
 privatises only the two-dimensional fairness statistic. In contrast, DP-FedAvg's
 isotropic gradient noise collapses AUC toward chance at small $\epsilon$. This is
-the central privacy result: \emph{FedFairGNN provides sensitive-attribute
+the central privacy result: \emph{TrustFedGNN provides sensitive-attribute
 differential privacy at negligible cost}, where the standard mechanism is
 unusable on compact GNNs.
 
@@ -225,7 +225,7 @@ unusable on compact GNNs.
 \centering
 \includegraphics[width=0.92\textwidth]{figures/privacy_bail.pdf}
 \caption{Utility (left) and fairness (right) versus privacy budget $\epsilon$ on
-Bail. FTGD (FedFairGNN) is flat across $\epsilon$; DP-FedAvg degrades sharply as
+Bail. FTGD (TrustFedGNN) is flat across $\epsilon$; DP-FedAvg degrades sharply as
 privacy tightens.}
 \label{fig:privacy}
 \end{figure}
@@ -250,7 +250,7 @@ fairness-poisoning attacks with $2/10$ malicious clients, across aggregators;
 Figure~\ref{fig:robust} sweeps the number of Byzantine clients. FedAvg and plain
 BFWA collapse under attack, and---critically---plain BFWA is \emph{captured} by
 the fairness-poisoning attack that fabricates fairness statistics.
-FedFairGNN-Robust (robust\_bfwa) preserves utility and fairness by screening
+TrustFedGNN-Robust (robust\_bfwa) preserves utility and fairness by screening
 malicious updates before applying the fairness constraint, matching or exceeding
 dedicated robust aggregators while remaining fair.
 
@@ -271,7 +271,7 @@ Robust aggregation retains utility as corruption grows.}
 
 \subsection{Uncertainty, calibration, and convergence}
 Table~\ref{tab:efficiency} reports ECE, Brier score, and the group-conditional
-uncertainty gap; FedFairGNN remains well-calibrated and does not concentrate
+uncertainty gap; TrustFedGNN remains well-calibrated and does not concentrate
 uncertainty on one group. Figure~\ref{fig:convergence} shows stable joint
 convergence of utility and both fairness metrics---FTGD's clean task pathway
 avoids the variance spikes typical of DP-FedAvg.
@@ -279,13 +279,13 @@ avoids the variance spikes typical of DP-FedAvg.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.55\textwidth]{figures/convergence.pdf}
-\caption{FedFairGNN convergence on Bail: AUC rises while DPD/EOD fall and
+\caption{TrustFedGNN convergence on Bail: AUC rises while DPD/EOD fall and
 stabilise below the budget.}
 \label{fig:convergence}
 \end{figure}
 
 \subsection{Scalability and sustainability}
-Table~\ref{tab:efficiency} also reports communication and efficiency. FedFairGNN
+Table~\ref{tab:efficiency} also reports communication and efficiency. TrustFedGNN
 transmits only model weights, so its per-round communication equals FedAvg's;
 fairness and privacy therefore incur \emph{no} communication overhead. The
 method scales to $K{=}20$ clients and to the $200$k-node Elliptic graph on
@@ -297,7 +297,7 @@ To verify that the framework is not confined to graphs that fit in memory, we
 additionally run it on \textbf{ogbn-products} \cite{hu2020ogb}---an Amazon
 co-purchase graph of $2.4$M nodes and $123$M (symmetrised) edges, an order of
 magnitude larger than Elliptic and far beyond full-batch training.
-FedFairGNN's three components are all local or $O(K)$ operations, so they
+TrustFedGNN's three components are all local or $O(K)$ operations, so they
 compose directly with standard mini-batch neighbor sampling
 \cite{hamilton2017graphsage}: each client trains on sampled subgraphs, FSER
 reweights the sampled edges, FTGD privatises the per-batch group statistics,
@@ -312,7 +312,7 @@ Table~\ref{tab:large-scale} reports all six methods trained end-to-end on the
 full $2.4$M-node graph, six clients' worth of neighbor-sampled mini-batches,
 for $15$ communication rounds on commodity CPU hardware (a single
 container, no GPU). Three findings stand out. First, utility is genuinely
-learnable at this scale: FedAvg-GAT, FairSIN, and both FedFairGNN variants all
+learnable at this scale: FedAvg-GAT, FairSIN, and both TrustFedGNN variants all
 converge to AUC $0.86$--$0.89$, confirming that FSER message passing, FTGD
 statistic privatisation, and BFWA aggregation compose correctly with
 mini-batch sampling rather than degrading into noise. Second,
@@ -321,7 +321,7 @@ performance on the five smaller datasets (Table~\ref{tab:main-auc})---showing
 that naïve per-parameter DP noise, tolerable on models with a few thousand
 parameters, becomes actively harmful once mini-batch gradient variance is
 already high; this is exactly the failure mode FTGD's 2D statistic
-privatisation (Section~\ref{sec:ftgd}) is designed to avoid, and FedFairGNN's
+privatisation (Section~\ref{sec:ftgd}) is designed to avoid, and TrustFedGNN's
 own DP variant confirms it: it loses only $0.001$ AUC ($0.862$ vs.\ $0.861$
 without DP) relative to its non-private counterpart at $\varepsilon\approx 8.0$,
 versus DP-FedAvg's $0.32$ absolute-AUC collapse. Third,
@@ -336,7 +336,7 @@ generalisation limitation of adversarial debiasing under the noisier,
 smaller-batch gradients that mini-batch sampling induces on million-node
 graphs, and (to our knowledge) has not been previously reported for FaVGNN;
 we view stabilising adversarial FL objectives under sampling as useful future
-work rather than a flaw specific to our comparison. FedFairGNN's per-round
+work rather than a flaw specific to our comparison. TrustFedGNN's per-round
 wall-clock is $2.4$--$2.5\times$ FedAvg's (Table~\ref{tab:large-scale},
 last column) on this CPU configuration, the price of FSER's edge-reweighted
 message passing and BFWA's Frank--Wolfe iterations at this scale; this
@@ -360,7 +360,7 @@ classifier, not a genuine fairness result---see discussion above.}
 \begin{table}[t]\centering\small
 \caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
 (lower better), group uncertainty gap, per-round communication, and energy
-proxy. FedFairGNN matches FedAvg's communication footprint.}
+proxy. TrustFedGNN matches FedAvg's communication footprint.}
 \label{tab:efficiency}
 \input{tables/efficiency.tex}
 \end{table}

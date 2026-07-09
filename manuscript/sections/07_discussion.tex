@@ -11,7 +11,7 @@ GNNs. The same principle applies to any group-fairness regulariser expressible
 through low-dimensional group statistics, so FTGD is reusable beyond GNNs.
 
 \paragraph{Relation to the closest 2025--2026 methods.}
-It is worth stating precisely how FedFairGNN differs from the most recent
+It is worth stating precisely how TrustFedGNN differs from the most recent
 neighbours, because superficially several sound similar. F\textsuperscript{2}GNN
 and FairGFL are federated fair-graph methods, but the former offers no privacy
 and the latter targets \emph{cross-client} performance fairness (equalising
@@ -29,7 +29,7 @@ FTGD instead \emph{avoids} the full-gradient noise entirely by privatising the
 low-dimensional fairness statistic, which is why it retains utility where they
 must trade it away. Finally, and decisively, none of these methods addresses
 Byzantine robustness: a single malicious silo can corrupt any of them, whereas
-FedFairGNN-Robust screens such updates before enforcing fairness. The
+TrustFedGNN-Robust screens such updates before enforcing fairness. The
 contribution is thus not a marginal gain on one axis but the first coherent
 occupation of the intersection of all of them.
 

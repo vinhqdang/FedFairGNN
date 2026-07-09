@@ -3,7 +3,7 @@
 Real-world FL deployment is constrained by communication and energy, not just
 accuracy. We report model size, per-round and total communication volume, a
 FLOP estimate for a forward pass, and a transparent wall-clock-based energy
-proxy. FedFairGNN transmits only model weights (the FTGD statistics add O(1)
+proxy. TrustFedGNN transmits only model weights (the FTGD statistics add O(1)
 scalars), so its communication footprint equals FedAvg's -- an important
 "fairness/privacy at no extra communication cost" point.
 """

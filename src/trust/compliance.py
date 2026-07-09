@@ -1,6 +1,6 @@
 """Regulatory-compliance mapping and model cards.
 
-Maps FedFairGNN's components to the requirements of two international
+Maps TrustFedGNN's components to the requirements of two international
 trustworthy-AI frameworks referenced by the target collection -- the EU AI Act
 and the NIST AI Risk Management Framework -- and generates a Mitchell et al.
 (2019) style model card. This operationalises "accountability, transparency and
@@ -55,7 +55,7 @@ def model_card(config, result: Dict, dataset_meta: Dict = None) -> str:
         v = f.get(k, d)
         return f"{v:.4f}" if isinstance(v, float) else v
     eps = f"{f.get('epsilon'):.2f}" if f.get("epsilon") else "no DP"
-    return f"""# Model Card -- FedFairGNN
+    return f"""# Model Card -- TrustFedGNN
 
 ## Model details
 - Architecture: {config.get('model')} ({config.get('num_layers')} layers, hidden {config.get('hidden_channels')})

@@ -15,7 +15,7 @@ class FederatedTrainer:
         self.client_data_list = self.data_utils.split_data_for_clients(self.full_data, args.num_clients)
         
         # Initialize Architecture
-        if args.model == 'FedFairGNN':
+        if args.model == 'TrustFedGNN':
             # Server with BFWA
             self.server = Server(in_channels=self.full_data.num_features,
                                  device=device,

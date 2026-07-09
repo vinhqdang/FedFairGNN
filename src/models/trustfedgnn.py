@@ -98,9 +98,9 @@ class FSERLayer(MessagePassing):
             return aggr_out.mean(dim=1)
 
 
-class FedFairGNN(nn.Module):
+class TrustFedGNN(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers=3, heads=1, dropout=0.2):
-        super(FedFairGNN, self).__init__()
+        super(TrustFedGNN, self).__init__()
         self.num_layers = num_layers
         self.dropout = dropout
         self.heads = heads

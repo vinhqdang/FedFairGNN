@@ -46,7 +46,7 @@ class ExperimentConfig:
     partition_by: str = "label"      # label | sensitive  (what the Dirichlet skews)
 
     # ---- model ----
-    model: str = "fedfairgnn"        # fedfairgnn | gcn | gat | fairgnn | ...
+    model: str = "trustfedgnn"       # trustfedgnn | gcn | gat | fairgnn | ...
     hidden_channels: int = 64
     num_layers: int = 2
     heads: int = 4
@@ -88,7 +88,7 @@ class ExperimentConfig:
     #   gradient : standard full-gradient DP-SGD (DP-FedAvg baseline)
 
     # ---- generic fairness (for baselines that add a local DP penalty) ----
-    local_fairness: bool = False     # add soft-DPD penalty for non-fedfairgnn models
+    local_fairness: bool = False     # add soft-DPD penalty for non-trustfedgnn models
     q_ffl: float = 2.0               # q for q-FedAvg client-fairness aggregation
     fairfed_beta: float = 1.0        # FairFed fairness-gap step
     postproc_fair: bool = False      # FDP-Fair: post-hoc group-offset calibration for DP

@@ -6,7 +6,7 @@ returns per-node fraud/positive probabilities of shape ``[N]`` (post-sigmoid).
 Models
     GCN, GAT        -- standard non-fair backbones (baselines)
     FairGNN         -- adversarial debiasing baseline (Dai & Wang, 2021)
-    FedFairGNN      -- our method: FSER-GAT backbone whose edge attention is
+    TrustFedGNN      -- our method: FSER-GAT backbone whose edge attention is
                        fairness-reweighted and exposed for explainability;
                        dropout can stay active at inference for MC-dropout
                        uncertainty estimation.
@@ -77,7 +77,7 @@ class FSERLayer(MessagePassing):
         return x_j * alpha.unsqueeze(-1)
 
 
-class FedFairGNN(nn.Module):
+class TrustFedGNN(nn.Module):
     """FSER-GAT backbone with input projection, residual blocks and skip
     concatenation. Supports Monte-Carlo dropout at inference (``mc=True``)."""
 

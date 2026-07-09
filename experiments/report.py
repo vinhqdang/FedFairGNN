@@ -35,8 +35,8 @@ plt.rcParams.update({"font.size": 11, "axes.grid": True, "grid.alpha": 0.3,
 PRETTY = {
     "fedavg-gcn": "FedAvg-GCN", "fedavg-gat": "FedAvg-GAT", "fairgnn": "FairGNN",
     "fairsin": "FairSIN", "fairfed": "FairFed", "qffl": "q-FedAvg", "fedfb": "FedFB",
-    "f2gnn": "F$^2$GNN", "dp-fedavg": "DP-FedAvg", "fedfairgnn-nodp": "FedFairGNN (no DP)",
-    "fedfairgnn": "\\textbf{FedFairGNN}", "ours-robust": "FedFairGNN-Robust",
+    "f2gnn": "F$^2$GNN", "dp-fedavg": "DP-FedAvg", "fedfairgnn-nodp": "TrustFedGNN (no DP)",
+    "fedfairgnn": "\\textbf{TrustFedGNN}", "ours-robust": "TrustFedGNN-Robust",
     "ours-nofser": "w/o FSER", "ours-nobfwa": "w/o BFWA",
     "favgnn": "FaVGNN$^{\\ast}$ (2026)", "fdp-fair": "FDP-Fair (2026)",
     "fairgfl": "FairGFL (2025)", "fedgraphfair": "FedGraph-Fair (2026)",
@@ -161,7 +161,7 @@ def fig_privacy(rows):
         return
     for ds in sorted({r["dataset"] for r in rows}):
         fig, ax = plt.subplots(1, 2, figsize=(9, 3.4))
-        for method, col, lab in [("fedfairgnn", C["ours"], "FedFairGNN (FTGD)"),
+        for method, col, lab in [("fedfairgnn", C["ours"], "TrustFedGNN (FTGD)"),
                                  ("dp-fedavg", C["dp"], "DP-FedAvg")]:
             pts = sorted([(r["dp_epsilon"], r.get("final_auc"), r.get("final_dpd"))
                           for r in rows if r["exp_name"] == method and r["dataset"] == ds])
@@ -216,7 +216,7 @@ def fig_robustness(rows):
 
 
 def fig_convergence(rows):
-    # representative FedFairGNN run on bail
+    # representative TrustFedGNN run on bail
     cand = [r for r in rows if r["exp_name"] == "fedfairgnn" and r["dataset"] == "bail"]
     if not cand:
         cand = [r for r in rows if r["exp_name"] == "fedfairgnn-nodp" and r["dataset"] == "bail"]
@@ -232,7 +232,7 @@ def fig_convergence(rows):
     ax.plot(rounds, [x.get("g_dpd") for x in h], color=C["b1"], label="DPD")
     ax.plot(rounds, [x.get("g_eod") for x in h], color=C["b3"], label="EOD")
     ax.set_xlabel("communication round"); ax.set_ylabel("metric")
-    ax.set_title("FedFairGNN convergence (Bail)"); ax.legend()
+    ax.set_title("TrustFedGNN convergence (Bail)"); ax.legend()
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "convergence.pdf")); plt.close(fig)
     print("[fig] convergence.pdf")
 
