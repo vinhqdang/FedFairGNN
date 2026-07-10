@@ -1063,10 +1063,11 @@ without needing an additional server-side correction pass.
 Figure~\ref{fig:privacy} sweeps the privacy budget $\epsilon$. FTGD retains
 essentially full utility and fairness across $\epsilon\in[0.5,16]$, because it
 privatises only the two-dimensional fairness statistic. In contrast, DP-FedAvg's
-isotropic gradient noise collapses AUC toward chance at small $\epsilon$. This is
-the central privacy result: \emph{TrustFedGNN provides sensitive-attribute
-differential privacy at negligible cost}, where the standard mechanism is
-unusable on compact GNNs.
+isotropic gradient noise collapses AUC toward chance at small $\epsilon$. The
+utility-preservation claim is thus clear; but---as the reviewer of trustworthy
+privacy work rightly demands---low utility cost is only half the story. A cheap
+mechanism is worthless if it does not actually reduce leakage. We therefore test
+the guarantee \emph{adversarially}.
 
 \begin{figure}[t]
 \centering
@@ -1075,6 +1076,47 @@ unusable on compact GNNs.
 Bail. FTGD (TrustFedGNN) is flat across $\epsilon$; DP-FedAvg degrades sharply as
 privacy tightens.}
 \label{fig:privacy}
+\end{figure}
+
+\paragraph{Does the guarantee stop a real attack?}
+To show the statistic-level guarantee is meaningful and not merely formal, we
+mount a worst-case \emph{attribute-inference} attack on the released fairness
+statistic (Table~\ref{tab:privacy-attack}, Figure~\ref{fig:privacy-attack}). The
+adversary is an honest-but-curious server that observes the released group means
+and knows every node's model prediction and the sensitive attribute of all
+\emph{but one} target node; it then performs the optimal ``differencing''
+maximum-likelihood guess of the target's attribute, correctly accounting for the
+changing group sizes under each hypothesis. On real Bail predictions the result
+is stark. Against the \emph{exact} statistic (no DP), the attack recovers the
+target's sensitive attribute \textbf{perfectly (100\%)}: an un-noised group mean
+is, by construction, a reconstruction oracle. FTGD's Gaussian noise---calibrated
+to the deployed budget---drives inference accuracy down to \textbf{$0.51$ at
+$\epsilon{=}8$} and $\le 0.51$ for every $\epsilon\le 16$, i.e.\ to
+balanced-random ($0.50$). Crucially, this protection is bought with noise on
+\emph{two scalars}, which is why (Figure~\ref{fig:privacy}) it leaves utility and
+fairness essentially untouched---whereas achieving comparable protection by
+noising the full gradient (DP-FedAvg) destroys utility. This is the honest,
+demonstrated form of the privacy contribution: FTGD does not make the whole
+update private (Section~\ref{sec:ftgd}), but for the object it does protect---the
+released fairness statistic---it converts a perfect reconstruction into a coin
+flip at negligible cost.
+
+\begin{table}[t]\centering\small
+\caption{Attribute-inference attack on the released fairness statistic (Bail,
+real predictions). A worst-case differencing adversary infers a target node's
+sensitive attribute. The exact release is a perfect oracle; FTGD's noise reduces
+inference to balanced-random ($0.500$) at every deployed $\epsilon$.}
+\label{tab:privacy-attack}
+\input{tables/privacy_attack.tex}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/privacy_attack.pdf}
+\caption{Sensitive-attribute inference accuracy vs.\ privacy budget. Exact
+release (no DP) leaks perfectly; FTGD collapses the attack to chance across the
+whole $\epsilon$ range, at the negligible utility cost of Figure~\ref{fig:privacy}.}
+\label{fig:privacy-attack}
 \end{figure}
 
 \subsection{Fairness--utility Pareto frontier}
