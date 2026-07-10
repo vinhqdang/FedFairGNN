@@ -47,7 +47,7 @@ def real_predictions(dataset="bail", seed=0):
     """Train the flagship briefly and return (y_hat, s) on a real client's
     training nodes -- the exact objects the FTGD statistic is computed from."""
     set_seed(seed)
-    cfg = ExperimentConfig(dataset=dataset, seed=seed, rounds=30, num_clients=5,
+    cfg = ExperimentConfig(dataset=dataset, seed=seed, rounds=15, num_clients=5,
                            local_epochs=2, hidden_channels=64)
     apply_method(cfg, "fedfairgnn-nodp")
     tr = FederatedTrainer(cfg)
@@ -106,7 +106,10 @@ def main():
     yhat, s = real_predictions()
     n0 = int((s == 0).sum()); n1 = int((s == 1).sum())
     base_rate = max(n0, n1) / (n0 + n1)          # majority-class baseline
-    steps = 30 * 2                                # rounds * local_epochs (deployed accounting)
+    # per-release noise is calibrated for the DEPLOYED accounting budget (a
+    # 50-round x 2-epoch Bail deployment = 100 statistic releases), independent
+    # of the short training used only to obtain realistic predictions above.
+    steps = 50 * 2
     rng = np.random.default_rng(0)
 
     eps_grid = [None, 16.0, 8.0, 4.0, 2.0, 1.0, 0.5]   # None = no DP (eps=inf)
