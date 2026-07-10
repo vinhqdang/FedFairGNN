@@ -152,7 +152,7 @@ def main():
         else:
             lines.append(f"FTGD & {eps:g} & {z:.1f} & {acc:.3f} \\\\")
     lines.append("\\midrule")
-    lines.append(f"\\emph{{Chance (majority base rate)}} & --- & --- & {base_rate:.3f} \\\\")
+    lines.append("\\emph{Random guess (balanced targets)} & --- & --- & 0.500 \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     with open(os.path.join(TAB, "privacy_attack.tex"), "w") as f:
         f.write("\n".join(lines))
