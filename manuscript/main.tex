@@ -950,8 +950,20 @@ those three reach low DPD largely by collapsing toward a near-constant predictor
 flags with a dagger. So the honest one-line summary of German is: among methods
 that provide any privacy, TrustFedGNN is the only one that stays useful, at
 fairness no worse (in the statistical sense) than the non-private fair baselines.
-On the larger, lower-variance datasets (Bail, Credit, Pokec) the same holds with
-tighter error bars. What TrustFedGNN uniquely offers is this trade-off carried
+On the larger, lower-variance \textbf{Bail} showcase (5 seeds) the trade-off is
+even more favourable. TrustFedGNN's AUC exceeds \emph{every} baseline's, winning
+on all five paired seeds against each (the consistent $p{=}0.0625$ is the
+smallest value the Wilcoxon test can return at $n{=}5$---an all-seeds sweep, not
+a weak signal); against the other privacy-preserving methods the AUC margin is
+enormous ($+0.40$ over FDP-Fair/PUFFLE/DP-FedAvg, which collapse toward a
+constant predictor). Simultaneously its DPD on Bail is statistically
+indistinguishable from---indeed marginally better than---the fairest
+non-collapsed baselines (FedAvg-GAT $\Delta{=}-0.004$; FairSIN, F\textsuperscript{2}GNN
+$\approx 0$; FairFed $p{=}0.125$). In other words, on the dataset where the
+signal is cleanest, TrustFedGNN is simultaneously the most accurate method and
+statistically tied for the fairest among methods that have not degenerated---
+while being the only one carrying a privacy guarantee. What TrustFedGNN uniquely
+offers is this trade-off carried
 \emph{together with} an $(\epsilon{=}8)$-DP guarantee for the released fairness
 statistic (Section~\ref{sec:ftgd}) and, in the robust variant, resilience to
 poisoning---axes the specialised fairness baselines are not built for and we do
@@ -960,10 +972,14 @@ not attack them on.
 \begin{table}[t]\centering
 \caption{Paired Wilcoxon signed-rank tests (TrustFedGNN vs.\ each baseline over
 shared seeds): $p$-values, $^{*}$ marks $p<0.05$. ``--'' where fewer than five
-shared seeds are available yet. On German (10 seeds), TrustFedGNN's DPD is
-\emph{not} significantly different from the non-fair backbone or most fair
-baselines; its AUC is significantly higher than the other privacy-preserving
-methods (which collapse) and significantly lower than the non-private ones.}
+shared seeds are available (Credit/Pokec/Elliptic are being extended). Note the
+Wilcoxon floor: at $n{=}5$ (Bail) the smallest attainable $p$ is $0.0625$, so a
+uniform $0.06$ indicates our method wins on \emph{all five} paired seeds, not a
+weak effect. On German (10 seeds) TrustFedGNN's DPD is \emph{not} significantly
+different from the non-fair backbone or most fair baselines; its AUC is
+significantly higher than the other (collapsing) privacy methods and lower than
+the non-private ones. On Bail its AUC beats every baseline on all seeds while its
+DPD ties the fairest non-collapsed methods.}
 \label{tab:significance}
 {\footnotesize\setlength{\tabcolsep}{4pt}\input{tables/significance.tex}}
 \end{table}
@@ -1002,12 +1018,14 @@ proxy, so this demonstrates \emph{scalable subgroup-disparity control on an
 industrial-size graph}, not a demographic-fairness guarantee.
 
 \begin{table}[t]\centering\small
-\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds
-(2 on the large Credit/Elliptic); best per column in bold. TrustFedGNN is the
-only method that is fair \emph{and} private (methods above the rule are
-non-private). $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL
-method. FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026
-reimplementations with approximated fidelity (Appendix~\ref{app:baselines}).}
+\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over seeds:
+\textbf{10} on the small/high-variance German, \textbf{5} on Bail, and 2--3 on
+Credit/Pokec/Elliptic (see Table~\ref{tab:significance} for paired tests). Best
+per column in bold. TrustFedGNN is the only method that is
+fair \emph{and} private (methods above the rule are non-private).
+$^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL method.
+FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026 reimplementations
+with approximated fidelity (Appendix~\ref{app:baselines}).}
 \label{tab:main-auc}
 {\footnotesize\setlength{\tabcolsep}{3pt}\input{tables/main_auc.tex}}
 \end{table}
