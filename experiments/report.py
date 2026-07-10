@@ -259,32 +259,62 @@ def table_datasets():
 
 
 def table_robustness(rows):
+    """Utility AND fairness retained under attack: AUC / DPD / EOD per aggregator.
+
+    A fairness-poisoning attack aims to raise disparity while preserving
+    accuracy, so an AUC-only table would hide whether the defence protected
+    fairness. We therefore report DPD and EOD under attack alongside AUC.
+    A near-chance model (AUC < COLLAPSE_AUC) reports spuriously low disparity
+    because it predicts near-constant scores; we mark such cells with a dagger
+    and exclude them from the fairness "best" comparison.
+    """
     rows = [r for r in rows if "rob_" in r["run_id"]]
     if not rows:
         return
     aggs = ["fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"]
     attacks = ["gaussian", "alie", "fairness_poison"]
+    COLLAPSE_AUC = 0.6
     A = {}
     for r in rows:
         for agg in aggs:
             for atk in attacks:
                 if f"rob_{agg}_{atk}" in r["run_id"]:
-                    A[(agg, atk)] = r.get("final_auc")
+                    A[(agg, atk)] = dict(auc=r.get("final_auc"), dpd=r.get("final_dpd"),
+                                         eod=r.get("final_eod"))
     if not A:
         return
     pretty_atk = {"gaussian": "Gaussian", "alie": "ALIE", "fairness_poison": "Fair-poison"}
-    lines = ["\\begin{tabular}{l" + "c" * len(attacks) + "}", "\\toprule",
-             "Aggregator & " + " & ".join(pretty_atk[a] for a in attacks) + " \\\\", "\\midrule"]
-    # best (highest retained AUC) per attack column
-    best = {a: max((A[(g, a)] for g in aggs if (g, a) in A), default=None) for a in attacks}
+    # best per (attack, metric): highest AUC; lowest DPD/EOD among non-collapsed models
+    best = {}
+    for a in attacks:
+        present = [g for g in aggs if (g, a) in A]
+        if not present:
+            continue
+        best[(a, "auc")] = max(present, key=lambda g: A[(g, a)]["auc"])
+        healthy = [g for g in present if A[(g, a)]["auc"] >= COLLAPSE_AUC]
+        for met in ("dpd", "eod"):
+            if healthy:
+                best[(a, met)] = min(healthy, key=lambda g: A[(g, a)][met])
+    header2 = " & ".join("AUC $\\uparrow$ & DPD $\\downarrow$ & EOD $\\downarrow$" for _ in attacks)
+    lines = ["\\begin{tabular}{l" + "ccc" * len(attacks) + "}", "\\toprule",
+             " & " + " & ".join(f"\\multicolumn{{3}}{{c}}{{{pretty_atk[a]}}}" for a in attacks) + " \\\\",
+             "Aggregator & " + header2 + " \\\\", "\\midrule"]
     for agg in aggs:
         cells = []
         for a in attacks:
-            v = A.get((agg, a))
-            if v is None:
-                cells.append("--")
-            else:
-                cells.append(f"\\textbf{{{v:.3f}}}" if best[a] and abs(v - best[a]) < 1e-9 else f"{v:.3f}")
+            m = A.get((agg, a))
+            if m is None:
+                cells += ["--", "--", "--"]
+                continue
+            collapsed = m["auc"] < COLLAPSE_AUC
+            for met in ("auc", "dpd", "eod"):
+                v = m[met]
+                s = f"{v:.3f}"
+                if best.get((a, met)) == agg and not (met != "auc" and collapsed):
+                    s = f"\\textbf{{{s}}}"
+                if met != "auc" and collapsed:
+                    s += "$^{\\dagger}$"
+                cells.append(s)
         name = "\\textbf{robust\\_bfwa (ours)}" if agg == "robust_bfwa" else agg.replace("_", "\\_")
         lines.append(f"{name} & " + " & ".join(cells) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
@@ -293,21 +323,39 @@ def table_robustness(rows):
     print("[table] robustness.tex")
 
 
+def _canonical(rows):
+    """The same filtered set the main results tables use: exclude ablation,
+    robustness/byzantine, and hyper-parameter-sweep runs so every table reads
+    from one consistent configuration."""
+    out = []
+    for r in rows:
+        rid = r["run_id"]
+        last = rid.split("__")[-1]
+        if ("__abl" in rid or "rob_" in rid or "byz_" in rid or "part_" in rid
+                or "eps" in last or "lam" in last or last.startswith("K")):
+            continue
+        out.append(r)
+    return out
+
+
 def table_trust(rows):
-    """Composite trust score per method on Bail from logged metrics."""
+    """Composite trust score per method on Bail from logged metrics.
+
+    Reads from the same canonical run set as the main tables so AUC/DPD/EOD
+    match Tables 3--5 exactly, and reports the protocol privacy budget.
+    """
     from src.trust.trust_score import trust_score, sub_scores
     ds = "bail"
     methods = ["fedavg-gat", "fairgnn", "fairsin", "fairfed", "f2gnn",
                "dp-fedavg", "fedfairgnn-nodp", "fedfairgnn"]
-    A = agg([r for r in rows if r["dataset"] == ds and "__abl" not in r["run_id"]
-             and "rob_" not in r["run_id"] and "byz_" not in r["run_id"]],
-            ("exp_name",), "auc")
-    D = agg([r for r in rows if r["dataset"] == ds], ("exp_name",), "dpd")
-    E = agg([r for r in rows if r["dataset"] == ds], ("exp_name",), "eod")
-    # epsilon per method (from summary config)
+    crows = [r for r in _canonical(rows) if r["dataset"] == ds]
+    A = agg(crows, ("exp_name",), "auc")
+    D = agg(crows, ("exp_name",), "dpd")
+    E = agg(crows, ("exp_name",), "eod")
+    # epsilon per method from the canonical (protocol) runs, not sweep runs
     eps_map = {}
-    for r in rows:
-        if r["dataset"] == ds and r.get("dp_enabled"):
+    for r in crows:
+        if r.get("dp_enabled"):
             eps_map[r["exp_name"]] = r.get("dp_epsilon")
     lines = ["\\begin{tabular}{lccccc}", "\\toprule",
              "Method & AUC & DPD & EOD & $\\epsilon$ & Trust \\\\", "\\midrule"]
@@ -364,6 +412,10 @@ def table_large_scale(rows):
         return
     methods = ["fedavg-gat", "fairsin", "favgnn", "dp-fedavg",
                "fedfairgnn-nodp", "fedfairgnn"]
+    nseeds = defaultdict(set)
+    for r in rows:
+        nseeds[r["exp_name"]].add(r.get("seed"))
+    single_seed = all(len(s) <= 1 for s in nseeds.values())
     Aa = agg(rows, ("exp_name",), "auc")
     Ad = agg(rows, ("exp_name",), "dpd")
     Ae = agg(rows, ("exp_name",), "eod")
@@ -385,11 +437,17 @@ def table_large_scale(rows):
     lines = ["\\begin{tabular}{lcccc}", "\\toprule",
              "Method & AUC $\\uparrow$ & DPD $\\downarrow$ & EOD $\\downarrow$ & Time/run (s) \\\\",
              "\\midrule"]
+    def cell(pair, bold=False):
+        # single-seed study: report a bare scalar, not a misleading "+/- 0.000"
+        if single_seed:
+            s = f"{pair[0]:.3f}"
+            return f"\\textbf{{{s}}}" if bold else s
+        return fmt(*pair, bold=bold)
     for m in present:
         collapsed = Aa[(m,)][0] < COLLAPSE_AUC
-        auc = fmt(*Aa[(m,)], bold=(m == best_auc))
-        dpd = fmt(*Ad[(m,)], bold=(m == best_dpd)) if (m,) in Ad else "--"
-        eod = fmt(*Ae[(m,)], bold=(m == best_eod)) if (m,) in Ae else "--"
+        auc = cell(Aa[(m,)], bold=(m == best_auc))
+        dpd = cell(Ad[(m,)], bold=(m == best_dpd)) if (m,) in Ad else "--"
+        eod = cell(Ae[(m,)], bold=(m == best_eod)) if (m,) in Ae else "--"
         if collapsed:
             dpd += "$^{\\dagger}$"; eod += "$^{\\dagger}$"
         wall = f"{Aw[(m,)][0]:.0f}" if (m,) in Aw else "--"

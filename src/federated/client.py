@@ -265,10 +265,14 @@ class Client:
         privatised at the level of its *sufficient statistics* -- the two group
         means (mu0, mu1) of the soft demographic-parity term.
 
-        Privatising these two bounded-sensitivity scalars (Gaussian mechanism,
-        post-processing immunity) yields (eps, delta)-DP w.r.t. the sensitive
-        attribute at negligible utility cost -- avoiding the curse of
-        dimensionality of noising the full |theta|-dimensional gradient.
+        Privatising these two bounded-sensitivity scalars (Gaussian mechanism)
+        yields (eps, delta)-DP for the *released fairness statistic* at
+        negligible utility cost, avoiding the curse of dimensionality of noising
+        the full |theta|-dimensional gradient. NOTE (scope): this does NOT make
+        the whole transmitted update DP w.r.t. s -- the fairness-gradient still
+        contains the raw group masks (grad flows through mu_g below) and FSER
+        uses s in the forward pass. The guarantee is on the released statistic,
+        not the update. See the manuscript's FTGD "Scope and limitations".
         """
         opt.zero_grad()
         pred = self.model(x, ei, s)[m]

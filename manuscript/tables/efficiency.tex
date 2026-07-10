@@ -2,6 +2,9 @@
 \toprule
 Method & ECE & Brier & U-gap & Comm/rd (MB) & Energy (Wh) & Trust \\
 \midrule
-\textit{pending trust\_eval run} & -- & -- & -- & -- & -- & -- \\
+FedAvg-GAT & 0.031 & 0.054 & 0.002 & 0.225 & 0.00 & 0.650 \\
+DP-FedAvg & 0.322 & 0.274 & 0.002 & 0.215 & 0.00 & 0.480 \\
+TrustFedGNN (no DP) & 0.043 & 0.061 & 0.002 & 0.896 & 0.00 & 0.632 \\
+\textbf{TrustFedGNN} & 0.062 & 0.073 & 0.006 & 0.896 & 0.00 & 0.718 \\
 \bottomrule
 \end{tabular}
