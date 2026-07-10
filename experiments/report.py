@@ -94,7 +94,7 @@ def table_main(rows):
     methods = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl",
                "f2gnn", "favgnn", "fdp-fair", "fairgfl", "fedgraphfair", "puffle",
                "fedfact", "popets-fairfed", "dp-fedavg",
-               "fedfairgnn-nodp", "fedfairgnn", "ours-robust", "trustfedgnn-plus"]
+               "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
     datasets = ["german", "bail", "credit", "pokec_z", "elliptic"]
     for metric, lower in [("auc", False), ("dpd", True), ("eod", True)]:
         A = agg(rows, ("exp_name", "dataset"), metric)
