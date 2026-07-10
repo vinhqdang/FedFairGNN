@@ -37,6 +37,7 @@ PRETTY = {
     "fairsin": "FairSIN", "fairfed": "FairFed", "qffl": "q-FedAvg", "fedfb": "FedFB",
     "f2gnn": "F$^2$GNN", "dp-fedavg": "DP-FedAvg", "fedfairgnn-nodp": "TrustFedGNN (no DP)",
     "fedfairgnn": "\\textbf{TrustFedGNN}", "ours-robust": "TrustFedGNN-Robust",
+    "trustfedgnn-plus": "TrustFedGNN+Calib",
     "ours-nofser": "w/o FSER", "ours-nobfwa": "w/o BFWA",
     "favgnn": "FaVGNN$^{\\ast}$ (2026)", "fdp-fair": "FDP-Fair (2026)",
     "fairgfl": "FairGFL (2025)", "fedgraphfair": "FedGraph-Fair (2026)",
@@ -93,7 +94,7 @@ def table_main(rows):
     methods = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl",
                "f2gnn", "favgnn", "fdp-fair", "fairgfl", "fedgraphfair", "puffle",
                "fedfact", "popets-fairfed", "dp-fedavg",
-               "fedfairgnn-nodp", "fedfairgnn", "ours-robust"]
+               "fedfairgnn-nodp", "fedfairgnn", "ours-robust", "trustfedgnn-plus"]
     datasets = ["german", "bail", "credit", "pokec_z", "elliptic"]
     for metric, lower in [("auc", False), ("dpd", True), ("eod", True)]:
         A = agg(rows, ("exp_name", "dataset"), metric)
@@ -384,6 +385,71 @@ def table_trust(rows):
     print("[table] trust.tex")
 
 
+def per_seed(rows, key_fields, metric):
+    """Return {key_tuple: {seed: value}} for paired significance testing."""
+    out = defaultdict(dict)
+    for r in rows:
+        v = r.get(f"final_{metric}")
+        if v is None:
+            continue
+        out[tuple(r.get(k) for k in key_fields)][r.get("seed")] = v
+    return out
+
+
+def significance_report(rows):
+    """Paired Wilcoxon signed-rank tests between TrustFedGNN and each baseline,
+    per dataset and metric, over shared seeds. Writes a compact LaTeX table and
+    prints a summary. Addresses the reviewer's request for significance testing
+    rather than boldfacing means from few seeds."""
+    try:
+        from scipy.stats import wilcoxon
+    except Exception:
+        print("[sig] scipy unavailable; skipping significance report")
+        return
+    crows = _canonical(rows)
+    datasets = ["german", "bail", "credit", "pokec_z", "elliptic"]
+    ours = "fedfairgnn"
+    baselines = ["fedavg-gat", "fairgnn", "fairsin", "fairfed", "f2gnn",
+                 "fdp-fair", "puffle", "dp-fedavg"]
+    lines = ["\\begin{tabular}{ll" + "c" * len(datasets) + "}", "\\toprule",
+             "Metric & Baseline & " + " & ".join(DS_PRETTY.get(d, d) for d in datasets) + " \\\\",
+             "\\midrule"]
+    printed = []
+    for metric in ["auc", "dpd"]:
+        P = per_seed(crows, ("exp_name", "dataset"), metric)
+        for b in baselines:
+            cells = []
+            for d in datasets:
+                ov = P.get((ours, d), {})
+                bv = P.get((b, d), {})
+                shared = sorted(set(ov) & set(bv))
+                if len(shared) < 5:
+                    cells.append("--")
+                    continue
+                a = [ov[s] for s in shared]; c = [bv[s] for s in shared]
+                if all(abs(x - y) < 1e-12 for x, y in zip(a, c)):
+                    cells.append("--"); continue
+                try:
+                    stat, p = wilcoxon(a, c)
+                except Exception:
+                    cells.append("--"); continue
+                diff = float(np.mean(a) - np.mean(c))
+                star = "$^{*}$" if p < 0.05 else ""
+                arrow = "" if abs(diff) < 1e-9 else ("$\\uparrow$" if diff > 0 else "$\\downarrow$")
+                cells.append(f"{p:.2f}{star}")
+                printed.append((metric, b, d, len(shared), diff, p))
+            lines.append(f"{metric.upper()} & {PRETTY.get(b, b)} & " + " & ".join(cells) + " \\\\")
+        lines.append("\\midrule")
+    lines[-1] = "\\bottomrule"
+    lines.append("\\end{tabular}")
+    with open(os.path.join(TAB, "significance.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print("[table] significance.tex")
+    for metric, b, d, n, diff, p in printed:
+        print(f"  {metric} ours vs {b:14s} on {d:9s}: n={n} dmean={diff:+.3f} p={p:.3f}"
+              + ("  *sig*" if p < 0.05 else ""))
+
+
 def _esc(s):
     return str(s).replace("&", "\\&").replace("_", "\\_").replace("%", "\\%")
 
@@ -470,6 +536,7 @@ def main():
     table_ablation(rows)
     table_robustness(rows)
     table_trust(rows)
+    significance_report(rows)
     fig_privacy(rows)
     fig_pareto(rows)
     fig_robustness(rows)
