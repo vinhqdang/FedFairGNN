@@ -34,7 +34,8 @@ METHODS = {
                          dp_enabled=True, dp_mode="gradient", postproc_fair=True),
 
     # --- 2025 competitors (uploaded PDFs, reimplemented; see docs/BASELINES_AND_SOURCES.md) ---
-    # FairGFL (arXiv 2512.23235, 2025): overlap-aware aggregation reweighting.
+    # FairGFL (Zhou et al., IEEE TPDS 2026; arXiv 2512.23235): overlap-aware
+    # aggregation reweighting.
     "fairgfl":      dict(model="gcn", aggregator="fairgfl", local_fairness=False, dp_enabled=False),
     # FedGraph-Fair (Khan, Information Sciences 2026): minimax/DRO dual-ascent
     # reweighting toward high-loss clients (personalisation/graph-mixing dropped).

@@ -228,10 +228,4 @@ manuscript/*.bbl
 manuscript/*.blg
 manuscript/*.out
 manuscript/*.log
-manuscript/sections/*.aux
-manuscript_new/*.aux
-manuscript_new/*.bbl
-manuscript_new/*.blg
-manuscript_new/*.out
-manuscript_new/*.log
 results_matrix.log
