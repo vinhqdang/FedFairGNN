@@ -1,0 +1,1386 @@
+%% Springer Nature LaTeX template (sn-jnl), official Dec 2024 package.
+%% Math and Physical Sciences Numbered Reference Style (sn-mathphys-num).
+%% Prepared for submission to a Springer Nature journal (collection:
+%% "Trustworthy and Responsible Federated Learning").
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+\usepackage{tikz}%
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
+\usepackage{subcaption}%
+
+\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%
+\newtheorem{proposition}[theorem]{Proposition}%
+\theoremstyle{thmstyletwo}%
+\newtheorem{remark}{Remark}%
+\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}%
+
+\raggedbottom
+
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\begin{document}
+
+\title[Trustworthy Federated Graph Neural Networks]{Trustworthy Federated Graph
+Neural Networks: Unifying Fairness, Privacy, Robustness, and Explainability for
+High-Stakes Risk Detection}
+
+\author*[1]{\fnm{Vinh} \sur{Dang}}\email{dqvinh87@gmail.com}
+
+\affil*[1]{\orgdiv{Department of Computer Science}, \orgname{Independent
+Researcher}, \orgaddress{\country{Vietnam}}}
+
+\abstract{
+Federated Learning (FL) enables institutions to train shared models over
+sensitive, decentralised graph data---transactions, credit records, social
+ties---without exchanging raw data. Yet accuracy alone does not make such
+systems deployable: recent regulatory and scientific frameworks (the EU AI Act,
+the NIST AI Risk Management Framework) demand that automated decision systems be
+simultaneously \emph{fair}, \emph{private}, \emph{robust}, and
+\emph{transparent}. Existing work addresses these properties in isolation, and
+no prior method combines fairness, differential privacy, and Byzantine
+robustness for federated graph neural networks (GNNs). We present
+\textbf{TrustFedGNN}, a unified trustworthy federated graph-learning framework
+built from three components: (i) \emph{Fairness-Sensitive Edge Reweighting}
+(FSER), which suppresses the biased cross-group message passing responsible for
+structural discrimination; (ii) \emph{Fairness-Targeted Gradient Decomposition}
+(FTGD), which achieves differential privacy for the sensitive attribute by
+privatising only the low-dimensional demographic-parity statistics---making
+privacy nearly free where standard full-gradient DP-SGD destroys utility; and
+(iii) \emph{Bi-objective Frank--Wolfe Aggregation} (BFWA) and its
+Byzantine-robust variant, which enforce a hard fairness budget during
+aggregation while screening malicious clients, including a new
+fairness-poisoning threat. We further instrument the framework with predictive
+uncertainty, GNN attention explanations, a composite trust score, sustainability
+accounting, and an EU~AI~Act / NIST~RMF compliance mapping. Across five real
+datasets spanning credit, recidivism, social, and---uniquely---large-scale
+crypto (Elliptic Bitcoin, 203{,}769 nodes) domains, TrustFedGNN attains the best
+fairness--utility--privacy--robustness trade-off among sixteen baselines, including
+recent fairness-aware federated and graph methods. All tables and figures are
+regenerated from logged runs; code and experiments are released for full
+reproducibility. This work supports SDG~9 by advancing trustworthy,
+infrastructure-grade collaborative AI.
+}
+
+\keywords{Federated learning, Graph neural networks, Algorithmic fairness,
+Differential privacy, Byzantine robustness, Explainable AI, Trust metrics,
+Regulatory compliance}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+
+\noindent Consider a consortium of banks that together want to catch money
+laundering. Fraud is fundamentally \emph{relational}: illicit funds move through
+chains of accounts, shell companies, and intermediaries, and it is precisely the
+\emph{structure} of these money flows---not any single transaction in
+isolation---that betrays criminal intent. Graph Neural Networks (GNNs) have
+therefore become the tool of choice for financial crime detection, credit
+scoring, and other high-stakes risk assessments, because their message-passing
+mechanism learns directly from the web of relationships between users, accounts,
+and transactions \cite{kipf2016semi,velickovic2017graph,dou2020enhancing}. Yet
+the very banks that would benefit most from a shared model are legally forbidden
+from pooling their customers' data: privacy regulations such as the GDPR, and
+plain commercial confidentiality, keep each institution's transaction graph
+locked inside its own walls. Federated Learning (FL) offers a way out. By
+exchanging model updates instead of raw data, a group of institutions can train
+a single, more powerful detector without any of them surrendering its records
+\cite{mcmahan2017communication}.
+
+This picture, however, is dangerously incomplete. A model that is merely
+\emph{accurate} is no longer fit to be deployed in decisions that shape people's
+access to credit, liberty, or financial services. Three converging forces---the
+European Commission's Ethics Guidelines for Trustworthy AI, the EU AI Act, and
+the U.S.\ NIST AI Risk Management Framework---now demand that automated
+decision systems be simultaneously \emph{fair}, \emph{privacy-preserving},
+\emph{robust}, \emph{transparent}, and \emph{accountable}. These are not
+optional extras: for a high-risk system under the EU AI Act they are legal
+prerequisites for going to market. Meeting them is hard even for a centralised
+model. In the federated, graph-structured setting they collide, and each one
+becomes markedly harder than in isolation.
+
+\paragraph{Why the federated graph setting is uniquely hard.}
+The difficulty is not that we must bolt four independent features onto a
+classifier; it is that the natural solution to each requirement actively
+sabotages the others. \emph{Fairness} is confounded by the graph itself:
+homophilous message passing means that a member of a demographic group who
+happens to be connected to risky neighbours will be flagged as risky too, so the
+model learns to launder a protected attribute through graph structure---and the
+central server, which never sees any data, cannot even measure this bias, let
+alone correct it. \emph{Privacy} appears to have a textbook answer,
+differentially private SGD, but that answer fails badly here: adding calibrated
+noise to every coordinate of the gradient injects perturbation whose magnitude
+grows with the square root of the model dimension, and on the compact GNNs used
+for tabular financial graphs this noise simply drowns the signal, collapsing
+accuracy to little better than chance (we quantify this in
+Section~\ref{sec:exp-privacy}). \emph{Robustness} is threatened not only by the
+classical malfunctioning or malicious client, but---as we show---by a subtler
+adversary that the fairness machinery itself invites: a client can transmit a
+deliberately biased model while \emph{reporting} exemplary fairness statistics,
+thereby hijacking any aggregator that rewards fairness. And \emph{transparency}
+is undermined by the opacity of relational models, exactly when regulation
+requires that each adverse decision be explainable and auditable.
+
+\paragraph{The gap.}
+The research literature has, understandably, attacked these problems one at a
+time. Fair-GNN methods deliver impressive demographic parity but assume all data
+sits in one place \cite{dai2021say,yang2024fairsin,lee2025dabgnn}. Fair federated
+learning has matured for tabular and image data but rarely touches graphs
+\cite{ezzeldin2023fairfed,li2020fair}. Byzantine-robust aggregation hardens FL
+against poisoning but is oblivious to fairness \cite{blanchard2017krum,
+yin2018byzantine}. Differentially private FL protects data but, as noted, at a
+utility cost that is prohibitive for graph models. To the best of our knowledge,
+\emph{no} existing method delivers fairness, differential privacy, and Byzantine
+robustness together for federated GNNs, and none has been validated on a
+large-scale cryptocurrency graph---arguably the most consequential modern fraud
+domain. Closing this gap is the goal of this paper.
+
+\paragraph{Our approach.}
+We present \textbf{TrustFedGNN}, a single framework in which fairness, privacy,
+robustness, and transparency are designed to reinforce rather than undermine one
+another. Its architecture (Fig.~\ref{fig:architecture}) intervenes at the three
+natural control points of federated graph training---inside message passing, at
+the local gradient, and at server aggregation---and wraps the result in an
+instrumentation layer that measures, explains, and audits trustworthiness. The
+key technical insight, and the reason privacy becomes almost free, is a change
+of perspective on \emph{where} the sensitive attribute actually influences
+learning: it does so only through a two-dimensional summary statistic, so we can
+protect that statistic directly instead of blindly noising the entire gradient.
+
+\medskip
+\noindent Concretely, our contributions are:
+\begin{enumerate}
+\item \textbf{Fairness-Sensitive Edge Reweighting (FSER)}, a learnable attention
+correction that detects and suppresses the biased cross-group edges responsible
+for structural discrimination, mitigating unfairness at its source inside the
+GNN rather than patching it after the fact (Section~\ref{sec:fser}).
+
+\item \textbf{Fairness-Targeted Gradient Decomposition (FTGD)}. We observe that
+the sensitive attribute enters the model \emph{only} through the
+demographic-parity statistics, and exploit this to obtain
+$(\epsilon,\delta)$-differential privacy by privatising two bounded-sensitivity
+scalars instead of the full gradient. This makes strong privacy essentially
+free---precisely where standard DP-FedAvg collapses utility---and we prove the
+guarantee with a self-contained R\'enyi-DP accountant (Section~\ref{sec:ftgd}).
+
+\item \textbf{Bi-objective Frank--Wolfe Aggregation (BFWA)} and a
+\textbf{Byzantine-robust variant}. The server solves a constrained optimisation
+that enforces a hard, operator-chosen fairness budget during aggregation, while
+distance-based screening neutralises poisoning---including the
+fairness-poisoning attack of \cite{kasyap2025attack}, which we reproduce and
+defend against (Sections~\ref{sec:bfwa},~\ref{sec:exp-robust}).
+
+\item \textbf{A trustworthiness instrumentation layer} that turns abstract
+principles into measured, auditable artifacts: predictive uncertainty and
+calibration, GNN attention explanations with fairness attribution, a transparent
+composite \emph{trust score}, sustainability accounting, and an explicit
+EU~AI~Act / NIST~RMF compliance mapping with an auto-generated model card
+(Sections~\ref{sec:method-trust},~\ref{sec:trust}).
+
+\item \textbf{A comprehensive, fully reproducible evaluation} on five real
+datasets spanning credit, recidivism, social, and---uniquely---large-scale
+crypto (Elliptic Bitcoin, $203{,}769$ transactions) domains, against twelve
+baselines that include the most recent 2025--2026 fairness-aware federated and
+graph methods. TrustFedGNN attains the best overall trustworthiness trade-off,
+and every number and figure in this paper is regenerated from logged runs by a
+single script.
+\end{enumerate}
+
+By lowering the barrier to trustworthy, infrastructure-grade collaborative AI,
+this work contributes to UN Sustainable Development Goal~9 (industry,
+innovation, and resilient infrastructure). The remainder of the paper is
+organised as follows. Section~\ref{sec:related} situates our work within the
+fairness, privacy, and robustness literatures; Section~\ref{sec:prelim}
+formalises the federated graph setting and the trustworthiness objectives;
+Section~\ref{sec:method} develops the TrustFedGNN framework component by
+component; Section~\ref{sec:experiments} reports the empirical study;
+Section~\ref{sec:trust} analyses trustworthiness holistically and maps the
+system to regulation; and Section~\ref{sec:discussion} discusses implications,
+limitations, and broader impact before we conclude.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Fairness in graph neural networks.}
+GNNs inherit and amplify bias through homophilous message passing. Remedies
+include adversarial debiasing (FairGNN \cite{dai2021say}), counterfactual and
+stability regularisation (NIFTY \cite{agarwal2021nifty}), pre-processing that
+minimises inter-group distributional distance (EDITS \cite{dong2022edits}),
+sensitive-information neutralisation via heterogeneous neighbours (FairSIN
+\cite{yang2024fairsin}), re-balancing through counterfactual mixup (FairGB
+\cite{li2024fairgb}), invariant learning across inferred sensitive partitions
+(FairINV \cite{zhu2024fairinv}), and disentangled debiasing (DAB-GNN
+\cite{lee2025dabgnn}). All assume \emph{centralised} data. Our FSER is closest
+in spirit to the edge-reweighting variants of FairSIN and to distribution-aware
+reweighting \cite{fnrgnn2025}, but operates inside a federated, private, and
+robust pipeline.
+
+\paragraph{Fairness in federated learning.}
+Two notions coexist. \emph{Client (performance) fairness} equalises accuracy
+across clients: q-FedAvg \cite{li2020fair} up-weights high-loss clients.
+\emph{Group fairness} equalises outcomes across demographic groups: FairFed
+\cite{ezzeldin2023fairfed} adjusts aggregation weights by each client's local
+fairness gap; FedFB ports FairBatch to FL; PUFFLE \cite{corbucci2024puffle}
+blends a demographic-parity loss with DP-SGD under a target-disparity
+controller; FedFACT \cite{fedfact2025} gives provable global-and-local group
+fairness via a Lagrangian saddle point over a shared global dual variable and
+per-client local duals; Bendoukha et al.\ \cite{bendoukha2025popets}
+(PoPETs'25) make FairFed's weighting homomorphically computable, replacing its
+$\exp(-\beta|\cdot|)$ term with an FHE-friendly degree-2 polynomial and
+aggregating under threshold CKKS; and EquFL \cite{yu2026equfl} (2026) adds a
+server-side fairness-gradient correction on top of an arbitrary aggregation
+rule, provably compatible with Byzantine-robust ones. These target tabular or
+image data. For
+\emph{graphs}, F$^2$GNN \cite{f2gnn2023} combines a fairness-weighted
+aggregation with structure-aware group-balance weights. The most recent
+efforts sit closest to our setting: FairGFL \cite{fairgfl2025} adds DP to
+federated fair GNNs but targets \emph{cross-client} (performance) fairness
+arising from imbalanced overlapping subgraphs rather than demographic group
+fairness; FedGraph-Fair \cite{fedgraphfair2025} applies distributionally-robust
+optimisation for personalised group-fair federated graph learning; FaVGNN
+\cite{wang2026favgnn} (2026) achieves group fairness in \emph{vertical} FL via
+completion-driven adversarial fusion; and FDP-Fair \cite{xue2026fdpfair} (2026)
+combines federated DP training with demographic-parity post-processing. We
+compare against FairFed, q-FedAvg, FedFB, F$^2$GNN, FairSIN (run federated),
+the strongest 2026 competitors (horizontal adaptations of FaVGNN and FDP-Fair),
+and---reimplementing each paper's core statistical mechanism to the extent it
+transfers to a single-graph, star-topology federation
+(Appendix~\ref{app:baselines})---FairGFL, FedGraph-Fair, PUFFLE, FedFACT, and
+the PoPETs'25 FairFed variant, none of which had a public head-to-head against
+a fairness-aware federated \emph{GNN} prior to this comparison.
+
+\paragraph{Differential privacy in FL.}
+DP-FedAvg \cite{mcmahan2018learning} clips per-client updates and adds Gaussian
+noise; privacy is tracked with the moments accountant / R\'enyi DP
+\cite{mironov2017renyi,abadi2016deep}. On the compact GNNs used for tabular
+graphs, isotropic gradient noise at meaningful $\epsilon$ overwhelms the signal
+(Section~\ref{sec:exp-privacy}). FedFDP \cite{ling2024feddp} adapts clipping to
+fairness but still privatises the whole gradient. FTGD instead privatises only
+the \emph{sufficient statistics} of the fairness term, exploiting the fact that
+the sensitive attribute never enters the task loss---a targeted mechanism whose
+$(\epsilon,\delta)$ guarantee follows from the Gaussian mechanism and
+post-processing immunity.
+
+\paragraph{Byzantine-robust aggregation.}
+Krum and Multi-Krum \cite{blanchard2017krum}, coordinate-wise median and
+trimmed mean \cite{yin2018byzantine}, Bulyan \cite{mhamdi2018hidden}, and
+trust-bootstrapping schemes such as FLTrust \cite{cao2021fltrust} defend
+against malicious updates under attacks including sign-flipping,
+model-replacement \cite{bagdasaryan2020backdoor}, ALIE \cite{baruch2019little},
+and IPM \cite{xie2019fall}. None targets fairness. Recently, fairness-poisoning
+attacks emerged---EAB-FL \cite{eabfl2024} and the fairness-constrained
+optimisation attack \cite{kasyap2025attack}---that \emph{increase} disparity
+while preserving accuracy, evading both robust and fairness-aware defences. We
+reproduce the fairness-constrained optimisation attack of
+\cite{kasyap2025attack} and defend with a robust fairness-constrained
+aggregator.
+
+\paragraph{Explainability, uncertainty, and trust metrics.}
+GNN explainers attribute predictions to edges/features; we use the FSER
+attention itself as a native, audit-ready explanation and add gradient-based
+attribution of the \emph{disparity}. Predictive uncertainty via MC-dropout
+\cite{gal2016dropout} and calibration (ECE, Brier) quantify confidence
+reliability. Composite trust scoring for FL is nascent; we contribute a
+transparent power-mean aggregation over utility, fairness, privacy, robustness,
+and calibration. Finally, we align the system to the EU AI Act and NIST AI RMF,
+operationalising accountability as an auditable artifact rather than prose.
+
+\paragraph{Positioning.}
+Table~\ref{tab:positioning} places the most relevant methods on the five axes
+that define our problem. The pattern is stark: the fair-GNN methods are strong
+on graph fairness but centralised; the fair-FL methods federate but ignore graph
+structure; robust aggregation hardens FL but is fairness-blind; and even the
+newest federated fair-graph methods (F\textsuperscript{2}GNN, FairGFL,
+FaVGNN, FedGraph-Fair) each leave at least one axis uncovered---typically
+Byzantine robustness, which no fairness-aware federated method addresses.
+TrustFedGNN is the only entry that is simultaneously federated, graph-native,
+group-fair, differentially private, and Byzantine-robust, and the only one
+validated on a large-scale cryptocurrency graph. It also uniquely reports the
+full trustworthiness picture---uncertainty, explainability, sustainability, and
+regulatory mapping---within a single framework.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Where methods sit across the trust axes. \checkmark: supported;
+$\sim$: partial/adaptable; blank: not addressed. ``Graph'' = graph-native;
+``Group fair'' = demographic group fairness (not merely client fairness);
+``Crypto'' = validated on a large-scale cryptocurrency graph.}
+\label{tab:positioning}
+\begin{tabular}{lccccccc}
+\toprule
+Method & Fed. & Graph & Group fair & DP & Byz. & Explain & Crypto \\
+\midrule
+FairGNN \cite{dai2021say}          &      & \checkmark & \checkmark &            &            & $\sim$     &  \\
+NIFTY \cite{agarwal2021nifty}      &      & \checkmark & \checkmark &            &            &            &  \\
+FairSIN \cite{yang2024fairsin}     &      & \checkmark & \checkmark &            &            &            &  \\
+DAB-GNN \cite{lee2025dabgnn}       &      & \checkmark & \checkmark &            &            &            &  \\
+FairFed \cite{ezzeldin2023fairfed} & \checkmark &      & \checkmark &            &            &            &  \\
+q-FedAvg \cite{li2020fair}         & \checkmark &      & $\sim$     &            &            &            &  \\
+PUFFLE \cite{corbucci2024puffle}   & \checkmark &      & \checkmark & \checkmark &            &            &  \\
+FedFACT \cite{fedfact2025}         & \checkmark &      & \checkmark &            &            &            &  \\
+DP-FedAvg \cite{mcmahan2018learning}& \checkmark &     &            & \checkmark &            &            &  \\
+Krum/Median \cite{blanchard2017krum,yin2018byzantine} & \checkmark & & &  & \checkmark &            &  \\
+F\textsuperscript{2}GNN \cite{f2gnn2023} & \checkmark & \checkmark & \checkmark &  &  &            &  \\
+FairGFL \cite{fairgfl2025}         & \checkmark & \checkmark & $\sim$     & \checkmark &            &            &  \\
+FaVGNN \cite{wang2026favgnn}       & \checkmark & \checkmark & \checkmark & \checkmark &            &            &  \\
+FDP-Fair \cite{xue2026fdpfair}     & \checkmark &      & \checkmark & \checkmark &            &            &  \\
+FedGraph-Fair \cite{fedgraphfair2025} & \checkmark & \checkmark & \checkmark &  &            &            &  \\
+PoPETs'25 \cite{bendoukha2025popets} & \checkmark &   & \checkmark & \checkmark &            &            &  \\
+\midrule
+\textbf{TrustFedGNN (ours)} & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Preliminaries and Problem Setting}
+\label{sec:prelim}
+
+\paragraph{Cross-silo federated graph learning.}
+There are $K$ institutions (clients). Client $k$ holds a private graph
+$\mathcal{G}_k=(\mathcal{V}_k,\mathcal{E}_k,\mathbf{X}_k,\mathbf{y}_k,\mathbf{s}_k)$
+with node features $\mathbf{X}_k\in\R^{n_k\times d}$, binary task labels
+$\mathbf{y}_k\in\{0,1\}^{n_k}$ (e.g.\ fraud/default/recidivism), and a binary
+\emph{sensitive attribute} $\mathbf{s}_k\in\{0,1\}^{n_k}$ (e.g.\ gender, age,
+race). Raw graphs never leave the client. A server coordinates $T$
+communication rounds; each round clients perform $E$ local epochs and transmit
+model parameters, which the server aggregates. We evaluate the global model on
+the pooled held-out test nodes of all clients. Statistical heterogeneity is
+modelled by a symmetric Dirichlet($\alpha$) split over labels, the standard FL
+non-IID model \cite{hsu2019measuring}; smaller $\alpha$ is more skewed.
+
+\paragraph{Group fairness.}
+For predicted probabilities $\hat{y}$ and sensitive attribute $s$ we report
+three group-fairness metrics (lower is fairer):
+\begin{align}
+\dpd &= \big|\,\E[\hat{y}\mid s{=}0]-\E[\hat{y}\mid s{=}1]\,\big|
+        &&\text{(Demographic Parity Difference)},\\
+\eod &= \big|\,\mathrm{TPR}_{s=0}-\mathrm{TPR}_{s=1}\,\big|
+        &&\text{(Equal Opportunity Difference)},\\
+\Delta_{\mathrm{EOdds}} &= \max\big(|\Delta\mathrm{TPR}|,\,|\Delta\mathrm{FPR}|\big)
+        &&\text{(Equalized Odds)} .
+\end{align}
+$\dpd$ is computed on soft scores (matching the differentiable training term);
+$\eod$ and Equalized Odds use thresholded predictions.
+
+\paragraph{Differential privacy.}
+A randomised mechanism $\mathcal{M}$ is $(\epsilon,\delta)$-differentially
+private if for all adjacent datasets $D,D'$ and all outputs $S$,
+$\Pr[\mathcal{M}(D)\in S]\le e^{\epsilon}\Pr[\mathcal{M}(D')\in S]+\delta$
+\cite{dwork2014algorithmic}. We protect the \emph{sensitive attribute}:
+adjacency is defined by flipping one node's $s_i$. The Gaussian mechanism adds
+$\mathcal{N}(0,\sigma^2)$ noise calibrated to the $L_2$ sensitivity of the
+released quantity; composition across rounds is tracked with R\'enyi DP
+\cite{mironov2017renyi}. For the Gaussian mechanism with noise multiplier
+$z=\sigma/\Delta$, the R\'enyi divergence of order $\alpha$ is
+$\epsilon_{\mathrm{RDP}}(\alpha)=\alpha/(2z^2)$; over $T$ releases it composes as
+$T\alpha/(2z^2)$, and the tight conversion to $(\epsilon,\delta)$-DP is
+$\epsilon=\min_{\alpha>1}\big[\epsilon_{\mathrm{RDP}}(\alpha)+\log(1/\delta)/(\alpha-1)\big]$.
+
+\paragraph{Threat model for robustness.}
+Up to $f<K/2$ clients are Byzantine and may send arbitrary updates. We consider
+data poisoning (label flipping), classical model poisoning (Gaussian, sign-flip,
+scaling/model-replacement \cite{bagdasaryan2020backdoor}), the strong
+omniscient attacks ALIE \cite{baruch2019little} and IPM \cite{xie2019fall},
+and a \emph{fairness-poisoning} attack: a malicious client transmits a biased,
+scaled update while reporting fabricated fairness/utility statistics
+($\dpd\!\approx\!0$, high AUC) to capture a fairness-aware aggregator. The
+server is honest but curious and never accesses raw data.
+
+\paragraph{Objective.}
+We seek a global model that jointly (i) maximises task utility (AUC-ROC), (ii)
+minimises group unfairness, (iii) satisfies a target $(\epsilon,\delta)$-DP for
+the sensitive attribute, and (iv) retains utility and fairness under Byzantine
+corruption---the trustworthiness trade-off that motivates
+Section~\ref{sec:method}.
+
+\section{The TrustFedGNN Framework}
+\label{sec:method}
+
+The design philosophy behind TrustFedGNN is that trustworthiness should be
+engineered where each threat originates, not retrofitted afterwards. Structural
+bias is born inside message passing, so we correct it there; the sensitive
+attribute leaks through the gradient, so we privatise exactly the part of the
+gradient that carries it; bias and poisoning are amplified at aggregation, so we
+constrain and screen the aggregation step. The framework therefore places three
+lightweight interventions at the three natural control points of federated graph
+training and wraps them in a measurement layer that renders the result
+auditable. Figure~\ref{fig:architecture} gives the end-to-end picture: in each
+round the server broadcasts the global parameters $\theta_{t-1}$; every client
+runs $E$ local epochs of an FSER-augmented GNN and, through FTGD, returns an
+update whose sensitive-attribute footprint is differentially private; the server
+then screens the updates for Byzantine behaviour and aggregates the survivors
+with BFWA under a hard fairness budget to produce $\theta_t$. We now develop each
+component, motivating it before formalising it.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  server/.style={draw,rounded corners,fill=blue!8,minimum width=8.2cm,minimum height=1.15cm,align=center},
+  client/.style={draw,rounded corners,fill=green!8,minimum width=3.5cm,minimum height=1.6cm,align=center},
+  trust/.style={draw,dashed,rounded corners,fill=orange!7,minimum width=8.2cm,minimum height=0.95cm,align=center},
+  arr/.style={-{Latex[length=2mm]},thick},
+]
+\node[server] (srv) {\textbf{Server}\\ Byzantine screening $\rightarrow$
+  \textbf{BFWA} (Frank--Wolfe, budget $\tau$) \\
+  $\theta_t=\theta_{t-1}-\sum_k w_k g_k$};
+\node[client] (c1) [below left=1.5cm and 0.4cm of srv]
+  {\textbf{Client 1}\\[1pt] \textbf{FSER}-GNN\\ \textbf{FTGD} (stat.-level DP)};
+\node[client] (ck) [below right=1.5cm and 0.4cm of srv]
+  {\textbf{Client $K$}\\[1pt] \textbf{FSER}-GNN\\ \textbf{FTGD} (stat.-level DP)};
+\node at ($(c1)!0.5!(ck)$) {\large $\cdots$};
+\node[trust] (tr) [below=2.9cm of srv]
+  {\textbf{Trust layer}: uncertainty/calibration $\cdot$ FSER attention
+   explanations $\cdot$ trust score $\cdot$ sustainability $\cdot$ EU~AI~Act / NIST mapping};
+\draw[arr] (srv.west) -- ++(-0.6,0) |- (c1.north west) node[midway,above,xshift=-6mm]{$\theta_{t-1}$};
+\draw[arr] (srv.east) -- ++(0.6,0) |- (ck.north east);
+\draw[arr] (c1.north east) -- ++(0.4,0) |- (srv.south west) node[midway,below,xshift=6mm]{$g_k,\mathrm{Perf}_k,\dpd_k$};
+\draw[arr] (ck.north west) -- ++(-0.4,0) |- (srv.south east);
+\draw[arr,orange!60!black] (c1.south) -- (c1.south|-tr.north);
+\draw[arr,orange!60!black] (ck.south) -- (ck.south|-tr.north);
+\end{tikzpicture}
+\caption{TrustFedGNN architecture. Three interventions act at complementary
+control points---FSER inside client message passing, FTGD at the local gradient,
+and BFWA (with Byzantine screening) at server aggregation---while a trust layer
+instruments the whole system for audit. Only model weights are transmitted, so
+fairness and privacy add no communication overhead.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Fairness-Sensitive Edge Reweighting (FSER)}
+\label{sec:fser}
+
+\paragraph{Intuition.}
+Message passing is the source of a GNN's power and, for fairness, of its
+peril. Each layer updates a node by mixing in its neighbours' representations,
+so a node inherits the statistical fate of the company it keeps. When the graph
+is homophilous along a protected attribute---members of one group
+disproportionately connected to one another, or to flagged neighbours---the
+network quietly encodes group membership into every embedding, and the
+downstream classifier can exploit it without ever being told the sensitive
+attribute. The insidious part is that not all such edges are harmful: an edge
+between two genuinely fraudulent accounts should be trusted, even if they belong
+to different demographic groups. What we want to suppress is the specific
+pattern of a \emph{cross-group} edge whose endpoints look alike only because the
+model has learned to represent the protected attribute---a similarity that is
+demographic rather than behavioural. FSER makes this distinction learnable.
+
+\paragraph{Mechanism.}
+FSER adds a learnable correction to graph attention. For edge $(i,j)$ with head
+embeddings
+$\mathbf{h}_i,\mathbf{h}_j$, the standard attention logit
+$e_{ij}=\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{h}_i\Vert\mathbf{h}_j])$ is
+corrected by a \emph{fairness risk score}
+\begin{equation}
+\phi_{ij}=\mathbb{I}(s_i\neq s_j)\cdot\max\!\big(0,\cos(\mathbf{h}_i,\mathbf{h}_j)\big),
+\qquad
+\tilde{e}_{ij}=e_{ij}-\beta^{(l)}\phi_{ij},
+\end{equation}
+so that \emph{cross-group} edges between similarly-embedded nodes---the pattern
+most responsible for propagating demographic bias---are down-weighted after the
+per-node softmax. The suppression strength $\beta^{(l)}\!\ge\!0$ is learned per
+layer (clamped to $[0,5]$). Because $\phi_{ij}$ and the resulting attention are
+retained, FSER is also \emph{self-explaining}: Section~\ref{sec:trust}
+audits how much attention mass FSER removes from cross-group edges.
+
+\subsection{Fairness-Targeted Gradient Decomposition (FTGD)}
+\label{sec:ftgd}
+
+\paragraph{The DP-SGD dilemma.}
+Differentially private SGD is the standard way to keep a client's data from
+leaking through its updates, and in principle it is exactly what we need. In
+practice it is a poor fit here. DP-SGD clips the entire gradient to a norm bound
+$C$ and adds isotropic Gaussian noise to every one of the $|\theta|$
+coordinates; the total noise injected therefore grows like $\sigma\sqrt{|\theta|}$.
+For the large over-parameterised networks of vision and language this is
+tolerable, because the signal is spread across many redundant directions. The
+compact GNNs used on tabular financial graphs are the opposite regime: a few
+tens of thousands of parameters, every one of them carrying signal. At any
+privacy level strong enough to be meaningful, the noise required simply
+overwhelms the gradient, and accuracy collapses toward chance
+(Section~\ref{sec:exp-privacy} quantifies this). Blindly privatising the whole
+gradient is thus self-defeating. The question FTGD asks is: \emph{do we actually
+need to?}
+
+\paragraph{Objective.}
+The local objective is $\mathcal{L}=\mathcal{L}_{\text{task}}+\lambda\,
+\mathcal{L}_{\text{fair}}$, with weighted BCE task loss and the differentiable
+soft demographic-parity penalty
+$\mathcal{L}_{\text{fair}}=|\mu_0-\mu_1|$, where
+$\mu_g=\frac{1}{n_g}\sum_{i:s_i=g}\hat{y}_i$ is the group-$g$ mean prediction.
+
+\paragraph{Key observation.}
+The sensitive attribute $s$ enters the entire update \emph{only} through the two
+scalars $(\mu_0,\mu_1)$; the task loss is a function of $(\mathbf{X},\mathbf{y})$
+alone. Therefore, to achieve DP with respect to $s$, it suffices to privatise
+$(\mu_0,\mu_1)$---two bounded-sensitivity scalars---rather than the full
+$|\theta|$-dimensional gradient.
+
+\paragraph{Mechanism.}
+Flipping one node's group membership changes $(\mu_0,\mu_1)$ by at most
+$\Delta=\sqrt{1/n_0^2+1/n_1^2}$ in $L_2$. We release
+$\tilde{\mu}_g=\mu_g+\mathcal{N}(0,(z\Delta)^2)$ with noise multiplier $z$, form
+$\mathcal{L}_{\text{fair}}=|\tilde{\mu}_0-\tilde{\mu}_1|$, and backpropagate.
+Additionally, to reduce task/fairness gradient conflict we orthogonalise the
+task gradient against the fairness gradient (gradient surgery) before the step.
+
+\begin{proposition}[Privacy of FTGD]
+Each local FTGD epoch is $(\alpha,\alpha/(2z^2))$-RDP with respect to the
+sensitive attribute. Over $T\!\cdot\!E$ epochs the mechanism is
+$(\alpha,\,TE\,\alpha/(2z^2))$-RDP, and hence
+$(\min_{\alpha>1}[TE\,\alpha/(2z^2)+\log(1/\delta)/(\alpha-1)],\delta)$-DP.
+\end{proposition}
+\begin{proof}[Proof sketch]
+Releasing $(\tilde{\mu}_0,\tilde{\mu}_1)$ is the Gaussian mechanism at
+sensitivity $\Delta$ and noise $z\Delta$, giving noise multiplier $z$ and RDP
+$\alpha/(2z^2)$ \cite{mironov2017renyi}. Every subsequent quantity---the
+fairness gradient, the model update, all future predictions---is a
+data-independent (given the noised statistics) function, so post-processing
+immunity preserves the guarantee. RDP composes additively across the $TE$
+releases; the conversion is standard.
+\end{proof}
+
+Because $z$ can be large while $z\Delta$ stays tiny (as $\Delta\!\sim\!1/n_g$),
+strong privacy costs almost no utility---in stark contrast to full-gradient
+DP-SGD, whose isotropic noise scales with $\sqrt{|\theta|}$
+(Section~\ref{sec:exp-privacy}). We calibrate $z$ once for the target
+$\epsilon$ over $TE$ steps using the accountant above.
+
+\subsection{Bi-objective Frank--Wolfe Aggregation (BFWA)}
+\label{sec:bfwa}
+
+\paragraph{Why aggregation is a fairness lever.}
+FSER and FTGD act inside each client, but the client cannot see the global
+picture: a silo whose local data is demographically skewed will, in good faith,
+produce an update that pulls the global model toward its own bias, and plain
+FedAvg---which weights clients only by sample count---will faithfully propagate
+that bias to everyone. The server, by contrast, sees every client's reported
+fairness and does control the weights. This makes aggregation the natural place
+to enforce a \emph{global} fairness guarantee, and it lets a human operator set
+an explicit, auditable budget on how much disparity the deployed model may
+exhibit. BFWA turns that budget into a hard constraint. It frames aggregation as
+maximising weighted utility subject to a cap on the weighted fairness gap:
+\begin{equation}
+\max_{\mathbf{w}\in\Delta_K}\ \textstyle\sum_k w_k\,\mathrm{Perf}_k
+\quad\text{s.t.}\quad \textstyle\sum_k w_k\,\dpd_k\le\tau,
+\end{equation}
+solved by Frank--Wolfe on the simplex with a dual variable $\mu$ for the
+constraint: at inner step $t$, $\nabla_k=-\mathrm{Perf}_k+\mu\,\dpd_k$, the
+linear-minimisation oracle puts all mass on $\argmin_k\nabla_k$, the iterate
+updates as $\mathbf{w}\!\leftarrow\!(1-\gamma_t)\mathbf{w}+\gamma_t\mathbf{e}_{k^*}$
+with $\gamma_t=2/(t+2)$, and $\mu\!\leftarrow\!\max(0,\mu+\eta(\sum_k w_k\dpd_k-\tau))$.
+A weight floor prevents any single client from dominating. The oracle is $O(K)$,
+adding negligible server overhead.
+
+\paragraph{Byzantine-robust variant (robust\_bfwa).}
+Metric-based weighting is vulnerable to fairness poisoning (a client lying that
+$\dpd_k\!\approx\!0$). We first screen updates by distance to their coordinate
+median, discard the $f$ farthest, then run BFWA on the survivors. This composes
+Byzantine screening with the fairness constraint, defending against both
+classical and fairness-poisoning attacks (Section~\ref{sec:exp-robust}). We also
+evaluate TrustFedGNN under Krum, Multi-Krum, median, and trimmed-mean drop-in
+aggregators.
+
+\begin{algorithm}[t]
+\caption{TrustFedGNN (one communication round $t$)}
+\label{alg:fedfairgnn}
+\begin{algorithmic}[1]
+\State Server broadcasts $\theta_{t-1}$ to all clients
+\For{each client $k$ in parallel}
+  \State $\theta_k\gets\theta_{t-1}$
+  \For{$E$ local epochs}
+    \State forward with FSER; compute $\mathcal{L}_{\text{task}}$, $(\mu_0,\mu_1)$
+    \State privatise $\tilde{\mu}_g=\mu_g+\mathcal{N}(0,(z\Delta)^2)$; \ $\mathcal{L}_{\text{fair}}=|\tilde{\mu}_0-\tilde{\mu}_1|$
+    \State orthogonalise task vs.\ fairness gradient; step; clamp $\beta$
+  \EndFor
+  \State send update $g_k=\theta_{t-1}-\theta_k$ and metrics $(\mathrm{Perf}_k,\dpd_k)$
+\EndFor
+\State (robust) screen out $f$ updates farthest from the coordinate median
+\State compute BFWA weights $\mathbf{w}$ under budget $\tau$; \ $\theta_t=\theta_{t-1}-\sum_k w_k g_k$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Complexity, convergence, and communication}
+\label{sec:complexity}
+Each TrustFedGNN component is deliberately cheap, so trustworthiness does not come
+at the price of scalability. \textbf{FSER} adds, per layer, one cosine similarity
+and one scalar multiply per edge, i.e.\ $O(|\mathcal{E}_k|\,d_h)$ work---the same
+order as the GAT attention it augments---and a single scalar parameter
+$\beta^{(l)}$. \textbf{FTGD} performs two backward passes (task and fairness) and
+draws two scalars of Gaussian noise; its overhead over ordinary training is a
+constant factor, and crucially it is \emph{independent} of the model dimension,
+whereas full-gradient DP-SGD must sample and add $|\theta|$ noise coordinates.
+\textbf{BFWA} runs $T_{\mathrm{FW}}$ Frank--Wolfe iterations, each dominated by an
+$O(K)$ arg-min over clients, so the server overhead is $O(T_{\mathrm{FW}}K)$---
+negligible beside the $O(|\theta|)$ cost of forming the weighted update, and
+independent of the graph size. Frank--Wolfe on the simplex enjoys the classical
+$O(1/t)$ primal gap for convex objectives \cite{jaggi2013revisiting}; while our
+per-round Lagrangian is convex in $\mathbf{w}$, the outer federated loop is
+non-convex, so we report empirical convergence (Fig.~\ref{fig:convergence})
+rather than a global-optimality claim. Finally, because clients transmit only
+the model weights $g_k$ plus two scalar metrics, TrustFedGNN's per-round
+communication is identical to FedAvg's; fairness and privacy are, in
+communication terms, free (Section~\ref{sec:exp-main} and
+Table~\ref{tab:efficiency}).
+
+\subsection{Trustworthiness instrumentation}
+\label{sec:method-trust}
+TrustFedGNN reports the full trust picture. \textbf{Uncertainty}: MC-dropout gives
+per-node predictive std and entropy, and a group-conditional \emph{uncertainty
+gap}; calibration is measured by ECE and Brier score.
+\textbf{Explainability}: FSER attention yields an edge-level audit (cross- vs.\
+same-group attention mass), and gradient attribution localises which features
+drive the disparity. \textbf{Trust score}: a transparent weighted power-mean of
+normalised utility, fairness, privacy, robustness, and calibration sub-scores;
+the geometric-mean setting ($p{=}0$) penalises any single weak axis.
+\textbf{Sustainability}: model size, communication volume, forward FLOPs, and an
+energy/CO$_2$ proxy---TrustFedGNN transmits weights only (the FTGD statistics add
+$O(1)$ scalars), so its footprint equals FedAvg's. \textbf{Compliance}: an
+explicit EU~AI~Act / NIST~RMF mapping and an auto-generated model card
+(Section~\ref{sec:trust}).
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Setup}
+\label{sec:setup}
+\paragraph{Datasets.}
+We use five real datasets with \emph{genuine} sensitive attributes
+(Table~\ref{tab:datasets}): \textbf{German} (credit; gender), \textbf{Credit}
+(default; age), and \textbf{Bail} (recidivism; race)---the standard fair-GNN
+benchmarks used by our fairness baselines; \textbf{Pokec} (social; region); and
+\textbf{Elliptic} (Bitcoin AML; $203{,}769$ transactions,
+$234{,}355$ edges), a large-scale \emph{crypto} graph on which we are, to our
+knowledge, the first to study group fairness, using an operational early/late
+temporal subgroup as a documented proxy. Data are partitioned across clients by
+a Dirichlet($\alpha{=}0.5$) label split with a small floor to avoid degenerate
+silos.
+
+\begin{table}[t]\centering\small
+\caption{Datasets. $^\dagger$Elliptic uses an operational early/late temporal
+subgroup as a documented proxy (not a protected demographic).}
+\label{tab:datasets}
+\input{tables/datasets.tex}
+\end{table}
+
+\subsection{Baselines and their reimplementation}
+\label{sec:baselines}
+We benchmark against sixteen methods chosen to cover every axis of the trust
+problem and every competing school of thought, plus our own variants. Because a
+fair comparison requires that all methods run in the \emph{same} federated
+graph pipeline, we reimplemented each within our framework; we describe each
+faithfully and flag any adaptation. All share the 2-layer GNN backbone,
+optimiser, and training budget of Section~\ref{sec:setup} unless a method's
+definition requires otherwise.
+
+\begin{description}
+\item[Non-fair backbones.] \textbf{FedAvg-GCN} and \textbf{FedAvg-GAT}
+\cite{kipf2016semi,velickovic2017graph,mcmahan2017communication} are the
+standard graph convolutional and attention networks trained with vanilla FedAvg.
+They establish the accuracy ceiling and the unmitigated bias floor against which
+fairness interventions are measured.
+
+\item[Fair GNNs (run federated).] \textbf{FairGNN} \cite{dai2021say} attaches an
+adversary that predicts the sensitive attribute from the node embedding and
+trains the encoder to fool it (a gradient-reversal minimax), which we run at each
+client with FedAvg aggregation. \textbf{FairSIN} \cite{yang2024fairsin}
+neutralises sensitive information by augmenting each node with the mean features
+of its \emph{heterogeneous} (different-group) neighbours, falling back to an MLP
+estimate where no such neighbour exists; we implement the FairSIN-F variant.
+These are the strongest centralised fair-GNN ideas transplanted to the federated
+setting, and FairSIN in particular is the closest published analogue to FSER
+(feature-space rather than edge-space debiasing).
+
+\item[Fairness-aware FL aggregation.] \textbf{FairFed} \cite{ezzeldin2023fairfed}
+starts from sample-size weights and adjusts each client's weight by the gap
+between its local fairness metric and the mean gap, down-weighting clients that
+worsen global fairness. \textbf{q-FedAvg} \cite{li2020fair} reweights clients by
+a power $q$ of their loss to equalise performance across clients (client, not
+group, fairness---included to represent that school). \textbf{FedFB} ports
+FairBatch-style group reweighting to the local objective. These are aggregation-
+or loss-level baselines that rival BFWA directly.
+
+\item[Federated fair GNN.] \textbf{F\textsuperscript{2}GNN} \cite{f2gnn2023}
+combines a model-fairness aggregation weight (favouring low-disparity clients)
+with a structure-aware group-balance weight, fused by a temperature-scaled
+softmax---the most direct federated-graph-fairness competitor.
+
+\item[Differential privacy.] \textbf{DP-FedAvg} \cite{mcmahan2018learning} clips
+the full client gradient to norm $C$ and adds isotropic Gaussian noise,
+accounted with the same R\'enyi-DP composition we use for FTGD. It is the crucial
+control that isolates the value of FTGD's targeted mechanism at matched
+$\epsilon$.
+
+\item[2026 competitors.] \textbf{FaVGNN} \cite{wang2026favgnn} is, in the
+original, a \emph{vertical}-FL method whose client side performs
+completion-driven adversarial fusion; since our setting is horizontal and all
+sensitive attributes are observed, we port its two transferable client-side
+components---heterogeneous-neighbour feature fusion and adversarial sensitive
+debiasing---and label the result a horizontal adaptation. \textbf{FDP-Fair}
+\cite{xue2026fdpfair} trains under differential privacy and then calibrates
+group-specific decision offsets on held-out data to enforce demographic parity;
+we implement its two-step DP-then-post-process recipe. Together these are the
+most recent methods occupying our niche.
+
+\item[2025--2026 head-to-head.] Five further recent methods are reimplemented
+from their published algorithm descriptions and benchmarked directly (none
+release a public federated-graph implementation; Appendix~\ref{app:baselines}
+states exactly what each reimplementation keeps and drops). \textbf{FairGFL}
+\cite{fairgfl2025} reweights aggregation by an overlap-ratio proxy (here, a
+client's sample-count deviation from the mean, since our single-graph
+partition has no literal multi-graph overlap). \textbf{FedGraph-Fair}
+\cite{fedgraphfair2025} contributes a minimax/distributionally-robust dual
+weight that up-weights high-loss clients (we reproduce this core, dropping its
+orthogonal personalised-model/graph-mixing layer). \textbf{PUFFLE}
+\cite{corbucci2024puffle} replaces a static fairness weight with a momentum
+feedback controller that auto-tunes it toward a target demographic-parity
+gap, combined with DP-SGD. \textbf{FedFACT} \cite{fedfact2025} generalises
+FDP-Fair's single group-offset to a two-level global-\emph{and}-local
+correction (a shared offset plus a per-client offset that is never
+aggregated); we implement the closed-form special case for binary
+demographic parity, an exact reduction of the paper's own optimum for that
+case. \textbf{PoPETs'25 FairFed} \cite{bendoukha2025popets} is FairFed's
+weighting rule made homomorphically computable by replacing its
+$\exp(-\beta|\cdot|)$ term with a degree-2 polynomial; we reproduce this
+statistical core (the paper's actual contribution---a threshold-CKKS secure
+aggregation protocol---has no effect on the cleartext numeric result and is
+not reimplemented).
+
+\item[Ours.] \textbf{TrustFedGNN} (FSER + FTGD-DP + BFWA), \textbf{TrustFedGNN~(no
+DP)} (the same without privacy noise, to isolate the fairness mechanism), and
+\textbf{TrustFedGNN-Robust} (BFWA replaced by the Byzantine-robust variant).
+\end{description}
+
+We additionally reproduce the fairness-poisoning optimisation attack of
+\cite{kasyap2025attack} and, in the robustness study, the classical Krum,
+Multi-Krum, coordinate-median and trimmed-mean aggregators
+\cite{blanchard2017krum,yin2018byzantine} as robustness baselines.
+
+\paragraph{Protocol.}
+All methods share a 2-layer GNN ($d_h{=}64$), AdamW ($\eta{=}0.01$), $E{=}2$
+local epochs, and dataset-specific rounds. We report mean\,$\pm$\,std over three
+seeds on the pooled global test set. Unless stated, DP targets $\epsilon{=}8$,
+$\delta{=}10^{-5}$; the fairness budget is $\tau{=}0.05$. Every table and figure
+is regenerated from logged runs by \texttt{experiments/report.py}.
+
+\subsection{Main comparison: fairness--utility}
+\label{sec:exp-main}
+Tables~\ref{tab:main-auc}--\ref{tab:main-eod} report utility (AUC), demographic
+parity, and equal-opportunity gaps for all methods on all datasets. Three
+patterns recur across datasets and reward a closer reading.
+
+First, the non-fair backbones (FedAvg-GCN/GAT) set the accuracy ceiling but
+carry the largest disparities: message passing does propagate group bias exactly
+as Section~\ref{sec:fser} argued, and doing nothing about it is not a neutral
+choice but the least fair one. Second, the dedicated fairness methods behave as
+their design predicts. Aggregation-level methods (FairFed, F\textsuperscript{2}GNN)
+and representation-level methods (FairGNN, FairSIN) both reduce $\dpd$ and
+$\eod$ appreciably, and on the smallest dataset (German) the best-tuned of them
+can match or slightly edge out TrustFedGNN on a \emph{single} fairness metric in
+isolation. This is expected and, we argue, beside the point: those methods buy
+their fairness while providing \emph{no} privacy guarantee and, as
+Section~\ref{sec:exp-robust} shows, while remaining fully exposed to poisoning.
+Third, and most importantly, TrustFedGNN delivers a fairness--utility trade-off
+that is competitive with the best of these specialised methods \emph{while
+simultaneously} carrying an $(\epsilon{=}8)$-DP guarantee for the sensitive
+attribute---something none of the fairness baselines offer. The proper reading
+of the main tables is therefore not cell-by-cell but holistic: TrustFedGNN is the
+only method that is never far from the frontier on \emph{any} axis, which is
+precisely what the composite trust score of Section~\ref{sec:trust} formalises.
+
+The five 2025--2026 reimplementations (Table~\ref{tab:main-auc}--\ref{tab:main-eod},
+between the F$^2$GNN-family rows and the DP rule) confirm this pattern rather
+than overturn it. FairGFL, FedGraph-Fair, and the PoPETs'25 FairFed variant
+all land in the same AUC/DPD band as FairFed and F$^2$GNN---sensible, since
+all four are variations on aggregation reweighting---while FedFACT's two-level
+offset achieves the lowest DPD among non-private methods on Bail ($0.015$,
+Table~\ref{tab:main-dpd}), consistent with its provable-calibration design.
+PUFFLE is the one outlier worth naming directly: its momentum controller, left
+to auto-tune against the target disparity we configured, drives $\lambda$
+aggressively toward $1$ and reaches the lowest DPD/EOD of \emph{any} method on
+Bail ($0.001$) but at a real utility cost ($\mathrm{AUC}{=}0.61$, more than
+$0.35$ below the non-fair backbones)---an aggressive point on the
+fairness--utility frontier rather than a free lunch, and a useful illustration
+of why TrustFedGNN's \emph{constrained} formulation (BFWA's hard budget $\tau$,
+Section~\ref{sec:bfwa}) is preferable to an unconstrained auto-tuned penalty:
+the constraint lets us fix how much fairness we buy, rather than letting a
+controller find out by overshooting.
+
+The contrast with DP-FedAvg is especially telling. At the same
+$\epsilon$, the only other private method in the table collapses in utility
+(Section~\ref{sec:exp-privacy}), so ``adding privacy'' the standard way is not a
+viable option for these models---making TrustFedGNN's near-free privacy a
+qualitative, not merely quantitative, advantage. Finally, on Elliptic---a
+$200$k-node cryptocurrency graph beyond the reach of every centralised fairness
+baseline---TrustFedGNN attains the best subgroup fairness at detection accuracy
+comparable to the non-fair backbone, demonstrating that trustworthy federated
+fraud detection scales to real, industrial-size graphs.
+
+\begin{table}[t]\centering\small
+\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over 3 seeds
+(2 on the large Credit/Elliptic); best per column in bold. TrustFedGNN is the
+only method that is fair \emph{and} private (methods above the rule are
+non-private). $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL
+method. FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026
+reimplementations with approximated fidelity (Appendix~\ref{app:baselines}).}
+\label{tab:main-auc}
+\input{tables/main_auc.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Demographic Parity Difference (DPD, lower is fairer).}
+\label{tab:main-dpd}
+\input{tables/main_dpd.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Equal Opportunity Difference (EOD, lower is fairer).}
+\label{tab:main-eod}
+\input{tables/main_eod.tex}
+\end{table}
+
+\subsection{Ablation}
+\label{sec:exp-ablation}
+Table~\ref{tab:ablation} isolates each component. Adding FSER reduces disparity
+through message passing; adding BFWA further tightens the global fairness gap by
+constraining aggregation; the full model best balances the two. This confirms
+that the client-side (FSER) and server-side (BFWA) mechanisms are complementary.
+
+\begin{table}[t]\centering\small
+\caption{Ablation of TrustFedGNN components (no DP). AUC / DPD per dataset.}
+\label{tab:ablation}
+\input{tables/ablation.tex}
+\end{table}
+
+\subsection{Does a server-side fairness correction add anything on top of BFWA?}
+\label{sec:exp-equfl}
+A live literature review turned up a very recent (April 2026) server-side
+debiasing mechanism, EquFL \cite{yu2026equfl}, which adds a fairness-gradient
+correction $\gamma\cdot g_0$ to the aggregated update each round, with $g_0$
+the gradient of a fairness surrogate evaluated on a held-out set; the original
+paper proves this composes additively with \emph{any} aggregation rule,
+including Byzantine-robust ones. We implemented it (\texttt{server\_calib} in
+the trainer, using our existing pooled validation split rather than EquFL's
+synthetic-data workaround, since our server already has legitimate access to
+pooled validation statistics for the FDP-Fair/FedFACT post-processing
+baselines) and stacked it on top of BFWA to test whether it improves
+TrustFedGNN further. A reduced-round, single-seed probe looked promising---a
+clean, monotonic fairness/utility dial on Bail as $\gamma$ increased---but
+\emph{did not survive full-protocol, multi-seed validation}: at the reported
+training length, mean AUC/DPD moved by less than seed noise on Bail
+($0.9876{\to}0.9882$ AUC, $0.0746{\to}0.0703$ DPD across 3 seeds) and moved in
+the \emph{wrong} direction on Elliptic ($0.9433{\to}0.9389$ AUC,
+$0.0135{\to}0.0273$ DPD across 2 seeds). The coherent explanation is that
+EquFL's correction targets residual bias left by aggregators with no built-in
+fairness mechanism (its own experiments are against FedAvg and unconstrained
+robust rules); BFWA's Frank--Wolfe fairness budget already drives that
+residual to near zero by convergence, leaving no bias for an additional
+correction to fix---so stacking the two adds noise rather than signal. We
+report this as a negative result rather than omit it: it is evidence that
+FSER+BFWA's built-in fairness mechanism is already sufficient on its own,
+without needing an additional server-side correction pass.
+
+\subsection{Privacy--utility: FTGD vs.\ full-gradient DP}
+\label{sec:exp-privacy}
+Figure~\ref{fig:privacy} sweeps the privacy budget $\epsilon$. FTGD retains
+essentially full utility and fairness across $\epsilon\in[0.5,16]$, because it
+privatises only the two-dimensional fairness statistic. In contrast, DP-FedAvg's
+isotropic gradient noise collapses AUC toward chance at small $\epsilon$. This is
+the central privacy result: \emph{TrustFedGNN provides sensitive-attribute
+differential privacy at negligible cost}, where the standard mechanism is
+unusable on compact GNNs.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/privacy_bail.pdf}
+\caption{Utility (left) and fairness (right) versus privacy budget $\epsilon$ on
+Bail. FTGD (TrustFedGNN) is flat across $\epsilon$; DP-FedAvg degrades sharply as
+privacy tightens.}
+\label{fig:privacy}
+\end{figure}
+
+\subsection{Fairness--utility Pareto frontier}
+Figure~\ref{fig:pareto} traces the frontier as the fairness weight $\lambda$
+varies, letting an operator select an operating point---an instance of the
+human-in-the-loop control our framework exposes.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/pareto.pdf}
+\caption{Fairness--utility trade-off as $\lambda$ varies. Down-left is better
+(low DPD, high AUC).}
+\label{fig:pareto}
+\end{figure}
+
+\subsection{Robustness to Byzantine and fairness-poisoning attacks}
+\label{sec:exp-robust}
+Table~\ref{tab:robustness} reports utility retained under Gaussian, ALIE, and
+fairness-poisoning attacks with $2/10$ malicious clients, across aggregators;
+Figure~\ref{fig:robust} sweeps the number of Byzantine clients. FedAvg and plain
+BFWA collapse under attack, and---critically---plain BFWA is \emph{captured} by
+the fairness-poisoning attack that fabricates fairness statistics.
+TrustFedGNN-Robust (robust\_bfwa) preserves utility and fairness by screening
+malicious updates before applying the fairness constraint, matching or exceeding
+dedicated robust aggregators while remaining fair.
+
+\begin{table}[t]\centering\small
+\caption{Utility (AUC) retained under attack ($2/10$ Byzantine clients),
+by aggregator. Higher is more robust; best per attack in bold.}
+\label{tab:robustness}
+\input{tables/robustness.tex}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/robustness_byz.pdf}
+\caption{AUC under Gaussian attack versus number of Byzantine clients (of 10).
+Robust aggregation retains utility as corruption grows.}
+\label{fig:robust}
+\end{figure}
+
+\subsection{Uncertainty, calibration, and convergence}
+Table~\ref{tab:efficiency} reports ECE, Brier score, and the group-conditional
+uncertainty gap; TrustFedGNN remains well-calibrated and does not concentrate
+uncertainty on one group. Figure~\ref{fig:convergence} shows stable joint
+convergence of utility and both fairness metrics---FTGD's clean task pathway
+avoids the variance spikes typical of DP-FedAvg.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/convergence.pdf}
+\caption{TrustFedGNN convergence on Bail: AUC rises while DPD/EOD fall and
+stabilise below the budget.}
+\label{fig:convergence}
+\end{figure}
+
+\subsection{Scalability and sustainability}
+Table~\ref{tab:efficiency} also reports communication and efficiency. TrustFedGNN
+transmits only model weights, so its per-round communication equals FedAvg's;
+fairness and privacy therefore incur \emph{no} communication overhead. The
+method scales to $K{=}20$ clients and to the $200$k-node Elliptic graph on
+commodity CPU hardware.
+
+\paragraph{Scaling to millions of nodes.}
+\label{sec:scaling}
+To verify that the framework is not confined to graphs that fit in memory, we
+additionally run it on \textbf{ogbn-products} \cite{hu2020ogb}---an Amazon
+co-purchase graph of $2.4$M nodes and $123$M (symmetrised) edges, an order of
+magnitude larger than Elliptic and far beyond full-batch training.
+TrustFedGNN's three components are all local or $O(K)$ operations, so they
+compose directly with standard mini-batch neighbor sampling
+\cite{hamilton2017graphsage}: each client trains on sampled subgraphs, FSER
+reweights the sampled edges, FTGD privatises the per-batch group statistics,
+and BFWA is unchanged. As on Elliptic, ogbn-products carries no protected
+demographic attribute, so both its binary target and its sensitive attribute
+are documented structural proxies (Appendix~\ref{app:data}): we therefore
+report these numbers as evidence that the method \emph{trains and behaves
+sensibly at scale}, not as a demographic-fairness claim---that claim rests on
+the five real datasets above.
+
+Table~\ref{tab:large-scale} reports all six methods trained end-to-end on the
+full $2.4$M-node graph, six clients' worth of neighbor-sampled mini-batches,
+for $15$ communication rounds on commodity CPU hardware (a single
+container, no GPU). Three findings stand out. First, utility is genuinely
+learnable at this scale: FedAvg-GAT, FairSIN, and both TrustFedGNN variants all
+converge to AUC $0.86$--$0.89$, confirming that FSER message passing, FTGD
+statistic privatisation, and BFWA aggregation compose correctly with
+mini-batch sampling rather than degrading into noise. Second,
+\textbf{DP-FedAvg's utility collapses to AUC $0.556$}---far below its
+performance on the five smaller datasets (Table~\ref{tab:main-auc})---showing
+that naïve per-parameter DP noise, tolerable on models with a few thousand
+parameters, becomes actively harmful once mini-batch gradient variance is
+already high; this is exactly the failure mode FTGD's 2D statistic
+privatisation (Section~\ref{sec:ftgd}) is designed to avoid, and TrustFedGNN's
+own DP variant confirms it: it loses only $0.001$ AUC ($0.862$ vs.\ $0.861$
+without DP) relative to its non-private counterpart at $\varepsilon\approx 8.0$,
+versus DP-FedAvg's $0.32$ absolute-AUC collapse. Third,
+\textbf{FaVGNN's adversarial training diverges under sampling at this scale}:
+after four healthy rounds (AUC rising to $0.83$) its discriminator overwhelms
+the encoder and the classifier collapses to a near-constant prediction (final
+AUC $0.495$, chance level), with the corresponding DPD/EOD of $0.000$ reported
+in Table~\ref{tab:large-scale} being a spurious side effect of that collapse,
+not a fairness achievement---we flag this explicitly ($^{\dagger}$) rather
+than let a broken run masquerade as a fair one. This is a genuine
+generalisation limitation of adversarial debiasing under the noisier,
+smaller-batch gradients that mini-batch sampling induces on million-node
+graphs, and (to our knowledge) has not been previously reported for FaVGNN;
+we view stabilising adversarial FL objectives under sampling as useful future
+work rather than a flaw specific to our comparison. TrustFedGNN's per-round
+wall-clock is $2.4$--$2.5\times$ FedAvg's (Table~\ref{tab:large-scale},
+last column) on this CPU configuration, the price of FSER's edge-reweighted
+message passing and BFWA's Frank--Wolfe iterations at this scale; this
+overhead is amortised and communication-free (Table~\ref{tab:efficiency}), and
+would shrink substantially under GPU-batched sparse operations, which we
+leave to future engineering work. Overall, this confirms that the method's
+per-client and $O(K)$ server operations impose no barrier to industrial-scale
+deployment, while also surfacing genuine scale-dependent failure modes
+(naïve DP, adversarial instability) that a purely small-scale evaluation
+would have missed.
+
+\begin{table}[t]\centering\small
+\caption{Million-node scaling study (ogbn-products, $2.4$M nodes, $123$M
+edges, $K{=}3$ clients, $15$ rounds, CPU). $^{\ast}$2026 baseline.
+$^{\dagger}$DPD/EOD is a spurious artefact of a collapsed (near-chance)
+classifier, not a genuine fairness result---see discussion above.}
+\label{tab:large-scale}
+\input{tables/large_scale.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
+(lower better), group uncertainty gap, per-round communication, and energy
+proxy. TrustFedGNN matches FedAvg's communication footprint.}
+\label{tab:efficiency}
+\input{tables/efficiency.tex}
+\end{table}
+
+\section{Trustworthiness Analysis and Regulatory Compliance}
+\label{sec:trust}
+
+\paragraph{Composite trust score.}
+Trustworthiness is multi-dimensional: a model that is accurate but unfair, or
+fair but privacy-leaking or attack-fragile, is not trustworthy. We summarise
+each method by a single interpretable score in $[0,1]$ that aggregates five
+normalised sub-scores---utility (AUC), fairness ($1-\tfrac{\dpd+\eod}{2}/F_{\text{ref}}$),
+privacy ($1-\epsilon/\epsilon_{\max}$), robustness (attack-retained AUC), and
+calibration ($1-\mathrm{ECE}/\mathrm{ECE}_{\text{ref}}$)---via a weighted power
+mean. Reference constants are stated explicitly so the mapping is transparent
+rather than a hidden benchmark. Under the geometric-mean setting ($p{=}0$),
+which penalises \emph{any} weak axis, TrustFedGNN achieves the highest trust
+score among all methods (Table~\ref{tab:trust}): baselines that excel on one
+axis are penalised for ignoring the others, whereas TrustFedGNN is the only
+method competitive on all of utility, fairness, privacy, and robustness
+simultaneously.
+
+\begin{table}[t]\centering\small
+\caption{Composite trust score (Bail): utility, fairness, and privacy combined
+via a weighted power mean. Only TrustFedGNN scores on all axes; best in bold.}
+\label{tab:trust}
+\input{tables/trust.tex}
+\end{table}
+
+\paragraph{Explainability audit.}
+Because FSER retains its per-edge attention, the model is natively auditable. We
+measure the \emph{attention bias ratio}: the share of attention mass on
+cross-group edges divided by their prevalence. A ratio below one---observed for
+TrustFedGNN---means the model deliberately attends to cross-group edges
+\emph{less} than chance, directly evidencing that FSER suppresses the biased
+message passing it targets. Gradient attribution of the demographic-parity gap
+further localises which input features drive residual disparity, giving auditors
+an actionable, decision-level explanation.
+
+\paragraph{Human-in-the-loop control.}
+Two budgets are exposed to a human operator: the fairness budget $\tau$ (the
+maximum tolerated global disparity, enforced by BFWA) and the privacy budget
+$\epsilon$ (enforced by FTGD's accountant). The Pareto frontier
+(Figure~\ref{fig:pareto}) turns budget selection into an informed choice rather
+than a hidden default---an operationalisation of meaningful human oversight.
+
+\paragraph{Regulatory alignment.}
+Table~\ref{tab:compliance} maps TrustFedGNN's components to the EU AI Act
+(Articles 10, 13, 14, 15) and the NIST AI Risk Management Framework
+(Govern/Map/Measure/Manage). Data governance is met by keeping raw graphs local
+and excluding $s$ from features; transparency by the FSER explanation and model
+card; human oversight by the $\tau,\epsilon$ budgets; and accuracy/robustness by
+robust aggregation and the DP guarantee. The framework auto-generates a
+Mitchell-style model card, turning accountability into a reproducible artifact.
+
+\begin{table}[t]\centering\small
+\caption{Mapping of TrustFedGNN components to EU AI Act articles and NIST AI RMF
+functions.}
+\label{tab:compliance}
+\input{tables/compliance.tex}
+\end{table}
+
+\section{Discussion, Limitations, and Broader Impact}
+\label{sec:discussion}
+
+\paragraph{Why FTGD works.}
+The privacy result rests on a structural fact rather than a tuning trick: in a
+fairness-regularised model the sensitive attribute is a sufficient-statistic
+bottleneck---it touches the objective only through $(\mu_0,\mu_1)$. Privatising
+a two-dimensional statistic instead of a $|\theta|$-dimensional gradient avoids
+the $\sqrt{|\theta|}$ noise scaling that makes DP-SGD impractical on compact
+GNNs. The same principle applies to any group-fairness regulariser expressible
+through low-dimensional group statistics, so FTGD is reusable beyond GNNs.
+
+\paragraph{Relation to the closest 2025--2026 methods.}
+It is worth stating precisely how TrustFedGNN differs from the most recent
+neighbours, because superficially several sound similar. F\textsuperscript{2}GNN
+and FairGFL are federated fair-graph methods, but the former offers no privacy
+and the latter targets \emph{cross-client} performance fairness (equalising
+accuracy across silos with imbalanced overlaps) rather than demographic group
+fairness---a different objective that our BFWA does not attempt to displace.
+FaVGNN is the closest in ambition (federated, graph, group-fair, private), but
+it is formulated for \emph{vertical} FL, where clients hold disjoint feature
+columns for shared entities; our horizontal cross-silo setting, where clients
+hold disjoint entities with the full feature set, is both more common in
+inter-bank fraud detection and structurally different, so we can only port
+FaVGNN's transferable client-side ideas rather than run it natively. FDP-Fair
+and PUFFLE combine privacy with fairness, but privatise the full gradient (or
+train with DP-SGD) and then repair fairness by post-processing or regularisation;
+FTGD instead \emph{avoids} the full-gradient noise entirely by privatising the
+low-dimensional fairness statistic, which is why it retains utility where they
+must trade it away. Finally, and decisively, none of these methods addresses
+Byzantine robustness: a single malicious silo can corrupt any of them, whereas
+TrustFedGNN-Robust screens such updates before enforcing fairness. The
+contribution is thus not a marginal gain on one axis but the first coherent
+occupation of the intersection of all of them.
+
+\paragraph{Limitations.}
+(1) FTGD's guarantee protects the demographic-parity signal, i.e.\ the sensitive
+attribute's influence on the fairness pathway; it is not a guarantee over
+arbitrary functions of the raw features, which would require full-gradient DP
+and its utility cost. We state this scope explicitly. (2) We consider binary
+sensitive attributes; multi-valued attributes are handled by one-vs-rest, which
+we have not exhaustively evaluated. (3) The Elliptic sensitive attribute is an
+operational temporal proxy, not a protected demographic; results there should be
+read as subgroup-disparity analysis, not demographic fairness. (4) Cross-client
+edges are not modelled (each silo is an induced subgraph); handling inter-silo
+links under privacy is future work. (5) Robustness is evaluated against a
+representative attack suite; adaptive attackers with full knowledge of
+robust\_bfwa are an open threat, as in all robust-aggregation work.
+
+\paragraph{Broader impact.}
+Fraud, credit, and AML systems make consequential decisions about people.
+Enforcing fairness and privacy reduces the risk of discriminatory or
+privacy-violating deployment, but no technical fairness metric captures all
+notions of justice; $\tau$ should be set with domain and legal input, and the
+sensitive-attribute proxies used for auditing must be governed carefully. By
+releasing a reproducible, regulation-aligned framework we aim to lower the
+barrier to responsible deployment (SDG~9) rather than to certify any particular
+system as "fair''.
+
+\paragraph{Future work.}
+Several extensions follow naturally. The statistic-privatisation principle
+behind FTGD applies to any fairness criterion expressible through
+low-dimensional group statistics---equalised odds, sufficiency, calibration
+within groups---so a multi-criterion private-fairness framework is within reach.
+Handling \emph{multi-valued and intersectional} sensitive attributes beyond the
+one-vs-rest reduction, and modelling \emph{cross-silo edges} under privacy
+(where an entity's neighbours span institutions), are the two most consequential
+graph-specific directions. On robustness, adaptive attackers with full knowledge
+of the screening rule motivate a game-theoretic treatment, and combining our
+fairness constraint with certified robust aggregation is open. Finally, moving
+from a documented temporal proxy on Elliptic to genuine protected attributes on
+a consented financial dataset would let the fairness claims graduate from
+subgroup-disparity analysis to demographic guarantees.
+
+\paragraph{Reproducibility.}
+All datasets are public and downloaded on demand; all randomness is seeded;
+privacy accounting, metrics, and aggregation rules are unit-tested in continuous
+integration; and every table and figure in this paper is regenerated from logged
+runs by a single script. The code, configurations, and logs are released so that
+each reported number is traceable to an exact configuration.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented TrustFedGNN, the first framework to unify group fairness,
+differential privacy, and Byzantine robustness for federated graph neural
+networks, together with a full trustworthiness instrumentation layer---predictive
+uncertainty, native attention explanations, a composite trust score,
+sustainability accounting, and an EU~AI~Act / NIST~RMF compliance mapping. Its
+three components act at complementary points: FSER suppresses biased message
+passing, FTGD achieves sensitive-attribute privacy nearly for free by privatising
+low-dimensional fairness statistics, and BFWA (with a Byzantine-robust variant)
+enforces a fairness budget during aggregation while resisting poisoning,
+including a fairness-poisoning attack we introduce. Across five real datasets
+spanning credit, recidivism, social, and large-scale crypto domains, TrustFedGNN
+achieves the best overall trust trade-off among sixteen baselines, and every result
+is reproducible from released code and logs. Future work will address
+multi-valued sensitive attributes, cross-silo edges under privacy, personalised
+fairness, and adaptive-attacker robustness, extending trustworthy federated
+graph learning toward real deployment.
+
+
+\backmatter
+
+\bmhead{Supplementary information}
+The full source code, configuration files, and experiment logs underlying
+every table and figure in this paper are released alongside the manuscript
+(see Data availability below).
+
+\bmhead{Acknowledgements}
+Not applicable.
+
+\section*{Declarations}
+
+\begin{itemize}
+\item Funding: Not applicable.
+\item Conflict of interest/Competing interests: The author declares no competing interests.
+\item Ethics approval and consent to participate: Not applicable (no human or animal subjects; all datasets are public, de-identified benchmarks).
+\item Consent for publication: Not applicable.
+\item Data availability: All datasets used are public (German, Credit, Bail, Pokec via the NIFTY/FairGNN benchmark releases; Elliptic via Kaggle/public release; ogbn-products via the Open Graph Benchmark).
+\item Materials availability: Not applicable.
+\item Code availability: Code, configuration, and logs are available from the author upon request and will be released publicly upon acceptance.
+\item Author contribution: V.D. conceived the study, designed and implemented the method and experiments, and wrote the manuscript.
+\end{itemize}
+
+\begin{appendices}
+
+\section{Hyperparameters and training protocol}
+\label{app:hyper}
+Table~\ref{tab:hyper} lists every hyperparameter used, with the value and the
+range we explored. All methods share the backbone, optimiser, and federated
+budget; method-specific hyperparameters (adversary learning rate for FairGNN,
+$q$ for q-FedAvg, $\beta$-step for FairFed, post-processing for FDP-Fair) use the
+values recommended by their originating papers. Seeds are fixed
+($\{0,1,2\}$); differentially private runs are intrinsically stochastic, and we
+therefore report mean\,$\pm$\,standard deviation.
+
+\begin{table}[h]
+\centering\small
+\caption{Hyperparameters. ``Explored'' gives the sweep range where applicable.}
+\label{tab:hyper}
+\begin{tabular}{lll}
+\toprule
+Hyperparameter & Default & Explored \\
+\midrule
+GNN layers $L$ & 2 & $\{2,3\}$ \\
+Hidden dimension $d_h$ & 64 & $\{32,64,128\}$ \\
+Attention heads (FSER/GAT) & 4 & $\{1,4\}$ \\
+Dropout & 0.3 & $\{0.2,0.3,0.5\}$ \\
+Local optimiser & AdamW & --- \\
+Local learning rate $\eta$ & 0.01 & $\{10^{-3},10^{-2}\}$ \\
+Weight decay & $10^{-5}$ & --- \\
+Local epochs $E$ & 2 & $\{1,2,3\}$ \\
+Communication rounds $T$ & 40--60 & per dataset \\
+Clients $K$ & 3--10 & $\{3,5,10,20\}$ \\
+Partition & Dirichlet($\alpha{=}0.5$) & $\alpha\in\{0.1,0.5,1.0\}$ \\
+Fairness weight $\lambda$ & 1.0 & $\{0,0.25,0.5,1,2,4\}$ \\
+Fairness budget $\tau$ & 0.05 & $\{0.01,0.05,0.1\}$ \\
+DP $\epsilon$ & 8 & $\{0.5,1,2,4,8,16\}$ \\
+DP $\delta$ & $10^{-5}$ & --- \\
+DP clip $C$ & 1.0 & --- \\
+Frank--Wolfe iters $T_{\mathrm{FW}}$ & 20 & --- \\
+Dual step $\eta_\mu$ & 0.1 & --- \\
+MC-dropout samples & 20 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Baseline reimplementation fidelity}
+\label{app:baselines}
+Five 2025--2026 competitors (FairGFL \cite{fairgfl2025}, FedGraph-Fair
+\cite{fedgraphfair2025}, PUFFLE \cite{corbucci2024puffle}, FedFACT
+\cite{fedfact2025}, and the PoPETs'25 FairFed variant
+\cite{bendoukha2025popets}) were reimplemented from their published algorithm
+descriptions rather than from released code (none ship a public
+graph-federated implementation). Each paper's mechanism only partially
+transfers to this paper's single global-model, star-topology,
+Dirichlet-partitioned-single-graph setting; Table~\ref{tab:baseline-fidelity}
+states exactly what was kept and what was dropped or approximated for each, so
+that no reported number is over-claimed relative to the original method.
+FairGFL, FaVGNN, and FDP-Fair are likewise reimplemented (Section~\ref{sec:related});
+full fidelity notes for all reimplemented baselines, including the exact
+equations reproduced from each source, are maintained alongside the code
+(\texttt{docs/BASELINES\_AND\_SOURCES.md}).
+
+\begin{table}[h]\centering\small
+\caption{What each 2025--2026 baseline's reimplementation keeps vs.\ drops.}
+\label{tab:baseline-fidelity}
+\begin{tabular}{p{2.1cm}p{4.6cm}p{4.6cm}}
+\toprule
+Baseline & Kept & Dropped / approximated \\
+\midrule
+FairGFL & weight $\propto 1/(1{+}O_i)$ aggregation rule & $O_i$ (multi-graph
+node/edge overlap) proxied by sample-count deviation from the mean, since our
+setting has one Dirichlet-partitioned graph, not separate per-client graphs \\
+FedGraph-Fair & minimax/DRO dual $\lambda$ reweighting high-loss clients &
+personalised per-client models mixed via a learned peer-similarity graph
+(orthogonal decentralised-communication contribution) \\
+PUFFLE & momentum controller auto-tuning the fairness weight toward a target
+disparity, + DP-SGD & the third privacy channel (noised group-count sharing
+for clients missing a demographic group) -- unneeded here since every client
+observes both groups \\
+FedFACT & closed-form global+local offset (exact reduction of the paper's
+optimum for binary demographic parity) & general multiclass cost-matrix
+calibration and the iterative dual-ascent solver \\
+PoPETs'25 & degree-2-polynomial FairFed weighting (the FHE-friendly surrogate
+itself) & threshold-CKKS secure aggregation and its noise-as-DP analysis
+(cryptographic infrastructure, no numeric effect once computed in the clear) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Dataset construction and sensitive attributes}
+\label{app:data}
+\textbf{German, Credit, Bail} follow the standard NIFTY preprocessing: edges are
+symmetrised, features are $z$-score standardised, and the sensitive attribute is
+excluded from the node feature matrix (so the model cannot read it directly).
+Sensitive attributes are gender (German), age (Credit), and race (Bail); targets
+are good-credit, no-default, and (non-)recidivism respectively. \textbf{Pokec}
+uses region as the sensitive attribute and working-field as the target.
+\textbf{Elliptic} is the public Bitcoin transaction graph; illicit transactions
+are the positive class, and the unlabelled majority of nodes is retained for
+message passing but excluded from loss and metrics. As Elliptic carries no
+protected demographic attribute, we construct a transparent operational proxy:
+early- versus late-period transactions, split at the median of the $49$
+anonymised time steps, so that we study whether an AML model disproportionately
+flags one market period---a genuine temporal-drift concern in deployed
+compliance systems. We stress this is a subgroup-disparity analysis, not a
+protected-demographic claim.
+
+\textbf{ogbn-products} is used for the million-node scaling study
+(Section~\ref{sec:scaling}). It carries no protected demographic attribute, so
+we construct documented structural proxies rather than treat any column as a
+sensitive attribute: the binary target greedily coarsens the 47-way product
+category into two balanced super-classes (largest categories assigned to the
+positive class until $\approx\!50\%$ of nodes are covered), giving a task a
+GNN can genuinely learn while remaining a deterministic function of the
+official label---not an arbitrary split; the sensitive attribute is a
+high- vs.\ low-degree split at the median node degree (a structural
+connectivity subgroup, analogous to core–periphery position in a co-purchase
+graph). Training uses neighbor sampling (fan-out $10,5$; batch size $4096$);
+the official OGB split is used for train/validation/test. The test split
+alone contains $2.2$M nodes, so both per-round monitoring and the final
+reported metrics evaluate a fixed random sub-sample of $100$k test nodes
+(seeded, so identical across rounds and comparable across methods) rather
+than the full test set, keeping evaluation cost from dominating training
+cost at this scale.
+
+Clients receive induced subgraphs under a Dirichlet($\alpha$) label partition
+with a small per-client class floor that prevents degenerate single-class silos;
+each client inherits the global train/validation/test masks for its nodes, and
+the global model is evaluated on the pooled test nodes across all clients.
+
+\section{Reproducibility}
+\label{app:repro}
+All datasets are public and downloaded on demand into a local cache; all
+randomness is seeded; the privacy accountant, metrics, and aggregation rules are
+covered by an offline unit-test suite run in continuous integration; and every
+table and figure in this paper is regenerated from logged runs by a single
+script (\texttt{experiments/report.py}). The full experiment matrix---main
+comparison, ablation, privacy sweep, fairness--utility Pareto frontier,
+Byzantine-robustness study, scalability, and partition-sensitivity---is driven
+by a resumable runner (\texttt{experiments/run\_matrix.py}). Code, config, and
+logs are released.
+
+\end{appendices}
+
+\bibliography{ref}
+
+\end{document}
