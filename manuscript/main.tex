@@ -220,6 +220,29 @@ and every number and figure in this paper is regenerated from logged runs by a
 single script.
 \end{enumerate}
 
+\paragraph{Relation to a preliminary version.}
+A short preliminary version of this work, introducing the FSER, FTGD, and BFWA
+components under the name FedFairGNN, appeared as a conference paper
+\cite{dang2026fedfairgnn} evaluated on three fraud-detection graphs
+(YelpChi, Amazon, Elliptic) with a single $K{=}3$-client configuration and no
+robustness, uncertainty, explainability, or regulatory-compliance analysis. This
+article substantially extends that preliminary study: it (i) evaluates on five
+standard fairness benchmarks (German, Credit, Bail, Pokec, Elliptic) plus a
+$2.4$M-node scalability study (ogbn-products), only one of which overlaps with
+the earlier evaluation; (ii) compares against sixteen baselines, including five
+2025--2026 methods reimplemented for this comparison, versus the small baseline
+set of the preliminary version; (iii) introduces the Byzantine-robust
+\texttt{robust\_bfwa} variant and a new fairness-poisoning attack, entirely
+absent from the earlier work; (iv) adds an adversarial evaluation of the privacy
+mechanism (an attribute-inference attack, Section~\ref{sec:exp-privacy}) and
+multi-seed statistical significance testing, neither of which the preliminary
+version performed; and (v) adds the full trustworthiness instrumentation
+layer---predictive uncertainty and calibration, attention-based audits, a
+composite trust score, sustainability accounting, and the EU~AI~Act / NIST~AI~RMF
+design mapping (Section~\ref{sec:trust})---which did not appear in the
+preliminary version at all. We also renamed the framework from FedFairGNN to
+TrustFedGNN to reflect this broadened scope.
+
 By lowering the barrier to trustworthy, infrastructure-grade collaborative AI,
 this work contributes to UN Sustainable Development Goal~9 (industry,
 innovation, and resilient infrastructure). The remainder of the paper is
@@ -274,7 +297,11 @@ fairness; FedGraph-Fair \cite{fedgraphfair2026} applies distributionally-robust
 optimisation for personalised group-fair federated graph learning; FaVGNN
 \cite{wang2026favgnn} (2026) achieves group fairness in \emph{vertical} FL via
 completion-driven adversarial fusion; and FDP-Fair \cite{xue2026fdpfair} (2026)
-combines federated DP training with demographic-parity post-processing. We
+combines federated DP training with demographic-parity post-processing. Our own
+preliminary conference paper \cite{dang2026fedfairgnn} introduced the FSER, FTGD,
+and BFWA components under the name FedFairGNN on a smaller evaluation without a
+robustness, uncertainty, or compliance analysis; this article is a substantial
+extension, detailed in Section~\ref{sec:intro}. We
 compare against FairFed, q-FedAvg, FedFB, F$^2$GNN, FairSIN (run federated),
 the strongest 2026 competitors (horizontal adaptations of FaVGNN and FDP-Fair),
 and---reimplementing each paper's core statistical mechanism to the extent it
