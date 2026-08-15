@@ -1,0 +1,112 @@
+================================================================================
+COPY-PASTE FIELDS FOR THE SUBMISSION SYSTEM
+Discover Artificial Intelligence — MSID ca5f4c68-82d0-46f5-99ec-5304715a69a6
+================================================================================
+
+
+--------------------------------------------------------------------------------
+TITLE
+--------------------------------------------------------------------------------
+
+Unifying Fairness Privacy Robustness and Explainability in Federated Graph Neural Networks for High Stakes Risk Detection
+
+
+--------------------------------------------------------------------------------
+SHORT TITLE / RUNNING HEAD
+--------------------------------------------------------------------------------
+
+Trustworthy Federated Graph Neural Networks
+
+
+--------------------------------------------------------------------------------
+ABSTRACT  (Unicode — use this if the field accepts ε, θ, √)
+--------------------------------------------------------------------------------
+
+Federated Learning (FL) enables institutions to train shared models over sensitive, decentralised graph data—transactions, credit records, social ties—without exchanging raw data. Yet accuracy alone does not make such systems deployable: recent regulatory and scientific frameworks (the EU AI Act, the NIST AI Risk Management Framework) demand that automated decision systems be simultaneously fair, private, robust, and transparent. Existing work addresses these properties in isolation, and no prior method combines fairness, differential privacy, and Byzantine robustness for federated graph neural networks (GNNs). We present TrustFedGNN, a unified trustworthy federated graph-learning framework built from three components: (i) Fairness-Sensitive Edge Reweighting (FSER), which suppresses the biased cross-group message passing responsible for structural discrimination; (ii) Fairness-Targeted Gradient Decomposition (FTGD), which applies differential privacy to the released fairness statistic by privatising only the low-dimensional demographic-parity means—so strong DP for the fairness signal costs O(1) noise where full-gradient DP-SGD must inject O(√|θ|) and destroys utility. We emphasise at the outset that this (ε,δ) guarantee covers the released fairness statistic only, and not the full transmitted model update, which retains sensitive-attribute dependence through FSER and the fairness-gradient masks; the comparison against full-gradient DP-SGD is therefore not like-for-like, and we make the exact scope precise in Section 4.2. The framework further contributes (iii) Bi-objective Frank–Wolfe Aggregation (BFWA) and its Byzantine-robust variant, which impose an operator-chosen constraint on the aggregated client-disparity statistic while screening malicious clients, including a new fairness-poisoning threat. We further instrument the framework with predictive uncertainty, GNN attention audits, a composite trust score, sustainability accounting, and an EU AI Act / NIST RMF compliance mapping. Across five real datasets spanning credit, recidivism, social, and—uniquely—large-scale crypto (Elliptic Bitcoin, 203,769 nodes) domains, TrustFedGNN does not dominate every individual metric, but it is the only method among fifteen baselines to combine competitive fairness and utility with a statistic-level sensitive-attribute DP guarantee and Byzantine robustness in a single federated GNN. All tables and figures are regenerated from logged runs and the code is released, so every reported number is traceable to a configuration. This work supports SDG 9 by advancing trustworthy collaborative AI.
+
+
+--------------------------------------------------------------------------------
+ABSTRACT  (plain ASCII — use this if the field mangles Greek letters or dashes)
+--------------------------------------------------------------------------------
+
+Federated Learning (FL) enables institutions to train shared models over sensitive, decentralised graph data - transactions, credit records, social ties - without exchanging raw data. Yet accuracy alone does not make such systems deployable: recent regulatory and scientific frameworks (the EU AI Act, the NIST AI Risk Management Framework) demand that automated decision systems be simultaneously fair, private, robust, and transparent. Existing work addresses these properties in isolation, and no prior method combines fairness, differential privacy, and Byzantine robustness for federated graph neural networks (GNNs). We present TrustFedGNN, a unified trustworthy federated graph-learning framework built from three components: (i) Fairness-Sensitive Edge Reweighting (FSER), which suppresses the biased cross-group message passing responsible for structural discrimination; (ii) Fairness-Targeted Gradient Decomposition (FTGD), which applies differential privacy to the released fairness statistic by privatising only the low-dimensional demographic-parity means - so strong DP for the fairness signal costs O(1) noise where full-gradient DP-SGD must inject O(sqrt(|theta|)) and destroys utility. We emphasise at the outset that this (epsilon, delta) guarantee covers the released fairness statistic only, and not the full transmitted model update, which retains sensitive-attribute dependence through FSER and the fairness-gradient masks; the comparison against full-gradient DP-SGD is therefore not like-for-like, and we make the exact scope precise in Section 4.2. The framework further contributes (iii) Bi-objective Frank-Wolfe Aggregation (BFWA) and its Byzantine-robust variant, which impose an operator-chosen constraint on the aggregated client-disparity statistic while screening malicious clients, including a new fairness-poisoning threat. We further instrument the framework with predictive uncertainty, GNN attention audits, a composite trust score, sustainability accounting, and an EU AI Act / NIST RMF compliance mapping. Across five real datasets spanning credit, recidivism, social, and - uniquely - large-scale crypto (Elliptic Bitcoin, 203,769 nodes) domains, TrustFedGNN does not dominate every individual metric, but it is the only method among fifteen baselines to combine competitive fairness and utility with a statistic-level sensitive-attribute DP guarantee and Byzantine robustness in a single federated GNN. All tables and figures are regenerated from logged runs and the code is released, so every reported number is traceable to a configuration. This work supports SDG 9 by advancing trustworthy collaborative AI.
+
+
+--------------------------------------------------------------------------------
+KEYWORDS
+--------------------------------------------------------------------------------
+
+Federated learning; Graph neural networks; Algorithmic fairness; Differential privacy; Byzantine robustness; Explainable AI; Trust metrics; Regulatory compliance
+
+(If the system wants them one per line:)
+Federated learning
+Graph neural networks
+Algorithmic fairness
+Differential privacy
+Byzantine robustness
+Explainable AI
+Trust metrics
+Regulatory compliance
+
+
+--------------------------------------------------------------------------------
+DATA AVAILABILITY STATEMENT
+(the system asks you to select "yes" and this must match the manuscript exactly)
+--------------------------------------------------------------------------------
+
+All datasets analysed during the current study are publicly available. The German Credit, Credit Defaulter, and Bail (Recidivism) graphs and the Pokec-z social graph are available from the NIFTY and FairGNN benchmark releases (https://github.com/chirag126/nifty and https://github.com/EnyanDai/FairGNN); the Elliptic Bitcoin transaction graph is available from its public release on Kaggle (https://www.kaggle.com/datasets/ellipticco/elliptic-data-set); and ogbn-products is available from the Open Graph Benchmark (https://ogb.stanford.edu/docs/nodeprop/). No new data were generated in this study. The result tables and figures reported in this article, together with the code and the exact configurations that produced them, are in the public repository cited below; the raw per-run experiment logs from which those tables and figures were generated are available from the corresponding author on request.
+
+
+--------------------------------------------------------------------------------
+CODE AVAILABILITY STATEMENT
+--------------------------------------------------------------------------------
+
+The complete source code, the experiment configurations that define every reported run, and the generated result tables and figures are publicly available at https://github.com/vinhqdang/FedFairGNN. The repository contains the full experiment matrix runner and the reporting script (experiments/report.py) that regenerates every table and figure from a run log, so any reported configuration can be re-executed end to end from public data; the per-run log files themselves are available from the corresponding author on request (Appendix C).
+
+
+--------------------------------------------------------------------------------
+AUTHORS (order and affiliations as on the title page)
+--------------------------------------------------------------------------------
+
+1. Quang-Vinh Dang — British University Vietnam, Hung Yen, Vietnam
+   vinh.dq4@buv.edu.vn
+
+2. Ngoc-Son-An Nguyen — Industrial University of Ho Chi Minh City,
+   Ho Chi Minh City, Vietnam
+   annns25871@pgr.iuh.edu.vn
+
+3. Dat Le — University of Economics and Finance, Ho Chi Minh City, Vietnam
+   datla@uef.edu.vn
+
+4. Minh Ngoc Dinh (CORRESPONDING AUTHOR) — Millennia Education,
+   Ho Chi Minh City, Vietnam
+   minh.dinh@maeducation.com
+
+
+--------------------------------------------------------------------------------
+OTHER DECLARATIONS (short forms, if the system asks for them separately)
+--------------------------------------------------------------------------------
+
+Funding
+  The authors received no specific funding for this work.
+
+Conflict of interest
+  The authors declare that they have no competing interests.
+
+Ethical approval
+  Not applicable. This study involved no human participants and no animal
+  subjects. It uses only publicly released, de-identified benchmark datasets.
+
+Consent to participate
+  Not applicable. No human participants were recruited or enrolled, and no
+  personal data were collected by the authors.
+
+Consent to publish
+  Not applicable. This article contains no data, images, or details relating to
+  an identifiable individual person.
+
+Author contributions
+  Q.-V.D. and N.-S.-A.N. conceived the original FedFairGNN framework and the
+  preliminary study. All authors contributed to extending the methodology,
+  experiments, and analysis presented in this article, and all authors read and
+  approved the final manuscript.
