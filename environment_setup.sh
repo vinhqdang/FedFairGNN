@@ -1,23 +1,24 @@
 #!/bin/bash
-# Environment setup script for FedFairGNN
+# Environment setup for TrustFedGNN.
+#
+# Everything in the paper runs on CPU; GPU wheels are only worth it for the
+# ogbn-products scalability study. Run from the repository root.
 
-# Ensure we are in the right conda environment
-# (User specified py313)
+set -e
 
-echo "Installing dependencies..."
+echo "Installing PyTorch (CPU wheels)..."
+pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install PyTorch (assuming CPU for now, can be adjusted for CUDA/MPS)
-# Using pip within the conda environment
-pip install torch torchvision torchaudio
-
-# Install PyTorch Geometric and dependencies
+echo "Installing PyTorch Geometric..."
 pip install torch_geometric
-pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
 
-# Install other requirements
-pip install pandas numpy scikit-learn matplotlib networkx scipy
+echo "Installing project requirements..."
+pip install -r requirements.txt
 
-# Install autodp for differential privacy
-pip install autodp
+# The neighbour-sampling path used by the million-node study (--sampling) needs
+# the compiled PyG extensions. Match the wheel URL to your torch version:
+#   pip install torch-scatter torch-sparse \
+#     -f https://data.pyg.org/whl/torch-$(python -c 'import torch;print(torch.__version__)')+cpu.html
 
-echo "Dependencies installed."
+echo
+echo "Done. Verify with:  python -m pytest -q"
