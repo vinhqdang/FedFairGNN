@@ -1,0 +1,15 @@
+\begin{tabular}{lccc}
+\toprule
+Release & $\epsilon$ & Noise mult.\ $z$ & Inference acc. \\
+\midrule
+Exact ($s$-statistic, no DP) & $\infty$ & 0 & 1.000 \\
+FTGD & 16 & 3.6 & 0.502 \\
+FTGD & 8 & 6.4 & 0.510 \\
+FTGD & 4 & 11.6 & 0.506 \\
+FTGD & 2 & 21.5 & 0.513 \\
+FTGD & 1 & 40.5 & 0.507 \\
+FTGD & 0.5 & 76.7 & 0.503 \\
+\midrule
+\emph{Random guess (balanced targets)} & --- & --- & 0.500 \\
+\bottomrule
+\end{tabular}

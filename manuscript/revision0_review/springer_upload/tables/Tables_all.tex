@@ -1,0 +1,305 @@
+%% Springer Nature LaTeX template (sn-jnl), official Dec 2024 package.
+%% Math and Physical Sciences Numbered Reference Style (sn-mathphys-num).
+%% Prepared for submission to a Springer Nature journal (collection:
+%% "Trustworthy and Responsible Federated Learning").
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+\usepackage{tikz}%
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
+\usepackage{subcaption}%
+
+\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%
+\newtheorem{proposition}[theorem]{Proposition}%
+\theoremstyle{thmstyletwo}%
+\newtheorem{remark}{Remark}%
+\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}%
+
+\raggedbottom
+
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\providecommand{\doiurl}[1]{\url{https://doi.org/#1}}
+
+\begin{document}
+
+\begin{center}\Large\bfseries Tables 1--13 and Appendix Tables\\[0.3em]
+\normalsize\mdseries Unifying Fairness Privacy Robustness and Explainability in Federated\\ Graph Neural Networks for High Stakes Risk Detection\end{center}
+
+\vspace{1em}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Where methods sit across the trust axes. \checkmark: supported;
+$\sim$: partial/adaptable; blank: not addressed. ``Graph'' = graph-native;
+``Group fair'' = demographic group fairness (not merely client fairness);
+``Crypto'' = validated on a large-scale cryptocurrency graph. $^{\ddagger}$Our
+DP entry is \emph{not} equivalent to the record-level guarantees of DP-FedAvg,
+PUFFLE, FDP-Fair or FaVGNN: TrustFedGNN privatises the \emph{released fairness
+statistic} rather than the whole model update (Section~\ref{sec:ftgd}), so this
+column marks the presence of a formal $(\epsilon,\delta)$ guarantee, not
+guarantees of equal scope.}
+\label{tab:positioning}
+\begin{tabular}{lccccccc}
+\toprule
+Method & Fed. & Graph & Group fair & DP & Byz. & Explain & Crypto \\
+\midrule
+FairGNN \cite{dai2021say}          &      & \checkmark & \checkmark &            &            & $\sim$     &  \\
+NIFTY \cite{agarwal2021nifty}      &      & \checkmark & \checkmark &            &            &            &  \\
+FairSIN \cite{yang2024fairsin}     &      & \checkmark & \checkmark &            &            &            &  \\
+DAB-GNN \cite{lee2025dabgnn}       &      & \checkmark & \checkmark &            &            &            &  \\
+FairFed \cite{ezzeldin2023fairfed} & \checkmark &      & \checkmark &            &            &            &  \\
+q-FedAvg \cite{li2020fair}         & \checkmark &      & $\sim$     &            &            &            &  \\
+PUFFLE \cite{corbucci2024puffle}   & \checkmark &      & \checkmark & \checkmark &            &            &  \\
+FedFACT \cite{fedfact2025}         & \checkmark &      & \checkmark &            &            &            &  \\
+DP-FedAvg \cite{mcmahan2018learning}& \checkmark &     &            & \checkmark &            &            &  \\
+Krum/Median \cite{blanchard2017krum,yin2018byzantine} & \checkmark & & &  & \checkmark &            &  \\
+F\textsuperscript{2}GNN \cite{f2gnn2023} & \checkmark & \checkmark & \checkmark &  &  &            &  \\
+FairGFL \cite{fairgfl2026}         & \checkmark & \checkmark & $\sim$     & \checkmark &            &            &  \\
+FaVGNN \cite{wang2026favgnn}       & \checkmark & \checkmark & \checkmark & \checkmark &            &            &  \\
+FDP-Fair \cite{xue2026fdpfair}     & \checkmark &      & \checkmark & \checkmark &            &            &  \\
+FedGraph-Fair \cite{fedgraphfair2026} & \checkmark & \checkmark & \checkmark &  &            &            &  \\
+PoPETs'25 \cite{bendoukha2025popets} & \checkmark &   & \checkmark & \checkmark &            &            &  \\
+\midrule
+\textbf{TrustFedGNN (ours)} & \checkmark & \checkmark & \checkmark & \checkmark$^{\ddagger}$ & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Datasets. $^\dagger$Elliptic uses an operational early/late temporal
+subgroup as a documented proxy (not a protected demographic).}
+\label{tab:datasets}
+\input{tables/datasets.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering
+\caption{Paired Wilcoxon signed-rank tests (TrustFedGNN vs.\ each baseline over
+shared seeds): $p$-values \emph{rounded to two decimals}, $^{*}$ marks
+$p<0.05$; where the running text quotes a $p$-value it quotes this rounded
+value. ``--'' where fewer than five
+shared seeds are available (Credit/Elliptic remain at 2--3 seeds by cost, and
+are run against a restricted baseline set---see Section~\ref{sec:setup}). Note
+the Wilcoxon floor: at $n{=}5$ (Bail, Pokec) the smallest attainable $p$ is
+$0.0625$, so a uniform $0.06$ indicates our method wins on \emph{all five} paired
+seeds, not a weak effect. On German (10 seeds) TrustFedGNN's DPD is \emph{not}
+significantly different from the non-fair backbone or most fair baselines; its
+AUC is significantly higher than the other (collapsing) privacy methods and lower
+than the non-private ones. On Bail its AUC beats every baseline on all seeds
+while its DPD ties the fairest non-collapsed methods; on Pokec it beats the
+backbone on \emph{both} axes on all seeds.}
+\label{tab:significance}
+{\footnotesize\setlength{\tabcolsep}{4pt}\input{tables/significance.tex}}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over seeds:
+\textbf{10} on the small/high-variance German, \textbf{5} on Bail and Pokec, and
+2--3 on the larger Credit/Elliptic (see Table~\ref{tab:significance} for paired
+tests). Best per column in bold. TrustFedGNN is the only method that is
+fair \emph{and} private (methods above the rule are non-private).
+$^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL method.
+FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026 reimplementations
+with approximated fidelity (Appendix~\ref{app:baselines}).}
+\label{tab:main-auc}
+{\footnotesize\setlength{\tabcolsep}{3pt}\input{tables/main_auc.tex}}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Demographic Parity Difference (DPD, lower is fairer).}
+\label{tab:main-dpd}
+{\footnotesize\setlength{\tabcolsep}{3pt}\input{tables/main_dpd.tex}}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Equal Opportunity Difference (EOD, lower is fairer).}
+\label{tab:main-eod}
+{\footnotesize\setlength{\tabcolsep}{3pt}\input{tables/main_eod.tex}}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Ablation of TrustFedGNN components (no DP). AUC / DPD per dataset.
+The ablation is a \emph{separate} set of runs from the main comparison (its own
+matched seed set, so that all four configurations are compared on identical
+seeds); its numbers are therefore close to, but not identical with, the
+corresponding rows of Tables~\ref{tab:main-auc} and~\ref{tab:main-dpd}, which
+aggregate the full seed sets (10 on German, 5 on Bail). All four differences
+lie within one standard deviation of the multi-seed mean---e.g.\ German DPD
+$0.045$ here versus $0.040\!\pm\!0.035$ there, and Bail AUC $0.988$ versus
+$0.990\!\pm\!0.004$---so the comparison within this table is internally
+consistent even where a cell does not reproduce the main table exactly.}
+\label{tab:ablation}
+\input{tables/ablation.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Attribute-inference attack on the released fairness statistic (Bail,
+real predictions). A worst-case differencing adversary infers a target node's
+sensitive attribute. The exact release is a perfect oracle; FTGD's noise reduces
+inference to balanced-random ($0.500$) at every deployed $\epsilon$. Targets are
+sampled in equal numbers from each true group ($2{,}000$ each), so $0.500$---not
+the dataset's $0.53$ majority-group prevalence---is the correct chance
+reference.}
+\label{tab:privacy-attack}
+\input{tables/privacy_attack.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Utility \emph{and} fairness retained under attack ($2/10$ Byzantine
+clients, Bail, single seed). AUC (higher = more robust), DPD and EOD (lower =
+fairer). Best per attack--metric in bold among non-collapsed models;
+$^{\dagger}$ marks near-chance models whose low disparity is an artefact of
+constant predictions.}
+\label{tab:robustness}
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\input{tables/robustness.tex}}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Million-node scaling study (ogbn-products, $2.4$M nodes, $123$M
+edges, $K{=}3$ clients, $15$ rounds, CPU). $^{\ast}$2026 baseline.
+$^{\dagger}$DPD/EOD is a spurious artefact of a collapsed (near-chance)
+classifier, not a genuine fairness result---see discussion above. The energy
+column is a transparent \emph{proxy}, not a metered measurement: logged
+wall-clock $\times$ an assumed $65$\,W CPU draw (\texttt{src/trust/
+sustainability.py}), valid for relative comparison between methods on this one
+machine and not comparable across hardware.}
+\label{tab:large-scale}
+\input{tables/large_scale.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
+(lower better), group uncertainty gap, and per-round communication. Energy is
+\emph{not} reported here: wall-clock was not logged for these canonical
+small-graph runs, so the proxy of Section~\ref{sec:method-trust} has no input
+for them. We report it instead where the measurement exists, on the large-scale
+study (Table~\ref{tab:large-scale}), rather than print an uninformative zero.}
+\label{tab:efficiency}
+\input{tables/efficiency.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Composite trust score on Bail: utility, fairness, and privacy combined
+via the arithmetic-mean ($p{=}1$) power mean, from the same canonical runs as
+Tables~\ref{tab:main-auc}--\ref{tab:main-eod}. Non-private methods score $0$ on
+privacy by construction. The calibration-augmented composite is in
+Table~\ref{tab:efficiency}. Ranking is sensitive to the reference constants
+(stated in text); best in bold.}
+\label{tab:trust}
+\input{tables/trust.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{Mapping of TrustFedGNN components to EU AI Act articles and NIST AI RMF
+functions.}
+\label{tab:compliance}
+\input{tables/compliance.tex}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]
+\centering\small
+\caption{Hyperparameters. ``Explored'' gives the sweep range where applicable.}
+\label{tab:hyper}
+\begin{tabular}{lll}
+\toprule
+Hyperparameter & Default & Explored \\
+\midrule
+GNN layers $L$ & 2 & $\{2,3\}$ \\
+Hidden dimension $d_h$ & 64 & $\{32,64,128\}$ \\
+Attention heads (FSER/GAT) & 4 & $\{1,4\}$ \\
+Dropout & 0.3 & $\{0.2,0.3,0.5\}$ \\
+Local optimiser & AdamW & --- \\
+Local learning rate $\eta$ & 0.01 & $\{10^{-3},10^{-2}\}$ \\
+Weight decay & $10^{-5}$ & --- \\
+Local epochs $E$ & 2 & $\{1,2,3\}$ \\
+Communication rounds $T$ & 40--60 & per dataset \\
+Clients $K$ & 3--10 & $\{3,5,10,20\}$ \\
+Partition & Dirichlet($\alpha{=}0.5$) & $\alpha\in\{0.1,0.5,1.0\}$ \\
+Fairness weight $\lambda$ & 1.0 & $\{0,0.25,0.5,1,2,4\}$ \\
+Fairness budget $\tau$ & 0.05 & $\{0.01,0.05,0.1\}$ \\
+DP $\epsilon$ & 8 & $\{0.5,1,2,4,8,16\}$ \\
+DP $\delta$ & $10^{-5}$ & --- \\
+DP clip $C$ & 1.0 & --- \\
+Frank--Wolfe iters $T_{\mathrm{FW}}$ & 20 & --- \\
+Dual step $\eta_\mu$ & 0.1 & --- \\
+MC-dropout samples & 20 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+
+\begin{table}[htbp]\centering\small
+\caption{What each 2025--2026 baseline's reimplementation keeps vs.\ drops.}
+\label{tab:baseline-fidelity}
+\begin{tabular}{p{2.1cm}p{4.6cm}p{4.6cm}}
+\toprule
+Baseline & Kept & Dropped / approximated \\
+\midrule
+FairGFL & weight $\propto 1/(1{+}O_i)$ aggregation rule & $O_i$ (multi-graph
+node/edge overlap) proxied by sample-count deviation from the mean, since our
+setting has one Dirichlet-partitioned graph, not separate per-client graphs \\
+FedGraph-Fair & minimax/DRO dual $\lambda$ reweighting high-loss clients &
+personalised per-client models mixed via a learned peer-similarity graph
+(orthogonal decentralised-communication contribution) \\
+PUFFLE & momentum controller auto-tuning the fairness weight toward a target
+disparity, + DP-SGD & the third privacy channel (noised group-count sharing
+for clients missing a demographic group) -- unneeded here since every client
+observes both groups \\
+FedFACT & closed-form global+local offset (exact reduction of the paper's
+optimum for binary demographic parity) & general multiclass cost-matrix
+calibration and the iterative dual-ascent solver \\
+PoPETs'25 & degree-2-polynomial FairFed weighting (the FHE-friendly surrogate
+itself) & threshold-CKKS secure aggregation and its noise-as-DP analysis
+(cryptographic infrastructure, no numeric effect once computed in the clear) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

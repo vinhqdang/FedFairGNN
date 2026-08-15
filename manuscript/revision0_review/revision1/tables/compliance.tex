@@ -1,0 +1,17 @@
+\begin{tabular}{p{0.30\textwidth}p{0.62\textwidth}}
+\toprule
+Requirement & Addressed by \\
+\midrule
+\multicolumn{2}{l}{\emph{EU AI Act}} \\
+Art. 10 - Data \& data governance & Non-IID federated silos keep raw data local; sensitive attribute excluded from features; documented dataset provenance and base-rate gaps. \\
+Art. 13 - Transparency \& information & Per-edge FSER attention and feature-level disparity attribution expose why a decision is made; model card documents intended use and metrics. \\
+Art. 14 - Human oversight & Explicit, human-set fairness budget tau and privacy budget epsilon; Pareto trade-off curves let an operator choose the operating point. \\
+Art. 15 - Accuracy, robustness \& cybersecurity & Byzantine-robust aggregation (robust\_bfwa) with reported accuracy retention under poisoning/fairness attacks; RDP privacy guarantee. \\
+\midrule
+\multicolumn{2}{l}{\emph{NIST AI RMF}} \\
+GOVERN & Fairness/privacy budgets and audit logging make governance choices explicit and recorded. \\
+MAP & Threat model (Byzantine + fairness poisoning) and subgroup-disparity context are documented. \\
+MEASURE & DPD/EOD/EO, RDP epsilon, attack-retention, ECE and a composite trust score are all measured. \\
+MANAGE & Robust aggregation + fairness constraint actively mitigate measured risks each round. \\
+\bottomrule
+\end{tabular}

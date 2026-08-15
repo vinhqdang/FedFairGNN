@@ -49,13 +49,19 @@ def main():
         print(f"{m}: AUC={final['auc']:.3f} DPD={final['dpd']:.3f} ECE={unc['ece']:.3f} "
               f"comm={sus['per_round_mb']}MB trust={t:.3f}")
 
-    lines = ["\\begin{tabular}{lcccccc}", "\\toprule",
-             "Method & ECE & Brier & U-gap & Comm/rd (MB) & Energy (Wh) & Trust \\\\",
+    # NOTE: no energy column here. The wall-clock-based energy proxy is only
+    # meaningful when `wall_s` was actually logged for the run; these canonical
+    # small-graph runs predate wall-clock logging, so `energy_wh` defaulted to
+    # 0 and the column printed a spurious "0.00 Wh" for every method. Energy is
+    # instead reported from logged wall-clock in the large-scale table
+    # (report.py:table_large_scale), where the measurement exists.
+    lines = ["\\begin{tabular}{lccccc}", "\\toprule",
+             "Method & ECE & Brier & U-gap & Comm/rd (MB) & Trust \\\\",
              "\\midrule"]
     for m, final, unc, sus, eps, t in rows:
         lines.append(f"{PRETTY.get(m,m)} & {unc['ece']:.3f} & {unc['brier']:.3f} & "
                      f"{unc['uncertainty_gap']:.3f} & {sus['per_round_mb']:.3f} & "
-                     f"{sus.get('energy_wh',0):.2f} & {t:.3f} \\\\")
+                     f"{t:.3f} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     with open(os.path.join(TAB, "efficiency.tex"), "w") as f:
         f.write("\n".join(lines))

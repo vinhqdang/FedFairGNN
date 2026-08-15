@@ -1,0 +1,14 @@
+\begin{tabular}{lccccccccc}
+\toprule
+ & \multicolumn{3}{c}{Gaussian} & \multicolumn{3}{c}{ALIE} & \multicolumn{3}{c}{Fair-poison} \\
+Aggregator & AUC $\uparrow$ & DPD $\downarrow$ & EOD $\downarrow$ & AUC $\uparrow$ & DPD $\downarrow$ & EOD $\downarrow$ & AUC $\uparrow$ & DPD $\downarrow$ & EOD $\downarrow$ \\
+\midrule
+fedavg & 0.511 & 0.031$^{\dagger}$ & 0.048$^{\dagger}$ & 0.935 & 0.062 & 0.039 & 0.945 & \textbf{0.015} & 0.037 \\
+bfwa & 0.483 & 0.014$^{\dagger}$ & 0.006$^{\dagger}$ & \textbf{0.991} & 0.086 & 0.030 & 0.689 & 0.086 & 0.126 \\
+krum & 0.986 & \textbf{0.053} & 0.022 & 0.710 & \textbf{0.032} & \textbf{0.003} & \textbf{0.991} & 0.049 & 0.007 \\
+multikrum & 0.985 & 0.060 & \textbf{0.017} & 0.916 & 0.063 & 0.030 & 0.989 & 0.068 & 0.024 \\
+median & 0.962 & 0.066 & 0.033 & 0.790 & 0.051 & 0.020 & 0.980 & 0.038 & 0.010 \\
+trimmed\_mean & 0.984 & 0.055 & 0.018 & 0.956 & 0.060 & 0.035 & 0.983 & 0.049 & \textbf{0.005} \\
+\textbf{robust\_bfwa (ours)} & \textbf{0.992} & 0.075 & 0.018 & 0.953 & 0.045 & 0.034 & 0.990 & 0.068 & 0.024 \\
+\bottomrule
+\end{tabular}

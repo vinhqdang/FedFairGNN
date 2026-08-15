@@ -1,4 +1,7 @@
 %% Springer Nature LaTeX template (sn-jnl), official Dec 2024 package.
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL ../main_revision0.tex   Sun Aug 16 01:08:01 2026
+%DIF ADD ../revision1/main.tex   Sun Aug 16 01:17:20 2026
 %% Math and Physical Sciences Numbered Reference Style (sn-mathphys-num).
 %% Prepared for submission to a Springer Nature journal (collection:
 %% "Trustworthy and Responsible Federated Learning").
@@ -39,12 +42,98 @@
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \providecommand{\doiurl}[1]{\url{https://doi.org/#1}}
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}} %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+\providecommand{\DIFscaledelfig}{0.5}
+%DIF HIGHLIGHTGRAPHICS PREAMBLE %DIF PREAMBLE
+\RequirePackage{settobox} %DIF PREAMBLE
+\RequirePackage{letltxmacro} %DIF PREAMBLE
+\newsavebox{\DIFdelgraphicsbox} %DIF PREAMBLE
+\newlength{\DIFdelgraphicswidth} %DIF PREAMBLE
+\newlength{\DIFdelgraphicsheight} %DIF PREAMBLE
+% store original definition of \includegraphics %DIF PREAMBLE
+\LetLtxMacro{\DIFOincludegraphics}{\includegraphics} %DIF PREAMBLE
+\providecommand{\DIFaddincludegraphics}[2][]{{\color{blue}\fbox{\DIFOincludegraphics[#1]{#2}}}} %DIF PREAMBLE
+\providecommand{\DIFdelincludegraphics}[2][]{% %DIF PREAMBLE
+\sbox{\DIFdelgraphicsbox}{\DIFOincludegraphics[#1]{#2}}% %DIF PREAMBLE
+\settoboxwidth{\DIFdelgraphicswidth}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\settoboxtotalheight{\DIFdelgraphicsheight}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\scalebox{\DIFscaledelfig}{% %DIF PREAMBLE
+\parbox[b]{\DIFdelgraphicswidth}{\usebox{\DIFdelgraphicsbox}\\[-\baselineskip] \rule{\DIFdelgraphicswidth}{0em}}\llap{\resizebox{\DIFdelgraphicswidth}{\DIFdelgraphicsheight}{% %DIF PREAMBLE
+\setlength{\unitlength}{\DIFdelgraphicswidth}% %DIF PREAMBLE
+\begin{picture}(1,1)% %DIF PREAMBLE
+\thicklines\linethickness{2pt} %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\framebox(1,1){}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\line( 1,1){1}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,1){\line(1,-1){1}}}% %DIF PREAMBLE
+\end{picture}% %DIF PREAMBLE
+}\hspace*{3pt}}} %DIF PREAMBLE
+} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbegin}{\DIFaddbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddend}{\DIFaddend} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbegin}{\DIFdelbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelend}{\DIFdelend} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbegin}{\DIFOaddbegin \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbegin}{\DIFOdelbegin \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbeginFL}{\DIFaddbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddendFL}{\DIFaddendFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbeginFL}{\DIFdelbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelendFL}{\DIFdelendFL} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbeginFL}{\DIFOaddbeginFL \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbeginFL}{\DIFOdelbeginFL \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+%DIF AMSMATHULEM PREAMBLE %DIF PREAMBLE
+\makeatletter %DIF PREAMBLE
+\let\sout@orig\sout %DIF PREAMBLE
+\renewcommand{\sout}[1]{\ifmmode\text{\sout@orig{\ensuremath{#1}}}\else\sout@orig{#1}\fi} %DIF PREAMBLE
+\makeatother %DIF PREAMBLE
+%DIF COLORLISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
+  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}[1][]{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}[1][]{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+\lstset{extendedchars=\true,inputencoding=utf8}
+
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
 
 \begin{document}
 
-\title[Trustworthy Federated Graph Neural Networks]{Unifying Fairness Privacy
-Robustness and Explainability in Federated Graph Neural Networks for High
-Stakes Risk Detection}
+\title[Trustworthy Federated Graph Neural Networks]{\DIFdelbegin \DIFdel{Trustworthy Federated Graph
+Neural Networks: }\DIFdelend Unifying Fairness \DIFdelbegin \DIFdel{, }\DIFdelend Privacy
+\DIFdelbegin \DIFdel{, }\DIFdelend Robustness \DIFdelbegin \DIFdel{, }\DIFdelend and Explainability \DIFaddbegin \DIFadd{in Federated Graph Neural Networks }\DIFaddend for \DIFdelbegin \DIFdel{High-Stakes }\DIFdelend \DIFaddbegin \DIFadd{High
+Stakes }\DIFaddend Risk Detection}
 
 \author[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
 
@@ -62,7 +151,42 @@ Stakes Risk Detection}
 
 \affil*[4]{\orgname{Millennia Education}, \orgaddress{\city{Ho Chi Minh City}, \country{Vietnam}}}
 
-\abstract{
+\DIFdelbegin %DIFDELCMD < \abstract{
+%DIFDELCMD < Federated Learning (FL) enables institutions to train shared models over
+%DIFDELCMD < sensitive, decentralised graph data---transactions, credit records, social
+%DIFDELCMD < ties---without exchanging raw data. Yet accuracy alone does not make such
+%DIFDELCMD < systems deployable: recent regulatory and scientific frameworks (the EU AI Act,
+%DIFDELCMD < the NIST AI Risk Management Framework) demand that automated decision systems be
+%DIFDELCMD < simultaneously \emph{fair}, \emph{private}, \emph{robust}, and
+%DIFDELCMD < \emph{transparent}. Existing work addresses these properties in isolation, and
+%DIFDELCMD < no prior method combines fairness, differential privacy, and Byzantine
+%DIFDELCMD < robustness for federated graph neural networks (GNNs). We present
+%DIFDELCMD < \textbf{TrustFedGNN}, a unified trustworthy federated graph-learning framework
+%DIFDELCMD < built from three components: (i) \emph{Fairness-Sensitive Edge Reweighting}
+%DIFDELCMD < (FSER), which suppresses the biased cross-group message passing responsible for
+%DIFDELCMD < structural discrimination; (ii) \emph{Fairness-Targeted Gradient Decomposition}
+%DIFDELCMD < (FTGD), which applies differential privacy to the \emph{released fairness
+%DIFDELCMD < statistic} by privatising only the low-dimensional demographic-parity means---so
+%DIFDELCMD < strong DP for the fairness signal costs $O(1)$ noise where full-gradient DP-SGD
+%DIFDELCMD < must inject $O(\sqrt{|\theta|})$ and destroys utility (we state precisely what
+%DIFDELCMD < this guarantee covers, and what it does not, in the text); and
+%DIFDELCMD < (iii) \emph{Bi-objective Frank--Wolfe Aggregation} (BFWA) and its
+%DIFDELCMD < Byzantine-robust variant, which impose an operator-chosen constraint on the
+%DIFDELCMD < aggregated client-disparity statistic while screening malicious clients,
+%DIFDELCMD < including a new fairness-poisoning threat. We further instrument the framework
+%DIFDELCMD < with predictive uncertainty, GNN attention audits, a composite trust score,
+%DIFDELCMD < sustainability accounting, and an EU~AI~Act / NIST~RMF compliance mapping.
+%DIFDELCMD < Across five real datasets spanning credit, recidivism, social, and---uniquely---
+%DIFDELCMD < large-scale crypto (Elliptic Bitcoin, 203{,}769 nodes) domains, TrustFedGNN does
+%DIFDELCMD < not dominate every individual metric, but it is the only method among sixteen
+%DIFDELCMD < baselines to combine competitive fairness and utility with a sensitive-attribute
+%DIFDELCMD < DP guarantee and Byzantine robustness in a single federated GNN. All tables and
+%DIFDELCMD < figures are regenerated from logged runs and the code is released, so every
+%DIFDELCMD < reported number is traceable to a configuration. This work supports SDG~9 by
+%DIFDELCMD < advancing trustworthy collaborative AI.
+%DIFDELCMD < }
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \abstract{
 Federated Learning (FL) enables institutions to train shared models over
 sensitive, decentralised graph data---transactions, credit records, social
 ties---without exchanging raw data. Yet accuracy alone does not make such
@@ -101,6 +225,7 @@ GNN. All tables and figures are regenerated from logged runs and the code is
 released, so every reported number is traceable to a configuration. This work supports SDG~9 by
 advancing trustworthy collaborative AI.
 }
+\DIFaddend 
 
 \keywords{Federated learning, Graph neural networks, Algorithmic fairness,
 Differential privacy, Byzantine robustness, Explainable AI, Trust metrics,
@@ -228,12 +353,12 @@ design-mapping with an auto-generated model card
 
 \item \textbf{A reproducible evaluation} on five real datasets spanning credit,
 recidivism, social, and---uniquely---large-scale crypto (Elliptic Bitcoin,
-$203{,}769$ transactions) domains, against fifteen baselines that include the
-most recent 2025--2026 fairness-aware federated and graph methods. Not every
+$203{,}769$ transactions) domains, against \DIFdelbegin \DIFdel{sixteen }\DIFdelend \DIFaddbegin \DIFadd{fifteen }\DIFaddend baselines that include the
+most recent 2025--2026 fairness-aware federated and graph methods. \DIFaddbegin \DIFadd{Not every
 baseline is run on every dataset---cost and scale restrict the Credit and
-Elliptic columns, as Section~\ref{sec:setup} states explicitly---and TrustFedGNN
+Elliptic columns, as Section~\ref{sec:setup} states explicitly---and }\DIFaddend TrustFedGNN
 does not win every metric, but it uniquely combines competitive fairness/utility
-with statistic-level sensitive-attribute DP and Byzantine robustness,
+with \DIFaddbegin \DIFadd{statistic-level }\DIFaddend sensitive-attribute DP and Byzantine robustness,
 and every number and figure in this paper is regenerated from logged runs by a
 single script.
 \end{enumerate}
@@ -247,7 +372,7 @@ robustness, uncertainty, explainability, or regulatory-compliance analysis. This
 article substantially extends that preliminary study: it (i) evaluates on five
 standard fairness benchmarks (German, Credit, Bail, Pokec, Elliptic) plus a
 $2.4$M-node scalability study (ogbn-products), only one of which overlaps with
-the earlier evaluation; (ii) compares against fifteen baselines, including five
+the earlier evaluation; (ii) compares against \DIFdelbegin \DIFdel{sixteen }\DIFdelend \DIFaddbegin \DIFadd{fifteen }\DIFaddend baselines, including five
 2025--2026 methods reimplemented for this comparison, versus the small baseline
 set of the preliminary version; (iii) introduces the Byzantine-robust
 \texttt{robust\_bfwa} variant and a new fairness-poisoning attack, entirely
@@ -322,7 +447,7 @@ the name FedFairGNN on a smaller evaluation without a robustness, uncertainty,
 or compliance analysis; this article is a
 substantial
 extension, detailed in Section~\ref{sec:intro}. We
-compare against FairFed, q-FedAvg, F$^2$GNN, FairSIN (run federated),
+compare against FairFed, q-FedAvg, \DIFdelbegin \DIFdel{FedFB, }\DIFdelend F$^2$GNN, FairSIN (run federated),
 the strongest 2026 competitors (horizontal adaptations of FaVGNN and FDP-Fair),
 and---reimplementing each paper's core statistical mechanism to the extent it
 transfers to a single-graph, star-topology federation
@@ -414,12 +539,12 @@ Section~\ref{sec:exp-main} shows, specialised baselines can win individual cells
 \caption{Where methods sit across the trust axes. \checkmark: supported;
 $\sim$: partial/adaptable; blank: not addressed. ``Graph'' = graph-native;
 ``Group fair'' = demographic group fairness (not merely client fairness);
-``Crypto'' = validated on a large-scale cryptocurrency graph. $^{\ddagger}$Our
-DP entry is \emph{not} equivalent to the record-level guarantees of DP-FedAvg,
-PUFFLE, FDP-Fair or FaVGNN: TrustFedGNN privatises the \emph{released fairness
-statistic} rather than the whole model update (Section~\ref{sec:ftgd}), so this
+``Crypto'' = validated on a large-scale cryptocurrency graph. \DIFaddbeginFL \DIFaddFL{$^{\ddagger}$Our
+DP entry is }\emph{\DIFaddFL{not}} \DIFaddFL{equivalent to the record-level guarantees of DP-FedAvg,
+PUFFLE, FDP-Fair or FaVGNN: TrustFedGNN privatises the }\emph{\DIFaddFL{released fairness
+statistic}} \DIFaddFL{rather than the whole model update (Section~\ref{sec:ftgd}), so this
 column marks the presence of a formal $(\epsilon,\delta)$ guarantee, not
-guarantees of equal scope.}
+guarantees of equal scope.}\DIFaddendFL }
 \label{tab:positioning}
 \begin{tabular}{lccccccc}
 \toprule
@@ -442,7 +567,7 @@ FDP-Fair \cite{xue2026fdpfair}     & \checkmark &      & \checkmark & \checkmark
 FedGraph-Fair \cite{fedgraphfair2026} & \checkmark & \checkmark & \checkmark &  &            &            &  \\
 PoPETs'25 \cite{bendoukha2025popets} & \checkmark &   & \checkmark & \checkmark &            &            &  \\
 \midrule
-\textbf{TrustFedGNN (ours)} & \checkmark & \checkmark & \checkmark & \checkmark$^{\ddagger}$ & \checkmark & \checkmark & \checkmark \\
+\textbf{TrustFedGNN (ours)} & \checkmark & \checkmark & \checkmark & \checkmark\DIFaddbeginFL \DIFaddFL{$^{\ddagger}$ }\DIFaddendFL & \checkmark & \checkmark & \checkmark \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -866,20 +991,21 @@ subgroup as a documented proxy (not a protected demographic).}
 
 \subsection{Baselines and their reimplementation}
 \label{sec:baselines}
-We benchmark against fifteen methods chosen to cover every axis of the trust
+We benchmark against \DIFdelbegin \DIFdel{sixteen }\DIFdelend \DIFaddbegin \DIFadd{fifteen }\DIFaddend methods chosen to cover every axis of the trust
 problem and every competing school of thought, plus our own variants. Because a
 fair comparison requires that all methods run in the \emph{same} federated
 graph pipeline, we reimplemented each within our framework; we describe each
 faithfully and flag any adaptation. All share the 2-layer GNN backbone,
 optimiser, and training budget of Section~\ref{sec:setup} unless a method's
-definition requires otherwise. The fifteen correspond exactly to the fifteen
+definition requires otherwise. \DIFaddbegin \DIFadd{The fifteen correspond exactly to the fifteen
 baseline rows of Tables~\ref{tab:main-auc}--\ref{tab:main-eod}, above the rule
 that separates them from our own three variants; no method is described here
 that does not appear there. (FedFB, surveyed in Section~\ref{sec:related}, is
-\emph{not} among them: its FairBatch-style local group reweighting coincides
+}\emph{\DIFadd{not}} \DIFadd{among them: its FairBatch-style local group reweighting coincides
 with the local soft-DPD objective already carried by FairFed and
 F\textsuperscript{2}GNN in our pipeline, so running it would have duplicated an
 existing row rather than added an axis.)
+}\DIFaddend 
 
 \begin{description}
 \item[Non-fair backbones.] \textbf{FedAvg-GCN} and \textbf{FedAvg-GAT}
@@ -904,7 +1030,9 @@ starts from sample-size weights and adjusts each client's weight by the gap
 between its local fairness metric and the mean gap, down-weighting clients that
 worsen global fairness. \textbf{q-FedAvg} \cite{li2020fair} reweights clients by
 a power $q$ of their loss to equalise performance across clients (client, not
-group, fairness---included to represent that school). These are aggregation-
+group, fairness---included to represent that school). \DIFdelbegin \textbf{\DIFdel{FedFB}} %DIFAUXCMD
+\DIFdel{ports
+FairBatch-style group reweighting to the local objective. }\DIFdelend These are aggregation-
 or loss-level baselines that rival BFWA directly.
 
 \item[Federated fair GNN.] \textbf{F\textsuperscript{2}GNN} \cite{f2gnn2023}
@@ -976,26 +1104,27 @@ targets $\epsilon{=}8$, $\delta{=}10^{-5}$; the fairness budget is $\tau{=}0.05$
 Every table and figure is regenerated from logged runs by
 \texttt{experiments/report.py}.
 
-\paragraph{Baseline coverage is not uniform across datasets.}
-We state this explicitly rather than leave it to be inferred from the dashes in
-the tables. The \emph{full} fifteen-baseline comparison is run only on the three
+\DIFaddbegin \paragraph{Baseline coverage is not uniform across datasets.}
+\DIFadd{We state this explicitly rather than leave it to be inferred from the dashes in
+the tables. The }\emph{\DIFadd{full}} \DIFadd{fifteen-baseline comparison is run only on the three
 datasets that combine a genuine protected attribute with a tractable cost:
-\textbf{German}, \textbf{Bail}, and \textbf{Pokec}. \textbf{Credit} ($30{,}000$
+}\textbf{\DIFadd{German}}\DIFadd{, }\textbf{\DIFadd{Bail}}\DIFadd{, and }\textbf{\DIFadd{Pokec}}\DIFadd{. }\textbf{\DIFadd{Credit}} \DIFadd{($30{,}000$
 nodes) is run against the seven core baselines (both FedAvg backbones, FairGNN,
 FairSIN, FairFed, q-FedAvg, F\textsuperscript{2}GNN) plus DP-FedAvg, but not
 against the five 2025--2026 reimplementations or FaVGNN/FDP-Fair.
-\textbf{Elliptic} ($203{,}769$ nodes) is run against only FedAvg-GAT and
+}\textbf{\DIFadd{Elliptic}} \DIFadd{($203{,}769$ nodes) is run against only FedAvg-GAT and
 FairSIN, the two baselines that scale to it within our CPU budget; the
 centralised fair-GNN and post-processing baselines were built for
 single-machine graphs an order of magnitude smaller. Consequently the Credit
 and Elliptic columns of Tables~\ref{tab:main-auc}--\ref{tab:main-eod} should be
-read as comparisons against \emph{that} restricted set, and a ``--'' always
-means \emph{not run}, never a failed or omitted result. The same restriction
+read as comparisons against }\emph{\DIFadd{that}} \DIFadd{restricted set, and a ``--'' always
+means }\emph{\DIFadd{not run}}\DIFadd{, never a failed or omitted result. The same restriction
 explains the missing Credit and Elliptic entries of
 Table~\ref{tab:significance}, where a paired test additionally requires at
 least five shared seeds.
+}
 
-\subsection{Main comparison: fairness--utility}
+\DIFaddend \subsection{Main comparison: fairness--utility}
 \label{sec:exp-main}
 Tables~\ref{tab:main-auc}--\ref{tab:main-eod} report utility (AUC), demographic
 parity, and equal-opportunity gaps for all methods on all datasets. Three
@@ -1017,14 +1146,15 @@ $p{=}0.92$), FairGNN ($p{=}0.49$), FairSIN ($p{=}0.49$), and F\textsuperscript{2
 ($p{=}0.11$)---the apparent ``German disadvantage'' of the low-seed data was an
 artefact of German's extreme variance (the same method's DPD ranges $0.004$ to
 $0.20$ across seeds). Only FairFed is \emph{significantly} fairer on German
-($p{=}0.01$), and we credit it plainly. Where TrustFedGNN does pay a real,
+(\DIFdelbegin \DIFdel{$p{=}0.006$}\DIFdelend \DIFaddbegin \DIFadd{$p{=}0.01$}\DIFaddend ), and we credit it plainly. Where TrustFedGNN does pay a real,
 significant price is \emph{utility}: on German its AUC is significantly below
-\emph{most} non-private baselines---FedAvg-GAT, FairSIN, F\textsuperscript{2}GNN
-($p{=}0.02$) and FairFed ($p{=}0.01$)---the cost of DP plus the
-fairness/robustness constraints. The one non-private baseline it is \emph{not}
-significantly below is FairGNN ($p{=}0.16$), whose adversarial objective is
+\DIFdelbegin \DIFdel{the
+}\DIFdelend \DIFaddbegin \emph{\DIFadd{most}} \DIFaddend non-private \DIFdelbegin \DIFdel{baselines ($p{\le}0.02$) , the }\DIFdelend \DIFaddbegin \DIFadd{baselines---FedAvg-GAT, FairSIN, F\textsuperscript{2}GNN
+($p{=}0.02$) and FairFed ($p{=}0.01$)---the }\DIFaddend cost of DP plus the
+fairness/robustness constraints. \DIFaddbegin \DIFadd{The one non-private baseline it is }\emph{\DIFadd{not}}
+\DIFadd{significantly below is FairGNN ($p{=}0.16$), whose adversarial objective is
 itself unstable on a graph this small (AUC $0.668\!\pm\!0.084$); we state this
-exception rather than generalise over it. But against the methods that also touch privacy---DP-FedAvg,
+exception rather than generalise over it. }\DIFaddend But against the methods that also touch privacy---DP-FedAvg,
 FDP-Fair, PUFFLE---TrustFedGNN's AUC is significantly \emph{higher} ($p{\le}0.01$):
 those three reach low DPD largely by collapsing toward a near-constant predictor
 (AUC $\approx 0.51$--$0.53$), the degenerate ``fairness'' our large-scale study
@@ -1036,11 +1166,11 @@ even more favourable. TrustFedGNN's AUC exceeds \emph{every} baseline's, winning
 on all five paired seeds against each (the consistent $p{=}0.0625$ is the
 smallest value the Wilcoxon test can return at $n{=}5$---an all-seeds sweep, not
 a weak signal); against the other privacy-preserving methods the AUC margin is
-enormous ($+0.38$ to $+0.44$ over PUFFLE, DP-FedAvg and FDP-Fair, which collapse
+enormous (\DIFdelbegin \DIFdel{$+0.40$ over FDP-Fair/PUFFLE/}\DIFdelend \DIFaddbegin \DIFadd{$+0.38$ to $+0.44$ over PUFFLE, }\DIFaddend DP-FedAvg \DIFaddbegin \DIFadd{and FDP-Fair}\DIFaddend , which collapse
 toward a constant predictor). Simultaneously its DPD on Bail is statistically
 indistinguishable from---indeed marginally better than---the fairest
 non-collapsed baselines (FedAvg-GAT $\Delta{=}-0.004$; FairSIN, F\textsuperscript{2}GNN
-$\approx 0$; FairFed $p{=}0.12$). In other words, on the dataset where the
+$\approx 0$; FairFed \DIFdelbegin \DIFdel{$p{=}0.125$}\DIFdelend \DIFaddbegin \DIFadd{$p{=}0.12$}\DIFaddend ). In other words, on the dataset where the
 signal is cleanest, TrustFedGNN is simultaneously the most accurate method and
 statistically tied for the fairest among methods that have not degenerated---
 while being the only one carrying a privacy guarantee. \textbf{Pokec} (also 5
@@ -1058,11 +1188,11 @@ not attack them on.
 
 \begin{table}[t]\centering
 \caption{Paired Wilcoxon signed-rank tests (TrustFedGNN vs.\ each baseline over
-shared seeds): $p$-values \emph{rounded to two decimals}, $^{*}$ marks
-$p<0.05$; where the running text quotes a $p$-value it quotes this rounded
-value. ``--'' where fewer than five
-shared seeds are available (Credit/Elliptic remain at 2--3 seeds by cost, and
-are run against a restricted baseline set---see Section~\ref{sec:setup}). Note
+shared seeds): $p$-values \DIFaddbeginFL \emph{\DIFaddFL{rounded to two decimals}}\DIFaddendFL , $^{*}$ marks
+$p<0.05$\DIFaddbeginFL \DIFaddFL{; where the running text quotes a $p$-value it quotes this rounded
+value}\DIFaddendFL . ``--'' where fewer than five
+shared seeds are available (Credit/Elliptic remain at 2--3 seeds by cost\DIFaddbeginFL \DIFaddFL{, and
+are run against a restricted baseline set---see Section~\ref{sec:setup}}\DIFaddendFL ). Note
 the Wilcoxon floor: at $n{=}5$ (Bail, Pokec) the smallest attainable $p$ is
 $0.0625$, so a uniform $0.06$ indicates our method wins on \emph{all five} paired
 seeds, not a weak effect. On German (10 seeds) TrustFedGNN's DPD is \emph{not}
@@ -1080,13 +1210,14 @@ between the F$^2$GNN-family rows and the DP rule) confirm this pattern rather
 than overturn it. FairGFL, FedGraph-Fair, and the PoPETs'25 FairFed variant
 all land in the same AUC/DPD band as FairFed and F$^2$GNN---sensible, since
 all four are variations on aggregation reweighting---while FedFACT's two-level
-offset achieves the lowest DPD among non-private methods on Bail ($0.021$,
+offset achieves the lowest DPD among non-private methods on Bail (\DIFdelbegin \DIFdel{$0.015$}\DIFdelend \DIFaddbegin \DIFadd{$0.021$}\DIFaddend ,
 Table~\ref{tab:main-dpd}), consistent with its provable-calibration design.
 PUFFLE is the one outlier worth naming directly: its momentum controller, left
 to auto-tune against the target disparity we configured, drives $\lambda$
-aggressively toward $1$ and reaches the lowest DPD on Bail ($0.001$, matched
+aggressively toward $1$ and reaches the lowest DPD \DIFdelbegin \DIFdel{/EOD of }\emph{\DIFdel{any}} %DIFAUXCMD
+\DIFdel{method }\DIFdelend on Bail ($0.001$\DIFaddbegin \DIFadd{, matched
 only by the two other full-gradient-DP methods, whose EOD it also ties at
-$0.006$) but at a real utility cost ($\mathrm{AUC}{=}0.61$, more than
+$0.006$}\DIFaddend ) but at a real utility cost ($\mathrm{AUC}{=}0.61$, more than
 $0.35$ below the non-fair backbones)---an aggressive point on the
 fairness--utility frontier rather than a free lunch, and a useful illustration
 of why TrustFedGNN's \emph{constrained} formulation (BFWA's operator-chosen
@@ -1104,16 +1235,17 @@ not viable here---which is the honest motivation for a targeted statistic-level
 mechanism, rather than a claim that FTGD dominates DP-FedAvg at matched privacy.
 Finally, on Elliptic---a $200$k-node cryptocurrency graph larger than the
 single-machine benchmarks the centralised fairness baselines were built for---
-TrustFedGNN cuts subgroup DPD from the backbone's $0.061$ to $0.039$ (and to
+TrustFedGNN \DIFdelbegin \DIFdel{attains strong subgroup fairness at detection accuracy comparable to
+the non-fair backbone. We }\DIFdelend \DIFaddbegin \DIFadd{cuts subgroup DPD from the backbone's $0.061$ to $0.039$ (and to
 $0.003$ in the robust variant) at a modest accuracy cost ($0.970\to0.944$
 AUC). We should not present this as an unqualified fairness win: on the same
-runs \emph{EOD moves the wrong way} ($0.020\to0.075$), the demographic-parity/
+runs }\emph{\DIFadd{EOD moves the wrong way}} \DIFadd{($0.020\to0.075$), the demographic-parity/
 equal-opportunity tension we return to in Section~\ref{sec:discussion}. We also
-reiterate that Elliptic's subgroups are a temporal
-proxy and that only two baselines were run at this scale
-(Section~\ref{sec:setup}), so this demonstrates \emph{scalable
+}\DIFaddend reiterate that Elliptic's subgroups are a temporal
+proxy \DIFaddbegin \DIFadd{and that only two baselines were run at this scale
+(Section~\ref{sec:setup})}\DIFaddend , so this demonstrates \emph{scalable
 subgroup-disparity control on an industrial-size graph}, not a
-demographic-fairness guarantee or a broad competitive ranking.
+demographic-fairness guarantee \DIFaddbegin \DIFadd{or a broad competitive ranking}\DIFaddend .
 
 \begin{table}[t]\centering\small
 \caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over seeds:
@@ -1155,9 +1287,9 @@ fairness gap on clean small graphs; it does not. BFWA earns its place for two
 different reasons the ablation does not capture: (i) it is the mechanism that
 makes aggregation an operator-controllable, auditable knob on reported disparity
 (the constraint of Section~\ref{sec:bfwa}), and (ii) it is the integration point
-for Byzantine robustness---\texttt{robust\_bfwa} is one of only two aggregators
-that stay strong across all three attacks, and the only one of the two that also
-enforces a fairness constraint (Section~\ref{sec:exp-robust}), which plain
+for Byzantine robustness---\texttt{robust\_bfwa} is \DIFdelbegin \DIFdel{the only aggregator that stays }\DIFdelend \DIFaddbegin \DIFadd{one of only two aggregators
+that stay }\DIFaddend strong across all three attacks\DIFaddbegin \DIFadd{, and the only one of the two that also
+enforces a fairness constraint }\DIFaddend (Section~\ref{sec:exp-robust}), which plain
 FSER+FedAvg cannot provide. The flagship therefore keeps BFWA as the price of
 robustness and operator control, and we report the small clean-data fairness cost
 rather than hide it. A fuller ablation (FTGD noise, gradient surgery, the weight
@@ -1166,7 +1298,7 @@ table covers only the two client/server components in isolation.
 
 \begin{table}[t]\centering\small
 \caption{Ablation of TrustFedGNN components (no DP). AUC / DPD per dataset.
-The ablation is a \emph{separate} set of runs from the main comparison (its own
+\DIFaddbeginFL \DIFaddFL{The ablation is a }\emph{\DIFaddFL{separate}} \DIFaddFL{set of runs from the main comparison (its own
 matched seed set, so that all four configurations are compared on identical
 seeds); its numbers are therefore close to, but not identical with, the
 corresponding rows of Tables~\ref{tab:main-auc} and~\ref{tab:main-dpd}, which
@@ -1174,7 +1306,7 @@ aggregate the full seed sets (10 on German, 5 on Bail). All four differences
 lie within one standard deviation of the multi-seed mean---e.g.\ German DPD
 $0.045$ here versus $0.040\!\pm\!0.035$ there, and Bail AUC $0.988$ versus
 $0.990\!\pm\!0.004$---so the comparison within this table is internally
-consistent even where a cell does not reproduce the main table exactly.}
+consistent even where a cell does not reproduce the main table exactly.}\DIFaddendFL }
 \label{tab:ablation}
 \input{tables/ablation.tex}
 \end{table}
@@ -1242,19 +1374,19 @@ changing group sizes under each hypothesis. On real Bail predictions the result
 is stark. Against the \emph{exact} statistic (no DP), the attack recovers the
 target's sensitive attribute \textbf{perfectly (100\%)}: an un-noised group mean
 is, by construction, a reconstruction oracle. FTGD's Gaussian noise---calibrated
-to the deployed budget---drives inference accuracy down to \textbf{$0.510$ at
-$\epsilon{=}8$} and to at most $0.513$ for every $\epsilon\in[0.5,16]$, i.e.\ to
-balanced-random. We are precise about the reference point, since two different
+to the deployed budget---drives inference accuracy down to \textbf{\DIFdelbegin \DIFdel{$0.51$ }\DIFdelend \DIFaddbegin \DIFadd{$0.510$ }\DIFaddend at
+$\epsilon{=}8$} and \DIFdelbegin \DIFdel{$\le 0.51$ for every $\epsilon\le 16$}\DIFdelend \DIFaddbegin \DIFadd{to at most $0.513$ for every $\epsilon\in[0.5,16]$}\DIFaddend , i.e.\ to
+balanced-random\DIFdelbegin \DIFdel{($0.50$). }\DIFdelend \DIFaddbegin \DIFadd{. We are precise about the reference point, since two different
 ``chance'' levels are available and only one of them is the right comparison
-here. Targets are \emph{sampled in equal numbers from each true group}
-(2{,}000 per group), so an adversary that ignores the release entirely can do no
+here. Targets are }\emph{\DIFadd{sampled in equal numbers from each true group}}
+\DIFadd{(2}{\DIFadd{,}}\DIFadd{000 per group), so an adversary that ignores the release entirely can do no
 better than $0.500$ on this target set; that is the baseline reported in
 Table~\ref{tab:privacy-attack} and the horizontal reference in
-Figure~\ref{fig:privacy-attack}. The \emph{prevalence} of the majority group in
+Figure~\ref{fig:privacy-attack}. The }\emph{\DIFadd{prevalence}} \DIFadd{of the majority group in
 Bail is a different quantity ($0.53$), and it is the relevant baseline only for
 an adversary evaluated on an unbalanced target set, which is not our setting; we
 report the balanced figure because it is the harder test of the mechanism.
-Crucially, this protection is bought with noise on
+}\DIFaddend Crucially, this protection is bought with noise on
 \emph{two scalars}, which is why (Figure~\ref{fig:privacy}) it leaves utility and
 fairness essentially untouched---whereas achieving comparable protection by
 noising the full gradient (DP-FedAvg) destroys utility. This is the honest,
@@ -1267,10 +1399,10 @@ flip at negligible cost.
 \caption{Attribute-inference attack on the released fairness statistic (Bail,
 real predictions). A worst-case differencing adversary infers a target node's
 sensitive attribute. The exact release is a perfect oracle; FTGD's noise reduces
-inference to balanced-random ($0.500$) at every deployed $\epsilon$. Targets are
+inference to balanced-random ($0.500$) at every deployed $\epsilon$. \DIFaddbeginFL \DIFaddFL{Targets are
 sampled in equal numbers from each true group ($2{,}000$ each), so $0.500$---not
 the dataset's $0.53$ majority-group prevalence---is the correct chance
-reference.}
+reference.}\DIFaddendFL }
 \label{tab:privacy-attack}
 \input{tables/privacy_attack.tex}
 \end{table}
@@ -1281,9 +1413,9 @@ reference.}
 \caption{Sensitive-attribute inference accuracy vs.\ privacy budget. Exact
 release (no DP) leaks perfectly; FTGD collapses the attack to chance across the
 whole $\epsilon$ range, at the negligible utility cost of Figure~\ref{fig:privacy}.
-Targets are drawn in equal numbers from each true group, so the chance level is
+\DIFaddbeginFL \DIFaddFL{Targets are drawn in equal numbers from each true group, so the chance level is
 $0.500$ (dotted); the majority-group prevalence in Bail ($0.53$) is shown for
-reference only and is \emph{not} the baseline for a balanced target set.}
+reference only and is }\emph{\DIFaddFL{not}} \DIFaddFL{the baseline for a balanced target set.}\DIFaddendFL }
 \label{fig:privacy-attack}
 \end{figure}
 
@@ -1310,41 +1442,44 @@ attack aims to raise disparity while preserving accuracy---an AUC-only view woul
 declare a defence successful even as its fairness collapsed. The picture is
 genuinely mixed and we report it as such. The clearest signal is
 \emph{utility retention across the whole attack suite}: FedAvg and plain BFWA
-collapse under the Gaussian attack ($0.51$ and $0.48$ AUC) and Krum collapses
+collapse under the Gaussian attack ($0.51$ and $0.48$ AUC) \DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{and }\DIFaddend Krum collapses
 under ALIE ($0.71$), whereas \texttt{robust\_bfwa}
-($0.992$/$0.953$/$0.990$) \emph{and the trimmed mean} ($0.984$/$0.956$/$0.983$)
+\DIFdelbegin \DIFdel{is the only aggregator that stays
+strong under all three }\DIFdelend ($0.992$/$0.953$/$0.990$) \DIFdelbegin \DIFdel{. }\DIFdelend \DIFaddbegin \emph{\DIFadd{and the trimmed mean}} \DIFadd{($0.984$/$0.956$/$0.983$)
 both stay strong under all three. We are careful here not to overstate: the
 table does not support an exclusivity claim for our aggregator, and the trimmed
 mean in fact retains marginally more utility than ours under ALIE ($0.956$ vs.\
 $0.953$). The accurate statement is that two of the seven aggregators survive
 the full suite---ours and the trimmed mean---and that among those two, ours is
 the one that also carries the fairness constraint of
-Section~\ref{sec:bfwa}. On fairness, plain
+Section~\ref{sec:bfwa}. }\DIFaddend On fairness, plain
 BFWA is visibly \emph{captured} by the fairness-poisoning attack---its EOD
 explodes to $0.126$ (DPD $0.086$)---while \texttt{robust\_bfwa} holds EOD at
 $0.024$ by screening the fabricated updates first. We do \emph{not} claim
-\texttt{robust\_bfwa} is best on any individual cell: under the
-fairness-poisoning attack Krum attains a lower DPD/EOD ($0.049$/$0.007$) and the
+\texttt{robust\_bfwa} is best on \DIFdelbegin \DIFdel{every }\DIFdelend \DIFaddbegin \DIFadd{any individual }\DIFaddend cell: under the
+fairness-poisoning attack Krum attains a lower DPD/EOD ($0.049$/$0.007$) \DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{and the
 trimmed mean the lowest EOD of all ($0.005$), under Gaussian corruption
-multi-Krum has the lowest EOD ($0.017$), and under ALIE plain BFWA retains
+multi-Krum has the lowest EOD ($0.017$), }\DIFaddend and under ALIE plain BFWA retains
 slightly more utility ($0.991$ vs.\ $0.953$). The honest summary is that
-\texttt{robust\_bfwa} achieves a strong overall \emph{balance}---utility
-retained across the whole suite, fairness comparable to the best dedicated
-robust aggregators, and the operator-facing fairness constraint preserved under
-attack---rather than dominating any metric. Cells for
+\texttt{robust\_bfwa} \DIFdelbegin \DIFdel{uniquely combines all-attack utility retention with }\DIFdelend \DIFaddbegin \DIFadd{achieves a strong overall }\emph{\DIFadd{balance}}\DIFadd{---utility
+retained across the whole suite, }\DIFaddend fairness comparable to the best dedicated
+robust \DIFdelbegin \DIFdel{aggregator, rather than dominating every }\DIFdelend \DIFaddbegin \DIFadd{aggregators, and the operator-facing fairness constraint preserved under
+attack---rather than dominating any }\DIFaddend metric. Cells for
 collapsed (near-chance) models are daggered, since a constant predictor reports
 spuriously low disparity.
+\DIFdelbegin \DIFdel{These are single-seed }\DIFdelend \DIFaddbegin 
 
 \paragraph{How far this single-seed evidence reaches.}
-These are \emph{single-seed} runs on Bail, and we deliberately do not lean on
+\DIFadd{These are }\emph{\DIFadd{single-seed}} \DIFaddend runs on Bail\DIFdelbegin \DIFdel{; error bars and a
+broader attack/seed sweep are future work. }\DIFdelend \DIFaddbegin \DIFadd{, and we deliberately do not lean on
 them harder than that allows. Differences of a few thousandths in AUC or EOD
 between the surviving aggregators---ours, the trimmed mean, multi-Krum---are
 well within the range seed noise alone produces elsewhere in this paper
 (TrustFedGNN's own Bail DPD has a standard deviation of $0.013$ over five
 seeds), so we make no ranking claim among them, and no conclusion in this paper
-rests on such a gap. What a single seed \emph{does} support, because these
+rests on such a gap. What a single seed }\emph{\DIFadd{does}} \DIFadd{support, because these
 effects are order-of-magnitude rather than marginal, are the two qualitative
-findings we actually rely on: that several aggregators \emph{collapse} outright
+findings we actually rely on: that several aggregators }\emph{\DIFadd{collapse}} \DIFadd{outright
 under a given attack (FedAvg and plain BFWA to $\approx\!0.5$ AUC under Gaussian
 noise, Krum to $0.71$ under ALIE), and that plain BFWA's fairness is captured by
 the fairness-poisoning attack---an EOD of $0.126$, more than five times the
@@ -1352,6 +1487,7 @@ $0.024$ of the screened variant. Replicating the full $7\times3$
 aggregator--attack grid over multiple seeds, with error bars and with adaptive
 attackers who know the screening rule, is the natural next step; we list it
 explicitly among our limitations (Section~\ref{sec:discussion}).
+}\DIFaddend 
 
 \begin{table}[t]\centering\small
 \caption{Utility \emph{and} fairness retained under attack ($2/10$ Byzantine
@@ -1405,9 +1541,9 @@ versus $0.225$\,MB for the plain FedAvg-GAT, because the backbone (hidden width,
 FSER layers) is larger, not because of the fairness/privacy machinery. On
 \emph{compute}, a TrustFedGNN round is more expensive than FedAvg's (FSER's
 per-edge similarities and FTGD's second backward pass), by roughly
-$2.45$--$2.53\times$ in wall-clock on the large-scale study
+\DIFdelbegin \DIFdel{$2.4$}\DIFdelend \DIFaddbegin \DIFadd{$2.45$}\DIFaddend --\DIFdelbegin \DIFdel{$2.5\times$ }\DIFdelend \DIFaddbegin \DIFadd{$2.53\times$ }\DIFaddend in wall-clock on the large-scale study
 (Table~\ref{tab:large-scale}); we report this rather than claim an efficiency
-parity that does not hold. Converted through the energy proxy of
+parity that does not hold. \DIFaddbegin \DIFadd{Converted through the energy proxy of
 Section~\ref{sec:method-trust} (logged wall-clock $\times$ an assumed $65$\,W CPU
 draw), the same gap reads as $66.2$\,Wh for a full TrustFedGNN run on
 ogbn-products against $26.2$\,Wh for FedAvg-GAT---roughly $40$\,Wh, or about
@@ -1415,7 +1551,7 @@ $16$\,gCO$_2$e at a $0.4$\,gCO$_2$/Wh grid factor, as the one-off cost of
 training a fair, private and robust model on a $2.4$M-node graph. We report the
 proxy only for those runs because they are the ones for which wall-clock was
 logged; it is an indicative relative measure on fixed hardware, not a metered
-figure. The method nonetheless scales to $K{=}20$ clients and
+figure. }\DIFaddend The method nonetheless scales to $K{=}20$ clients and
 to the $200$k-node Elliptic graph on commodity CPU hardware.
 
 \paragraph{Scaling to millions of nodes.}
@@ -1464,7 +1600,7 @@ smaller-batch gradients that mini-batch sampling induces on million-node
 graphs, and (to our knowledge) has not been previously reported for FaVGNN;
 we view stabilising adversarial FL objectives under sampling as useful future
 work rather than a flaw specific to our comparison. TrustFedGNN's per-round
-wall-clock is $2.45$--$2.53\times$ FedAvg's (Table~\ref{tab:large-scale},
+wall-clock is \DIFdelbegin \DIFdel{$2.4$}\DIFdelend \DIFaddbegin \DIFadd{$2.45$}\DIFaddend --\DIFdelbegin \DIFdel{$2.5\times$ }\DIFdelend \DIFaddbegin \DIFadd{$2.53\times$ }\DIFaddend FedAvg's (Table~\ref{tab:large-scale},
 last column) on this CPU configuration, the price of FSER's edge-reweighted
 message passing and BFWA's Frank--Wolfe iterations at this scale; this
 overhead is amortised and communication-free (Table~\ref{tab:efficiency}), and
@@ -1479,22 +1615,23 @@ would have missed.
 \caption{Million-node scaling study (ogbn-products, $2.4$M nodes, $123$M
 edges, $K{=}3$ clients, $15$ rounds, CPU). $^{\ast}$2026 baseline.
 $^{\dagger}$DPD/EOD is a spurious artefact of a collapsed (near-chance)
-classifier, not a genuine fairness result---see discussion above. The energy
-column is a transparent \emph{proxy}, not a metered measurement: logged
-wall-clock $\times$ an assumed $65$\,W CPU draw (\texttt{src/trust/
-sustainability.py}), valid for relative comparison between methods on this one
-machine and not comparable across hardware.}
+classifier, not a genuine fairness result---see discussion above. \DIFaddbeginFL \DIFaddFL{The energy
+column is a transparent }\emph{\DIFaddFL{proxy}}\DIFaddFL{, not a metered measurement: logged
+wall-clock $\times$ an assumed $65$\,W CPU draw (}\texttt{\DIFaddFL{src/trust/
+sustainability.py}}\DIFaddFL{), valid for relative comparison between methods on this one
+machine and not comparable across hardware.}\DIFaddendFL }
 \label{tab:large-scale}
 \input{tables/large_scale.tex}
 \end{table}
 
 \begin{table}[t]\centering\small
 \caption{Calibration, uncertainty, and efficiency (Bail). ECE and Brier
-(lower better), group uncertainty gap, and per-round communication. Energy is
-\emph{not} reported here: wall-clock was not logged for these canonical
-small-graph runs, so the proxy of Section~\ref{sec:method-trust} has no input
-for them. We report it instead where the measurement exists, on the large-scale
-study (Table~\ref{tab:large-scale}), rather than print an uninformative zero.}
+(lower better), group uncertainty gap, \DIFaddbeginFL \DIFaddFL{and }\DIFaddendFL per-round communication\DIFaddbeginFL \DIFaddFL{. Energy is
+}\emph{\DIFaddFL{not}} \DIFaddFL{reported here: wall-clock was not logged for these canonical
+small-graph runs}\DIFaddendFL , \DIFdelbeginFL \DIFdelFL{and energy
+}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{so the }\DIFaddendFL proxy \DIFaddbeginFL \DIFaddFL{of Section~\ref{sec:method-trust} has no input
+for them}\DIFaddendFL . \DIFdelbeginFL \DIFdelFL{TrustFedGNN matches FedAvg's communication footprint}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{We report it instead where the measurement exists, on the large-scale
+study (Table~\ref{tab:large-scale}), rather than print an uninformative zero}\DIFaddendFL .}
 \label{tab:efficiency}
 \input{tables/efficiency.tex}
 \end{table}
@@ -1502,10 +1639,12 @@ study (Table~\ref{tab:large-scale}), rather than print an uninformative zero.}
 \section{Trustworthiness Analysis and Regulatory Compliance}
 \label{sec:trust}
 
-\paragraph{Composite trust score: read this caveat first.}
-Because a single headline number invites exactly the over-reading we want to
-avoid, we state its limits \emph{before} presenting it rather than after. The
-composite score below is a \emph{communication tool}: a compact way to say
+\DIFdelbegin %DIFDELCMD < \paragraph{Composite trust score.}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \paragraph{Composite trust score: read this caveat first.}
+\DIFadd{Because a single headline number invites exactly the over-reading we want to
+avoid, we state its limits }\emph{\DIFadd{before}} \DIFadd{presenting it rather than after. The
+composite score below is a }\emph{\DIFadd{communication tool}}\DIFadd{: a compact way to say
 ``good on every axis at once'' that makes the axes and the normalisation
 explicit. It is not a certification of trustworthiness, not a substitute for the
 per-axis evidence, and not decisive evidence of superiority. Its ranking depends
@@ -1515,8 +1654,9 @@ ordering. Auditors, deployers and reviewers should therefore treat the per-axis
 results (Tables~\ref{tab:main-auc}--\ref{tab:efficiency},
 \ref{tab:robustness}) as the primary empirical findings, and the composite as a
 summary of them. With that framing fixed, the construction is as follows.
+}
 
-Trustworthiness is multi-dimensional: a model that is accurate but unfair, or
+\DIFaddend Trustworthiness is multi-dimensional: a model that is accurate but unfair, or
 fair but privacy-leaking or attack-fragile, is not trustworthy. We summarise a
 method by a single interpretable score in $[0,1]$ that aggregates \emph{the
 available} normalised sub-scores---utility (AUC), fairness
@@ -1526,9 +1666,13 @@ by omission), calibration ($1-\mathrm{ECE}/\mathrm{ECE}_{\text{ref}}$), and
 robustness (attack-retained AUC)---via a weighted power mean. The reference
 constants ($F_{\text{ref}}{=}0.20$, $\epsilon_{\max}{=}16$,
 $\mathrm{ECE}_{\text{ref}}{=}0.20$) and unit weights are stated explicitly and
-are configurable, so that any reader can recompute the score under their own
+are configurable\DIFdelbegin \DIFdel{. We stress that the ranking is sensitive to these constants and
+to the choice of $p$; the composite is a }\emph{\DIFdel{transparent communication tool}}%DIFAUXCMD
+\DIFdel{, not decisive evidence of superiority, and the per-axis results
+(Tables~\ref{tab:main-auc}--\ref{tab:efficiency}, \ref{tab:robustness}) are the
+primary findings}\DIFdelend \DIFaddbegin \DIFadd{, so that any reader can recompute the score under their own
 choices---which, per the caveat above, is exactly what we would encourage a
-sceptical auditor to do. Table~\ref{tab:trust} reports the arithmetic-mean ($p{=}1$)
+sceptical auditor to do}\DIFaddend . Table~\ref{tab:trust} reports the arithmetic-mean ($p{=}1$)
 composite over the three axes computable from the main runs (utility, fairness,
 privacy); Table~\ref{tab:efficiency} adds the calibration axis on Bail; the
 robustness axis is reported separately (Table~\ref{tab:robustness}) rather than
@@ -1589,40 +1733,40 @@ aggregation plus the DP guarantee speak to accuracy/robustness. The framework
 auto-generates a Mitchell-style model card \cite{mitchell2019model}, making these
 artifacts reproducible.
 
-\paragraph{What requiring the protected attribute at inference actually costs a
+\DIFaddbegin \paragraph{What requiring the protected attribute at inference actually costs a
 deployer.}
-This deserves more than the passing mention it received above, because it is the
+\DIFadd{This deserves more than the passing mention it received above, because it is the
 single design decision in TrustFedGNN with the largest practical and legal
 footprint. FSER's risk score $\phi_{ij}=\mathbb{I}(s_i\neq s_j)\cdot
 \max(0,\cos(\mathbf{h}_i,\mathbf{h}_j))$ (Eq.~\ref{eq:fser}) evaluates the group
 indicator inside the forward pass. The model therefore needs $s$ for
-\emph{both endpoints of every edge it attends over}, not only during training but
+}\emph{\DIFadd{both endpoints of every edge it attends over}}\DIFadd{, not only during training but
 at every inference---and, because a decision about one customer aggregates over
 that customer's neighbourhood, an institution scoring a single applicant needs
 the protected attribute of the counterparties in that applicant's transaction
 neighbourhood too. Four consequences follow for a deploying institution.
-\emph{First, lawful basis.} Gender, race and ethnicity are special-category
+}\emph{\DIFadd{First, lawful basis.}} \DIFadd{Gender, race and ethnicity are special-category
 data under GDPR Art.~9; processing them in an automated decision requires an
 Art.~9(2) condition, and in several EU member states the substantial-public-
 interest route (Art.~9(2)(g)) additionally needs a national-law basis. The
 EU~AI~Act anticipates exactly this tension: Art.~10(5) permits processing
-special-category data \emph{for the purpose of bias detection and correction}
-in high-risk systems, subject to safeguards including technical limits on
+special-category data }\emph{\DIFadd{for the purpose of bias detection and correction}}
+\DIFadd{in high-risk systems, subject to safeguards including technical limits on
 re-use, pseudonymisation, and deletion once bias correction is complete. FSER
 is squarely a bias-correction mechanism and so is the kind of processing that
 provision contemplates---but an institution must document that reliance rather
 than assume it, and Art.~10(5) is a permission to process, not a waiver of
 Art.~9 or of a DPIA.
-\emph{Second, data-access agreements.} In the cross-silo setting the
+}\emph{\DIFadd{Second, data-access agreements.}} \DIFadd{In the cross-silo setting the
 counterparties in a neighbourhood may be another institution's customers, so
 inference-time access to $s$ can require inter-institutional agreements that
 plain FedAvg does not---a governance cost that partly offsets the
 ``no raw data leaves the silo'' benefit of federation.
-\emph{Third, collection risk.} Where $s$ is not already held, obtaining it means
+}\emph{\DIFadd{Third, collection risk.}} \DIFadd{Where $s$ is not already held, obtaining it means
 either new collection (consent, minimisation, retention limits) or
-\emph{inference} of a protected attribute from proxies, which is itself a
+}\emph{\DIFadd{inference}} \DIFadd{of a protected attribute from proxies, which is itself a
 discriminatory-profiling risk and which we do not recommend.
-\emph{Fourth, purpose limitation.} $s$ must reach the attention mechanism
+}\emph{\DIFadd{Fourth, purpose limitation.}} \DIFadd{$s$ must reach the attention mechanism
 without reaching the classifier as a feature: our implementation keeps it out of
 $\mathbf{X}$, but that separation is an engineering invariant a deployer must
 verify and an auditor must test, not a property the architecture enforces by
@@ -1637,8 +1781,9 @@ entirely---by distilling FSER's behaviour into an $s$-free student model, or by
 replacing the hard indicator with a function of the DP-noised statistics---is
 the direction we consider most valuable for practical deployment, and we list it
 in Section~\ref{sec:discussion}.
+}
 
-\begin{table}[t]\centering\small
+\DIFaddend \begin{table}[t]\centering\small
 \caption{Mapping of TrustFedGNN components to EU AI Act articles and NIST AI RMF
 functions.}
 \label{tab:compliance}
@@ -1699,25 +1844,29 @@ not guarantee equal-opportunity improvement, and on Elliptic DPD improves while
 EOD \emph{worsens} ($0.020\!\to\!0.075$)---a real tension we report. Demographic
 parity itself can be an inappropriate criterion when base rates genuinely differ
 across groups (recidivism, default), and should be chosen with domain and legal
-input rather than assumed. (4)~\emph{Statistical power, and where it runs out.} The main comparison is
+input rather than assumed. (4)~\emph{Statistical power\DIFaddbegin \DIFadd{, and where it runs out}\DIFaddend .} \DIFdelbegin \DIFdel{Small datasets }\DIFdelend \DIFaddbegin \DIFadd{The main comparison is
 supported by paired Wilcoxon tests (Table~\ref{tab:significance}) on the three
 datasets with at least five seeds---German (10), Bail (5), Pokec (5)---and those
 are the claims we regard as tested. Everything else is weaker and should be read
-accordingly: Credit and Elliptic use $2$--$3$ seeds, so their columns carry means
-and standard deviations but no significance test; and the \emph{robustness}
-(Table~\ref{tab:robustness}), large-scale (Table~\ref{tab:large-scale}) and
-calibration (Table~\ref{tab:efficiency}) studies are \textbf{single-seed}. This
+accordingly: Credit and Elliptic }\DIFaddend use $2$--$3$ seeds\DIFdelbegin \DIFdel{and the large-scale, robustness, and
+calibration studies are
+single-seed; we report means (and, where $>1$ seed , standard deviations)but do
+not run significance tests,
+so small }\DIFdelend \DIFaddbegin \DIFadd{, so their columns carry means
+and standard deviations but no significance test; and the }\emph{\DIFadd{robustness}}
+\DIFadd{(Table~\ref{tab:robustness}), large-scale (Table~\ref{tab:large-scale}) and
+calibration (Table~\ref{tab:efficiency}) studies are }\textbf{\DIFadd{single-seed}}\DIFadd{. This
 matters most for robustness, which is one of our contributions: we therefore
 restrict the robustness claims to order-of-magnitude effects (which aggregators
 collapse, and whether fairness is captured by the poisoning attack) and make no
 ranking claim among the aggregators that survive, whose differences are within
 plausible seed noise (Section~\ref{sec:exp-robust}). A multi-seed replication of
 the full aggregator--attack grid with error bars is the most valuable single
-addition to this evaluation and is planned future work. (4b)~\emph{Baseline
-coverage is uneven}: the full fifteen-baseline comparison is run only on German,
+addition to this evaluation and is planned future work. (4b)~}\emph{\DIFadd{Baseline
+coverage is uneven}}\DIFadd{: the full fifteen-baseline comparison is run only on German,
 Bail and Pokec; Credit uses eight baselines and Elliptic two
-(Section~\ref{sec:setup}), so cross-method statements about those two datasets
-are correspondingly narrower.
+(Section~\ref{sec:setup}), so }\DIFaddend cross-method \DIFdelbegin \DIFdel{gaps should be read cautiously}\DIFdelend \DIFaddbegin \DIFadd{statements about those two datasets
+are correspondingly narrower}\DIFaddend .
 (5)~\emph{Binary $s$}; multi-valued/intersectional attributes are handled only by
 one-vs-rest, not exhaustively evaluated. (6)~\emph{Elliptic/ogbn-products
 subgroups are temporal/structural proxies}, not protected demographics; those
@@ -1733,18 +1882,19 @@ corruption count} $f$ and a representative (non-adaptive) attack suite;
 misspecified $f$, adaptive attackers with knowledge of the screen, and the
 interaction between distance screening and honest non-IID minority clients are
 open issues. (10)~\emph{The composite trust score} is sensitive to its reference
-constants ($F_{\text{ref}}$, $\epsilon_{\max}$, $\mathrm{ECE}_{\text{ref}}$), to
+constants \DIFdelbegin \DIFdel{and weightsand }\DIFdelend \DIFaddbegin \DIFadd{($F_{\text{ref}}$, $\epsilon_{\max}$, $\mathrm{ECE}_{\text{ref}}$), to
 its unit weights, and to the power $p$; a different, equally defensible choice of
-constants can reorder the methods. It is a communication tool and must not be
+constants can reorder the methods. It }\DIFaddend is a communication tool \DIFdelbegin \DIFdel{, not decisive evidence .
+}\DIFdelend \DIFaddbegin \DIFadd{and must not be
 read as a certification of trustworthiness or as evidence of superiority on any
 axis: the per-axis tables are the primary evidence, and we now say so before the
 score is introduced (Section~\ref{sec:trust}) as well as here. It also covers
 only the axes computable from a given run---the three-axis composite of
 Table~\ref{tab:trust} omits calibration and robustness entirely---so a high
 score is a statement about the axes included, not about the system as a whole.
-(11)~\emph{Explainability} rests on attention/gradient diagnostics that we have
+}\DIFaddend (11)~\emph{Explainability} rests on attention/gradient diagnostics that we have
 not validated against faithfulness benchmarks.
-(12)~\emph{FSER requires the protected attribute at inference}, for both
+\DIFaddbegin \DIFadd{(12)~}\emph{\DIFadd{FSER requires the protected attribute at inference}}\DIFadd{, for both
 endpoints of every attended edge, which imposes lawful-basis, data-access and
 purpose-limitation obligations on a deploying institution that a
 sensitive-attribute-free model would not
@@ -1752,6 +1902,7 @@ sensitive-attribute-free model would not
 $s$-free student, or by replacing the hard group indicator with a function of
 the DP-noised statistics---is open work, and until it is done TrustFedGNN is
 only deployable where such processing is lawful and governed.
+}\DIFaddend 
 
 \paragraph{Broader impact.}
 Fraud, credit, and AML systems make consequential decisions about people.
@@ -1771,14 +1922,14 @@ within groups---so a multi-criterion private-fairness framework is within reach.
 Handling \emph{multi-valued and intersectional} sensitive attributes beyond the
 one-vs-rest reduction, and modelling \emph{cross-silo edges} under privacy
 (where an entity's neighbours span institutions), are the two most consequential
-graph-specific directions. A third, driven by the deployment analysis of
+graph-specific directions. \DIFaddbegin \DIFadd{A third, driven by the deployment analysis of
 Section~\ref{sec:trust}, is to remove FSER's inference-time dependence on the
 protected attribute---distilling the FSER-trained model into an $s$-free student,
 or driving the edge correction from the DP-noised statistics rather than a hard
 group indicator---which would materially widen the set of institutions that can
-lawfully deploy the framework. On robustness, replicating the
+lawfully deploy the framework. }\DIFaddend On robustness, \DIFaddbegin \DIFadd{replicating the
 aggregator--attack grid over multiple seeds is the immediate empirical priority;
-beyond it, adaptive attackers with full knowledge
+beyond it, }\DIFaddend adaptive attackers with full knowledge
 of the screening rule motivate a game-theoretic treatment, and combining our
 fairness constraint with certified robust aggregation is open. Replacing our
 MC-dropout calibration with a distribution-free conformal-prediction layer in
@@ -1813,16 +1964,16 @@ target while resisting poisoning, including a fairness-poisoning attack we
 introduce. Across five real datasets spanning credit, recidivism, social, and
 large-scale crypto domains, TrustFedGNN does not dominate every individual
 metric---specialised baselines win specific cells, and we report this
-openly---but it is the only method among fifteen baselines to combine
-competitive fairness and utility with statistic-level sensitive-attribute DP and
+openly---but it is the only method among \DIFdelbegin \DIFdel{sixteen }\DIFdelend \DIFaddbegin \DIFadd{fifteen }\DIFaddend baselines to combine
+competitive fairness and utility with \DIFaddbegin \DIFadd{statistic-level }\DIFaddend sensitive-attribute DP and
 Byzantine robustness at once, and every reported number is reproducible from
 released code
 and logs. We were candid about the limits: BFWA's constraint is a surrogate for
 global fairness rather than a certificate, the privacy guarantee covers the
 released statistic and not the full update, demographic parity does not entail
-equalised odds, FSER needs the protected attribute at inference and so carries
+equalised odds, \DIFdelbegin \DIFdel{and several studies are few-seed}\DIFdelend \DIFaddbegin \DIFadd{FSER needs the protected attribute at inference and so carries
 real governance obligations, and several studies---robustness among
-them---remain single-seed. Future work will tighten these
+them---remain single-seed}\DIFaddend . Future work will tighten these
 ---update-level sensitive-attribute DP, a certified global-fairness bound,
 cross-silo edges under privacy, multi-valued attributes, and adaptive-attacker
 robustness---extending trustworthy federated graph learning toward real
@@ -1841,57 +1992,83 @@ Not applicable.
 
 \section*{Declarations}
 
-\bmhead{Funding}
-The authors received no specific funding for this work.
+\DIFdelbegin %DIFDELCMD < \begin{itemize}
+%DIFDELCMD < \item %%%
+\DIFdel{Funding: Not applicable.
+}%DIFDELCMD < \item %%%
+\DIFdel{Conflict of interest/Competing interests: }\DIFdelend \DIFaddbegin \bmhead{Funding}
+\DIFadd{The authors received no specific funding for this work.
+}
 
 \bmhead{Conflict of interest}
-The authors declare that they have no competing interests.
+\DIFaddend The authors declare \DIFaddbegin \DIFadd{that they have }\DIFaddend no competing interests.
+\DIFdelbegin %DIFDELCMD < \item %%%
+\DIFdel{Ethics approval and consent to participate: Not applicable(no human or animal
+subjects}\DIFdelend \DIFaddbegin 
 
 \bmhead{Ethical approval}
-Not applicable. This study involved no human participants and no animal
+\DIFadd{Not applicable. This study involved no human participants and no animal
 subjects. It uses only publicly released, de-identified benchmark datasets
 (German Credit, Credit Defaulter, Bail/Recidivism, Pokec, Elliptic, and
 ogbn-products), each obtained from its published distribution and used in
 accordance with its licence and intended research purpose. No ethics-committee
 approval was therefore required.
+}
 
 \bmhead{Consent to participate}
-Not applicable. No human participants were recruited or enrolled in this study,
-and no personal data were collected by the authors; all datasets analysed were
-previously published in de-identified form by their original curators.
+\DIFadd{Not applicable. No human participants were recruited or enrolled in this study,
+and no personal data were collected by the authors}\DIFaddend ; all datasets \DIFdelbegin \DIFdel{are public, }\DIFdelend \DIFaddbegin \DIFadd{analysed were
+previously published in }\DIFaddend de-identified \DIFdelbegin \DIFdel{benchmarks).
+}%DIFDELCMD < \item %%%
+\DIFdel{Consent for publication: }\DIFdelend \DIFaddbegin \DIFadd{form by their original curators.
+}
 
 \bmhead{Consent to publish}
-Not applicable. This article contains no data, images, or details relating to an
+\DIFaddend Not applicable. \DIFdelbegin %DIFDELCMD < \item %%%
+\DIFdel{Data availability: All datasets used are public (German , Credit, Bail, Pokec via the NIFTY/}\DIFdelend \DIFaddbegin \DIFadd{This article contains no data, images, or details relating to an
 identifiable individual person.
+}
 
 \bmhead{Data availability}
-All datasets analysed during the current study are publicly available. The
+\DIFadd{All datasets analysed during the current study are publicly available. The
 German Credit, Credit Defaulter, and Bail (Recidivism) graphs and the Pokec-z
-social graph are available from the NIFTY and FairGNN benchmark releases
-(\url{https://github.com/chirag126/nifty} and
-\url{https://github.com/EnyanDai/FairGNN}); the Elliptic Bitcoin transaction
+social graph are available from the NIFTY and }\DIFaddend FairGNN benchmark releases
+\DIFdelbegin \DIFdel{; Elliptic via Kaggle/public release ; }\DIFdelend \DIFaddbegin \DIFadd{(}\url{https://github.com/chirag126/nifty} \DIFadd{and
+}\url{https://github.com/EnyanDai/FairGNN}\DIFadd{); the Elliptic Bitcoin transaction
 graph is available from its public release on Kaggle
-(\url{https://www.kaggle.com/datasets/ellipticco/elliptic-data-set}); and
-ogbn-products is available from the Open Graph Benchmark
-(\url{https://ogb.stanford.edu/docs/nodeprop/}). No new data were generated in
+(}\url{https://www.kaggle.com/datasets/ellipticco/elliptic-data-set}\DIFadd{); and
+}\DIFaddend ogbn-products \DIFdelbegin \DIFdel{via }\DIFdelend \DIFaddbegin \DIFadd{is available from }\DIFaddend the Open Graph Benchmark
+\DIFdelbegin \DIFdel{).
+}%DIFDELCMD < \item %%%
+\DIFdel{Materials availability: }\DIFdelend \DIFaddbegin \DIFadd{(}\url{https://ogb.stanford.edu/docs/nodeprop/}\DIFadd{). No new data were generated in
 this study. The experiment logs from which every table and figure in this
 article is regenerated are included in the code repository cited below.
+}
 
 \bmhead{Materials availability}
-Not applicable.
+\DIFaddend Not applicable.
+\DIFdelbegin %DIFDELCMD < \item %%%
+\DIFdel{Code availability: Code, configuration, and logs are available from the corresponding author upon request and will be
+released publicly upon acceptance.
+}%DIFDELCMD < \item %%%
+\DIFdel{Author contribution: }\DIFdelend \DIFaddbegin 
 
 \bmhead{Code availability}
-The complete source code, experiment configurations, and logged results
+\DIFadd{The complete source code, experiment configurations, and logged results
 supporting this article are publicly available at
-\url{https://github.com/vinhqdang/FedFairGNN}. Every table and figure can be
+}\url{https://github.com/vinhqdang/FedFairGNN}\DIFadd{. Every table and figure can be
 regenerated from the released logs with a single script
-(\texttt{experiments/report.py}), as described in Appendix~\ref{app:repro}.
+(}\texttt{\DIFadd{experiments/report.py}}\DIFadd{), as described in Appendix~\ref{app:repro}.
+}
 
 \bmhead{Author contributions}
-Q.-V.D. and N.-S.-A.N. conceived the original FedFairGNN framework and the
-preliminary study. All authors contributed to extending the methodology,
+\DIFaddend Q.-V.D. and N.-S.-A.N. conceived the original FedFairGNN framework and \DIFaddbegin \DIFadd{the
+}\DIFaddend preliminary study. All authors contributed to extending the methodology,
 experiments, and analysis presented in this article, and all authors read and
 approved the final manuscript.
+\DIFdelbegin %DIFDELCMD < \end{itemize}
+%DIFDELCMD < %%%
+\DIFdelend 
 
 \begin{appendices}
 
@@ -2030,8 +2207,8 @@ table and figure in this paper is regenerated from logged runs by a single
 script (\texttt{experiments/report.py}). The full experiment matrix---main
 comparison, ablation, privacy sweep, fairness--utility Pareto frontier,
 Byzantine-robustness study, scalability, and partition-sensitivity---is driven
-by a resumable runner (\texttt{experiments/run\_matrix.py}). Code, configuration,
-and logs are released at \url{https://github.com/vinhqdang/FedFairGNN}.
+by a resumable runner (\texttt{experiments/run\_matrix.py}). Code, config\DIFaddbegin \DIFadd{uration}\DIFaddend  ,
+and logs are released \DIFaddbegin \DIFadd{at }\url{https://github.com/vinhqdang/FedFairGNN}\DIFaddend .
 
 \end{appendices}
 

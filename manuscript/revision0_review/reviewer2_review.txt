@@ -1,0 +1,19 @@
+Reviewer 2
+
+Summary of Work:
+
+This paper presents TrustFedGNN, a federated learning framework for graph neural networks that simultaneously addresses fairness, differential privacy, Byzantine robustness, and explainability. The framework is evaluated on five real datasets against sixteen baselines, and while it does not win every individual metric, it is the method that maintains competitive accuracy and fairness while providing a privacy guarantee and robustness to poisoning attacks.
+
+Strengths:
+
+The gap of combining fairness, differential privacy, and Byzantine robustness for federated GNNs in a single framework is well-motivated and the paper addresses it well.
+
+The FTGD mechanism is a good contribution, where privatising only two scalars for sensitive attributes instead of the full gradient avoids the utility collapse that makes standard DP-SGD unusable on compact GNNs.
+
+Identifying and demonstrating this fairness-poisoning attack, then defending against it, adds value beyond the main framework.
+
+Suggestions for Authors:
+
+FSER requires the protected attribute at inference time. This is currently called a "governance nuance" in one line. Given the paper's emphasis on EU AI Act compliance, this deserves a dedicated paragraph in Section 6 if possible, by the authors to explain what this means practically for a deploying institution, such as what data access agreements or any legal obligations it creates.
+
+Also, the paper mentions the composite trust score is not decisive evidence, but this appears after the score is already presented. If possible, highlight this limitation more prominently, which can be helpful for readers.

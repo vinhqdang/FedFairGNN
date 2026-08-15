@@ -1,0 +1,39 @@
+Your manuscript, "Trustworthy Federated Graph Neural Networks: Unifying Fairness, Privacy, Robustness, and Explainability for High-Stakes Risk Detection", has now been assessed. You will see that, while the reviewers find your work of interest, they have raised points that need to be addressed by a Minor revision.
+
+We invite you to revise your paper, taking into account the points raised and the general guidelines below. To ensure the Editor and Reviewers will be able to recommend that your revised manuscript is accepted, please pay careful attention to each of the comments that have been pasted underneath this email. This way we can avoid future rounds of clarifications and revisions, moving swiftly to a decision. When your revision is ready, please submit it via: https://submission.springernature.com/submission-details/ca5f4c68-82d0-46f5-99ec-5304715a69a6.
+
+To support the continuity of the peer review process, we recommend returning your manuscript to us within 5 days. If you think you will need additional time, feel free to reach out to us with the MSID details.
+
+Internal feedback:
+
+1. Revise Title: To aid our readers, and to maximize the accessibility of your manuscript, the title should have a clear, precise scientific meaning. Where possible, the title should be read as one concise sentence, without the use of punctuation (full stops, colons, hyphens, question marks etc.). Please could you re-write the title ensuring that it is informative and appropriate?
+
+2. Data availability statement (in system): When submitting your revised manuscript, please select ‘yes’ under the data availability declaration. This ensures that your data statement will be automatically extracted from your manuscript. Please add the statement in the manuscript under “Declarations” section. Please make sure that data availability statement in the manuscript and system exactly matches.
+
+
+Declaration Section : Authors are requested to include a separate section in the manuscript titled “Declarations.” In this section, please clearly state the following items as individual subheadings:
+· Ethical approval
+· Consent to participate
+· Consent to publish
+Each item should be addressed separately and appropriately under this section.
+
+
+Editor Comments
+
+"The reviewers find the work technically sound and well motivated, with a strong contribution in combining fairness, privacy, Byzantine robustness, and explainability for federated GNNs. For the revision, please address the few overstated or unsupported claims, carefully check the consistency between the text and reported tables, and clarify the scope of the differential privacy guarantee. We also encourage you to expand the discussion of the practical implications of requiring protected attributes at inference time and to make the limitations of the composite trust score more explicit.
+"
+-Marco Fisichella
+
+We recommend submitting all revisions within the mentioned deadline.
+
+If you need more time, please contact us and include your submission ID.
+
+Kind regards,
+
+Alfeya Baig
+Assistant Editor
+Discover Artificial Intelligence
+
+Support contact: discoverai@springernature.com
+
+Submission ID: ca5f4c68-82d0-46f5-99ec-5304715a69a6

@@ -1,0 +1,828 @@
+%% BioMed_Central_Bib_Style_v1.01
+
+\begin{thebibliography}{50}
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
+
+%%% 1
+\bibitem[\protect\citeauthoryear{Kipf and Welling}{2017}]{kipf2016semi}
+\begin{bchapter}
+\bauthor{\bsnm{Kipf}, \binits{T.N.}},
+\bauthor{\bsnm{Welling}, \binits{M.}}:
+\bctitle{Semi-supervised classification with graph convolutional networks}.
+In: \bbtitle{International Conference on Learning Representations (ICLR)}
+(\byear{2017}).
+\burl{https://openreview.net/forum?id=SJU4ayYgl}
+\end{bchapter}
+\endbibitem
+
+%%% 2
+\bibitem[\protect\citeauthoryear{Veli{\v{c}}kovi{\'c}
+  et~al.}{2018}]{velickovic2017graph}
+\begin{bchapter}
+\bauthor{\bsnm{Veli{\v{c}}kovi{\'c}}, \binits{P.}},
+\bauthor{\bsnm{Cucurull}, \binits{G.}},
+\bauthor{\bsnm{Casanova}, \binits{A.}},
+\bauthor{\bsnm{Romero}, \binits{A.}},
+\bauthor{\bsnm{Li{\`o}}, \binits{P.}},
+\bauthor{\bsnm{Bengio}, \binits{Y.}}:
+\bctitle{Graph attention networks}.
+In: \bbtitle{International Conference on Learning Representations (ICLR)}
+(\byear{2018}).
+\burl{https://openreview.net/forum?id=rJXMpikCZ}
+\end{bchapter}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Dou et~al.}{2020}]{dou2020enhancing}
+\begin{bchapter}
+\bauthor{\bsnm{Dou}, \binits{Y.}},
+\bauthor{\bsnm{Liu}, \binits{Z.}},
+\bauthor{\bsnm{Sun}, \binits{L.}},
+\bauthor{\bsnm{Deng}, \binits{Y.}},
+\bauthor{\bsnm{Peng}, \binits{H.}},
+\bauthor{\bsnm{Yu}, \binits{P.S.}}:
+\bctitle{Enhancing graph neural network-based fraud detectors against
+  camouflaged fraudsters}.
+In: \bbtitle{ACM International Conference on Information and Knowledge
+  Management (CIKM)},
+pp. \bfpage{315}--\blpage{324}
+(\byear{2020}).
+\doiurl{10.1145/3340531.3411903}
+\end{bchapter}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{McMahan
+  et~al.}{2017}]{mcmahan2017communication}
+\begin{bchapter}
+\bauthor{\bsnm{McMahan}, \binits{B.}},
+\bauthor{\bsnm{Moore}, \binits{E.}},
+\bauthor{\bsnm{Ramage}, \binits{D.}},
+\bauthor{\bsnm{Hampson}, \binits{S.}},
+\bauthor{\bsnm{Arcas}, \binits{B.}}:
+\bctitle{Communication-efficient learning of deep networks from decentralized
+  data}.
+In: \bbtitle{Artificial Intelligence and Statistics (AISTATS)},
+vol. \bseriesno{54},
+pp. \bfpage{1273}--\blpage{1282}
+(\byear{2017}).
+\burl{https://proceedings.mlr.press/v54/mcmahan17a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 5
+\bibitem[\protect\citeauthoryear{Dai and Wang}{2021}]{dai2021say}
+\begin{bchapter}
+\bauthor{\bsnm{Dai}, \binits{E.}},
+\bauthor{\bsnm{Wang}, \binits{S.}}:
+\bctitle{Say no to the discrimination: Learning fair graph neural networks with
+  limited sensitive attribute information}.
+In: \bbtitle{ACM International Conference on Web Search and Data Mining
+  (WSDM)},
+pp. \bfpage{680}--\blpage{688}
+(\byear{2021}).
+\doiurl{10.1145/3437963.3441752}
+\end{bchapter}
+\endbibitem
+
+%%% 6
+\bibitem[\protect\citeauthoryear{Yang et~al.}{2024}]{yang2024fairsin}
+\begin{bchapter}
+\bauthor{\bsnm{Yang}, \binits{C.}},
+\bauthor{\bsnm{Liu}, \binits{J.}},
+\bauthor{\bsnm{Yan}, \binits{Y.}},
+\bauthor{\bsnm{Shi}, \binits{C.}}:
+\bctitle{{FairSIN}: Achieving fairness in graph neural networks through
+  sensitive information neutralization}.
+In: \bbtitle{AAAI Conference on Artificial Intelligence},
+vol. \bseriesno{38},
+pp. \bfpage{9241}--\blpage{9249}
+(\byear{2024}).
+\doiurl{10.1609/aaai.v38i8.28776}
+\end{bchapter}
+\endbibitem
+
+%%% 7
+\bibitem[\protect\citeauthoryear{Lee et~al.}{2025}]{lee2025dabgnn}
+\begin{bchapter}
+\bauthor{\bsnm{Lee}, \binits{Y.-C.}},
+\bauthor{\bsnm{Shin}, \binits{H.}},
+\bauthor{\bsnm{Kim}, \binits{S.-W.}}:
+\bctitle{Disentangling, amplifying, and debiasing: Learning disentangled
+  representations for fair graph neural networks}.
+In: \bbtitle{AAAI Conference on Artificial Intelligence},
+vol. \bseriesno{39},
+pp. \bfpage{12013}--\blpage{12021}
+(\byear{2025}).
+\doiurl{10.1609/aaai.v39i11.33308}
+\end{bchapter}
+\endbibitem
+
+%%% 8
+\bibitem[\protect\citeauthoryear{Ezzeldin et~al.}{2023}]{ezzeldin2023fairfed}
+\begin{bchapter}
+\bauthor{\bsnm{Ezzeldin}, \binits{Y.H.}},
+\bauthor{\bsnm{Yan}, \binits{S.}},
+\bauthor{\bsnm{He}, \binits{C.}},
+\bauthor{\bsnm{Ferrara}, \binits{E.}},
+\bauthor{\bsnm{Avestimehr}, \binits{A.S.}}:
+\bctitle{{FairFed}: Enabling group fairness in federated learning}.
+In: \bbtitle{AAAI Conference on Artificial Intelligence},
+vol. \bseriesno{37},
+pp. \bfpage{7494}--\blpage{7502}
+(\byear{2023}).
+\doiurl{10.1609/aaai.v37i6.25911}
+\end{bchapter}
+\endbibitem
+
+%%% 9
+\bibitem[\protect\citeauthoryear{Li et~al.}{2020}]{li2020fair}
+\begin{bchapter}
+\bauthor{\bsnm{Li}, \binits{T.}},
+\bauthor{\bsnm{Sanjabi}, \binits{M.}},
+\bauthor{\bsnm{Beirami}, \binits{A.}},
+\bauthor{\bsnm{Smith}, \binits{V.}}:
+\bctitle{Fair resource allocation in federated learning}.
+In: \bbtitle{International Conference on Learning Representations (ICLR)}
+(\byear{2020}).
+\burl{https://openreview.net/forum?id=ByexElSYDr}
+\end{bchapter}
+\endbibitem
+
+%%% 10
+\bibitem[\protect\citeauthoryear{Blanchard et~al.}{2017}]{blanchard2017krum}
+\begin{bchapter}
+\bauthor{\bsnm{Blanchard}, \binits{P.}},
+\bauthor{\bsnm{El~Mhamdi}, \binits{E.M.}},
+\bauthor{\bsnm{Guerraoui}, \binits{R.}},
+\bauthor{\bsnm{Stainer}, \binits{J.}}:
+\bctitle{Machine learning with adversaries: Byzantine tolerant gradient
+  descent}.
+In: \bbtitle{Advances in Neural Information Processing Systems (NeurIPS)},
+pp. \bfpage{119}--\blpage{129}
+(\byear{2017}).
+\burl{https://proceedings.neurips.cc/paper/2017/hash/f4b9ec30ad9f68f89b29639786cb62ef-Abstract.html}
+\end{bchapter}
+\endbibitem
+
+%%% 11
+\bibitem[\protect\citeauthoryear{Yin et~al.}{2018}]{yin2018byzantine}
+\begin{bchapter}
+\bauthor{\bsnm{Yin}, \binits{D.}},
+\bauthor{\bsnm{Chen}, \binits{Y.}},
+\bauthor{\bsnm{Ramchandran}, \binits{K.}},
+\bauthor{\bsnm{Bartlett}, \binits{P.L.}}:
+\bctitle{Byzantine-robust distributed learning: Towards optimal statistical
+  rates}.
+In: \bbtitle{International Conference on Machine Learning (ICML)},
+vol. \bseriesno{80}
+(\byear{2018}).
+\burl{https://proceedings.mlr.press/v80/yin18a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 12
+\bibitem[\protect\citeauthoryear{Kasyap et~al.}{2025}]{kasyap2025attack}
+\begin{botherref}
+\oauthor{\bsnm{Kasyap}, \binits{H.}},
+\oauthor{\bsnm{Fang}, \binits{M.}},
+\oauthor{\bsnm{Liu}, \binits{Z.}},
+\oauthor{\bsnm{Maple}, \binits{C.}},
+\oauthor{\bsnm{Tripathy}, \binits{S.}}:
+Fairness-Constrained Optimization Attack in Federated Learning.
+arXiv preprint arXiv:2510.12143
+(2025).
+\url{https://arxiv.org/abs/2510.12143}
+\end{botherref}
+\endbibitem
+
+%%% 13
+\bibitem[\protect\citeauthoryear{Dang and Nguyen}{2026}]{dang2026fedfairgnn}
+\begin{bchapter}
+\bauthor{\bsnm{Dang}, \binits{Q.-V.}},
+\bauthor{\bsnm{Nguyen}, \binits{N.-S.-A.}}:
+\bctitle{{FedFairGNN}: A privacy-preserving and fairness-aware federated graph
+  neural network for fraud detection}.
+In: \bbtitle{Proceedings of IndabaX Nigeria 2026: Building Scalable AI That
+  Works: From Research to Deployment in Resource-Constrained Environments}.
+\bsertitle{Proceedings of Machine Learning Research},
+vol. \bseriesno{319},
+pp. \bfpage{74}--\blpage{86}
+(\byear{2026}).
+\burl{https://proceedings.mlr.press/v319/dang26a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 14
+\bibitem[\protect\citeauthoryear{Agarwal et~al.}{2021}]{agarwal2021nifty}
+\begin{bchapter}
+\bauthor{\bsnm{Agarwal}, \binits{C.}},
+\bauthor{\bsnm{Lakkaraju}, \binits{H.}},
+\bauthor{\bsnm{Zitnik}, \binits{M.}}:
+\bctitle{Towards a unified framework for fair and stable graph representation
+  learning}.
+In: \bbtitle{Uncertainty in Artificial Intelligence (UAI)},
+vol. \bseriesno{161},
+pp. \bfpage{2114}--\blpage{2124}
+(\byear{2021}).
+\burl{https://proceedings.mlr.press/v161/agarwal21b.html}
+\end{bchapter}
+\endbibitem
+
+%%% 15
+\bibitem[\protect\citeauthoryear{Dong et~al.}{2022}]{dong2022edits}
+\begin{bchapter}
+\bauthor{\bsnm{Dong}, \binits{Y.}},
+\bauthor{\bsnm{Liu}, \binits{N.}},
+\bauthor{\bsnm{Jalaian}, \binits{B.}},
+\bauthor{\bsnm{Li}, \binits{J.}}:
+\bctitle{{EDITS}: Modeling and mitigating data bias for graph neural networks}.
+In: \bbtitle{The Web Conference (WWW)},
+pp. \bfpage{1259}--\blpage{1269}
+(\byear{2022}).
+\doiurl{10.1145/3485447.3512173}
+\end{bchapter}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Li et~al.}{2024}]{li2024fairgb}
+\begin{bchapter}
+\bauthor{\bsnm{Li}, \binits{Z.}},
+\bauthor{\bsnm{Dong}, \binits{Y.}},
+\bauthor{\bsnm{Liu}, \binits{Q.}},
+\bauthor{\bsnm{Yu}, \binits{J.X.}}:
+\bctitle{Rethinking fair graph neural networks from re-balancing}.
+In: \bbtitle{ACM SIGKDD Conference on Knowledge Discovery and Data Mining
+  (KDD)},
+pp. \bfpage{1736}--\blpage{1745}
+(\byear{2024}).
+\doiurl{10.1145/3637528.3671826}
+\end{bchapter}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Zhu et~al.}{2024}]{zhu2024fairinv}
+\begin{bchapter}
+\bauthor{\bsnm{Zhu}, \binits{Y.}},
+\bauthor{\bsnm{Li}, \binits{J.}},
+\bauthor{\bsnm{Bian}, \binits{Y.}},
+\bauthor{\bsnm{Zheng}, \binits{Z.}},
+\bauthor{\bsnm{Chen}, \binits{L.}}:
+\bctitle{One fits all: Learning fair graph neural networks for various
+  sensitive attributes}.
+In: \bbtitle{ACM SIGKDD Conference on Knowledge Discovery and Data Mining
+  (KDD)}
+(\byear{2024}).
+\doiurl{10.1145/3637528.3672029}
+\end{bchapter}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{Park and Lim}{2025}]{fnrgnn2025}
+\begin{bchapter}
+\bauthor{\bsnm{Park}, \binits{S.}},
+\bauthor{\bsnm{Lim}, \binits{S.}}:
+\bctitle{{FnRGNN}: Distribution-aware fairness in graph neural network}.
+In: \bbtitle{ACM International Conference on Information and Knowledge
+  Management (CIKM)}
+(\byear{2025}).
+\doiurl{10.1145/3746252.3760796}
+\end{bchapter}
+\endbibitem
+
+%%% 19
+\bibitem[\protect\citeauthoryear{Corbucci et~al.}{2024}]{corbucci2024puffle}
+\begin{bchapter}
+\bauthor{\bsnm{Corbucci}, \binits{L.}},
+\bauthor{\bsnm{Heikkil{\"a}}, \binits{M.A.}},
+\bauthor{\bsnm{Solans~Noguero}, \binits{D.}},
+\bauthor{\bsnm{Monreale}, \binits{A.}},
+\bauthor{\bsnm{Kourtellis}, \binits{N.}}:
+\bctitle{{PUFFLE}: Balancing privacy, utility, and fairness in federated
+  learning}.
+In: \bbtitle{European Conference on Artificial Intelligence (ECAI)}.
+\bsertitle{Frontiers in Artificial Intelligence and Applications},
+vol. \bseriesno{392},
+pp. \bfpage{1639}--\blpage{1647}
+(\byear{2024}).
+\doiurl{10.3233/FAIA240671}
+\end{bchapter}
+\endbibitem
+
+%%% 20
+\bibitem[\protect\citeauthoryear{Zhang et~al.}{2025}]{fedfact2025}
+\begin{bchapter}
+\bauthor{\bsnm{Zhang}, \binits{L.}},
+\bauthor{\bsnm{Han}, \binits{Z.}},
+\bauthor{\bsnm{Feng}, \binits{X.}},
+\bauthor{\bsnm{Zhang}, \binits{J.}},
+\bauthor{\bsnm{Li}, \binits{Y.}},
+\bauthor{\bsnm{Chen}, \binits{C.}}:
+\bctitle{{FedFACT}: A provable framework for controllable group-fairness
+  calibration in federated learning}.
+In: \bbtitle{Advances in Neural Information Processing Systems (NeurIPS)}
+(\byear{2025}).
+\burl{https://arxiv.org/abs/2506.03777}
+\end{bchapter}
+\endbibitem
+
+%%% 21
+\bibitem[\protect\citeauthoryear{Bendoukha et~al.}{2025}]{bendoukha2025popets}
+\begin{barticle}
+\bauthor{\bsnm{Bendoukha}, \binits{A.-A.}},
+\bauthor{\bsnm{Demirag}, \binits{D.}},
+\bauthor{\bsnm{Kaaniche}, \binits{N.}},
+\bauthor{\bsnm{Boudguiga}, \binits{A.}},
+\bauthor{\bsnm{Sirdey}, \binits{R.}},
+\bauthor{\bsnm{Gambs}, \binits{S.}}:
+\batitle{Towards privacy-preserving and fairness-aware federated learning
+  framework}.
+\bjtitle{Proceedings on Privacy Enhancing Technologies (PoPETs)}
+\bvolume{2025}(\bissue{1}),
+\bfpage{845}--\blpage{865}
+(\byear{2025})
+\doiurl{10.56553/popets-2025-0044}
+\end{barticle}
+\endbibitem
+
+%%% 22
+\bibitem[\protect\citeauthoryear{Yu et~al.}{2026}]{yu2026equfl}
+\begin{botherref}
+\oauthor{\bsnm{Yu}, \binits{T.}},
+\oauthor{\bsnm{Zhao}, \binits{K.}},
+\oauthor{\bsnm{Zhang}, \binits{C.}},
+\oauthor{\bsnm{Gao}, \binits{A.}},
+\oauthor{\bsnm{Quan}, \binits{Y.}},
+\oauthor{\bsnm{Liu}, \binits{Z.}},
+\oauthor{\bsnm{Fang}, \binits{M.}}:
+When the Server Steps In: Calibrated Updates for Fair Federated Learning.
+arXiv preprint arXiv:2601.05352
+(2026).
+\url{https://arxiv.org/abs/2601.05352}
+\end{botherref}
+\endbibitem
+
+%%% 23
+\bibitem[\protect\citeauthoryear{Cui et~al.}{2023}]{f2gnn2023}
+\begin{bchapter}
+\bauthor{\bsnm{Cui}, \binits{N.}},
+\bauthor{\bsnm{Wang}, \binits{X.}},
+\bauthor{\bsnm{Wang}, \binits{W.H.}},
+\bauthor{\bsnm{Chen}, \binits{V.}},
+\bauthor{\bsnm{Ning}, \binits{Y.}}:
+\bctitle{Equipping federated graph neural networks with structure-aware group
+  fairness}.
+In: \bbtitle{IEEE International Conference on Data Mining (ICDM)}
+(\byear{2023}).
+\doiurl{10.1109/ICDM58522.2023.00111}
+\end{bchapter}
+\endbibitem
+
+%%% 24
+\bibitem[\protect\citeauthoryear{Zhou et~al.}{2026}]{fairgfl2026}
+\begin{botherref}
+\oauthor{\bsnm{Zhou}, \binits{Z.}},
+\oauthor{\bsnm{Yang}, \binits{S.}},
+\oauthor{\bsnm{Zhao}, \binits{F.}},
+\oauthor{\bsnm{Ren}, \binits{X.}}:
+{FairGFL}: Privacy-preserving fairness-aware federated learning with
+  overlapping subgraphs.
+IEEE Transactions on Parallel and Distributed Systems
+\textbf{37}(3)
+(2026)
+\doiurl{10.1109/TPDS.2025.3649863}
+\end{botherref}
+\endbibitem
+
+%%% 25
+\bibitem[\protect\citeauthoryear{Khan}{2026}]{fedgraphfair2026}
+\begin{barticle}
+\bauthor{\bsnm{Khan}, \binits{K.}}:
+\batitle{{FedGraph-Fair}: Federated learning with personalization and fairness
+  via dynamic graphs and distributionally robust optimization}.
+\bjtitle{Information Sciences}
+\bvolume{728},
+\bfpage{122710}
+(\byear{2026})
+\doiurl{10.1016/j.ins.2025.122710}
+\end{barticle}
+\endbibitem
+
+%%% 26
+\bibitem[\protect\citeauthoryear{Wang et~al.}{2026}]{wang2026favgnn}
+\begin{barticle}
+\bauthor{\bsnm{Wang}, \binits{Z.}},
+\bauthor{\bsnm{Yan}, \binits{X.}},
+\bauthor{\bsnm{Jin}, \binits{Y.}}:
+\batitle{Fairness-oriented vertical federated {GNNs} with incomplete sensitive
+  attributes}.
+\bjtitle{Information Fusion}
+\bvolume{127},
+\bfpage{103871}
+(\byear{2026})
+\doiurl{10.1016/j.inffus.2025.103871}
+\end{barticle}
+\endbibitem
+
+%%% 27
+\bibitem[\protect\citeauthoryear{Xue and Yu}{2026}]{xue2026fdpfair}
+\begin{botherref}
+\oauthor{\bsnm{Xue}, \binits{G.}},
+\oauthor{\bsnm{Yu}, \binits{Y.}}:
+Federated Fairness-Aware Classification under Differential Privacy.
+arXiv preprint arXiv:2603.24392
+(2026).
+\url{https://arxiv.org/abs/2603.24392}
+\end{botherref}
+\endbibitem
+
+%%% 28
+\bibitem[\protect\citeauthoryear{McMahan et~al.}{2018}]{mcmahan2018learning}
+\begin{bchapter}
+\bauthor{\bsnm{McMahan}, \binits{H.B.}},
+\bauthor{\bsnm{Ramage}, \binits{D.}},
+\bauthor{\bsnm{Talwar}, \binits{K.}},
+\bauthor{\bsnm{Zhang}, \binits{L.}}:
+\bctitle{Learning differentially private recurrent language models}.
+In: \bbtitle{International Conference on Learning Representations (ICLR)}
+(\byear{2018}).
+\burl{https://openreview.net/forum?id=BJ0hF1Z0b}
+\end{bchapter}
+\endbibitem
+
+%%% 29
+\bibitem[\protect\citeauthoryear{Mironov}{2017}]{mironov2017renyi}
+\begin{bchapter}
+\bauthor{\bsnm{Mironov}, \binits{I.}}:
+\bctitle{R{\'e}nyi differential privacy}.
+In: \bbtitle{IEEE Computer Security Foundations Symposium (CSF)},
+pp. \bfpage{263}--\blpage{275}
+(\byear{2017}).
+\doiurl{10.1109/CSF.2017.11}
+\end{bchapter}
+\endbibitem
+
+%%% 30
+\bibitem[\protect\citeauthoryear{Abadi et~al.}{2016}]{abadi2016deep}
+\begin{bchapter}
+\bauthor{\bsnm{Abadi}, \binits{M.}},
+\bauthor{\bsnm{Chu}, \binits{A.}},
+\bauthor{\bsnm{Goodfellow}, \binits{I.}},
+\bauthor{\bsnm{McMahan}, \binits{H.B.}},
+\bauthor{\bsnm{Mironov}, \binits{I.}},
+\bauthor{\bsnm{Talwar}, \binits{K.}},
+\bauthor{\bsnm{Zhang}, \binits{L.}}:
+\bctitle{Deep learning with differential privacy}.
+In: \bbtitle{ACM SIGSAC Conference on Computer and Communications Security
+  (CCS)},
+pp. \bfpage{308}--\blpage{318}
+(\byear{2016}).
+\doiurl{10.1145/2976749.2978318}
+\end{bchapter}
+\endbibitem
+
+%%% 31
+\bibitem[\protect\citeauthoryear{Ling et~al.}{2024}]{ling2024feddp}
+\begin{botherref}
+\oauthor{\bsnm{Ling}, \binits{X.}},
+\oauthor{\bsnm{Fu}, \binits{J.}},
+\oauthor{\bsnm{Wang}, \binits{K.}},
+\oauthor{\bsnm{Li}, \binits{H.}},
+\oauthor{\bsnm{Cheng}, \binits{T.}},
+\oauthor{\bsnm{Chen}, \binits{Z.}}:
+{FedFDP}: Fairness-Aware Federated Learning with Differential Privacy.
+arXiv preprint arXiv:2402.16028
+(2024).
+\url{https://arxiv.org/abs/2402.16028}
+\end{botherref}
+\endbibitem
+
+%%% 32
+\bibitem[\protect\citeauthoryear{Guo et~al.}{2026}]{guo2026cefedgnn}
+\begin{botherref}
+\oauthor{\bsnm{Guo}, \binits{Z.}},
+\oauthor{\bsnm{Wu}, \binits{W.}},
+\oauthor{\bsnm{Chen}, \binits{C.}},
+\oauthor{\bsnm{Zhang}, \binits{L.}},
+\oauthor{\bsnm{Kotevska}, \binits{O.}},
+\oauthor{\bsnm{Madduri}, \binits{R.K.}}:
+Provably Communication-Efficient and Privacy-Preserving Federated Graph Neural
+  Networks.
+arXiv preprint arXiv:2605.26243
+(2026).
+\url{https://arxiv.org/abs/2605.26243}
+\end{botherref}
+\endbibitem
+
+%%% 33
+\bibitem[\protect\citeauthoryear{Varun et~al.}{2026}]{varun2026adversarial}
+\begin{botherref}
+\oauthor{\bsnm{Varun}, \binits{M.}},
+\oauthor{\bsnm{Dhakar}, \binits{A.K.}},
+\oauthor{\bsnm{Hong}, \binits{Y.}},
+\oauthor{\bsnm{Sural}, \binits{S.}}:
+Adversarial Attacks on Locally Private Graph Neural Networks.
+arXiv preprint arXiv:2603.20746
+(2026).
+\url{https://arxiv.org/abs/2603.20746}
+\end{botherref}
+\endbibitem
+
+%%% 34
+\bibitem[\protect\citeauthoryear{El~Mhamdi et~al.}{2018}]{mhamdi2018hidden}
+\begin{bchapter}
+\bauthor{\bsnm{El~Mhamdi}, \binits{E.M.}},
+\bauthor{\bsnm{Guerraoui}, \binits{R.}},
+\bauthor{\bsnm{Rouault}, \binits{S.}}:
+\bctitle{The hidden vulnerability of distributed learning in byzantium}.
+In: \bbtitle{International Conference on Machine Learning (ICML)},
+vol. \bseriesno{80},
+pp. \bfpage{3521}--\blpage{3530}
+(\byear{2018}).
+\burl{https://proceedings.mlr.press/v80/mhamdi18a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 35
+\bibitem[\protect\citeauthoryear{Cao et~al.}{2021}]{cao2021fltrust}
+\begin{bchapter}
+\bauthor{\bsnm{Cao}, \binits{X.}},
+\bauthor{\bsnm{Fang}, \binits{M.}},
+\bauthor{\bsnm{Liu}, \binits{J.}},
+\bauthor{\bsnm{Gong}, \binits{N.Z.}}:
+\bctitle{{FLTrust}: Byzantine-robust federated learning via trust
+  bootstrapping}.
+In: \bbtitle{Network and Distributed System Security Symposium (NDSS)}
+(\byear{2021}).
+\doiurl{10.14722/ndss.2021.24434}
+\end{bchapter}
+\endbibitem
+
+%%% 36
+\bibitem[\protect\citeauthoryear{Bagdasaryan
+  et~al.}{2020}]{bagdasaryan2020backdoor}
+\begin{bchapter}
+\bauthor{\bsnm{Bagdasaryan}, \binits{E.}},
+\bauthor{\bsnm{Veit}, \binits{A.}},
+\bauthor{\bsnm{Hua}, \binits{Y.}},
+\bauthor{\bsnm{Estrin}, \binits{D.}},
+\bauthor{\bsnm{Shmatikov}, \binits{V.}}:
+\bctitle{How to backdoor federated learning}.
+In: \bbtitle{Artificial Intelligence and Statistics (AISTATS)},
+vol. \bseriesno{108},
+pp. \bfpage{2938}--\blpage{2948}
+(\byear{2020}).
+\burl{https://proceedings.mlr.press/v108/bagdasaryan20a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 37
+\bibitem[\protect\citeauthoryear{Baruch et~al.}{2019}]{baruch2019little}
+\begin{bchapter}
+\bauthor{\bsnm{Baruch}, \binits{G.}},
+\bauthor{\bsnm{Baruch}, \binits{M.}},
+\bauthor{\bsnm{Goldberg}, \binits{Y.}}:
+\bctitle{A little is enough: Circumventing defenses for distributed learning}.
+In: \bbtitle{Advances in Neural Information Processing Systems (NeurIPS)},
+pp. \bfpage{8632}--\blpage{8642}
+(\byear{2019}).
+\burl{https://proceedings.neurips.cc/paper/2019/hash/ec1c59141046cd1866bbbcdfb6ae31d4-Abstract.html}
+\end{bchapter}
+\endbibitem
+
+%%% 38
+\bibitem[\protect\citeauthoryear{Xie et~al.}{2019}]{xie2019fall}
+\begin{bchapter}
+\bauthor{\bsnm{Xie}, \binits{C.}},
+\bauthor{\bsnm{Koyejo}, \binits{O.}},
+\bauthor{\bsnm{Gupta}, \binits{I.}}:
+\bctitle{Fall of empires: Breaking byzantine-tolerant {SGD} by inner product
+  manipulation}.
+In: \bbtitle{Uncertainty in Artificial Intelligence (UAI)},
+vol. \bseriesno{115},
+pp. \bfpage{261}--\blpage{270}
+(\byear{2019}).
+\burl{https://proceedings.mlr.press/v115/xie20a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 39
+\bibitem[\protect\citeauthoryear{Meerza and Liu}{2024}]{eabfl2024}
+\begin{bchapter}
+\bauthor{\bsnm{Meerza}, \binits{S.I.A.}},
+\bauthor{\bsnm{Liu}, \binits{J.}}:
+\bctitle{{EAB-FL}: Exacerbating algorithmic bias through model poisoning
+  attacks in federated learning}.
+In: \bbtitle{International Joint Conference on Artificial Intelligence
+  (IJCAI)},
+pp. \bfpage{458}--\blpage{466}
+(\byear{2024}).
+\doiurl{10.24963/ijcai.2024/51}
+\end{bchapter}
+\endbibitem
+
+%%% 40
+\bibitem[\protect\citeauthoryear{Nath and Kasyap}{2026}]{nath2026cqsa}
+\begin{botherref}
+\oauthor{\bsnm{Nath}, \binits{A.}},
+\oauthor{\bsnm{Kasyap}, \binits{H.}}:
+{CQSA}: Byzantine-robust Clustered Quantum Secure Aggregation in Federated
+  Learning.
+arXiv preprint arXiv:2602.22269
+(2026).
+\url{https://arxiv.org/abs/2602.22269}
+\end{botherref}
+\endbibitem
+
+%%% 41
+\bibitem[\protect\citeauthoryear{Rahmati and
+  Rahmati}{2026}]{rahmati2026pqbyzantine}
+\begin{botherref}
+\oauthor{\bsnm{Rahmati}, \binits{M.}},
+\oauthor{\bsnm{Rahmati}, \binits{N.}}:
+Byzantine-Robust Federated Learning Framework with Post-Quantum Secure
+  Aggregation for Real-Time Threat Intelligence Sharing in Critical {IoT}
+  Infrastructure.
+arXiv preprint arXiv:2601.01053
+(2026).
+\url{https://arxiv.org/abs/2601.01053}
+\end{botherref}
+\endbibitem
+
+%%% 42
+\bibitem[\protect\citeauthoryear{Gal and Ghahramani}{2016}]{gal2016dropout}
+\begin{bchapter}
+\bauthor{\bsnm{Gal}, \binits{Y.}},
+\bauthor{\bsnm{Ghahramani}, \binits{Z.}}:
+\bctitle{Dropout as a bayesian approximation: Representing model uncertainty in
+  deep learning}.
+In: \bbtitle{International Conference on Machine Learning (ICML)},
+vol. \bseriesno{48},
+pp. \bfpage{1050}--\blpage{1059}
+(\byear{2016}).
+\doiurl{10.5555/3045390.3045502}
+\end{bchapter}
+\endbibitem
+
+%%% 43
+\bibitem[\protect\citeauthoryear{Nguyen et~al.}{2026}]{nguyen2026conformal}
+\begin{botherref}
+\oauthor{\bsnm{Nguyen}, \binits{Q.-H.}},
+\oauthor{\bsnm{Wang}, \binits{J.}},
+\oauthor{\bsnm{Ku}, \binits{W.-S.}}:
+Conformalized Neural Networks for Federated Uncertainty Quantification under
+  Dual Heterogeneity.
+arXiv preprint arXiv:2602.23296
+(2026).
+\url{https://arxiv.org/abs/2602.23296}
+\end{botherref}
+\endbibitem
+
+%%% 44
+\bibitem[\protect\citeauthoryear{Ali et~al.}{2026}]{ali2026cryptofair}
+\begin{botherref}
+\oauthor{\bsnm{Ali}, \binits{M.H.}},
+\oauthor{\bsnm{Abdullah}, \binits{M.A.}},
+\oauthor{\bsnm{Hussain}, \binits{S.M.}},
+\oauthor{\bsnm{Uddin}, \binits{M.M.}},
+\oauthor{\bsnm{Alam}, \binits{S.}}:
+Privacy-Preserving Federated Learning with Verifiable Fairness Guarantees.
+arXiv preprint arXiv:2601.12447
+(2026).
+\url{https://arxiv.org/abs/2601.12447}
+\end{botherref}
+\endbibitem
+
+%%% 45
+\bibitem[\protect\citeauthoryear{Hsu et~al.}{2019}]{hsu2019measuring}
+\begin{botherref}
+\oauthor{\bsnm{Hsu}, \binits{T.-M.H.}},
+\oauthor{\bsnm{Qi}, \binits{H.}},
+\oauthor{\bsnm{Brown}, \binits{M.}}:
+Measuring the Effects of Non-Identical Data Distribution for Federated Visual
+  Classification.
+arXiv preprint arXiv:1909.06335
+(2019).
+\url{https://arxiv.org/abs/1909.06335}
+\end{botherref}
+\endbibitem
+
+%%% 46
+\bibitem[\protect\citeauthoryear{Dwork and Roth}{2014}]{dwork2014algorithmic}
+\begin{barticle}
+\bauthor{\bsnm{Dwork}, \binits{C.}},
+\bauthor{\bsnm{Roth}, \binits{A.}}:
+\batitle{The algorithmic foundations of differential privacy}.
+\bjtitle{Foundations and Trends in Theoretical Computer Science}
+\bvolume{9}(\bissue{3--4}),
+\bfpage{211}--\blpage{487}
+(\byear{2014})
+\doiurl{10.1561/0400000042}
+\end{barticle}
+\endbibitem
+
+%%% 47
+\bibitem[\protect\citeauthoryear{Jaggi}{2013}]{jaggi2013revisiting}
+\begin{bchapter}
+\bauthor{\bsnm{Jaggi}, \binits{M.}}:
+\bctitle{Revisiting frank--wolfe: Projection-free sparse convex optimization}.
+In: \bbtitle{International Conference on Machine Learning (ICML)},
+vol. \bseriesno{28},
+pp. \bfpage{427}--\blpage{435}
+(\byear{2013}).
+\doiurl{10.5555/3042817.3042867}
+\end{bchapter}
+\endbibitem
+
+%%% 48
+\bibitem[\protect\citeauthoryear{Hu et~al.}{2020}]{hu2020ogb}
+\begin{bchapter}
+\bauthor{\bsnm{Hu}, \binits{W.}},
+\bauthor{\bsnm{Fey}, \binits{M.}},
+\bauthor{\bsnm{Zitnik}, \binits{M.}},
+\bauthor{\bsnm{Dong}, \binits{Y.}},
+\bauthor{\bsnm{Ren}, \binits{H.}},
+\bauthor{\bsnm{Liu}, \binits{B.}},
+\bauthor{\bsnm{Catasta}, \binits{M.}},
+\bauthor{\bsnm{Leskovec}, \binits{J.}}:
+\bctitle{Open graph benchmark: Datasets for machine learning on graphs}.
+In: \bbtitle{Advances in Neural Information Processing Systems (NeurIPS)}
+(\byear{2020}).
+\doiurl{10.48550/arXiv.2005.00687}
+\end{bchapter}
+\endbibitem
+
+%%% 49
+\bibitem[\protect\citeauthoryear{Hamilton et~al.}{2017}]{hamilton2017graphsage}
+\begin{bchapter}
+\bauthor{\bsnm{Hamilton}, \binits{W.L.}},
+\bauthor{\bsnm{Ying}, \binits{R.}},
+\bauthor{\bsnm{Leskovec}, \binits{J.}}:
+\bctitle{Inductive representation learning on large graphs}.
+In: \bbtitle{Advances in Neural Information Processing Systems (NeurIPS)}
+(\byear{2017}).
+\doiurl{10.48550/arXiv.1706.02216}
+\end{bchapter}
+\endbibitem
+
+%%% 50
+\bibitem[\protect\citeauthoryear{Mitchell et~al.}{2019}]{mitchell2019model}
+\begin{bchapter}
+\bauthor{\bsnm{Mitchell}, \binits{M.}},
+\bauthor{\bsnm{Wu}, \binits{S.}},
+\bauthor{\bsnm{Zaldivar}, \binits{A.}},
+\bauthor{\bsnm{Barnes}, \binits{P.}},
+\bauthor{\bsnm{Vasserman}, \binits{L.}},
+\bauthor{\bsnm{Hutchinson}, \binits{B.}},
+\bauthor{\bsnm{Spitzer}, \binits{E.}},
+\bauthor{\bsnm{Raji}, \binits{I.D.}},
+\bauthor{\bsnm{Gebru}, \binits{T.}}:
+\bctitle{Model cards for model reporting}.
+In: \bbtitle{ACM Conference on Fairness, Accountability, and Transparency
+  (FAT*)}
+(\byear{2019}).
+\doiurl{10.1145/3287560.3287596}
+\end{bchapter}
+\endbibitem
+
+\end{thebibliography}

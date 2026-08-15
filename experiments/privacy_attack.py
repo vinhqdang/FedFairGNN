@@ -131,8 +131,16 @@ def main():
     nodp = [a for e, _, a, _ in rows if e is None][0]
     ax.axhline(nodp, ls="--", color="#762a83",
                label=f"no DP (exact release): {nodp:.2f}")
-    ax.axhline(base_rate, ls=":", color="#999999",
-               label=f"chance (base rate): {base_rate:.2f}")
+    # `attack()` draws targets in equal numbers from each true group, so the
+    # correct chance level for THIS evaluation is 0.50 -- an adversary ignoring
+    # the release cannot beat a coin flip on a balanced target set. The
+    # dataset's majority-group prevalence (base_rate) is a different quantity;
+    # it is the chance level only for an unbalanced target set, so it is drawn
+    # for reference but must not be labelled "chance".
+    ax.axhline(0.5, ls=":", color="#444444",
+               label="chance, balanced targets: 0.50")
+    ax.axhline(base_rate, ls=(0, (1, 3)), color="#bbbbbb", lw=1.0,
+               label=f"majority-group prevalence: {base_rate:.2f}")
     ax.set_xscale("log"); ax.set_xlabel("privacy budget $\\epsilon$")
     ax.set_ylabel("sensitive-attribute inference accuracy")
     ax.set_ylim(0.4, 1.02)

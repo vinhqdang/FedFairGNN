@@ -7,8 +7,10 @@ models, so FedAvg, BFWA and the robust rules share one interface.
 
 Rules
     fedavg        weighted by client sample count.
-    bfwa          Bi-objective Frank-Wolfe: maximise weighted utility s.t. a
-                  hard bound tau on weighted demographic-parity gap (ours).
+    bfwa          Bi-objective Frank-Wolfe: maximise weighted utility subject to an
+                  operator-chosen target tau on the weighted demographic-parity gap
+                  reported by clients -- a surrogate, not a certified bound on
+                  the aggregate model's DPD (ours).
     krum          Blanchard et al. 2017 -- pick the update closest to its
                   n-f-2 nearest neighbours.
     multikrum     average the m best Krum-scored updates.

@@ -500,8 +500,9 @@ def table_large_scale(rows):
                 if healthy and all((m,) in Ad for m in healthy) else None)
     best_eod = (min(healthy, key=lambda m: Ae[(m,)][0])
                 if healthy and all((m,) in Ae for m in healthy) else None)
-    lines = ["\\begin{tabular}{lcccc}", "\\toprule",
-             "Method & AUC $\\uparrow$ & DPD $\\downarrow$ & EOD $\\downarrow$ & Time/run (s) \\\\",
+    lines = ["\\begin{tabular}{lccccc}", "\\toprule",
+             "Method & AUC $\\uparrow$ & DPD $\\downarrow$ & EOD $\\downarrow$ & "
+             "Time/run (s) & Energy (Wh) \\\\",
              "\\midrule"]
     def cell(pair, bold=False):
         # single-seed study: report a bare scalar, not a misleading "+/- 0.000"
@@ -516,8 +517,15 @@ def table_large_scale(rows):
         eod = cell(Ae[(m,)], bold=(m == best_eod)) if (m,) in Ae else "--"
         if collapsed:
             dpd += "$^{\\dagger}$"; eod += "$^{\\dagger}$"
-        wall = f"{Aw[(m,)][0]:.0f}" if (m,) in Aw else "--"
-        lines.append(f"{PRETTY.get(m, m)} & {auc} & {dpd} & {eod} & {wall} \\\\")
+        # Energy proxy: logged wall-clock x assumed CPU draw (src/trust/
+        # sustainability.py, 65 W). Reported only where wall-clock was actually
+        # logged -- an unmeasured run prints "--", never a spurious 0.00.
+        if (m,) in Aw:
+            wall = f"{Aw[(m,)][0]:.0f}"
+            energy = f"{Aw[(m,)][0] * 65.0 / 3600.0:.1f}"
+        else:
+            wall = energy = "--"
+        lines.append(f"{PRETTY.get(m, m)} & {auc} & {dpd} & {eod} & {wall} & {energy} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     with open(os.path.join(TAB, "large_scale.tex"), "w") as f:
         f.write("\n".join(lines))
