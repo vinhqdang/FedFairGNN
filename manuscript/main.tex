@@ -1813,8 +1813,9 @@ graduate from subgroup-disparity analysis to demographic guarantees.
 All datasets are public and downloaded on demand; all randomness is seeded;
 privacy accounting, metrics, and aggregation rules are unit-tested in continuous
 integration; and every table and figure in this paper is regenerated from logged
-runs by a single script. The code, configurations, and logs are released so that
-each reported number is traceable to an exact configuration.
+runs by a single script. The code, the configurations, and the generated tables
+and figures are released publicly, so that each reported number is traceable to
+an exact configuration and can be re-executed from public data.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -1852,9 +1853,9 @@ deployment.
 \backmatter
 
 \bmhead{Supplementary information}
-The full source code, configuration files, and experiment logs underlying
-every table and figure in this paper are released alongside the manuscript
-(see Data availability below).
+The full source code, the configuration files defining every reported run, and
+the generated tables and figures are publicly released (see Data availability
+and Code availability below).
 
 \bmhead{Acknowledgements}
 Not applicable.
@@ -1894,18 +1895,24 @@ graph is available from its public release on Kaggle
 (\url{https://www.kaggle.com/datasets/ellipticco/elliptic-data-set}); and
 ogbn-products is available from the Open Graph Benchmark
 (\url{https://ogb.stanford.edu/docs/nodeprop/}). No new data were generated in
-this study. The experiment logs from which every table and figure in this
-article is regenerated are included in the code repository cited below.
+this study. The result tables and figures reported in this article, together with
+the code and the exact configurations that produced them, are in the public
+repository cited below; the raw per-run experiment logs from which those tables
+and figures were generated are available from the corresponding author on
+request.
 
 \bmhead{Materials availability}
 Not applicable.
 
 \bmhead{Code availability}
-The complete source code, experiment configurations, and logged results
-supporting this article are publicly available at
-\url{https://github.com/vinhqdang/FedFairGNN}. Every table and figure can be
-regenerated from the released logs with a single script
-(\texttt{experiments/report.py}), as described in Appendix~\ref{app:repro}.
+The complete source code, the experiment configurations that define every
+reported run, and the generated result tables and figures are publicly available
+at \url{https://github.com/vinhqdang/FedFairGNN}. The repository contains the
+full experiment matrix runner and the reporting script
+(\texttt{experiments/report.py}) that regenerates every table and figure from a
+run log, so any reported configuration can be re-executed end to end from public
+data; the per-run log files themselves are available from the corresponding
+author on request (Appendix~\ref{app:repro}).
 
 \bmhead{Author contributions}
 Q.-V.D. and N.-S.-A.N. conceived the original FedFairGNN framework and the
@@ -2050,8 +2057,12 @@ table and figure in this paper is regenerated from logged runs by a single
 script (\texttt{experiments/report.py}). The full experiment matrix---main
 comparison, ablation, privacy sweep, fairness--utility Pareto frontier,
 Byzantine-robustness study, scalability, and partition-sensitivity---is driven
-by a resumable runner (\texttt{experiments/run\_matrix.py}). Code, configuration,
-and logs are released at \url{https://github.com/vinhqdang/FedFairGNN}.
+by a resumable runner (\texttt{experiments/run\_matrix.py}). The code, the
+configurations, and the generated tables and figures are released at
+\url{https://github.com/vinhqdang/FedFairGNN}; because each run is fully
+specified by a serialised \texttt{ExperimentConfig} and all data are public, any
+reported number can be reproduced end to end from the repository alone. The raw
+per-run log files are available from the corresponding author on request.
 
 \end{appendices}
 

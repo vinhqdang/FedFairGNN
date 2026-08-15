@@ -1,7 +1,7 @@
 %% Springer Nature LaTeX template (sn-jnl), official Dec 2024 package.
 %DIF LATEXDIFF DIFFERENCE FILE
 %DIF DEL /Users/vinhdq1/work/FedFairGNN/manuscript/revision0_review/main_revision0.tex   Sun Aug 16 01:08:01 2026
-%DIF ADD /Users/vinhdq1/work/FedFairGNN/manuscript/revision0_review/revision1/main.tex   Sun Aug 16 01:37:41 2026
+%DIF ADD /Users/vinhdq1/work/FedFairGNN/manuscript/revision0_review/revision1/main.tex   Sun Aug 16 01:43:46 2026
 %% Math and Physical Sciences Numbered Reference Style (sn-mathphys-num).
 %% Prepared for submission to a Springer Nature journal (collection:
 %% "Trustworthy and Responsible Federated Learning").
@@ -1966,8 +1966,9 @@ graduate from subgroup-disparity analysis to demographic guarantees.
 All datasets are public and downloaded on demand; all randomness is seeded;
 privacy accounting, metrics, and aggregation rules are unit-tested in continuous
 integration; and every table and figure in this paper is regenerated from logged
-runs by a single script. The code, configurations, and logs are released so that
-each reported number is traceable to an exact configuration.
+runs by a single script. The code, \DIFaddbegin \DIFadd{the }\DIFaddend configurations, and \DIFdelbegin \DIFdel{logs are released }\DIFdelend \DIFaddbegin \DIFadd{the generated tables
+and figures are released publicly, }\DIFaddend so that each reported number is traceable to
+an exact configuration \DIFaddbegin \DIFadd{and can be re-executed from public data}\DIFaddend .
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -2005,9 +2006,11 @@ deployment.
 \backmatter
 
 \bmhead{Supplementary information}
-The full source code, configuration files, and experiment logs underlying
+The full source code, \DIFdelbegin \DIFdel{configuration files, and experiment logs underlying
 every table and figure in this paper are released alongside the manuscript
-(see Data availability below).
+}\DIFdelend \DIFaddbegin \DIFadd{the configuration files defining every reported run, and
+the generated tables and figures are publicly released }\DIFaddend (see Data availability
+\DIFaddbegin \DIFadd{and Code availability }\DIFaddend below).
 
 \bmhead{Acknowledgements}
 Not applicable.
@@ -2062,25 +2065,29 @@ graph is available from its public release on Kaggle
 }\DIFaddend ogbn-products \DIFdelbegin \DIFdel{via }\DIFdelend \DIFaddbegin \DIFadd{is available from }\DIFaddend the Open Graph Benchmark
 \DIFdelbegin \DIFdel{).
 }%DIFDELCMD < \item %%%
-\DIFdel{Materials availability: }\DIFdelend \DIFaddbegin \DIFadd{(}\url{https://ogb.stanford.edu/docs/nodeprop/}\DIFadd{). No new data were generated in
-this study. The experiment logs from which every table and figure in this
-article is regenerated are included in the code repository cited below.
+\DIFdel{Materials availability: Not applicable. }%DIFDELCMD < \item %%%
+\DIFdel{Code availability: Code, configuration, and logs }\DIFdelend \DIFaddbegin \DIFadd{(}\url{https://ogb.stanford.edu/docs/nodeprop/}\DIFadd{). No new data were generated in
+this study. The result tables and figures reported in this article, together with
+the code and the exact configurations that produced them, are in the public
+repository cited below; the raw per-run experiment logs from which those tables
+and figures were generated }\DIFaddend are available from the corresponding author \DIFdelbegin \DIFdel{upon requestand will be released publicly upon acceptance. }%DIFDELCMD < \item %%%
+\DIFdel{Author contribution: }\DIFdelend \DIFaddbegin \DIFadd{on
+request.
 }
 
 \bmhead{Materials availability}
-\DIFaddend Not applicable.
-\DIFdelbegin %DIFDELCMD < \item %%%
-\DIFdel{Code availability: Code, configuration, and logs are available from the corresponding author upon request and will be
-released publicly upon acceptance.
-}%DIFDELCMD < \item %%%
-\DIFdel{Author contribution: }\DIFdelend \DIFaddbegin 
+\DIFadd{Not applicable.
+}
 
 \bmhead{Code availability}
-\DIFadd{The complete source code, experiment configurations, and logged results
-supporting this article are publicly available at
-}\url{https://github.com/vinhqdang/FedFairGNN}\DIFadd{. Every table and figure can be
-regenerated from the released logs with a single script
-(}\texttt{\DIFadd{experiments/report.py}}\DIFadd{), as described in Appendix~\ref{app:repro}.
+\DIFadd{The complete source code, the experiment configurations that define every
+reported run, and the generated result tables and figures are publicly available
+at }\url{https://github.com/vinhqdang/FedFairGNN}\DIFadd{. The repository contains the
+full experiment matrix runner and the reporting script
+(}\texttt{\DIFadd{experiments/report.py}}\DIFadd{) that regenerates every table and figure from a
+run log, so any reported configuration can be re-executed end to end from public
+data; the per-run log files themselves are available from the corresponding
+author on request (Appendix~\ref{app:repro}).
 }
 
 \bmhead{Author contributions}
@@ -2229,8 +2236,12 @@ table and figure in this paper is regenerated from logged runs by a single
 script (\texttt{experiments/report.py}). The full experiment matrix---main
 comparison, ablation, privacy sweep, fairness--utility Pareto frontier,
 Byzantine-robustness study, scalability, and partition-sensitivity---is driven
-by a resumable runner (\texttt{experiments/run\_matrix.py}). Code, config\DIFaddbegin \DIFadd{uration}\DIFaddend  ,
-and logs are released \DIFaddbegin \DIFadd{at }\url{https://github.com/vinhqdang/FedFairGNN}\DIFaddend .
+by a resumable runner (\texttt{experiments/run\_matrix.py}). \DIFdelbegin \DIFdel{Code, config, and logs are released }\DIFdelend \DIFaddbegin \DIFadd{The code, the
+configurations, and the generated tables and figures are released at
+}\url{https://github.com/vinhqdang/FedFairGNN}\DIFadd{; because each run is fully
+specified by a serialised }\texttt{\DIFadd{ExperimentConfig}} \DIFadd{and all data are public, any
+reported number can be reproduced end to end from the repository alone. The raw
+per-run log files are available from the corresponding author on request}\DIFaddend .
 
 \end{appendices}
 

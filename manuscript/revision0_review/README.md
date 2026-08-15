@@ -12,8 +12,14 @@ documents it responds to.
 | Manuscript (PDF, clean) | `revision1/main.pdf` |
 | Manuscript (tracked changes) | `revision1_tracked/main_tracked.pdf` |
 | Response to reviewers | `response_letter/response_letter.pdf` |
-| Figures (production quality) | `springer_upload/figures/Fig1–Fig6.{eps,pdf,tif}` |
-| Tables (rendered, for reference) | `springer_upload/tables/Tables_all.pdf` |
+| Figures + tables (one archive) | `TrustFedGNN_revision1_figures_tables.zip` |
+| — figures only | `TrustFedGNN_revision1_figures.zip` |
+| — tables only | `TrustFedGNN_revision1_tables.zip` |
+
+The three artwork ZIPs are alternatives, not additions: upload the combined one
+unless the system asks for figures and tables separately. Each contains
+`MANIFEST.txt`, which maps `Fig1`–`Fig6` to their manuscript numbers and captions,
+lists the table order, states the formats, and records what changed this revision.
 
 ## Contents
 
@@ -39,11 +45,15 @@ revision0_review/
 │   ├── response_letter.tex
 │   └── response_letter.md            plain text, for pasting into the form
 │
-├── springer_upload/                  production artwork + tables
+├── springer_upload/                  production artwork + tables (unzipped)
+│   ├── MANIFEST.txt                  figure/table map, formats, what changed
 │   ├── figures/Fig1..Fig6 .pdf/.eps/.tif/.png
 │   └── tables/Tables_all.pdf + Tables_all.tex + tables/
 │
-└── TrustFedGNN_revision1_latex.zip   complete LaTeX source (verified to compile)
+├── TrustFedGNN_revision1_latex.zip           LaTeX source (verified to compile)
+├── TrustFedGNN_revision1_figures_tables.zip  artwork + tables (combined)
+├── TrustFedGNN_revision1_figures.zip         artwork only
+└── TrustFedGNN_revision1_tables.zip          tables only
 ```
 
 ## Figure numbering
@@ -66,8 +76,14 @@ convenience only. Vector files should be preferred wherever the system accepts t
 - [ ] Select **"yes"** under the data availability declaration in the system, and
       paste the *Data availability* statement from the manuscript verbatim so the
       two match exactly (editorial requirement 2).
-- [ ] Confirm `https://github.com/vinhqdang/FedFairGNN` is **public** before
-      submitting — the Code availability statement now cites it directly.
+- [x] `https://github.com/vinhqdang/FedFairGNN` is **public** — confirmed, and the
+      Code availability statement cites it directly.
+- [ ] *Optional but worthwhile:* the raw per-run logs (`results/`) are not in the
+      repository and never were, so the Data/Code availability statements now say
+      they are available from the corresponding author on request. If the logs can
+      be recovered from the machine that ran the matrix, committing them (or
+      depositing them on Zenodo for a DOI) would let both statements be
+      strengthened to "included in the repository".
 
 ## Notes on this revision
 
