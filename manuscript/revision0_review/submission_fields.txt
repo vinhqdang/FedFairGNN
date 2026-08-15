@@ -51,10 +51,18 @@ Regulatory compliance
 
 --------------------------------------------------------------------------------
 DATA AVAILABILITY STATEMENT
-(the system asks you to select "yes" and this must match the manuscript exactly)
+
+  On the submission form, answer:  ==> "Yes. I used or generated research data
+  in this study."  <==  Five public benchmark graphs plus ogbn-products were
+  analysed.
+
+  NOTE: the form warns that whatever you paste here REPLACES the manuscript's
+  statement and is what gets published. The text below is therefore
+  self-contained (no "cited below" cross-references) and is identical to the
+  statement now in the manuscript, so the two are consistent.
 --------------------------------------------------------------------------------
 
-All datasets analysed during the current study are publicly available. The German Credit, Credit Defaulter, and Bail (Recidivism) graphs and the Pokec-z social graph are available from the NIFTY and FairGNN benchmark releases (https://github.com/chirag126/nifty and https://github.com/EnyanDai/FairGNN); the Elliptic Bitcoin transaction graph is available from its public release on Kaggle (https://www.kaggle.com/datasets/ellipticco/elliptic-data-set); and ogbn-products is available from the Open Graph Benchmark (https://ogb.stanford.edu/docs/nodeprop/). No new data were generated in this study. The result tables and figures reported in this article, together with the code and the exact configurations that produced them, are in the public repository cited below; the raw per-run experiment logs from which those tables and figures were generated are available from the corresponding author on request.
+All datasets analysed in this study are publicly available and were used under their original licences; no new data were generated. The German Credit, Credit Defaulter, and Bail (Recidivism) graphs and the Pokec-z social graph are available from the NIFTY and FairGNN benchmark releases (https://github.com/chirag126/nifty and https://github.com/EnyanDai/FairGNN). The Elliptic Bitcoin transaction graph is available from its public release on Kaggle (https://www.kaggle.com/datasets/ellipticco/elliptic-data-set; free registration required). The ogbn-products co-purchase graph is available from the Open Graph Benchmark (https://ogb.stanford.edu/docs/nodeprop/). The result tables and figures reported in this article, together with the source code and the exact configurations that produced them, are available in the public repository https://github.com/vinhqdang/FedFairGNN; the raw per-run experiment logs are available from the corresponding author on reasonable request.
 
 
 --------------------------------------------------------------------------------
