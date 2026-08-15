@@ -67,6 +67,12 @@ Section 3.2 of the paper.) Aggregators: `fedavg`, `bfwa`,
 `label_flip`, `gaussian`, `scaling`, `sign_flip`, `ipm`, `alie`,
 `fairness_poison`.
 
+> **Why `--method fedfairgnn` selects TrustFedGNN.** The preset *keys* keep the
+> pre-rename name because `exp_name` is baked into every already-logged
+> `run_id`; renaming them would orphan completed runs rather than relabel them.
+> The model dispatch string and every user-facing name were renamed. See
+> [the papers](#papers) for the rename, and `experiments/methods.py` for the note.
+
 ## Repository layout
 
 ```
@@ -106,7 +112,9 @@ or can be regenerated with:
 python -m experiments.run_matrix --study main,ablation,privacy,robustness
 ```
 
-## Paper
+## Papers
+
+**Journal article (this repository).**
 
 > Q.-V. Dang, N.-S.-A. Nguyen, D. Le, M. N. Dinh.
 > *Unifying Fairness Privacy Robustness and Explainability in Federated Graph
@@ -114,9 +122,46 @@ python -m experiments.run_matrix --study main,ablation,privacy,robustness
 > Discover Artificial Intelligence — collection *Trustworthy and Responsible
 > Federated Learning*. Under revision (revision 1 submitted).
 
-A preliminary conference version, covering FSER, FTGD and BFWA on three
-fraud-detection graphs under the name **FedFairGNN**, is cited in the manuscript;
-this repository implements the extended **TrustFedGNN** framework.
+**Preliminary conference version.**
+
+> Q.-V. Dang, N.-S.-A. Nguyen.
+> *FedFairGNN: A Privacy-Preserving and Fairness-Aware Federated Graph Neural
+> Network for Fraud Detection.*
+> Proceedings of IndabaX Nigeria 2026, PMLR **319**:74–86, 2026.
+> https://proceedings.mlr.press/v319/dang26a.html
+
+```bibtex
+@inproceedings{dang2026fedfairgnn,
+  title     = {{FedFairGNN}: A Privacy-Preserving and Fairness-Aware Federated
+               Graph Neural Network for Fraud Detection},
+  author    = {Dang, Quang-Vinh and Nguyen, Ngoc-Son-An},
+  booktitle = {Proceedings of IndabaX Nigeria 2026: Building Scalable AI That
+               Works: From Research to Deployment in Resource-Constrained
+               Environments},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {319},
+  pages     = {74--86},
+  year      = {2026},
+  url       = {https://proceedings.mlr.press/v319/dang26a.html}
+}
+```
+
+### What changed between the two
+
+The conference paper introduced FSER, FTGD and BFWA, evaluated on three
+fraud-detection graphs (YelpChi, Amazon, Elliptic) with a single `K=3` client
+configuration. The journal article extends it substantially, and this repository
+implements the extended framework — renamed **FedFairGNN → TrustFedGNN** to
+reflect the wider scope:
+
+| | Conference (FedFairGNN) | Journal (TrustFedGNN) |
+|---|---|---|
+| Datasets | 3 fraud graphs, `K=3` | 5 fairness benchmarks + a 2.4M-node scalability study |
+| Baselines | small set | 15, including five 2025–2026 methods reimplemented here |
+| Robustness | — | `robust_bfwa` + a new fairness-poisoning attack |
+| Privacy evidence | guarantee only | + adversarial attribute-inference evaluation |
+| Statistics | — | multi-seed paired Wilcoxon significance tests |
+| Trust layer | — | uncertainty, attention audits, trust score, sustainability, EU AI Act / NIST RMF mapping |
 
 ### Scope of the claims
 
