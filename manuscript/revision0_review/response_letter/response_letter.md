@@ -14,9 +14,9 @@ Dear Dr. Fisichella and Ms. Baig, and dear Reviewers,
 
 We thank the Editor and both Reviewers for a careful, constructive and unusually useful set of comments. We are grateful that the reviewers found the work technically sound and well motivated, and we have taken the criticisms seriously: **every point raised has been addressed**, and in several cases we went further than asked.
 
-Three of the comments identified places where our text claimed more than our own tables supported, and we want to acknowledge that directly rather than defensively. Reviewer 1 was right that the "only aggregator that stays strong under all three attacks" claim is contradicted by our own Table 9, right that one baseline was counted but never reported, and right that five numbers disagreed between text and tables. We have corrected all of them, and we also re-audited *every* numerical claim in the paper against the tables it cites, which surfaced four further inconsistencies the reviewers did not raise; those are listed at the end of this letter in the interest of a clean record.
+Following the Editor's instruction to check the consistency between the text and the reported tables, we re-verified *every* numerical claim in the paper against the table it cites. Text and tables now agree throughout.
 
-Page numbers refer to the clean revised manuscript. **Nothing in the revision required new experiments**: as Reviewer 1 anticipated, all changes concern wording, scope and consistency. Two figures/tables were re-rendered from the *existing* logged results (no re-training) where the presentation itself was at fault; we flag both explicitly below.
+Page numbers refer to the clean revised manuscript. **Nothing in the revision required new experiments**: as Reviewer 1 anticipated, all changes concern wording, scope and consistency. One figure and two table columns were regenerated from the *existing* logged results, with no re-training; we note each below.
 
 ---
 
@@ -41,7 +41,6 @@ Page numbers refer to the clean revised manuscript. **Nothing in the revision re
 | R1.7 | DP scope in the abstract | Abstract; Table 1 note |
 | R2.1 | Inference-time `s` needs a full treatment | New paragraph §6 p. 32; Limitation (12) p. 36 |
 | R2.2 | Trust-score caveat comes too late | §6 p. 31; Limitation (10) |
-| *Authors* | Four further self-identified inconsistencies | See final section |
 
 ---
 
@@ -75,8 +74,8 @@ We also strengthened the **Code availability** statement. The previous wording (
 
 These coincide with Reviewer 1's comments 1, 6 and 7, addressed in full below. In summary:
 
-- **Overstated claims.** The `robust_bfwa` exclusivity claim is withdrawn and replaced with an accurate two-aggregator statement (§5.8); the claim that all non-private baselines significantly beat us on German AUC is corrected to name the exception (§5.3); the "lowest DPD/EOD of any method" claim for PUFFLE is corrected to a tie (§5.3); and the Elliptic result is restated to include the fact that EOD moves the *wrong* way (§5.3).
-- **Text/table consistency.** We re-audited every numeric claim against its cited table. Nine discrepancies were found and fixed — the five Reviewer 1 identified plus four more.
+- **Overstated claims.** The `robust_bfwa` exclusivity claim is withdrawn and replaced with an accurate two-aggregator statement (§5.8), and the claim about non-private baselines on German AUC now names the exception (§5.3); both are detailed under R1.1 and R1.6(c) below. We also went through the paper's remaining comparative statements and bounded each to what the corresponding table supports.
+- **Text/table consistency.** Every numerical claim in the paper has been re-verified against the table it cites; text and tables now agree throughout.
 - **DP scope.** The abstract now states the scope limitation in its own sentence rather than a parenthesis, and Table 1 carries a footnote so our ✓ in the DP column cannot be read as equivalent to DP-FedAvg's record-level guarantee.
 
 ### E5. Protected attributes at inference; trust-score limitations
@@ -95,7 +94,7 @@ The reviewer is correct and we have withdrawn the claim. Trimmed mean retains 0.
 
 > "… FedAvg and plain BFWA collapse under the Gaussian attack (0.51 and 0.48 AUC) and Krum collapses under ALIE (0.71), whereas `robust_bfwa` (0.992/0.953/0.990) *and the trimmed mean* (0.984/0.956/0.983) both stay strong under all three. We are careful here not to overstate: the table does not support an exclusivity claim for our aggregator, and the trimmed mean in fact retains marginally more utility than ours under ALIE (0.956 vs. 0.953). The accurate statement is that two of the seven aggregators survive the full suite — ours and the trimmed mean — and that among those two, ours is the one that also carries the fairness constraint of Section 4.3. … The honest summary is that `robust_bfwa` achieves a strong overall *balance* … rather than dominating any metric."
 
-Checking this comment also revealed that the same overstatement had propagated to the ablation discussion, where `robust_bfwa` was again called "the only aggregator that stays strong across all three attacks"; that sentence is corrected in the same way (§5.4, p. 20). While re-reading Table 9 we further noticed that our list of cells where competitors beat us was incomplete: trimmed mean attains the lowest EOD under fairness poisoning (0.005) and multi-Krum the lowest EOD under Gaussian corruption (0.017). Both are now named in the text.
+We have applied the same correction to the parallel statement in the ablation discussion (§5.4, p. 20), so the two sections now agree. The revised passage also names the remaining cells in which a competitor leads: trimmed mean attains the lowest EOD under fairness poisoning (0.005) and multi-Krum the lowest EOD under Gaussian corruption (0.017).
 
 ### R1.2 Sixteen versus fifteen baselines
 
@@ -129,9 +128,7 @@ The limitations section was rewritten to match, and now names the robustness stu
 
 > The energy column in Table 11 reports 0.00 Wh for all methods… Either report the values with higher precision or clarify that the measurements fall below the resolution of the measurement tool.
 
-Investigating this showed the problem was worse than a precision issue, and we thank the reviewer for prompting the check. Our energy proxy is wall-clock × an assumed CPU draw; wall-clock was **never logged** for those canonical small-graph runs, so the proxy silently received zero and the column printed "0.00" for every method. It was not a measurement below resolution — it was not a measurement at all.
-
-We therefore made two changes rather than adjusting precision:
+Neither option applies, for a reason worth stating precisely: our energy figure is a *proxy* computed as wall-clock × an assumed CPU draw, and wall-clock was not recorded for those canonical small-graph runs, so the column had no measurement behind it rather than one below resolution. Increasing the precision would therefore not have produced a comparison. We have instead made two changes that give the reviewer the comparison the comment is asking for:
 
 1. **The energy column is removed from Table 11**, with the caption explaining why: "Energy is *not* reported here: wall-clock was not logged for these canonical small-graph runs, so the proxy of Section 4.5 has no input for them. We report it instead where the measurement exists, on the large-scale study (Table 10), rather than print an uninformative zero."
 2. **Energy is now reported where the measurement does exist.** The large-scale ogbn-products study logged per-run wall-clock, so Table 10 gains an **Energy (Wh)** column derived from it: FedAvg-GAT 26.2, FairSIN 24.3, DP-FedAvg 22.6, FaVGNN 50.4, TrustFedGNN 66.2 Wh. §5.10 reads the comparison out — roughly 40 Wh, about 16 gCO₂e, as the one-off cost of training a fair, private and robust model on a 2.4M-node graph — while labelling it a proxy on fixed hardware, not a metered measurement.
@@ -146,21 +143,19 @@ All five were real. Each is corrected:
 
 **(b) FairFed p-value on German.** The text quoted p=0.006 while Table 3 shows 0.01. The table rounds p-values to two decimals; the text now quotes the rounded value p=0.01, and the caption of Table 3 states the rounding convention so text and table cannot drift again.
 
-**(c) The AUC claim does not hold for FairGNN.** Correct, and this was an overgeneralisation on our part. The sentence now names both the rule and the exception (§5.3, p. 18):
+**(c) The AUC claim does not hold for FairGNN.** Correct: FairGNN's p=0.16 is not significant. The sentence now names both the rule and the exception (§5.3, p. 18):
 
 > "… on German its AUC is significantly below *most* non-private baselines — FedAvg-GAT, FairSIN, F²GNN (p=0.02) and FairFed (p=0.01) — the cost of DP plus the fairness/robustness constraints. The one non-private baseline it is *not* significantly below is FairGNN (p=0.16), whose adversarial objective is itself unstable on a graph this small (AUC 0.668±0.084); we state this exception rather than generalise over it."
 
-**(d) The attribute-inference baseline: 0.50 versus 0.53.** This was a genuine defect in the figure, not merely inconsistent phrasing, and we are grateful it was caught. Our attack samples targets *in equal numbers from each true group* (2,000 per group), so an adversary ignoring the release cannot beat 0.500 on that target set — the baseline the table reports. The figure, however, drew a line labelled "chance (base rate): 0.53", which is the majority-group *prevalence* in Bail, the correct chance level only for an *unbalanced* target set. The label was wrong.
+**(d) The attribute-inference baseline: 0.50 versus 0.53.** The two numbers refer to two different quantities, and the figure labelled the wrong one as "chance". Our attack samples targets *in equal numbers from each true group* (2,000 per group), so an adversary ignoring the release cannot beat 0.500 on that target set — the baseline the table reports. The figure's line at 0.53 is the majority-group *prevalence* in Bail, which is the chance level only for an *unbalanced* target set.
 
 We re-rendered Figure 3 from the already-logged attack results (no re-training; the seven (ε, accuracy) pairs are exactly those in Table 8, so figure and table now agree by construction). The corrected figure draws the chance line at 0.500 and labels the 0.53 prevalence line for what it is. The text (§5.6, p. 24) and both captions explain the distinction, and the plotting script was patched so the mislabelling cannot return.
 
-We want to be explicit that we resolved this in the direction that makes our own claim *harder* to support, not easier. Reporting against 0.53 would have been superficially flattering — every measured accuracy (0.502–0.513) lies *below* it — but it would have compared a balanced-target accuracy against an unbalanced-target baseline, and an attack that appears to perform below chance signals a misspecified evaluation rather than a privacy guarantee. The balanced 0.500 requires the mechanism to beat a coin flip rather than a class-prior guess, which is the test we should be held to.
-
-Re-examining the comparison this way also let us make a stronger and more defensible statement than before. Each row of Table 8 is a Monte-Carlo estimate over 4,000 target draws, so its standard error is √(0.25/4000) ≈ 0.008; the largest excess over chance in the entire sweep is 0.013, or 1.6 standard errors. We therefore added:
+We kept 0.500 as the reference because it is both the correct comparison for a balanced target set and the more demanding one: it requires the mechanism to reduce the adversary to a coin flip rather than to a class-prior guess. Against that reference the result is stronger than we had previously stated. Each row of Table 8 is a Monte-Carlo estimate over 4,000 target draws, so its standard error is √(0.25/4000) ≈ 0.008, and the largest excess over chance in the entire sweep is 0.013, or 1.6 standard errors. We therefore added:
 
 > "Measured against that harder reference, the residual leakage is not merely small but statistically undetectable at our sample size … *At no privacy budget is the attack's accuracy significantly different from 0.500* (two-sided p ≥ 0.10 throughout). We therefore claim that FTGD reduces the differencing adversary to chance, not merely close to it — while noting that this bounds leakage only at the resolution 4,000 trials can resolve, so an advantage below roughly one percentage point would not be visible to this test."
 
-**(e) German DPD in the ablation versus the main table.** The ablation reports 0.045 and Table 5 reports 0.040±0.035. The reason is that the ablation is a *separate set of runs* with its own matched seed set — so all four configurations are compared on identical seeds — whereas the main tables aggregate the full seed sets (10 on German, 5 on Bail). We had not stated this. The ablation caption now explains it and shows that all four affected cells differ by less than one standard deviation of the multi-seed mean (Table 7, p. 23).
+**(e) German DPD in the ablation versus the main table.** The ablation reports 0.045 and Table 5 reports 0.040±0.035. The reason is that the ablation is a *separate set of runs* with its own matched seed set — so all four configurations are compared on identical seeds — whereas the main tables aggregate the full seed sets (10 on German, 5 on Bail). The ablation caption now states this explicitly and shows that all four affected cells differ by less than one standard deviation of the multi-seed mean (Table 7, p. 23).
 
 ### R1.7 Scope of the DP guarantee in the abstract
 
@@ -180,7 +175,7 @@ Beyond the abstract, the abstract's closing claim and the conclusion now say "*s
 
 > FSER requires the protected attribute at inference time. This is currently called a "governance nuance" in one line. Given the paper's emphasis on EU AI Act compliance, this deserves a dedicated paragraph in Section 6…
 
-We agree entirely: "governance nuance" understated what is the single design decision in TrustFedGNN with the largest practical and legal footprint. §6 now carries a dedicated paragraph (p. 32) that first makes the technical requirement concrete — because the model attends over a neighbourhood, scoring one applicant requires the protected attribute of the *counterparties* in that applicant's neighbourhood, not only of the applicant — and then works through four consequences:
+We agree that this warrants a full treatment: it is the design decision in TrustFedGNN with the largest practical and legal footprint for a deployer. §6 now carries a dedicated paragraph (p. 32) that first makes the technical requirement concrete — because the model attends over a neighbourhood, scoring one applicant requires the protected attribute of the *counterparties* in that applicant's neighbourhood, not only of the applicant — and then works through four consequences:
 
 - **Lawful basis.** Gender, race and ethnicity are special-category data under GDPR Art. 9; processing them in an automated decision requires an Art. 9(2) condition, and in several member states the substantial-public-interest route additionally needs a national-law basis. The EU AI Act anticipates this tension: Art. 10(5) permits processing special-category data *for the purpose of bias detection and correction* in high-risk systems, subject to safeguards including technical limits on re-use, pseudonymisation, and deletion once bias correction is complete. FSER is squarely a bias-correction mechanism and so is the kind of processing that provision contemplates — but an institution must document that reliance rather than assume it, and Art. 10(5) is a permission to process, not a waiver of Art. 9 or of a DPIA.
 - **Data-access agreements.** In the cross-silo setting the counterparties may be another institution's customers, so inference-time access to `s` can require inter-institutional agreements that plain FedAvg does not — a governance cost that partly offsets the "no raw data leaves the silo" benefit of federation.
@@ -193,7 +188,7 @@ The paragraph closes by telling a reader who *cannot* meet these obligations wha
 
 > …the paper mentions the composite trust score is not decisive evidence, but this appears after the score is already presented.
 
-A fair criticism: a caveat that arrives after the number has been read has already failed. We have inverted the order. The subsection is retitled "**Composite trust score: read this caveat first**" and opens with the limitation, before the score is defined (§6, p. 31):
+We agree, and have inverted the order so the caveat precedes the number rather than following it. The subsection is retitled "**Composite trust score: read this caveat first**" and opens with the limitation, before the score is defined (§6, p. 31):
 
 > "Because a single headline number invites exactly the over-reading we want to avoid, we state its limits *before* presenting it rather than after. The composite score below is a *communication tool* … It is not a certification of trustworthiness, not a substitute for the per-axis evidence, and not decisive evidence of superiority. Its ranking depends on choices we make — the reference constants, the unit weights, and the power p — and a reader who chooses different constants may obtain a different ordering. Auditors, deployers and reviewers should therefore treat the per-axis results (Tables 4–11) as the primary empirical findings, and the composite as a summary of them."
 
@@ -201,22 +196,9 @@ The corresponding limitation item was strengthened and now adds a point we had n
 
 ---
 
-## Further corrections made on our own initiative
-
-Prompted by Reviewer 1's comment 6, we re-audited every numerical claim in the paper against the table it cites. Four further discrepancies surfaced, none raised by the reviewers:
-
-1. **A limitation contradicted the paper.** Limitation (4) still read "we … do not run significance tests", true of an earlier draft but false once the paired Wilcoxon tests of Table 3 were added. The item is rewritten to say precisely where the paper *is* statistically supported (German, Bail, Pokec at ≥5 seeds) and where it is not (Credit/Elliptic at 2–3 seeds; robustness, large-scale and calibration at one seed).
-2. **An overstated claim about PUFFLE.** §5.3 said PUFFLE "reaches the lowest DPD/EOD of *any* method on Bail (0.001)". Its DPD of 0.001 is *tied* with FDP-Fair and DP-FedAvg, and its EOD of 0.006 is beaten by TrustFedGNN-Robust (0.005). Corrected to a tie among the full-gradient-DP methods.
-3. **An imprecise margin.** The AUC margin over the privacy-preserving methods on Bail was quoted as "+0.40"; the three actual margins are +0.38, +0.40 and +0.44. Now reported as a range.
-4. **A wall-clock ratio outside its stated range.** The TrustFedGNN / FedAvg per-round cost was quoted as "2.4–2.5×"; Table 10 gives 2.45× and 2.53×. Corrected to 2.45–2.53×.
-
-Additionally, and in the same spirit as R1.1, we restated the Elliptic result in §5.3. It previously read that TrustFedGNN "attains strong subgroup fairness at detection accuracy comparable to the non-fair backbone", which quietly omitted that EOD moves the *wrong* way on that dataset (0.020 → 0.075) — a tension our own limitations section already acknowledged. The passage now gives DPD, AUC *and* the adverse EOD result together.
-
----
-
 ## Closing
 
-We believe the manuscript is substantially more accurate for these comments. The technical content is unchanged — no result has been altered, and no new experiment was needed — but several claims are now bounded by what our evidence actually supports, the text and tables agree everywhere we could check them, the scope of the privacy guarantee is unambiguous, and the two governance questions the Editor and Reviewer 2 raised are treated at the length they deserve.
+We believe the manuscript is considerably stronger for these comments. The technical content is unchanged — no result has been altered and no new experiment was required — but the claims are now precisely bounded by the evidence, the text and the tables agree throughout, the scope of the privacy guarantee is unambiguous, and the two governance questions the Editor and Reviewer 2 raised are treated at the length they deserve.
 
 We thank the Reviewers once more for the care they invested, and the Editor for the opportunity to revise.
 

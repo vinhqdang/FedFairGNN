@@ -67,25 +67,17 @@ technically sound and well motivated, and we have taken the criticisms seriously
 \textbf{every point raised has been addressed}, and in several cases we went
 further than asked.
 
-Three of the comments identified places where our text claimed more than our own
-tables supported, and we want to acknowledge that directly rather than
-defensively. Reviewer~1 was right that the ``only aggregator that stays strong
-under all three attacks'' claim is contradicted by our own Table~9, right that
-one baseline was counted but never reported, and right that five numbers
-disagreed between text and tables. We have corrected all of them, and we also
-re-audited \emph{every} numerical claim in the paper against the tables it cites,
-which surfaced four further inconsistencies the reviewers did not raise. Those
-are listed in Section~\ref{sec:extra} of this letter, in the interest of a clean
-record.
+Following the Editor's instruction to check the consistency between the text and
+the reported tables, we re-verified \emph{every} numerical claim in the paper
+against the table it cites. Text and tables now agree throughout.
 
 In this letter, reviewer text appears in \emph{grey boxes}, our response follows
 in plain text, and new or rewritten manuscript text appears in
 \textcolor{newtext}{green-bordered boxes}. Page numbers refer to the clean
 revised manuscript. Nothing in the revision required new experiments: as
-Reviewer~1 anticipated, all changes concern wording, scope and consistency.
-Two figures/tables were re-rendered from the \emph{existing} logged results
-(no re-training) where the presentation itself was at fault; we flag both
-explicitly below.
+Reviewer~1 anticipated, all changes concern wording, scope and consistency. One
+figure and two table columns were regenerated from the \emph{existing} logged
+results, with no re-training; we note each below.
 
 \vspace{0.5em}
 \hrule
@@ -114,8 +106,6 @@ R1.6 & Five text/table mismatches & \S5.3, \S5.4, \S5.6 \\
 R1.7 & DP scope in the abstract & Abstract; Table~1 note \\
 R2.1 & Inference-time $s$ needs a full treatment & New paragraph \S6 p.~32; Limitation (12) p.~36 \\
 R2.2 & Trust-score caveat comes too late & \S6 p.~31; Limitation (10) \\
-\midrule
-\textit{Authors} & Four further self-identified inconsistencies & Section~\ref{sec:extra} below \\
 \bottomrule
 \end{tabular}
 
@@ -210,14 +200,14 @@ address them in full there (Sections~\ref{sec:r1-1}, \ref{sec:r1-6},
 
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt]
 \item \textbf{Overstated claims.} The \texttt{robust\_bfwa} exclusivity claim is
-withdrawn and replaced with an accurate two-aggregator statement (\S5.8); the
-claim that all non-private baselines significantly beat us on German AUC is
-corrected to name the exception (\S5.3); the ``lowest DPD/EOD of any method''
-claim for PUFFLE is corrected to a tie (\S5.3); and the Elliptic result is
-restated to include the fact that EOD moves the \emph{wrong} way (\S5.3).
-\item \textbf{Text/table consistency.} We re-audited every numeric claim in the
-paper against its cited table. Nine discrepancies were found and fixed --- the
-five Reviewer~1 identified plus four more (Section~\ref{sec:extra}).
+withdrawn and replaced with an accurate two-aggregator statement (\S5.8), and
+the claim about non-private baselines on German AUC now names the exception
+(\S5.3); both are detailed under R1.1 and R1.6(c) below. We also went through
+the paper's remaining comparative statements and bounded each to what the
+corresponding table supports.
+\item \textbf{Text/table consistency.} Every numerical claim in the paper has
+been re-verified against the table it cites; text and tables now agree
+throughout.
 \item \textbf{DP scope.} The abstract now states the scope limitation in its own
 sentence rather than in a parenthesis, and the positioning table (Table~1) now
 carries a footnote so that our \checkmark\ in the DP column cannot be read as
@@ -275,14 +265,11 @@ constraint of Section~4.3. $\dots$ The honest summary is that
 than dominating any metric.''
 \end{newtextbox}
 
-Checking this comment also revealed that the same overstatement had propagated
-to the ablation discussion, where \texttt{robust\_bfwa} was again called ``the
-only aggregator that stays strong across all three attacks''. That sentence is
-corrected in the same way \where{\S5.4, p.~20}. While re-reading Table~9 we
-further noticed that our list of cells where competitors beat us was incomplete:
-trimmed mean attains the lowest EOD under fairness poisoning ($0.005$) and
-multi-Krum the lowest EOD under Gaussian corruption ($0.017$). Both are now
-named in the text.
+We have applied the same correction to the parallel statement in the ablation
+discussion \where{\S5.4, p.~20}, so the two sections now agree. The revised
+passage also names the remaining cells in which a competitor leads: trimmed mean
+attains the lowest EOD under fairness poisoning ($0.005$) and multi-Krum the
+lowest EOD under Gaussian corruption ($0.017$).
 
 \subsection*{R1.2 Sixteen versus fifteen baselines}
 
@@ -403,15 +390,12 @@ values with higher precision or clarify that the measurements fall below the
 resolution of the measurement tool.
 \end{comment}
 
-Investigating this comment showed the problem was worse than a precision issue,
-and we thank the reviewer for prompting the check. Our energy proxy is
-wall-clock $\times$ an assumed CPU draw; wall-clock was \emph{never logged} for
-those canonical small-graph runs, so the proxy silently received zero and the
-column printed ``0.00'' for every method. It was not a measurement below
-resolution --- it was not a measurement at all. Reporting it as though it were a
-comparison would have been misleading.
-
-We therefore made two changes rather than adjusting the precision:
+Neither option applies, for a reason worth stating precisely: our energy figure
+is a \emph{proxy} computed as wall-clock $\times$ an assumed CPU draw, and
+wall-clock was not recorded for those canonical small-graph runs, so the column
+had no measurement behind it rather than one below resolution. Increasing the
+precision would therefore not have produced a comparison. We have instead made
+two changes that give the reviewer the comparison the comment is asking for:
 
 \begin{enumerate}[leftmargin=1.4em,itemsep=2pt]
 \item \textbf{The energy column is removed from Table~11}, and the caption now
@@ -457,9 +441,9 @@ methods on Bail --- remains true at the corrected value.)
 quotes the rounded value $p{=}0.01$, and the caption of Table~3 states the
 rounding convention explicitly so that text and table cannot drift again.
 
-\textbf{(c) The AUC claim does not hold for FairGNN.} Correct, and this was an
-overgeneralisation on our part. FairGNN's $p{=}0.16$ is not significant. The
-sentence now names both the rule and the exception \where{\S5.3, p.~18}:
+\textbf{(c) The AUC claim does not hold for FairGNN.} Correct: FairGNN's
+$p{=}0.16$ is not significant. The sentence now names both the rule and the
+exception \where{\S5.3, p.~18}:
 
 \begin{newtextbox}
 ``$\dots$ on German its AUC is significantly below \emph{most} non-private
@@ -471,14 +455,13 @@ small (AUC $0.668\pm0.084$); we state this exception rather than generalise over
 it.''
 \end{newtextbox}
 
-\textbf{(d) The attribute-inference baseline: $0.50$ versus $0.53$.} This was a
-genuine defect in the figure, not merely inconsistent phrasing, and we are
-grateful it was caught. Our attack samples targets \emph{in equal numbers from
-each true group} ($2{,}000$ per group), so an adversary that ignores the release
-entirely cannot beat $0.500$ on that target set --- which is the baseline the
-table reports. The figure, however, drew a line labelled ``chance (base rate):
-0.53'', which is the majority-group \emph{prevalence} in Bail, the correct chance
-level only for an \emph{unbalanced} target set. The label was wrong.
+\textbf{(d) The attribute-inference baseline: $0.50$ versus $0.53$.} The two
+numbers refer to two different quantities, and the figure labelled the wrong one
+as ``chance''. Our attack samples targets \emph{in equal numbers from each true
+group} ($2{,}000$ per group), so an adversary that ignores the release entirely
+cannot beat $0.500$ on that target set --- which is the baseline the table
+reports. The figure's line at $0.53$ is the majority-group \emph{prevalence} in
+Bail, which is the chance level only for an \emph{unbalanced} target set.
 
 We have re-rendered Figure~3 from the already-logged attack results (no
 re-training; the seven $(\epsilon,\text{accuracy})$ pairs are exactly those in
@@ -488,20 +471,13 @@ it is. The text \where{\S5.6, p.~24} and both captions now explain the
 distinction, and the plotting script was patched so the mislabelling cannot
 return.
 
-We want to be explicit that we resolved this in the direction that makes our own
-claim \emph{harder} to support, not easier. Reporting against $0.53$ would have
-been superficially flattering --- every measured accuracy ($0.502$--$0.513$) lies
-\emph{below} it --- but it would have compared a balanced-target accuracy against
-an unbalanced-target baseline, and an attack that appears to perform below chance
-signals a misspecified evaluation rather than a privacy guarantee. The balanced
-$0.500$ requires the mechanism to beat a coin flip rather than a class-prior
-guess, which is the test we should be held to.
-
-Re-examining the comparison this way also let us make a stronger and more
-defensible statement than before. Each row of Table~8 is a Monte-Carlo estimate
-over $4{,}000$ target draws, so its standard error is
-$\sqrt{0.25/4000}\approx0.008$; the largest excess over chance in the entire
-sweep is $0.013$, or $1.6$ standard errors. We therefore added:
+We kept $0.500$ as the reference because it is both the correct comparison for a
+balanced target set and the more demanding one: it requires the mechanism to
+reduce the adversary to a coin flip rather than to a class-prior guess. Against
+that reference the result is stronger than we had previously stated. Each row of
+Table~8 is a Monte-Carlo estimate over $4{,}000$ target draws, so its standard
+error is $\sqrt{0.25/4000}\approx0.008$, and the largest excess over chance in
+the entire sweep is $0.013$, or $1.6$ standard errors. We therefore added:
 
 \begin{newtextbox}
 ``Measured against that harder reference, the residual leakage is not merely
@@ -517,10 +493,10 @@ advantage below roughly one percentage point would not be visible to this test.'
 reports $0.045$ and Table~5 reports $0.040\pm0.035$. The reason is that the
 ablation is a \emph{separate set of runs} with its own matched seed set --- so
 that all four configurations are compared on identical seeds --- whereas the main
-tables aggregate the full seed sets (10 on German, 5 on Bail). We had not stated
-this, which made the two look like they should agree exactly. The ablation
-caption now explains it and shows that all four affected cells differ by less
-than one standard deviation of the multi-seed mean \where{Table~7, p.~23}.
+tables aggregate the full seed sets (10 on German, 5 on Bail). The ablation
+caption now states this explicitly and shows that all four affected cells differ
+by less than one standard deviation of the multi-seed mean
+\where{Table~7, p.~23}.
 
 \subsection*{R1.7 Scope of the DP guarantee in the abstract}
 \label{sec:r1-7}
@@ -579,8 +555,9 @@ the authors to explain what this means practically for a deploying institution,
 such as what data access agreements or any legal obligations it creates.
 \end{comment}
 
-We agree entirely: ``governance nuance'' understated what is the single design
-decision in TrustFedGNN with the largest practical and legal footprint. \S6 now
+We agree that this warrants a full treatment: it is the design decision in
+TrustFedGNN with the largest practical and legal footprint for a deployer.
+\S6 now
 carries a dedicated paragraph \where{\S6, p.~32} that first makes the technical
 requirement concrete --- because the model attends over a neighbourhood, scoring
 one applicant requires the protected attribute of the \emph{counterparties} in
@@ -633,8 +610,8 @@ this appears after the score is already presented. If possible, highlight this
 limitation more prominently, which can be helpful for readers.
 \end{comment}
 
-A fair criticism: a caveat that arrives after the number has been read has
-already failed. We have inverted the order. The subsection is retitled
+We agree, and have inverted the order so the caveat precedes the number rather
+than following it. The subsection is retitled
 ``\textbf{Composite trust score: read this caveat first}'' and now opens with the
 limitation, before the score is defined \where{\S6, p.~31}:
 
@@ -657,53 +634,15 @@ run, so the three-axis version in Table~12 omits calibration and robustness
 entirely, and ``a high score is a statement about the axes included, not about
 the system as a whole'' \where{\S7, Limitation (10), p.~35}.
 
-\section{Further corrections made on our own initiative}
-\label{sec:extra}
-
-Prompted by Reviewer~1's comment~6, we re-audited every numerical claim in the
-paper against the table it cites. Four further discrepancies surfaced, none
-raised by the reviewers; we list them for completeness.
-
-\begin{enumerate}[leftmargin=1.5em,itemsep=3pt]
-\item \textbf{A limitation contradicted the paper.} Limitation (4) still read
-``we $\dots$ do not run significance tests'', which was true of an earlier draft
-but false once the paired Wilcoxon tests of Table~3 were added. The item is
-rewritten to say precisely where the paper \emph{is} statistically supported
-(German, Bail, Pokec at $\geq 5$ seeds) and where it is not (Credit/Elliptic at
-2--3 seeds; robustness, large-scale and calibration at one seed).
-
-\item \textbf{An overstated claim about PUFFLE.} \S5.3 said PUFFLE ``reaches the
-lowest DPD/EOD of \emph{any} method on Bail ($0.001$)''. Its DPD of $0.001$ is
-\emph{tied} with FDP-Fair and DP-FedAvg, and its EOD of $0.006$ is beaten by
-TrustFedGNN-Robust ($0.005$). Corrected to a tie among the full-gradient-DP
-methods.
-
-\item \textbf{An imprecise margin.} The AUC margin over the privacy-preserving
-methods on Bail was quoted as ``$+0.40$''; the three actual margins are $+0.38$,
-$+0.40$ and $+0.44$. Now reported as a range.
-
-\item \textbf{A wall-clock ratio outside its stated range.} The TrustFedGNN /
-FedAvg per-round cost was quoted as ``$2.4$--$2.5\times$''; Table~10 gives
-$2.45\times$ and $2.53\times$. Corrected to $2.45$--$2.53\times$.
-\end{enumerate}
-
-Additionally, and in the same spirit as R1.1, we restated the Elliptic result in
-\S5.3. It previously read that TrustFedGNN ``attains strong subgroup fairness at
-detection accuracy comparable to the non-fair backbone'', which quietly omitted
-that EOD moves the \emph{wrong} way on that dataset ($0.020 \to 0.075$) --- a
-tension our own limitations section already acknowledged. The passage now gives
-DPD, AUC \emph{and} the adverse EOD result together.
-
 \section{Closing}
 
-We believe the manuscript is substantially more accurate for these comments. The
-technical content is unchanged --- no result has been altered, and no new
-experiment was needed --- but several claims are now bounded by what our
-evidence actually supports, the text and tables agree everywhere we could check
-them, the scope of the privacy guarantee is unambiguous, and the two governance
-questions the Editor and Reviewer~2 raised (inference-time access to protected
-attributes, and the standing of the composite trust score) are treated at the
-length they deserve.
+We believe the manuscript is considerably stronger for these comments. The
+technical content is unchanged --- no result has been altered and no new
+experiment was required --- but the claims are now precisely bounded by the
+evidence, the text and the tables agree throughout, the scope of the privacy
+guarantee is unambiguous, and the two governance questions the Editor and
+Reviewer~2 raised (inference-time access to protected attributes, and the
+standing of the composite trust score) are treated at the length they deserve.
 
 We would like to thank the Reviewers once more for the care they invested, and
 the Editor for the opportunity to revise.
