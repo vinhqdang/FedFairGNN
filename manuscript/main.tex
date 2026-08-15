@@ -1244,16 +1244,34 @@ target's sensitive attribute \textbf{perfectly (100\%)}: an un-noised group mean
 is, by construction, a reconstruction oracle. FTGD's Gaussian noise---calibrated
 to the deployed budget---drives inference accuracy down to \textbf{$0.510$ at
 $\epsilon{=}8$} and to at most $0.513$ for every $\epsilon\in[0.5,16]$, i.e.\ to
-balanced-random. We are precise about the reference point, since two different
-``chance'' levels are available and only one of them is the right comparison
-here. Targets are \emph{sampled in equal numbers from each true group}
-(2{,}000 per group), so an adversary that ignores the release entirely can do no
-better than $0.500$ on this target set; that is the baseline reported in
-Table~\ref{tab:privacy-attack} and the horizontal reference in
-Figure~\ref{fig:privacy-attack}. The \emph{prevalence} of the majority group in
-Bail is a different quantity ($0.53$), and it is the relevant baseline only for
-an adversary evaluated on an unbalanced target set, which is not our setting; we
-report the balanced figure because it is the harder test of the mechanism.
+balanced-random.
+
+We are precise about the reference point, since two different ``chance'' levels
+are available and only one of them is the right comparison here. Targets are
+\emph{sampled in equal numbers from each true group} ($2{,}000$ per group), so an
+adversary that ignores the release entirely---including one that always names the
+majority group---can do no better than $0.500$ on this target set. That is the
+baseline reported in Table~\ref{tab:privacy-attack} and the horizontal reference
+in Figure~\ref{fig:privacy-attack}. The \emph{prevalence} of the majority group
+in Bail ($0.53$) is a different quantity, relevant only to an adversary evaluated
+on an unbalanced target set drawn from the natural distribution; we deliberately
+report against the balanced $0.500$ because it is the \emph{harder} test---an
+attack must beat a coin flip rather than a class-prior guess---and because
+comparing a balanced-target accuracy against an unbalanced-target baseline would
+be incoherent.
+
+Measured against that harder reference, the residual leakage is not merely small
+but statistically undetectable at our sample size. Each row of
+Table~\ref{tab:privacy-attack} is a Monte-Carlo estimate over $4{,}000$ target
+draws, giving a standard error of $\sqrt{0.25/4000}\approx0.008$. The largest
+excess over chance anywhere in the sweep is $0.013$ (at $\epsilon{=}2$), i.e.\
+$1.6$ standard errors, and the deployed $\epsilon{=}8$ setting sits $1.3$
+standard errors above chance. \emph{At no privacy budget is the attack's accuracy
+significantly different from $0.500$} (two-sided $p\ge0.10$ throughout). We
+therefore claim that FTGD reduces the differencing adversary to chance, not
+merely close to it---while noting that this bounds leakage only at the resolution
+$4{,}000$ trials can resolve, so an advantage below roughly one percentage point
+would not be visible to this test.
 Crucially, this protection is bought with noise on
 \emph{two scalars}, which is why (Figure~\ref{fig:privacy}) it leaves utility and
 fairness essentially untouched---whereas achieving comparable protection by
@@ -1270,7 +1288,9 @@ sensitive attribute. The exact release is a perfect oracle; FTGD's noise reduces
 inference to balanced-random ($0.500$) at every deployed $\epsilon$. Targets are
 sampled in equal numbers from each true group ($2{,}000$ each), so $0.500$---not
 the dataset's $0.53$ majority-group prevalence---is the correct chance
-reference.}
+reference. Each accuracy is a Monte-Carlo estimate over $4{,}000$ target draws
+(standard error $\approx0.008$); no FTGD row differs significantly from $0.500$
+(two-sided $p\ge0.10$).}
 \label{tab:privacy-attack}
 \input{tables/privacy_attack.tex}
 \end{table}

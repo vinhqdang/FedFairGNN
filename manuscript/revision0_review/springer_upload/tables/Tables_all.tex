@@ -173,7 +173,9 @@ sensitive attribute. The exact release is a perfect oracle; FTGD's noise reduces
 inference to balanced-random ($0.500$) at every deployed $\epsilon$. Targets are
 sampled in equal numbers from each true group ($2{,}000$ each), so $0.500$---not
 the dataset's $0.53$ majority-group prevalence---is the correct chance
-reference.}
+reference. Each accuracy is a Monte-Carlo estimate over $4{,}000$ target draws
+(standard error $\approx0.008$); no FTGD row differs significantly from $0.500$
+(two-sided $p\ge0.10$).}
 \label{tab:privacy-attack}
 \input{tables/privacy_attack.tex}
 \end{table}

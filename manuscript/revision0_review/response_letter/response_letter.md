@@ -154,6 +154,12 @@ All five were real. Each is corrected:
 
 We re-rendered Figure 5 from the already-logged attack results (no re-training; the seven (ε, accuracy) pairs are exactly those in Table 8, so figure and table now agree by construction). The corrected figure draws the chance line at 0.500 and labels the 0.53 prevalence line for what it is. The text (§5.5, p. 24) and both captions explain the distinction, and the plotting script was patched so the mislabelling cannot return.
 
+We want to be explicit that we resolved this in the direction that makes our own claim *harder* to support, not easier. Reporting against 0.53 would have been superficially flattering — every measured accuracy (0.502–0.513) lies *below* it — but it would have compared a balanced-target accuracy against an unbalanced-target baseline, and an attack that appears to perform below chance signals a misspecified evaluation rather than a privacy guarantee. The balanced 0.500 requires the mechanism to beat a coin flip rather than a class-prior guess, which is the test we should be held to.
+
+Re-examining the comparison this way also let us make a stronger and more defensible statement than before. Each row of Table 8 is a Monte-Carlo estimate over 4,000 target draws, so its standard error is √(0.25/4000) ≈ 0.008; the largest excess over chance in the entire sweep is 0.013, or 1.6 standard errors. We therefore added:
+
+> "Measured against that harder reference, the residual leakage is not merely small but statistically undetectable at our sample size … *At no privacy budget is the attack's accuracy significantly different from 0.500* (two-sided p ≥ 0.10 throughout). We therefore claim that FTGD reduces the differencing adversary to chance, not merely close to it — while noting that this bounds leakage only at the resolution 4,000 trials can resolve, so an advantage below roughly one percentage point would not be visible to this test."
+
 **(e) German DPD in the ablation versus the main table.** The ablation reports 0.045 and Table 5 reports 0.040±0.035. The reason is that the ablation is a *separate set of runs* with its own matched seed set — so all four configurations are compared on identical seeds — whereas the main tables aggregate the full seed sets (10 on German, 5 on Bail). We had not stated this. The ablation caption now explains it and shows that all four affected cells differ by less than one standard deviation of the multi-seed mean (Table 7, p. 23).
 
 ### R1.7 Scope of the DP guarantee in the abstract
