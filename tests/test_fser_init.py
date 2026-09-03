@@ -66,6 +66,21 @@ def test_fser_modes():
         assert model.layers[0].fser_mode == mode
 
 
+def test_fser_mode_defaults_agree():
+    """The default fser_mode must be the canonical 'sub' at EVERY construction site.
+
+    A direct ``TrustFedGNN(...)`` call bypasses build_model/ExperimentConfig, so a
+    divergent constructor default would silently train a different method with no
+    error -- the layer, the backbone and the canonical config must all say 'sub'.
+    """
+    assert FSERLayer(in_channels=8, out_channels=4, heads=2).fser_mode == "sub"
+    backbone = TrustFedGNN(in_channels=8, hidden_channels=8, heads=2, num_layers=1)
+    assert backbone.fser_mode == "sub"
+    assert backbone.layers[0].fser_mode == "sub"
+    assert ExperimentConfig().fser_mode == "sub"
+    assert ExperimentConfig.canonical().fser_mode == "sub"
+
+
 def test_canonical_matches_manifest():
     """Verify ExperimentConfig.canonical() initializes with the frozen canonical hyperparameters."""
     cfg = ExperimentConfig.canonical(seed=42)

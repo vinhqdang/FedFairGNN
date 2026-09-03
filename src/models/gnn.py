@@ -69,23 +69,17 @@ class FSERLayer(MessagePassing):
         # standard GAT logit
         e = (torch.cat([x_i, x_j], dim=-1) * self.att).sum(-1)
         e = F.leaky_relu(e, 0.2)                                    # [E, heads]
-        # FSER fairness risk
+        # FSER fairness risk phi_ij = 1[gate] * relu(cos(h_i, h_j)), applied to
+        # the logit with a mode-dependent sign. The three modes differ only in
+        # which edges are gated and in that sign:
+        #   sub            (canonical) penalise cross-group edges
+        #   add            boost cross-group edges       (sign-flip control)
+        #   same_penalize  penalise same-group edges      (gate-flip control)
         mode = getattr(self, "fser_mode", "sub")
-        if mode == "add":
-            delta_s = (s_i != s_j).float().unsqueeze(-1)            # [E, 1]
-            cos = F.cosine_similarity(x_i, x_j, dim=-1)              # [E, heads]
-            phi = delta_s * cos.clamp(min=0)
-            e = e + self.beta * phi
-        elif mode == "same_penalize":
-            delta_s = (s_i == s_j).float().unsqueeze(-1)            # [E, 1]
-            cos = F.cosine_similarity(x_i, x_j, dim=-1)              # [E, heads]
-            phi = delta_s * cos.clamp(min=0)
-            e = e - self.beta * phi
-        else: # 'sub' default
-            delta_s = (s_i != s_j).float().unsqueeze(-1)            # [E, 1]
-            cos = F.cosine_similarity(x_i, x_j, dim=-1)              # [E, heads]
-            phi = delta_s * cos.clamp(min=0)
-            e = e - self.beta * phi
+        gate = (s_i == s_j) if mode == "same_penalize" else (s_i != s_j)
+        cos = F.cosine_similarity(x_i, x_j, dim=-1)                 # [E, heads]
+        phi = gate.float().unsqueeze(-1) * cos.clamp(min=0)         # [E, heads]
+        e = e + (self.beta * phi if mode == "add" else -(self.beta * phi))
 
         alpha = softmax(e, index, ptr, size_i)                      # [E, heads]
         self.last_attention = alpha.detach()
@@ -95,11 +89,18 @@ class FSERLayer(MessagePassing):
 
 class TrustFedGNN(nn.Module):
     """FSER-GAT backbone with input projection, residual blocks and skip
-    concatenation. Supports Monte-Carlo dropout at inference (``mc=True``)."""
+    concatenation. Supports Monte-Carlo dropout at inference (``mc=True``).
+
+    ``fser_mode`` defaults to the canonical ``"sub"``, matching both
+    :class:`FSERLayer` and ``ExperimentConfig.canonical()``; the other modes are
+    ablation controls and must be requested explicitly. Keep the three defaults
+    in step -- a direct ``TrustFedGNN(...)`` construction that bypasses
+    ``build_model`` would otherwise silently train a different method.
+    """
 
     def __init__(self, in_channels, hidden_channels=64, out_channels=1,
                  num_layers=2, heads=4, dropout=0.3, beta_init: float = 0.5,
-                 fser_mode: str = "same_penalize", **_):
+                 fser_mode: str = "sub", **_):
         super().__init__()
         self.dropout = dropout
         self.num_layers = num_layers

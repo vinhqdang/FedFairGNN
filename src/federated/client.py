@@ -12,6 +12,7 @@ level attacks are applied server-side (see attacks.py).
 """
 from __future__ import annotations
 
+import warnings
 from typing import Dict, List
 
 import torch
@@ -79,23 +80,44 @@ class Client:
         self.is_adv = config.model in ("fairgnn", "favgnn")
         self.local_fair = self.is_fair or config.local_fairness
 
-        # resolve DP mode
-        if not config.dp_enabled and config.dp_mode in ("auto", "none"):
-            self.dp_mode = "none"
-        elif config.dp_mode == "auto":
-            self.dp_mode = "ftgd" if self.local_fair else "gradient"
+        # Resolve DP mode. `dp_mode` selects the local *training algorithm*, and
+        # two of those algorithms stay meaningful with the noise switched off:
+        # `fedfairgnn-nodp` is exactly FTGD orthogonalisation at sigma=0 and must
+        # differ from `fedfairgnn` by dp_enabled alone (see
+        # tests/test_method_registry_invariants.py), and PUFFLE's lambda
+        # controller is its fairness mechanism, not its privacy one. So an
+        # explicitly-set mode is honoured regardless of dp_enabled; what
+        # dp_enabled governs is whether the privacy *mechanism* (clip + Gaussian
+        # noise) is live -- that is `self.dp_active`, and every clip/noise site
+        # gates on it rather than on the mode name.
+        if config.dp_mode == "auto":
+            self.dp_mode = ("ftgd" if self.local_fair else "gradient") \
+                if config.dp_enabled else "none"
         else:
             self.dp_mode = config.dp_mode
 
         # DP noise multiplier: calibrate for target epsilon over all local
         # privatised steps, so cumulative RDP accounting hits dp_epsilon.
+        self.dp_active = bool(config.dp_enabled and self.dp_mode != "none")
         self.noise_multiplier = 0.0
         self.dp_sigma = 0.0
-        if config.dp_enabled and self.dp_mode != "none":
+        if self.dp_active:
             total_steps = max(1, config.rounds * config.local_epochs)
             self.noise_multiplier = calibrate_noise_multiplier(
                 config.dp_epsilon, total_steps, config.dp_delta)
             self.dp_sigma = self.noise_multiplier * config.dp_clip
+        elif self.dp_mode in ("gradient", "puffle"):
+            # These two paths ARE the privacy mechanism. Running them with
+            # dp_enabled=False used to clip to dp_clip and add nothing, i.e. a
+            # silently non-private variant that is neither the published method
+            # nor plain SGD. Clipping is now skipped too (see _privatise_grads),
+            # so the arm degrades to its noise-free algorithm -- loudly.
+            warnings.warn(
+                f"client {client_id}: dp_mode={self.dp_mode!r} with "
+                "dp_enabled=False -- running WITHOUT clipping or noise. This "
+                "configuration is not differentially private and must not be "
+                "reported as such.",
+                RuntimeWarning, stacklevel=2)
 
         # data-poisoning: flip labels once, on the training portion
         self._y = self.data.y.clone()
@@ -150,18 +172,9 @@ class Client:
                     loss = _weighted_bce(pred, y_s)
                     if self.local_fair:
                         loss = loss + cfg.fairness_weight * _soft_dpd(pred, s_s)
+                    loss.backward()
                     if self.dp_mode == "gradient":
-                        loss.backward()
-                        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
-                                       for p in self.model.parameters()])
-                        g = g / max(1.0, float(g.norm(2) / cfg.dp_clip)) + torch.randn_like(g) * self.dp_sigma
-                        i = 0
-                        for p in self.model.parameters():
-                            n = p.numel()
-                            if p.grad is not None: p.grad.copy_(g[i:i+n].view_as(p))
-                            i += n
-                    else:
-                        loss.backward()
+                        self._privatise_grads()
                     opt.step()
             if self.is_fair:
                 self.model.clamp_beta()
@@ -226,6 +239,27 @@ class Client:
                 _weighted_bce(pred, y[m].float()).backward()
                 opt.step()
 
+    def _privatise_grads(self) -> None:
+        """Clip the flat gradient to ``dp_clip`` and add Gaussian noise, in place.
+
+        No-op unless the privacy mechanism is live (``dp_active``): clipping with
+        zero noise is neither the private mechanism nor plain SGD, so it must
+        never happen implicitly. See the dp_mode resolution in ``__init__``.
+        """
+        if not self.dp_active:
+            return
+        params = list(self.model.parameters())
+        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
+                       for p in params])
+        g = g / max(1.0, float(g.norm(2) / self.cfg.dp_clip))
+        g = g + torch.randn_like(g) * self.dp_sigma
+        idx = 0
+        for p in params:
+            n = p.numel()
+            if p.grad is not None:
+                p.grad.copy_(g[idx:idx + n].view_as(p))
+            idx += n
+
     def _fair_step(self, opt, x, ei, s, y, m):
         """Task + soft-DPD penalty, no privacy (generic fair baseline)."""
         opt.zero_grad()
@@ -246,16 +280,7 @@ class Client:
         if self.local_fair:
             loss = loss + self.cfg.fairness_weight * _soft_dpd(pred, s[m])
         loss.backward()
-        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
-                       for p in self.model.parameters()])
-        g = g / max(1.0, float(g.norm(2) / self.cfg.dp_clip))
-        g = g + torch.randn_like(g) * self.dp_sigma
-        idx = 0
-        for p in self.model.parameters():
-            n = p.numel()
-            if p.grad is not None:
-                p.grad.copy_(g[idx:idx + n].view_as(p))
-            idx += n
+        self._privatise_grads()
         opt.step()
         if self.is_fair:
             self.model.clamp_beta()
@@ -339,16 +364,7 @@ class Client:
         loss = (1.0 - self._puffle_lambda) * _weighted_bce(pred, y[m].float()) \
             + self._puffle_lambda * dpl
         loss.backward()
-        g = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
-                       for p in self.model.parameters()])
-        g = g / max(1.0, float(g.norm(2) / cfg.dp_clip))
-        g = g + torch.randn_like(g) * self.dp_sigma
-        idx = 0
-        for p in self.model.parameters():
-            n = p.numel()
-            if p.grad is not None:
-                p.grad.copy_(g[idx:idx + n].view_as(p))
-            idx += n
+        self._privatise_grads()
         opt.step()
 
     def _adv_step(self, opt, adv_opt, x, ei, s, y, m):

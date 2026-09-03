@@ -88,8 +88,21 @@ METHODS = {
     "cgsv":             dict(model="gcn", aggregator="cgsv", local_fairness=False, dp_enabled=False),
 }
 
-# robust aggregators to sweep in the Byzantine study (backbone = ours)
-ROBUST_AGGREGATORS = ["fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"]
+# Aggregators to sweep in the Byzantine study (backbone = ours).
+#
+# "fedavg" and "bfwa" are the undefended controls that show the attack lands;
+# the rest are the defences. Kept in step with the library's own ROBUST_METHODS
+# set (src/federated/aggregation.py) by test_method_registry_invariants, so that
+# adding a defence there can no longer leave it silently out of the robustness
+# study -- which is how fu_shapley/robust_fu_shapley, the aggregators the paper
+# actually proposes, were missing from it.
+ROBUST_AGGREGATORS = [
+    "fedavg", "bfwa",                                        # undefended controls
+    "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
+    # score-based gating: the proposed rule, its robust variant, and the
+    # cosine-similarity credit baseline it is argued against (CGSV).
+    "fu_shapley", "robust_fu_shapley", "cgsv",
+]
 
 FAIR_BASELINES = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl", "f2gnn"]
 
