@@ -129,8 +129,8 @@ def run_multi_seed(cfg_fn: Callable[[int], ExperimentConfig], seeds=(42, 43, 44)
         "omega_w_mean": float(np.mean(omegas)) if omegas else 0.0,
         "omega_w_std": float(np.std(omegas)) if omegas else 0.0,
         "pred_std_mean": float(np.mean(pred_stds)) if pred_stds else 0.0,
-        "w_adv_mean": float(np.mean(w_advs)) if w_advs else 0.0,
-        "w_adv_std": float(np.std(w_advs)) if w_advs else 0.0,
+        "w_adv_mean": float(np.mean(w_advs)) if w_advs else float("nan"),
+        "w_adv_std": float(np.std(w_advs)) if w_advs else float("nan"),
         "wall_clock_s_mean": float(np.mean(wall_clocks)) if wall_clocks else 0.0,
         "per_seed": results,
     }

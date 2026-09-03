@@ -112,7 +112,10 @@ def evaluate_single_byz_run(aggregator: str, attack: str, byz_ratio: float, seed
             fp_rate = len(benign_dropped) / len(benign_indices) if benign_indices else 0.0
             fp_rates.append(fp_rate)
 
-    mean_w_adv = float(np.mean(adv_weights)) if adv_weights else 0.0
+    mean_w_adv = float(np.mean(adv_weights)) if adv_weights else float("nan")  # NaN, not 0.0: an aggregator that exposes no weight vector
+    # (coordinate median, trimmed_mean) never populates adv_weights, and a 0.0
+    # there reads as a measured "attacker captured nothing". See
+    # experiments/revision/adaptive_poisoner.py for the full note.
     mean_fp_rate = float(np.mean(fp_rates)) if fp_rates else 0.0
 
     final = res["final"]

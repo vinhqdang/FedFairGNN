@@ -41,10 +41,19 @@ class ResultLogger:
                   "byzantine_ids": result.get("byzantine_ids", [])}
         with open(os.path.join(self.runs_dir, f"{run_id}.json"), "w") as f:
             json.dump(record, f, default=_default)
+        # Every field that distinguishes one protocol from another belongs here.
+        # Without the second group, a summary line cannot tell whether a run used
+        # dirichlet_alpha 0.3 or 0.5, a pooled or a held-out scoring set, or 20 vs
+        # 60 rounds -- so two incompatible protocols read as one in the tables.
         summary = {"run_id": run_id, **{k: config.get(k) for k in
                    ("exp_name", "model", "dataset", "aggregator", "seed",
                     "attack", "num_byzantine", "dp_epsilon", "dp_enabled",
-                    "fairness_weight", "num_clients")},
+                    "fairness_weight", "num_clients",
+                    # protocol provenance -- do not drop
+                    "dirichlet_alpha", "partition", "rounds", "local_epochs",
+                    "dp_mode", "fu_val_source", "fu_score", "fu_alpha",
+                    "fu_ema_beta", "fser_mode", "fairness_budget",
+                    "fw_iterations", "dual_step_size", "krum_f", "sampling")},
                    **{f"final_{k}": v for k, v in result.get("final", {}).items()}}
         with open(self.summary_path, "a") as f:
             f.write(json.dumps(summary, default=_default) + "\n")

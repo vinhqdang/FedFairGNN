@@ -59,7 +59,7 @@ def evaluate_partition_run(model_name: str, partition_method: str, seed: int,
     wall_clock = time.perf_counter() - t0
 
     weights_hist = [r.get("agg_weights") for r in res.get("history", []) if r.get("agg_weights") and len(r["agg_weights"]) == num_clients]
-    omega = float(weight_oscillation(weights_hist)) if weights_hist else 0.0
+    omega = float(weight_oscillation(weights_hist))  # NaN when unmeasurable
 
     final = res["final"]
     return {

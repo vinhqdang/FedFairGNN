@@ -72,7 +72,7 @@ def evaluate_dirichlet_run(model_name: str, alpha: float, num_clients: int, seed
         w = r.get("agg_weights")
         if w is not None and len(w) == num_clients:
             weights_hist.append(w)
-    omega = float(weight_oscillation(weights_hist)) if weights_hist else 0.0
+    omega = float(weight_oscillation(weights_hist))  # NaN when unmeasurable
 
     final = res["final"]
     return {

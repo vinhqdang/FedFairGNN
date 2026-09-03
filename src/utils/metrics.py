@@ -194,10 +194,16 @@ def weight_oscillation(weights_history: list) -> float:
 
     Measures aggregation stability. Unsmoothed Frank-Wolfe/Shapley jumps on simplex
     vertices (Omega_w >= 0.30); temporal EMA smoothing bounds it (Omega_w <= 0.05).
+
+    Returns NaN -- NOT 0.0 -- when fewer than two weight vectors are available.
+    Aggregators that are not expressible as client weights (coordinate median,
+    trimmed_mean) report no weight vector at all, so a 0.0 here reads as "perfectly
+    stable" for a rule whose stability was never measured. NaN keeps the
+    unmeasured case visibly distinct from a measured zero; render it as "--".
     """
     valid = [np.asarray(w, dtype=float) for w in weights_history if w is not None and len(w) > 0]
     if len(valid) < 2:
-        return 0.0
+        return float("nan")
     diffs = [np.sum(np.abs(valid[t] - valid[t - 1])) for t in range(1, len(valid))]
     return float(np.mean(diffs))
 

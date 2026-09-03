@@ -70,15 +70,31 @@ def evaluate_byzantine_run(model_name: str, attack: str, byz_ratio: float, seed:
         krum_f=num_byz,
     )
     
+    # The two arms MUST differ by fields that src/ actually reads.
+    #
+    # This block previously set `cfg.fu_cosine_filter` and `cfg.fu_multikrum`,
+    # neither of which is a field of ExperimentConfig nor read anywhere in src/.
+    # Both arms therefore ran the identical canonical config, results agreed to
+    # 3-4 decimals across all 30 seed-pairs, and "Hypothesis H2" was scored on
+    # CUDA float non-determinism. ExperimentConfig.__setattr__ now rejects
+    # undeclared fields so this cannot recur silently.
+    #
+    # M6 is wired to the definition the repo already codifies for it in
+    # tests/test_canonical_config.py and manuscript/tables/ablation.tex --
+    # "CGSV Aggregation (No Server Holdout)" = {fu_val_source, fu_score} --
+    # rather than to a mechanism that has no implementation.
+    #
+    # CAVEAT for whoever reports this: M1 (= canonical) uses aggregator
+    # "fu_shapley", which has NO Byzantine screen; the distance screen lives in
+    # "robust_fu_shapley". So this comparison is score-rule vs score-rule, and
+    # calling M1 a "two-tier defense" overclaims. If the intended contrast is
+    # screen-vs-no-screen, set aggregator="robust_fu_shapley" for M1 and say so.
     if model_name == "m6_no_defense":
-        # M6: Disable cosine filter and multi-krum
-        cfg.fu_cosine_filter = False
-        cfg.fu_multikrum = False
-    else:
-        # M1: Full Two-tier defense enabled
-        cfg.fu_cosine_filter = True
-        cfg.fu_multikrum = True
-        
+        cfg.fu_val_source = "pooled"     # target built from all clients, Byzantine included
+        cfg.fu_score = "cosine"          # CGSV-style norm-invariant credit
+    # else: M1 keeps canonical (server_holdout + dot)
+
+
     trainer = FederatedTrainer(cfg)
     res = trainer.run(verbose=False)
     wall_clock_s = time.perf_counter() - t0
@@ -93,7 +109,10 @@ def evaluate_byzantine_run(model_name: str, attack: str, byz_ratio: float, seed:
             byz_w = sum(w_list[i] for i in byz_indices)
             adv_weights.append(byz_w)
             
-    mean_w_adv = float(np.mean(adv_weights)) if adv_weights else 0.0
+    mean_w_adv = float(np.mean(adv_weights)) if adv_weights else float("nan")  # NaN, not 0.0: an aggregator that exposes no weight vector
+    # (coordinate median, trimmed_mean) never populates adv_weights, and a 0.0
+    # there reads as a measured "attacker captured nothing". See
+    # experiments/revision/adaptive_poisoner.py for the full note.
     final = res["final"]
     
     out_dict = {

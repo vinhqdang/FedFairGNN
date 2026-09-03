@@ -127,7 +127,16 @@ def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rou
     res = trainer.run(verbose=False)
     wall_clock_s = time.perf_counter() - t0
 
-    # Calculate w_adv
+    # Calculate w_adv -- the adversary's captured aggregation weight mass.
+    #
+    # NaN, NOT 0.0, when the rule exposes no weight vector. Coordinate median and
+    # trimmed_mean are not expressible as client weights, so aggregate() returns
+    # no info["weights"] for them and adv_weights stays empty. The old 0.0 default
+    # made that empty list indistinguishable from a measured "the attacker
+    # captured nothing", which is how median came to be reported as w_adv = 0.000
+    # and described as "completely immune" -- a dict-lookup fallback, not a
+    # measurement. Any aggregator returning no weights would have printed 0.000
+    # under any attack, including none at all.
     hist = res.get("history", [])
     adv_weights = []
     for r_entry in hist:
@@ -136,7 +145,7 @@ def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rou
             byz_w = sum(w_list[i] for i in byz_indices)
             adv_weights.append(byz_w)
 
-    mean_w_adv = float(np.mean(adv_weights)) if adv_weights else 0.0
+    mean_w_adv = float(np.mean(adv_weights)) if adv_weights else float("nan")
     final = res["final"]
 
     return {

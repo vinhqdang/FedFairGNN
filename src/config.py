@@ -179,6 +179,30 @@ class ExperimentConfig:
     def run_id(self) -> str:
         return f"{self.exp_name}__{self.model}__{self.dataset}__{self.aggregator}__seed{self.seed}"
 
+    def __setattr__(self, name, value):
+        """Reject assignment to anything that is not a declared field.
+
+        A plain dataclass silently accepts ``cfg.some_typo = True``, and a runner
+        that toggles an ablation with a flag no code reads produces two arms that
+        are byte-identical -- an experiment that measures nothing while appearing
+        to measure a defence. That happened here: a Byzantine sweep switched its
+        "two-tier defence" on and off via ``cfg.fu_cosine_filter`` and
+        ``cfg.fu_multikrum``, neither of which exists on this class nor is read
+        anywhere in src/, so both arms were the same configuration and the
+        hypothesis was scored on floating-point noise.
+
+        Failing loudly here makes that class of null experiment impossible. Use a
+        real field (add it to this dataclass and read it) rather than stashing
+        state on the config.
+        """
+        if name not in _FIELD_NAMES:
+            raise AttributeError(
+                f"ExperimentConfig has no field {name!r}; assigning it would "
+                "create a knob that no code reads. Declare it as a dataclass "
+                f"field and consume it, or fix the name. Known fields: "
+                f"{sorted(_FIELD_NAMES)}")
+        object.__setattr__(self, name, value)
+
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)
 
@@ -222,6 +246,12 @@ class ExperimentConfig:
         )
         base.update(overrides)
         return cls(**base)
+
+
+# Declared-field allowlist for ExperimentConfig.__setattr__. Computed after the
+# dataclass is built (the decorator needs to run first) and before any instance
+# exists, since the generated __init__ assigns through __setattr__.
+_FIELD_NAMES = frozenset(f.name for f in dataclasses.fields(ExperimentConfig))
 
 
 def set_seed(seed: int) -> None:

@@ -127,14 +127,18 @@ Metrics reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes Holm-Bonferron
     # 3. Ablation Suite Table (German Credit, M1-M7)
     # -------------------------------------------------------------
     ablation_matrix = remed["stage4_5_ablation_matrix"]
+    # NOTE: every LaTeX string below MUST be a raw literal. Written as plain
+    # strings, "$\alpha$" and "$\beta$" put a BEL (0x07) and a backspace (0x08)
+    # control byte into the emitted .tex and render as "lpha"/"eta" in the PDF --
+    # which is exactly what shipped in manuscript/tables/ablation.tex.
     ablation_rows = [
-        ("M1 (Full Proposed)", "\\textbf{TrustFedGNN (Canonical)}", ablation_matrix["M1_Full"]),
+        ("M1 (Full Proposed)", r"\textbf{TrustFedGNN (Canonical)}", ablation_matrix["M1_Full"]),
         ("M2 (w/o FSER)", "GAT Backbone (No Topological Reweighting)", ablation_matrix["M2_wo_FSER"]),
         ("M3 (w/o FTGD)", "Standard Local Optimization (No Orthogonal Surgery)", ablation_matrix["M3_wo_FTGD"]),
-        ("M4 (Full DP-SGD)", "Standard Client-Wide DP-SGD ($\epsilon=8.0$)", ablation_matrix["M4_Full_DPSGD"]),
-        ("M5 (w/o FairScore)", "GTG-Shapley Metric ($\alpha=0.0$)", ablation_matrix["M5_wo_FairScore"]),
+        ("M4 (Full DP-SGD)", r"Standard Client-Wide DP-SGD ($\epsilon=8.0$)", ablation_matrix["M4_Full_DPSGD"]),
+        ("M5 (w/o FairScore)", r"GTG-Shapley Metric ($\alpha=0.0$)", ablation_matrix["M5_wo_FairScore"]),
         ("M6 (w/o Two-Tier)", "CGSV Aggregation (No Server Holdout)", ablation_matrix["M6_wo_TwoTier"]),
-        ("M7 (w/o Temp EMA)", "Instantaneous Gradient Alignment ($\beta_{\\text{ema}}=0.0$)", ablation_matrix["M7_wo_EMA"]),
+        ("M7 (w/o Temp EMA)", r"Instantaneous Gradient Alignment ($\beta_{\text{ema}}=0.0$)", ablation_matrix["M7_wo_EMA"]),
     ]
 
     abl_lines = []
