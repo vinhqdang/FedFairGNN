@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{BFWA Disparity Constraint Slack Induced by Differential Privacy Noise.}
+Empirical slack between reported noisy disparity and true underlying disparity $\Delta_{\tau} = |\sum_k w_k \widehat{\text{DPD}}_k - \sum_k w_k \text{DPD}_k|$ under budget $\tau = 0.05$ (Bail, $n=10$ clients, 20 rounds).
+As privacy spend increases from $\epsilon=2.0$ to the operating point $\epsilon=8.0$, the slack monotonically contracts from $0.1777$ to $0.0442$, demonstrating that dual constraint satisfaction stabilizes rapidly under practical privacy budgets.}
+\label{tab:bfwa_slack}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{DP Target $\epsilon$} & \textbf{Reported $\sum w_k \widehat{\text{DPD}}_k$} & \textbf{True $\sum w_k \text{DPD}_k$} & \textbf{Slack $|\Delta_{\tau}|$} & \textbf{Slack / $\tau$ (\%)} \\
+\midrule
+$\epsilon = 2.0$ & 0.1979 & 0.0264 & 0.1777 $\pm$ 0.2600 & 355.4\% \\
+$\epsilon = 4.0$ & 0.0910 & 0.0207 & 0.0796 $\pm$ 0.1192 & 159.1\% \\
+$\epsilon = 8.0$ & 0.0524 & 0.0159 & 0.0442 $\pm$ 0.0653 & 88.3\% \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -14,7 +14,8 @@ import numpy as np
 import torch
 
 from ..config import ExperimentConfig, set_seed
-from ..data import load_dataset, partition_graph, partition_stats
+from ..data import (load_dataset, partition_graph, partition_stats,
+                    carve_server_holdout)
 from ..models import build_model
 from ..utils.metrics import all_metrics
 from ..trust.privacy import PrivacyAccountant
@@ -31,6 +32,16 @@ class FederatedTrainer:
 
         data = load_dataset(config.dataset, root=config.data_root, seed=config.seed)
         self.in_channels = data.x.shape[1]
+
+        # A1/F10: when the server scores clients it must do so on data no client
+        # -- least of all a Byzantine one -- can touch. Carve that set out before
+        # partitioning, so 'the server owns a small clean split' is an explicit
+        # assumption rather than an artefact of reusing the pooled client nodes.
+        self.server_holdout = None
+        if config.fu_val_source == "server_holdout":
+            self.server_holdout, data = carve_server_holdout(
+                data, config.fu_holdout_size, seed=config.seed)
+
         self.clients_data = partition_graph(
             data, config.num_clients, method=config.partition,
             alpha=config.dirichlet_alpha, by=config.partition_by, seed=config.seed)
@@ -210,13 +221,47 @@ class FederatedTrainer:
                 self.cfg.attack, updates, metas, self.byzantine_ids,
                 self.cfg.attack_intensity)
 
+        # FairShare-GNN: build the server target gradient on the pooled client
+        # validation nodes (current global model), then let the FU-Shapley rule
+        # score clients against it. Only computed when the aggregator needs it.
+        g_target = g_task = g_fair = None
+        fu_warmup = False
+        if "fu_shapley" in self.cfg.aggregator:
+            load_flat_state(self.ref_model, self.global_flat.to(self.device))
+            from ..trust.incentive import (get_server_target_gradients,
+                                           get_server_target_gradients_pooled)
+            if self.server_holdout is not None:
+                # A1 honoured: scored against a split no client owns.
+                tg = get_server_target_gradients(
+                    self.ref_model, self.server_holdout.to(self.device),
+                    self.cfg.fu_alpha, fair_surrogate=self.cfg.fu_fair_surrogate)
+            else:
+                # A1 NOT honoured: the target is built from every client's
+                # validation nodes, Byzantine clients included. Kept as the
+                # default only so prior configs stay reproducible -- any
+                # verifiability claim must use fu_val_source='server_holdout'.
+                tg = get_server_target_gradients_pooled(
+                    self.ref_model, self.clients_data, self.device,
+                    self.cfg.fu_alpha, fair_surrogate=self.cfg.fu_fair_surrogate)
+            if tg is not None:
+                # Flat weights (and hence the client pseudo-gradients) live on
+                # CPU by design; bring the target gradient back to match, so the
+                # K-vector scoring stays on one device on GPU runs.
+                g_target, g_task, g_fair = (g.cpu() for g in tg)
+            fu_warmup = t < self.cfg.fu_warmup_rounds
+
         g_agg, info = aggregate(
             self.cfg.aggregator, updates, metas,
             tau=self.cfg.fairness_budget, fw_iters=self.cfg.fw_iterations,
             dual_step=self.cfg.dual_step_size, trimmed_beta=self.cfg.trimmed_beta,
             krum_f=max(self.cfg.krum_f, len(self.byzantine_ids)),
             q_ffl=self.cfg.q_ffl, fairfed_beta=self.cfg.fairfed_beta,
-            state=self._agg_state)
+            state=self._agg_state,
+            g_target=g_target, g_task=g_task, g_fair=g_fair,
+            fu_alpha=self.cfg.fu_alpha, fu_beta_ema=self.cfg.fu_ema_beta,
+            fu_normalize=self.cfg.fu_normalize, fu_score=self.cfg.fu_score,
+            fu_warmup=fu_warmup, fu_grad_clip=self.cfg.fu_grad_clip,
+            fu_warmup_agg=self.cfg.fu_warmup_agg)
 
         if self.cfg.server_calib and (t + 1) >= self.cfg.rounds * self.cfg.server_calib_start_frac:
             g0 = self._server_calibration_grad()
@@ -227,6 +272,11 @@ class FederatedTrainer:
 
         rec = {"round": t + 1, **{f"g_{k}": v for k, v in self.evaluate_global().items()}}
         rec["agg_weights"] = info.get("weights")
+        for key in ("phi_raw", "phi_util", "phi_fair", "phi_ema", "fu_warmup", "kept",
+                    "fu_fallback", "phi_nan_frac", "n_clipped",
+                    "g_norm_median", "g_norm_max", "phi_norm"):
+            if key in info:
+                rec[key] = info[key]
         return rec
 
     def run(self, verbose=False) -> Dict:

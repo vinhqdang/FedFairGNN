@@ -80,7 +80,7 @@ class Client:
         self.local_fair = self.is_fair or config.local_fairness
 
         # resolve DP mode
-        if not config.dp_enabled:
+        if not config.dp_enabled and config.dp_mode in ("auto", "none"):
             self.dp_mode = "none"
         elif config.dp_mode == "auto":
             self.dp_mode = "ftgd" if self.local_fair else "gradient"
@@ -91,7 +91,7 @@ class Client:
         # privatised steps, so cumulative RDP accounting hits dp_epsilon.
         self.noise_multiplier = 0.0
         self.dp_sigma = 0.0
-        if self.dp_mode != "none":
+        if config.dp_enabled and self.dp_mode != "none":
             total_steps = max(1, config.rounds * config.local_epochs)
             self.noise_multiplier = calibrate_noise_multiplier(
                 config.dp_epsilon, total_steps, config.dp_delta)
@@ -179,7 +179,8 @@ class Client:
             mu1 = mu1 + torch.randn(()) * self.noise_multiplier * sens
         (task + self.cfg.fairness_weight * torch.abs(mu0 - mu1)).backward()
         opt.step()
-        self.model.clamp_beta()
+        if hasattr(self.model, "clamp_beta"):
+            self.model.clamp_beta()
 
     # ----- training -----
     def train(self) -> None:
@@ -312,7 +313,8 @@ class Client:
                 p.grad.copy_(g_final[idx:idx + n].view_as(p))
             idx += n
         opt.step()
-        self.model.clamp_beta()
+        if hasattr(self.model, "clamp_beta"):
+            self.model.clamp_beta()
 
     def _puffle_step(self, opt, x, ei, s, y, m):
         """PUFFLE (Corbucci et al., ECML-PKDD'24): a per-round auto-tuned
@@ -379,9 +381,22 @@ class Client:
         return out
 
     def meta(self) -> Dict[str, float]:
+        """Self-reported summary the server sees. Untrusted by construction.
+
+        Since SPEC 4.0(c), ``evaluate`` returns NaN for a diverged model rather
+        than the old ``auc=0.5, dpd=0.0``. This channel, however, feeds the
+        metric-based aggregators (BFWA, FairFed) whose weight arithmetic needs a
+        finite number, so the protocol-level report is coerced back to neutral
+        values -- and the divergence is carried alongside as ``diverged`` so it
+        stays visible in the logs instead of being laundered into a claim of
+        perfect fairness. Reporting stays honest; only the wire format is fixed.
+        """
         v = self.evaluate("val")
         s = self.data.sensitive_attr[self.data.train_mask]
-        return {"n": int(self.data.train_mask.sum()), "perf": v["auc"],
-                "dpd": v["dpd"], "eod": v["eod"], "eo": v["eo"],
-                "loss": 1.0 - v["auc"],
+        bad = bool(v.get("diverged", 0.0))
+        auc = 0.5 if bad else v["auc"]
+        return {"n": int(self.data.train_mask.sum()), "perf": auc,
+                "dpd": 0.0 if bad else v["dpd"], "eod": 0.0 if bad else v["eod"],
+                "eo": 0.0 if bad else v["eo"],
+                "loss": 1.0 - auc, "diverged": float(bad),
                 "group1_rate": float((s == 1).float().mean()) if len(s) else 0.5}

@@ -1,0 +1,479 @@
+{
+  "run_id": "de5a6d1__20260803T163419Z",
+  "commit": "de5a6d12a2d58da2b41a8260d487d9a3e3bdb71d",
+  "commit_short": "de5a6d1",
+  "branch": "main_fairshare",
+  "tarball_sha256": "d5b20dd05e9e5a2e2ac93ffd82519662d63fd5c81bb7d636088db97a1b592ad8",
+  "provenance_source": "manifest",
+  "device": "cpu",
+  "env": {
+    "machine": "x86_64",
+    "system": "Linux",
+    "python": "3.12.13",
+    "torch": "2.11.0+cpu",
+    "threads": 1
+  },
+  "torch": "2.11.0+cpu",
+  "design": {
+    "beta": 0.9,
+    "tau_rounds": 10.000000000000002,
+    "rounds_temporal": 30,
+    "rounds_converge": 50,
+    "seeds_distributional": 5,
+    "seeds_directional": 3,
+    "rationale": "Round của nhóm T suy từ β (3τ). Seed của nhóm P suy từ A3 (phân hoạch Dirichlet dị thể ⇒ 1 seed = 0 bằng chứng). Nhóm I chỉ cần 1 lần đánh giá vì Phase 0 đã cho bit-exact."
+  },
+  "config": {
+    "dataset": "german",
+    "num_clients": 5,
+    "fu_val_source": "server_holdout",
+    "fu_holdout_size": 100
+  },
+  "scope": "Chuỗi toán §1.3–§1.4 trên đường code ship. KHÔNG so hiệu năng, KHÔNG p-value, KHÔNG xếp hạng aggregator — đó là Phase 3.",
+  "checks": [
+    {
+      "id": "E0",
+      "group": "E",
+      "what": "cfg.fu_ema_beta khớp hằng số suy round (0.9)",
+      "verdict": "PASS",
+      "requires": "1 lần đánh giá",
+      "why_it_matters": "Cả R_TEMPORAL=30 lẫn checkpoint T1/T3 đều suy từ β. Lệch β ⇒ số round đang dùng là sai, và T sẽ đỏ vì sai hằng số chứ không vì sai code.",
+      "cfg_beta": 0.9,
+      "tau": 10.000000000000002
+    },
+    {
+      "id": "E1",
+      "group": "E",
+      "what": "mô hình học VÀ chạm plateau trong 50 round",
+      "verdict": "FAIL",
+      "requires": "50 round (phải chạm plateau) × 5 seed",
+      "why_it_matters": "GATE 1 chỉ kiểm AUC CUỐI ∈ [0.55,0.85] — không phân biệt 'đã học' với 'khởi tạo may', và cũng không phân biệt 'đã hội tụ' với 'còn đang leo'. Nếu chưa plateau thì mọi so sánh sau này đang so hai mô hình chưa học xong.",
+      "per_seed": [
+        {
+          "seed": 0,
+          "auc_first": 0.6551,
+          "auc_last": 0.6626,
+          "gain": 0.0281,
+          "tail_slope": -0.00206
+        },
+        {
+          "seed": 1,
+          "auc_first": 0.676,
+          "auc_last": 0.5347,
+          "gain": 0.0343,
+          "tail_slope": 0.00296
+        },
+        {
+          "seed": 2,
+          "auc_first": 0.6606,
+          "auc_last": 0.6324,
+          "gain": 0.0506,
+          "tail_slope": 0.00482
+        },
+        {
+          "seed": 3,
+          "auc_first": 0.6741,
+          "auc_last": 0.6942,
+          "gain": 0.0325,
+          "tail_slope": 0.00371
+        },
+        {
+          "seed": 4,
+          "auc_first": 0.7563,
+          "auc_last": 0.6272,
+          "gain": 0.0,
+          "tail_slope": -0.0013
+        }
+      ],
+      "n_learned": 3,
+      "n_plateau": 1
+    },
+    {
+      "id": "E2",
+      "group": "E",
+      "what": "A3: w lệch khỏi uniform (cơ chế không phải no-op)",
+      "verdict": "PASS",
+      "requires": "sau 3τ=30 round × 5 seed",
+      "why_it_matters": "A3 nói non-IID là ĐIỀU KIỆN TỒN TẠI của novelty: nếu w ≈ 1/K thì FairShare = FedAvg và MỌI claim FS-* đều rỗng, bất kể chúng có 'thắng' hay không. Đo sau 3τ vì trước đó w còn mang điều kiện đầu của EMA.",
+      "per_seed": [
+        {
+          "seed": 0,
+          "mean_l1_dev": 0.5439
+        },
+        {
+          "seed": 1,
+          "mean_l1_dev": 0.5421
+        },
+        {
+          "seed": 2,
+          "mean_l1_dev": 0.4902
+        },
+        {
+          "seed": 3,
+          "mean_l1_dev": 0.6235
+        },
+        {
+          "seed": 4,
+          "mean_l1_dev": 0.6379
+        }
+      ],
+      "uniform": 0.2,
+      "dirichlet_alpha": 0.3
+    },
+    {
+      "id": "E3",
+      "group": "E",
+      "what": "nhánh fairness của g_target không suy biến",
+      "verdict": "PASS",
+      "requires": "1 lần đánh giá",
+      "why_it_matters": "g_target = g_task + α·g_fair. Nếu ‖α·g_fair‖/‖g_task‖ ≈ 0 thì φ_fair là nhiễu số học quanh 0: FS-1 mất chữ 'fairness-aware' và FS-3 (phân rã) mất luôn ý nghĩa — bất kể α được đặt bằng bao nhiêu.",
+      "alpha": 0.1,
+      "norm_ratio": 0.00491,
+      "g_task_norm": 1.493037,
+      "alpha_g_fair_norm": 0.00733
+    },
+    {
+      "id": "I1",
+      "group": "I",
+      "what": "FS-3: φ = φ_util + φ_fair",
+      "verdict": "PASS",
+      "requires": "1 lần đánh giá (kiểm free trên mọi round có sẵn)",
+      "why_it_matters": "Cộng tính là ĐIỀU KIỆN TỒN TẠI của phép phân rã, và F15 đã chốt nó KHÔNG đúng với cosine. Sai ⇒ hai cột phi_util/phi_fair là số trang trí.",
+      "max_abs_error": 2.2113090381026268e-07,
+      "tol": 1e-05,
+      "score": "dot"
+    },
+    {
+      "id": "I2",
+      "group": "I",
+      "what": "FS-2 tầng 1: φ̄ ≤ 0 ⟺ w = 0, và Σw = 1",
+      "verdict": "PASS",
+      "requires": "bất biến ⇒ kiểm MỌI round của mọi run có sẵn",
+      "why_it_matters": "Nếu quan hệ này không đúng từng round thì 'gate' chỉ là một phép co giãn, và câu 'cơ chế đã zero attacker' là đọc sai cái đang chạy. Đ3 đòi fallback có nhãn — fallback không nhãn thì mọi thống kê về cơ chế đang trộn 'đo hỏng' với 'mọi client đóng góp âm'.",
+      "n_gate_violations": 0,
+      "examples": [],
+      "n_simplex_violations": 0,
+      "n_fallback_unlabelled": 0
+    },
+    {
+      "id": "I3",
+      "group": "I",
+      "what": "θ_{t+1} = θ_t − Σ w_k g_k (tổng hợp đúng trọng số)",
+      "verdict": "PASS",
+      "requires": "1 lần đánh giá",
+      "why_it_matters": "Mũi tên cuối của chuỗi §1.4. Nếu g_agg không đúng là tổ hợp lồi theo w thì mọi thứ đo được về w không nói gì về mô hình phát hành.",
+      "max_abs_error": 1.862645149230957e-09
+    },
+    {
+      "id": "I4",
+      "group": "I",
+      "what": "P1/N1: w bỏ qua HOÀN TOÀN metadata client tự khai",
+      "verdict": "PASS",
+      "requires": "1 lần đánh giá + 1 đối chứng dương",
+      "why_it_matters": "Claim trung tâm của cả bài (C3): server không cần TIN self-report. Metadata không có trong công thức φ nên đây là đồng nhất thức, kiểm chính xác trong 1 round — không cần seed, không cần p-value. Đối chứng BFWA BẮT BUỘC phải lệch: nếu nó cũng bằng 0 thì phép thử không có sức phân biệt và I4 chưa chứng minh được gì.",
+      "max_weight_delta_ours": 0.0,
+      "max_weight_delta_bfwa": 0.0017198920249938965,
+      "control_has_power": true,
+      "w_honest": [
+        0.125004,
+        0.634448,
+        0.0,
+        0.023221,
+        0.217327
+      ],
+      "w_lying": [
+        0.125004,
+        0.634448,
+        0.0,
+        0.023221,
+        0.217327
+      ]
+    },
+    {
+      "id": "I5",
+      "group": "I",
+      "what": "A1: holdout được carve ra và không client nào giữ",
+      "verdict": "PASS",
+      "requires": "1 lần đánh giá (kiểm tập hợp)",
+      "why_it_matters": "`carve_server_holdout` trả None khi thiếu node val, và trainer khi đó ÂM THẦM rơi về pooled — đúng vòng tròn F10 (g_target dựng từ val của cả attacker), KHÔNG một dòng log nào. Đây là đường hỏng im lặng, và nó làm hỏng địa vị chứng cứ của mọi số Phase 1 chứ không chỉ của claim A1.",
+      "n_total": 1000,
+      "n_holdout": 100,
+      "n_clients_total": 900,
+      "requested": 100,
+      "note": "take = min(size, len(val_idx)//2) nên số thực nhận có thể nhỏ hơn yêu cầu"
+    },
+    {
+      "id": "T1",
+      "group": "T",
+      "what": "FS-1b: đệ quy EMA khớp φ̄ₜ = β·φ̄ₜ₋₁ + (1−β)·φₜ",
+      "verdict": "PASS",
+      "requires": "2 round liên tiếp là đủ (đồng nhất thức) — kiểm trên toàn bộ run có sẵn",
+      "why_it_matters": "Đây là ĐỒNG NHẤT THỨC nên không cần 3τ. Tách nó khỏi T3 là cố ý: sai đệ quy và sai hành vi làm mượt là hai lỗi khác nhau, cần hai phép kiểm khác nhau.",
+      "max_abs_error": 5.7027343736137937e-08,
+      "tol": 1e-05
+    },
+    {
+      "id": "T2",
+      "group": "T",
+      "what": "Đ2: φ mất hữu hạn ⇒ EMA GIỮ giá trị round trước",
+      "verdict": "N/A",
+      "requires": "30 round dưới sign_flip × 5 seed — cần sự kiện xảy ra",
+      "why_it_matters": "NaN là ĐIỂM HÚT của đệ quy EMA (§1.3.1 Đ2): một lần dính thì mọi round sau đều NaN kể cả khi φ đã hồi phục, và vì `nan > 0` là False, cơ chế âm thầm rơi về FedAvg — trao attacker đúng 1/K, không báo fallback. Cần horizon dài vì phải quan sát cả GIỮ lẫn HỒI PHỤC.",
+      "n_nonfinite_coords": 0,
+      "n_held_correctly": 0,
+      "note": "holds=0 ⇒ sự kiện không xảy ra ⇒ N/A, KHÔNG phải PASS"
+    },
+    {
+      "id": "T3",
+      "group": "T",
+      "what": "FS-1b: EMA thật sự làm mượt (var(φ̄) < var(φ))",
+      "verdict": "PASS",
+      "requires": "≥3τ = 30+ round, bỏ 1τ đầu × 5 seed",
+      "why_it_matters": "T1 chỉ nói code chạy ĐÚNG công thức; T3 hỏi công thức có MUA được gì không. Đây là chỗ 15 round là sai: β^15 = 0.21 nên EMA còn giữ 21% điều kiện đầu, phương sai đo được lúc đó là phương sai của quá trình quá độ.",
+      "n_series": 25,
+      "n_smoothed": 23,
+      "examples": [
+        {
+          "seed": 0,
+          "client": 0,
+          "var_raw": 0.00680185,
+          "var_ema": 0.00184097,
+          "smoothed": true
+        },
+        {
+          "seed": 0,
+          "client": 1,
+          "var_raw": 0.00574367,
+          "var_ema": 0.00019154,
+          "smoothed": true
+        },
+        {
+          "seed": 0,
+          "client": 2,
+          "var_raw": 0.01501638,
+          "var_ema": 0.0002653,
+          "smoothed": true
+        },
+        {
+          "seed": 0,
+          "client": 3,
+          "var_raw": 0.00682222,
+          "var_ema": 0.00090033,
+          "smoothed": true
+        },
+        {
+          "seed": 0,
+          "client": 4,
+          "var_raw": 0.00674839,
+          "var_ema": 0.00052065,
+          "smoothed": true
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "group": "T",
+      "what": "điều kiện CẦN của A2: dấu φ ổn định, không lật như tung đồng xu",
+      "verdict": "FAIL",
+      "requires": "≥3τ = 30+ round × 5 seed",
+      "why_it_matters": "A2 (dấu φ phản ánh đúng CHIỀU đóng góp) chỉ phán quyết được bằng exact-SV làm chuẩn ⇒ D9/Phase 3. Nhưng ĐIỀU KIỆN CẦN thì kiểm được ngay, không cần chuẩn: nếu sign(φ_k) lật gần như ngẫu nhiên qua các round thì EMA đang làm mượt nhiễu và gate là tuỳ tiện — A2 sai mà không cần đợi Phase 3. 1.0 = ổn định tuyệt đối, 0.0 = tung đồng xu.",
+      "median_stability": 0.15,
+      "per_series": [
+        {
+          "seed": 0,
+          "client": 0,
+          "stability": 0.05
+        },
+        {
+          "seed": 0,
+          "client": 1,
+          "stability": 0.25
+        },
+        {
+          "seed": 0,
+          "client": 2,
+          "stability": 0.05
+        },
+        {
+          "seed": 0,
+          "client": 3,
+          "stability": 0.25
+        },
+        {
+          "seed": 0,
+          "client": 4,
+          "stability": 0.05
+        },
+        {
+          "seed": 1,
+          "client": 0,
+          "stability": 0.1
+        },
+        {
+          "seed": 1,
+          "client": 1,
+          "stability": 0.15
+        },
+        {
+          "seed": 1,
+          "client": 2,
+          "stability": 0.05
+        },
+        {
+          "seed": 1,
+          "client": 3,
+          "stability": 0.45
+        },
+        {
+          "seed": 1,
+          "client": 4,
+          "stability": 0.1
+        }
+      ],
+      "note": "Đây KHÔNG phải phép kiểm A2. Xanh không xác nhận A2; đỏ thì bác A2."
+    },
+    {
+      "id": "P1",
+      "group": "P",
+      "what": "đặc hiệu: không tấn công ⇒ gate hiếm khi zero client lương thiện",
+      "verdict": "FAIL",
+      "requires": "50 round × 5 seed — phụ thuộc phân hoạch nên báo TỈ LỆ",
+      "why_it_matters": "Điều kiện tiên quyết để đọc được mọi con số 'attacker bị zero'. Gate zero ai đó mỗi round cũng cho w_atk = 0 — cùng con số, khác hẳn claim. Báo tỉ lệ chứ không nhị phân, vì A3 cố ý đẩy phân hoạch dị thể mạnh nên một client lương thiện CÓ THỂ chính đáng có φ<0 ở vài round.",
+      "mean_rate": 0.48,
+      "per_seed": [
+        {
+          "seed": 0,
+          "rounds": 40,
+          "zeroed_rounds": 8,
+          "rate": 0.2
+        },
+        {
+          "seed": 1,
+          "rounds": 40,
+          "zeroed_rounds": 3,
+          "rate": 0.075
+        },
+        {
+          "seed": 2,
+          "rounds": 40,
+          "zeroed_rounds": 32,
+          "rate": 0.8
+        },
+        {
+          "seed": 3,
+          "rounds": 40,
+          "zeroed_rounds": 38,
+          "rate": 0.95
+        },
+        {
+          "seed": 4,
+          "rounds": 40,
+          "zeroed_rounds": 15,
+          "rate": 0.375
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "group": "P",
+      "what": "độ trễ phát hiện: φ đẩy attacker xuống đáy sớm VÀ giữ được",
+      "verdict": "FAIL",
+      "requires": "30 round × 5 seed — độ trễ phụ thuộc phân hoạch",
+      "why_it_matters": "Learning point của cơ chế. F25 đã cho thấy phát hiện ĐÚNG mà MUỘN vẫn đủ để mô hình chết: gate bật ở round 6 trong khi gradient ×10 giết mô hình ở round 2. Nên phải đo CẢ độ trễ lẫn độ bền, không chỉ trạng thái cuối.",
+      "per_seed": [
+        {
+          "seed": 0,
+          "first_round_at_bottom": 1,
+          "frac_rounds_at_bottom": 1.0
+        },
+        {
+          "seed": 1,
+          "first_round_at_bottom": 1,
+          "frac_rounds_at_bottom": 0.7667
+        },
+        {
+          "seed": 2,
+          "first_round_at_bottom": 1,
+          "frac_rounds_at_bottom": 0.5333
+        },
+        {
+          "seed": 3,
+          "first_round_at_bottom": 1,
+          "frac_rounds_at_bottom": 1.0
+        },
+        {
+          "seed": 4,
+          "first_round_at_bottom": 2,
+          "frac_rounds_at_bottom": 0.8667
+        }
+      ],
+      "n_detected_by_round2": 5
+    },
+    {
+      "id": "P3",
+      "group": "P",
+      "what": "FS-2 tầng 2 hạ trọng số attacker so với tầng 1 (scaling VÀ alie)",
+      "verdict": "PASS",
+      "requires": "30 round × 3 seed × 2 attack",
+      "why_it_matters": "F4 đã thu hẹp claim: ReLU-gate KHÔNG chặn scaling/ALIE (‖g_k‖ lớn đẩy điểm dương vượt gate) nên cần tầng 2. `alie` TRƯỚC NAY CHƯA TỪNG CHẠY (F26) ⇒ nửa phạm vi của claim hai tầng không có bằng chứng nào. Đây là kiểm HƯỚNG; độ lớn và ý nghĩa thống kê là Phase 3.",
+      "per_attack": {
+        "scaling": {
+          "tier1": [
+            0.5556,
+            0.294,
+            0.0583
+          ],
+          "tier2": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "tier2_lower_in_seeds": 3
+        },
+        "alie": {
+          "tier1": [
+            0.015,
+            0.0314,
+            0.0582
+          ],
+          "tier2": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "tier2_lower_in_seeds": 3
+        }
+      },
+      "fair_share": 0.2,
+      "n_seeds": 3
+    },
+    {
+      "id": "P4",
+      "group": "P",
+      "what": "đối chứng dương: BFWA BỊ fairness_poison bắt",
+      "verdict": "PASS",
+      "requires": "30 round × 3 seed",
+      "why_it_matters": "FS-4 là negative result và là motivation của cả bài (P1/C3). Nó cũng là phép kiểm tra rằng THIẾT BỊ ĐO có khả năng báo đỏ: nếu không ô nào đỏ được thì các ô xanh không nói lên điều gì.",
+      "atk_w_mass_per_seed": [
+        0.8293,
+        0.8621,
+        0.0345
+      ],
+      "fair_share": 0.2
+    },
+    {
+      "id": "O1",
+      "group": "O",
+      "what": "quan sát: fu_grad_clip=10.0 có chạm ‖g_k‖ thực tế không",
+      "verdict": "PASS",
+      "requires": "quan sát trên mọi run có sẵn",
+      "why_it_matters": "`n_clipped = 0` MƠ HỒ: clip đúng cỡ trên round sạch cũng cho 0, ngưỡng sai đơn vị cũng cho 0. Checkpoint chỉ đòi ĐO ĐƯỢC; ACTIVE/INACTIVE là dữ liệu, và đổi hằng số là sửa ĐẶC TẢ §4.0(b) theo luồng 5 bước.",
+      "g_norm_max": 72.9086,
+      "g_norm_min": 6.0885,
+      "threshold": 10.0,
+      "status": "ACTIVE"
+    }
+  ],
+  "finished_at": "2026-08-03T16:42:34Z",
+  "gate1c_pass": false
+}

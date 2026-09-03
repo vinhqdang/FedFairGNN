@@ -1,0 +1,46 @@
+[
+  {
+    "name": "german",
+    "nodes": 1000,
+    "edges": 43484,
+    "dim": 26,
+    "sensitive": "Gender",
+    "homophily_hs": 0.8048017661668659,
+    "max_feat_auc": 0.6285928571428572,
+    "max_feat_idx": 3,
+    "status": "PASS (Zero Leakage)"
+  },
+  {
+    "name": "bail",
+    "nodes": 18876,
+    "edges": 623740,
+    "dim": 16,
+    "sensitive": "WHITE",
+    "homophily_hs": 0.5220797127008048,
+    "max_feat_auc": 0.5869021137919266,
+    "max_feat_idx": 11,
+    "status": "PASS (Zero Leakage)"
+  },
+  {
+    "name": "credit",
+    "nodes": 30000,
+    "edges": 2843716,
+    "dim": 12,
+    "sensitive": "Age",
+    "homophily_hs": 0.959534637073463,
+    "max_feat_auc": 0.72809886636721,
+    "max_feat_idx": 10,
+    "status": "PASS (Zero Leakage)"
+  },
+  {
+    "name": "pokec_z",
+    "nodes": 67796,
+    "edges": 1235916,
+    "dim": 276,
+    "sensitive": "region",
+    "homophily_hs": 0.9506131484664007,
+    "max_feat_auc": 0.7604788395993998,
+    "max_feat_idx": 1,
+    "status": "PASS (Zero Leakage)"
+  }
+]

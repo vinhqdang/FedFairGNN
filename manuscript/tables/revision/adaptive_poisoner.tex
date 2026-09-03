@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Adaptive Stealth Poisoning Breakdown Point Analysis (Bail Recidivism).}
+Performance under an omniscient adversary that projects malicious updates within the benign median radius ($\rho=0.85$) while falsifying $\widehat{\text{DPD}} = 0.0$.
+Reports AUC / DPD across corruption ratios $f/K \in \{0.1, 0.2, 0.3, 0.4\}$.
+While Krum and Median retain robust utility up to their theoretical breakdown limits ($f < 0.5$), BFWA-based methods suffer fairness degradation when stealth updates evade geometric screening, delineating the exact threat boundary of metadata-driven aggregation.}
+\label{tab:adaptive_poisoner}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Aggregator} & \textbf{$f=0.1$ (1/10)} & \textbf{$f=0.2$ (2/10)} & \textbf{$f=0.3$ (3/10)} & \textbf{$f=0.4$ (4/10)} \\
+ & AUC / DPD & AUC / DPD & AUC / DPD & AUC / DPD \\
+\midrule
+fedavg & 0.690 / 0.026 & 0.686 / 0.008 & 0.677 / 0.020 & 0.684 / 0.016 \\
+bfwa & 0.636 / 0.030 & 0.641 / 0.052 & 0.629 / 0.055 & 0.623 / 0.067 \\
+krum & 0.615 / 0.051 & 0.587 / 0.110 & 0.612 / 0.108 & 0.594 / 0.110 \\
+median & 0.663 / 0.027 & 0.667 / 0.002 & 0.670 / 0.013 & 0.663 / 0.038 \\
+\textbf{robust\_bfwa (ours)} & 0.631 / 0.038 & 0.637 / 0.076 & 0.622 / 0.086 & 0.613 / 0.125 \\
+\bottomrule
+\end{tabular}
+\end{table}

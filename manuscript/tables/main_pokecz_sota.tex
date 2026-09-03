@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Main SOTA Benchmark on Pokec-z ($N=67,796$ nodes, $1.24\text{M}$ edges, $n=10$ independent random seeds).} 
+Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistically significant difference versus TrustFedGNN (Ours) under the two-sided Wilcoxon signed-rank test with family-wise Holm-Bonferroni correction ($p < 0.05$). Bold indicates the best result. $^\dagger$FTGD's $(\epsilon=8.0, \delta=10^{-5})$ differential privacy guarantee strictly covers the released fairness statistics (two scalar group means per client per round), not transmitted model updates $\theta_k$ (see \S7.1).}
+\label{tab:main_pokecz_sota}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
+\midrule
+FedAvg-GCN & AISTATS'17 & $\times$ & 0.7272 $\pm$ 0.0122$^\star$ & 0.0400 $\pm$ 0.0116$^\star$ & 0.0588 $\pm$ 0.0314$^\star$ & 0.0000 \\
+FairGNN & WSDM'21 & $\times$ & 0.5839 $\pm$ 0.0893$^\star$ & 0.0200 $\pm$ 0.0226 & 0.0075 $\pm$ 0.0101 & 0.0000 \\
+FairSIN & WWW'24 & $\times$ & 0.7212 $\pm$ 0.0302$^\star$ & 0.0341 $\pm$ 0.0149$^\star$ & 0.0370 $\pm$ 0.0259 & 0.0000 \\
+FairFed & AAAI'23 & $\times$ & 0.7232 $\pm$ 0.0162$^\star$ & 0.0065 $\pm$ 0.0040$^\star$ & 0.0168 $\pm$ 0.0237 & 0.0592 \\
+FairGFL & IEEE TPDS'26 & $\times$ & 0.7318 $\pm$ 0.0066$^\star$ & 0.0399 $\pm$ 0.0095$^\star$ & 0.0618 $\pm$ 0.0376$^\star$ & 0.0000 \\
+FedGraph-Fair & InfoSci'26 & $\times$ & 0.7159 $\pm$ 0.0103$^\star$ & 0.0367 $\pm$ 0.0067$^\star$ & 0.0567 $\pm$ 0.0251$^\star$ & 0.0165 \\
+CGSV & NeurIPS'21 & $\times$ & 0.7390 $\pm$ 0.0054$^\star$ & 0.0435 $\pm$ 0.0077$^\star$ & 0.0540 $\pm$ 0.0341$^\star$ & 0.1467 \\
+Ours w/o FSER (M2) & Ablation & \checkmark & 0.7662 $\pm$ 0.0173$^\star$ & 0.0161 $\pm$ 0.0124 & 0.0246 $\pm$ 0.0144 & 0.1592 \\
+\textbf{TrustFedGNN (Ours)} & Proposed & \checkmark & \textbf{0.7862 $\pm$ 0.0105} & \textbf{0.0149 $\pm$ 0.0088} & \textbf{0.0219 $\pm$ 0.0148} & 0.6348 \\
+\bottomrule
+\end{tabular}
+\end{table*}

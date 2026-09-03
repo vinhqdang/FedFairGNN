@@ -1,0 +1,59 @@
+{
+  "rounds": 20,
+  "seed": 0,
+  "device": "cpu",
+  "modes": {
+    "default": {
+      "german": {
+        "bit_identical": true,
+        "weight_sha256": [
+          "b0f5b5ab10b41aa3",
+          "b0f5b5ab10b41aa3"
+        ],
+        "auc": [
+          0.6867047619047619,
+          0.6867047619047619
+        ],
+        "dpd": [
+          0.030335353301437107,
+          0.030335353301437107
+        ],
+        "d_auc": 0.0,
+        "d_dpd": 0.0,
+        "diverged": [
+          0.0,
+          0.0
+        ],
+        "sec_per_round": 0.578
+      }
+    },
+    "deterministic": {
+      "german": {
+        "bit_identical": true,
+        "weight_sha256": [
+          "b0f5b5ab10b41aa3",
+          "b0f5b5ab10b41aa3"
+        ],
+        "auc": [
+          0.6867047619047619,
+          0.6867047619047619
+        ],
+        "dpd": [
+          0.030335353301437107,
+          0.030335353301437107
+        ],
+        "d_auc": 0.0,
+        "d_dpd": 0.0,
+        "diverged": [
+          0.0,
+          0.0
+        ],
+        "sec_per_round": 0.6
+      }
+    }
+  },
+  "gate_0b_default": true,
+  "gate_0b_deterministic": true,
+  "gate_0b_pass": true,
+  "recommended_config": "default (use_deterministic_algorithms(False) l\u00e0 \u0111\u1ee7 tr\u00ean CPU)"
+}

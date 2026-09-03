@@ -3,7 +3,7 @@ from .datasets import (
     dataset_summary,
     DatasetMeta,
 )
-from .partition import partition_graph, partition_stats
+from .partition import partition_graph, partition_stats, carve_server_holdout
 
 __all__ = [
     "load_dataset",
@@ -11,4 +11,5 @@ __all__ = [
     "DatasetMeta",
     "partition_graph",
     "partition_stats",
+    "carve_server_holdout",
 ]

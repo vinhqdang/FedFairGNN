@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Composite Trust Score Sensitivity Analysis under Weight Perturbations (Issue I11).}
+Robustness of relative baseline rankings under $2{,}000$ Monte Carlo weight configurations perturbing the five trust sub-score weights (Utility, Fairness, Privacy, Robustness, Calibration).
+Reports Spearman's $\rho_s$, Kendall's $\tau$, and Rank-1 retention probability for TrustFedGNN across uniform $\pm 25\%$ perturbations and unconstrained Dirichlet(1) priors.}
+\label{tab:trust_score_sensitivity}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Perturbation Model} & \textbf{Spearman $\rho_s$ (95\% CI)} & \textbf{Kendall $\tau$ (95\% CI)} & \textbf{Rank-1 Retention (\%)} \\
+\midrule
+Uniform $\pm 25\%$ Perturbation & 0.965 [0.764, 1.000] & 0.923 [0.692, 1.000] & \textbf{100.0\%} \\
+Unconstrained $\text{Dirichlet}(\mathbf{1})$ Prior & 0.777 [0.341, 0.989] & 0.677 [0.282, 0.949] & \textbf{98.9\%} \\
+\bottomrule
+\end{tabular}
+\end{table}

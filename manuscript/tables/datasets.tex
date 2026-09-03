@@ -1,11 +1,17 @@
-\begin{tabular}{lrrrlcl}
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Characteristics of Experimental Benchmark Datasets.} 
+All datasets strictly satisfy the Zero-Feature Leakage criterion ($\max_j \text{AUC}(x_j, y) < 0.85$). $h_s$ denotes the sensitive attribute homophily ratio.}
+\label{tab:datasets}
+\begin{tabular}{lcccccc}
 \toprule
-Dataset & Nodes & Edges & Feat. & Sensitive attr. & Pos.\ rate & Task \\
+\textbf{Dataset} & \textbf{Nodes ($N$)} & \textbf{Edges ($|E|$)} & \textbf{Features ($D$)} & \textbf{Sensitive ($s$)} & \textbf{Target ($y$)} & \textbf{Homophily ($h_s$)} \\
 \midrule
-German & 1{,}000 & 43{,}484 & 26 & Gender & 0.70 & credit risk \\
-Bail & 18{,}876 & 623{,}740 & 17 & Race (WHITE) & 0.38 & recidivism \\
-Credit & 30{,}000 & 2{,}843{,}716 & 12 & Age & 0.78 & default \\
-Pokec-z & 67{,}796 & 1{,}235{,}916 & 276 & Region & 0.08 & working field \\
-Elliptic & 203{,}769 & 234{,}355 & 165 & Time period$^\dagger$ & 0.02 & illicit (crypto) \\
+German Credit & 1,000 & 24,444 & 27 & Gender & Credit Risk & 0.6120 \\
+Bail Recidivism & 18,876 & 321,308 & 17 & Race & Recidivism & 0.7240 \\
+Credit Default & 30,000 & 1,436,858 & 23 & Age & Default & 0.9595 \\
+Pokec-z & 67,796 & 1,235,916 & 276 & Region & Working Field & 0.9506 \\
 \bottomrule
 \end{tabular}
+\end{table}

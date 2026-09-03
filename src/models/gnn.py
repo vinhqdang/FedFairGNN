@@ -36,17 +36,19 @@ class FSERLayer(MessagePassing):
     per-edge attention is cached in ``self.last_attention`` for explanation.
     """
 
-    def __init__(self, in_channels, out_channels, heads=4, concat=True, dropout=0.3):
+    def __init__(self, in_channels, out_channels, heads=4, concat=True, dropout=0.3, beta_init: float = 0.5, fser_mode: str = "sub"):
         super().__init__(node_dim=0, aggr="add")
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.heads = heads
         self.concat = concat
         self.dropout = dropout
+        self.beta_init = float(beta_init)
+        self.fser_mode = str(fser_mode)
 
         self.lin = nn.Linear(in_channels, heads * out_channels, bias=False)
         self.att = Parameter(torch.empty(1, heads, 2 * out_channels))
-        self.beta = Parameter(torch.tensor(0.5))  # fairness coefficient (clamped to [0,5])
+        self.beta = Parameter(torch.tensor(self.beta_init))  # fairness coefficient (clamped to [0,5])
         self.last_attention = None
         self.reset_parameters()
 
@@ -54,7 +56,8 @@ class FSERLayer(MessagePassing):
         nn.init.xavier_uniform_(self.lin.weight)
         nn.init.xavier_uniform_(self.att)
         with torch.no_grad():
-            self.beta.fill_(0.5)
+            b_val = getattr(self, "beta_init", 0.5)
+            self.beta.fill_(b_val)
 
     def forward(self, x, edge_index, sensitive_attr):
         x = self.lin(x).view(-1, self.heads, self.out_channels)
@@ -67,10 +70,23 @@ class FSERLayer(MessagePassing):
         e = (torch.cat([x_i, x_j], dim=-1) * self.att).sum(-1)
         e = F.leaky_relu(e, 0.2)                                    # [E, heads]
         # FSER fairness risk
-        delta_s = (s_i != s_j).float().unsqueeze(-1)               # [E, 1]
-        cos = F.cosine_similarity(x_i, x_j, dim=-1)                 # [E, heads]
-        phi = delta_s * cos.clamp(min=0)
-        e = e - self.beta * phi
+        mode = getattr(self, "fser_mode", "sub")
+        if mode == "add":
+            delta_s = (s_i != s_j).float().unsqueeze(-1)            # [E, 1]
+            cos = F.cosine_similarity(x_i, x_j, dim=-1)              # [E, heads]
+            phi = delta_s * cos.clamp(min=0)
+            e = e + self.beta * phi
+        elif mode == "same_penalize":
+            delta_s = (s_i == s_j).float().unsqueeze(-1)            # [E, 1]
+            cos = F.cosine_similarity(x_i, x_j, dim=-1)              # [E, heads]
+            phi = delta_s * cos.clamp(min=0)
+            e = e - self.beta * phi
+        else: # 'sub' default
+            delta_s = (s_i != s_j).float().unsqueeze(-1)            # [E, 1]
+            cos = F.cosine_similarity(x_i, x_j, dim=-1)              # [E, heads]
+            phi = delta_s * cos.clamp(min=0)
+            e = e - self.beta * phi
+
         alpha = softmax(e, index, ptr, size_i)                      # [E, heads]
         self.last_attention = alpha.detach()
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
@@ -82,10 +98,13 @@ class TrustFedGNN(nn.Module):
     concatenation. Supports Monte-Carlo dropout at inference (``mc=True``)."""
 
     def __init__(self, in_channels, hidden_channels=64, out_channels=1,
-                 num_layers=2, heads=4, dropout=0.3):
+                 num_layers=2, heads=4, dropout=0.3, beta_init: float = 0.5,
+                 fser_mode: str = "same_penalize", **_):
         super().__init__()
         self.dropout = dropout
         self.num_layers = num_layers
+        self.beta_init = float(beta_init)
+        self.fser_mode = str(fser_mode)
 
         self.input_proj = nn.Linear(in_channels, hidden_channels)
         self.bn_in = nn.BatchNorm1d(hidden_channels)
@@ -93,7 +112,9 @@ class TrustFedGNN(nn.Module):
         self.bns = nn.ModuleList()
         for _ in range(num_layers):
             self.layers.append(FSERLayer(hidden_channels, hidden_channels // heads,
-                                         heads=heads, concat=True, dropout=dropout))
+                                         heads=heads, concat=True, dropout=dropout,
+                                         beta_init=self.beta_init,
+                                         fser_mode=self.fser_mode))
             self.bns.append(nn.BatchNorm1d(hidden_channels))
         self.final_lin = nn.Linear(hidden_channels * (num_layers + 1), hidden_channels)
         self.classifier = nn.Linear(hidden_channels, out_channels)

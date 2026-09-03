@@ -1,0 +1,193 @@
+{
+  "run_id": "4edfbd4__20260804T045319Z",
+  "device": "cpu",
+  "commit": "4edfbd4b3d250af345fe8ec53b2b05d6820bbb39",
+  "commit_short": "4edfbd4",
+  "branch": "phase1/d0-spec-fix",
+  "tarball_sha256": "4c8a5f9dc7dadf404df0ede13894e70be291b07b097ccd8e965d621d64b7dce1",
+  "torch": "2.11.0+cpu",
+  "started_at": "2026-08-04T04:53:21Z",
+  "gate1": {
+    "csv_exists": true,
+    "rows": 3,
+    "all_finite": true,
+    "auc_in_range": true,
+    "verdict_json": true,
+    "auc_mean": [
+      0.5648,
+      0.7506,
+      0.6908
+    ],
+    "dpd_mean": [
+      0.0913,
+      0.2765,
+      0.0464
+    ],
+    "methods": [
+      "bfwa",
+      "fedavg-gat",
+      "fairshare_a0.1"
+    ],
+    "pass": true
+  },
+  "spec_4_0_dod": {
+    "csv_exists": true,
+    "rows": 16,
+    "rows_with_nan": [
+      {
+        "aggregator": "fu_shapley",
+        "attack": "scaling",
+        "nan_round_frac": "0.1"
+      }
+    ],
+    "pass": false,
+    "table": [
+      {
+        "aggregator": "bfwa",
+        "attack": "none",
+        "auc": "0.503",
+        "dpd": "0.022",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "bfwa",
+        "attack": "fairness_poison",
+        "auc": "0.6341",
+        "dpd": "0.7424",
+        "atk_w_mass": "0.8621",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "bfwa",
+        "attack": "sign_flip",
+        "auc": "0.4658",
+        "dpd": "0.1234",
+        "atk_w_mass": "0.0345",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "bfwa",
+        "attack": "scaling",
+        "auc": "0.5427",
+        "dpd": "0.0133",
+        "atk_w_mass": "0.0345",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "fu_shapley",
+        "attack": "none",
+        "auc": "0.683",
+        "dpd": "0.0297",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "fu_shapley",
+        "attack": "fairness_poison",
+        "auc": "0.6789",
+        "dpd": "0.1086",
+        "atk_w_mass": "0.1629",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "fu_shapley",
+        "attack": "sign_flip",
+        "auc": "0.6728",
+        "dpd": "0.0251",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "fu_shapley",
+        "attack": "scaling",
+        "auc": "0.668",
+        "dpd": "0.0224",
+        "atk_w_mass": "0.3891",
+        "nan_round_frac": "0.1",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "robust_fu_shapley",
+        "attack": "none",
+        "auc": "0.6371",
+        "dpd": "0.095",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "robust_fu_shapley",
+        "attack": "fairness_poison",
+        "auc": "0.6014",
+        "dpd": "0.1056",
+        "atk_w_mass": "0.159",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "robust_fu_shapley",
+        "attack": "sign_flip",
+        "auc": "0.6732",
+        "dpd": "0.024",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "robust_fu_shapley",
+        "attack": "scaling",
+        "auc": "0.672",
+        "dpd": "0.025",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "cgsv",
+        "attack": "none",
+        "auc": "0.6678",
+        "dpd": "0.0391",
+        "atk_w_mass": "0.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "cgsv",
+        "attack": "fairness_poison",
+        "auc": "0.6371",
+        "dpd": "0.1525",
+        "atk_w_mass": "0.1964",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "cgsv",
+        "attack": "sign_flip",
+        "auc": "nan",
+        "dpd": "nan",
+        "atk_w_mass": "1.0",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      },
+      {
+        "aggregator": "cgsv",
+        "attack": "scaling",
+        "auc": "0.5861",
+        "dpd": "0.0459",
+        "atk_w_mass": "0.2537",
+        "nan_round_frac": "0.0",
+        "degenerate_frac": "0.0"
+      }
+    ]
+  },
+  "finished_at": "2026-08-04T04:56:09Z",
+  "phase1_pass": false
+}

@@ -167,7 +167,7 @@ def load_credit(root="data", seed=42) -> Data:
 def load_bail(root="data", seed=42) -> Data:
     return _load_tabular(
         "bail", sens="WHITE", label="RECID",
-        drop_cols=[], neg_label=0,
+        drop_cols=["TIME"], neg_label=0,
         root=root, seed=seed,
         meta=DatasetMeta("bail", "WHITE", "RECID", "recidivism within follow-up"),
     )

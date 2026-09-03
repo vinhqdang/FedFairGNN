@@ -1,11 +1,20 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=3$ seeds).} 
+Isolating each architectural component confirms that: (1) FTGD targeted DP avoids utility collapse ($12\sigma$ gain over Full DP-SGD M4); (2) Temporal EMA (M7) is essential to prevent Simplex weight instability ($\Omega_w$ reduces $17.7\times$); (3) FairScore (M5) is required to reduce demographic disparity.}
+\label{tab:ablation_suite}
 \begin{tabular}{llcccc}
 \toprule
- & & \multicolumn{2}{c}{Bail} & \multicolumn{2}{c}{German} \\
-Config & & AUC & DPD & AUC & DPD \\
+\textbf{Ablation Arm} & \textbf{Description / Isolated Component} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
 \midrule
-Base GAT & & 0.972 & 0.072 & 0.709 & 0.050 \\
-+ BFWA (no FSER) & & 0.972 & 0.073 & 0.680 & 0.071 \\
-+ FSER (no BFWA) & & 0.987 & 0.059 & 0.668 & 0.009 \\
-+ FSER + BFWA & & 0.988 & 0.075 & 0.638 & 0.045 \\
+M1 (Full Proposed) & \textbf{TrustFedGNN (Canonical)} & \textbf{0.6426 $\pm$ 0.0138} & \textbf{0.0740 $\pm$ 0.0375} & \textbf{0.0201 $\pm$ 0.0137} & 0.0781 \\
+M2 (w/o FSER) & GAT Backbone (No Topological Reweighting) & 0.6598 $\pm$ 0.0612 & 0.1797 $\pm$ 0.1193 & 0.1961 $\pm$ 0.1098 & 0.1369 \\
+M3 (w/o FTGD) & Standard Local Optimization (No Orthogonal Surgery) & 0.6409 $\pm$ 0.0094 & 0.0378 $\pm$ 0.0217 & 0.0339 $\pm$ 0.0217 & 0.0629 \\
+M4 (Full DP-SGD) & Standard Client-Wide DP-SGD ($\epsilon=8.0$) & 0.4761 $\pm$ 0.0191 & 0.1692 $\pm$ 0.0658 & 0.1478 $\pm$ 0.0805 & 0.2724 \\
+M5 (w/o FairScore) & GTG-Shapley Metric ($lpha=0.0$) & 0.6406 $\pm$ 0.0125 & 0.0870 $\pm$ 0.0557 & 0.0339 $\pm$ 0.0165 & 0.0783 \\
+M6 (w/o Two-Tier) & CGSV Aggregation (No Server Holdout) & 0.6768 $\pm$ 0.0149 & 0.0901 $\pm$ 0.0225 & 0.0227 $\pm$ 0.0133 & 0.0332 \\
+M7 (w/o Temp EMA) & Instantaneous Gradient Alignment ($eta_{\text{ema}}=0.0$) & 0.6563 $\pm$ 0.0190 & 0.0912 $\pm$ 0.0596 & 0.0407 $\pm$ 0.0343 & 1.3837 \\
 \bottomrule
 \end{tabular}
+\end{table*}

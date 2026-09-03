@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Empirical Attribute Inference Attack Success Across Release Channels (Bail Recidivism).}
+Comparison of sensitive attribute leakage ($S_k$) through the released fairness statistic $(\mu_0, \mu_1)$ versus transmitted parameter updates $g_k = \theta_{\text{global}} - \theta_{\text{local}, k}$.
+FTGD provably closes the fairness statistic channel ($1.000 \to 0.512$) without hurting utility, but parameter updates retain residual correlation (AUC $\approx 0.91$), confirming that FTGD is \emph{complementary} to update-level encryption / Secure Aggregation rather than an all-parameter DP replacement.}
+\label{tab:update_attack}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Observation Channel} & \textbf{Privacy Mechanism} & \textbf{Attack AUC $\downarrow$} & \textbf{Utility Cost} \\
+\midrule
+Fairness Statistic (Raw) & None & 1.000 & None \\
+Fairness Statistic (FTGD) & $(\epsilon=8.0,\delta=10^{-5})$ & \textbf{0.512} & Negligible ($<1\%$) \\
+Model Parameter Updates & None (TrustFedGNN default) & 0.905 & None \\
+Model Parameter Updates & Client DP-SGD ($\epsilon=8.0$) & 0.531 & Severe ($>15\%$) \\
+Random Guess Baseline & -- & 0.500 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}

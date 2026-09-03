@@ -14,7 +14,8 @@ setting where each institution holds a disjoint portion of the entity graph.
 """
 from __future__ import annotations
 
-from typing import List
+import warnings
+from typing import List, Tuple
 
 import numpy as np
 import torch
@@ -74,7 +75,10 @@ def _community(data: Data, k: int, gen) -> List[torch.Tensor]:
     g.add_nodes_from(range(data.num_nodes))
     g.add_edges_from(data.edge_index.t().tolist())
     try:
-        comms = list(nx.community.greedy_modularity_communities(g))
+        if hasattr(nx.community, "louvain_communities"):
+            comms = list(nx.community.louvain_communities(g, seed=42))
+        else:
+            comms = list(nx.community.greedy_modularity_communities(g))
     except Exception:
         return _uniform(data.num_nodes, k, gen)
     # round-robin communities (largest first) into k buckets
@@ -97,6 +101,78 @@ def partition_graph(data: Data, num_clients: int, method: str = "dirichlet",
     else:
         raise ValueError(f"Unknown partition method '{method}'")
     return [_induced(data, idx) for idx in parts if len(idx) > 0]
+
+
+def carve_server_holdout(data: Data, size: int, seed: int = 42) -> Tuple[Data, Data]:
+    """Split ``size`` validation nodes off for the server *before* partitioning.
+
+    Motivation (A1/F10). The FU-Shapley target gradient is the server's only
+    independent yardstick for scoring clients, so it must not be computed on
+    data the clients -- including the Byzantine ones -- control. Building it
+    from the pooled client validation nodes assumes away the very threat the
+    robustness study measures, making the verifiability claim circular. Carving
+    the holdout out here, ahead of ``partition_graph``, is what makes "the
+    server has a small clean set" an explicit, auditable assumption instead of
+    an accident of the plumbing.
+
+    The returned graphs are node-disjoint, so edges crossing the cut are
+    dropped from both sides -- an unavoidable cost of a genuinely disjoint
+    holdout, and one the ablation over ``fu_holdout_size`` should report.
+    Measured on german (1000 nodes, seed 0): mean degree falls 43.48 -> 4.12 at
+    ``size=100``. The client subgraphs go through the *same* ``_induced`` call
+    (see ``partition_graph``), and under Dirichlet alpha=0.3 they scatter from
+    49 to 498 nodes with degrees 2.45 .. 20.54 -- i.e. two of five clients are
+    *sparser* than the holdout. Neither side is "the dense one"; see ``1_1``
+    section 1.1.6 and ``1_3`` section 3.9.7.
+
+    Returns ``(holdout, rest)``. If there are not enough validation nodes to
+    spare, returns ``(None, data)`` and the caller must fall back to pooled.
+
+    The returned ``holdout`` carries ``requested_size`` / ``granted_size`` /
+    ``truncated`` so callers and tests can tell an honoured request from a
+    silently clipped one (C16).
+    """
+    gen = torch.Generator().manual_seed(seed)
+    val_idx = torch.nonzero(data.val_mask, as_tuple=False).flatten()
+    # Leave at least half the validation nodes with the clients: they still need
+    # a local split for their own early stopping and reported metrics.
+    #
+    # C16: this cap used to clip *silently*. On german the val split is 250
+    # nodes, so asking for fu_holdout_size=250 quietly yielded 125 -- and a
+    # D7/D8 ablation reading "a bigger holdout does not help" would have been
+    # measuring a holdout that never grew. The cap stays (clients genuinely
+    # need their own val split); what changes is that it now says so.
+    take = min(int(size), int(len(val_idx) // 2))
+    if take <= 0:
+        return None, data
+    if take < int(size):
+        warnings.warn(
+            f"carve_server_holdout: requested {int(size)} server-holdout nodes "
+            f"but only {take} could be spared ({len(val_idx)} validation nodes "
+            f"exist and at most half may leave the clients). The holdout is "
+            f"{take} nodes, NOT {int(size)} -- any ablation over "
+            f"fu_holdout_size must read holdout.num_nodes, not the config.",
+            RuntimeWarning, stacklevel=2)
+
+    pick = val_idx[torch.randperm(len(val_idx), generator=gen)[:take]]
+    mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+    mask[pick] = True
+
+    holdout = _induced(data, torch.nonzero(mask, as_tuple=False).flatten())
+    # Every holdout node is a server validation node, whatever its original split.
+    holdout.val_mask = torch.ones(holdout.num_nodes, dtype=torch.bool)
+    holdout.train_mask = torch.zeros(holdout.num_nodes, dtype=torch.bool)
+    holdout.test_mask = torch.zeros(holdout.num_nodes, dtype=torch.bool)
+
+    # C16: make the request/grant gap machine-readable, not just a warning a
+    # batch run will swallow. `granted_size` is what the server actually scores
+    # against; `fu_holdout_size` in the config is only a request.
+    holdout.requested_size = int(size)
+    holdout.granted_size = int(holdout.num_nodes)
+    holdout.truncated = bool(take < int(size))
+
+    rest = _induced(data, torch.nonzero(~mask, as_tuple=False).flatten())
+    return holdout, rest
 
 
 def partition_stats(clients: List[Data]) -> List[dict]:

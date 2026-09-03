@@ -1,0 +1,23 @@
+{
+  "args": {
+    "datasets": [
+      "german"
+    ],
+    "seeds": 1,
+    "rounds": 50,
+    "alphas": [
+      0.1
+    ],
+    "out": "/content/results/fairshare/de5a6d1__20260803T163107Z"
+  },
+  "verdict": {
+    "german": {
+      "strict_pass": true,
+      "best_alpha": 0.1,
+      "pareto_ok": true,
+      "pareto_alpha": 0.1,
+      "monotone_dpd": true,
+      "auc_deficit_vs_bfwa": -0.126
+    }
+  }
+}

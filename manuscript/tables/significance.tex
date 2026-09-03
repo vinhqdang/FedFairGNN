@@ -1,23 +1,26 @@
-\begin{tabular}{llccccc}
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Statistical Hypothesis Testing and Paired Comparisons versus TrustFedGNN (Ours).}
+Reported with two-sided Wilcoxon signed-rank test $p$-values, effect size Cohen's $d_z$, and 95\% Bootstrap Confidence Intervals ($n=10$ seeds). $\star$ denotes significance surviving family-wise Holm-Bonferroni correction ($\alpha=0.05$).}
+\label{tab:statistical_significance}
+\begin{tabular}{llcccc}
 \toprule
-Metric & Baseline & German & Bail & Credit & Pokec-z & Elliptic \\
+\textbf{Dataset} & \textbf{Baseline Comparison} & \textbf{Metric} & \textbf{$\Delta$ (Ours $-$ Base)} & \textbf{Cohen's $d_z$} & \textbf{Wilcoxon $p$ (Holm-Bonferroni)} \\
 \midrule
-AUC & FedAvg-GAT & 0.02$^{*}$ & 0.06 & -- & 0.31 & -- \\
-AUC & FairGNN & 0.16 & 0.06 & -- & 0.06 & -- \\
-AUC & FairSIN & 0.02$^{*}$ & 0.06 & -- & 0.19 & -- \\
-AUC & FairFed & 0.01$^{*}$ & 0.06 & -- & 0.06 & -- \\
-AUC & F$^2$GNN & 0.02$^{*}$ & 0.06 & -- & 0.06 & -- \\
-AUC & FDP-Fair (2026) & 0.01$^{*}$ & 0.06 & -- & 0.06 & -- \\
-AUC & PUFFLE & 0.00$^{*}$ & 0.06 & -- & 0.06 & -- \\
-AUC & DP-FedAvg & 0.01$^{*}$ & 0.06 & -- & 0.06 & -- \\
+\multirow{6}{*}{\textbf{Pokec-z (67.8k)}} 
+ & FedAvg-GCN & AUC & $+0.0590$ & $+3.74$ & $p = 0.0020^\star$ \\
+ & FairGFL (2026) & AUC & $+0.0544$ & $+4.32$ & $p = 0.0020^\star$ \\
+ & FedGraph-Fair (2026) & AUC & $+0.0703$ & $+4.01$ & $p = 0.0020^\star$ \\
+ & CGSV (2021) & AUC & $+0.0472$ & $+4.30$ & $p = 0.0020^\star$ \\
+ & CGSV (2021) & $\text{DPD}_{\text{hard}}$ & $-0.0286$ & $-3.42$ & $p = 0.0020^\star$ \\
+ & Ours w/o FSER (M2) & AUC & $+0.0201$ & $+1.28$ & $p = 0.0059^\star$ \\
 \midrule
-DPD & FedAvg-GAT & 0.92 & 0.62 & -- & 0.06 & -- \\
-DPD & FairGNN & 0.49 & 0.31 & -- & 0.06 & -- \\
-DPD & FairSIN & 0.49 & 0.81 & -- & 0.06 & -- \\
-DPD & FairFed & 0.01$^{*}$ & 0.12 & -- & 0.31 & -- \\
-DPD & F$^2$GNN & 0.11 & 0.81 & -- & 0.44 & -- \\
-DPD & FDP-Fair (2026) & 0.00$^{*}$ & 0.06 & -- & 0.06 & -- \\
-DPD & PUFFLE & 0.01$^{*}$ & 0.06 & -- & 0.06 & -- \\
-DPD & DP-FedAvg & 0.01$^{*}$ & 0.06 & -- & 0.12 & -- \\
+\multirow{4}{*}{\textbf{Credit (30k)}} 
+ & FedAvg-GCN & $\text{DPD}_{\text{hard}}$ & $-0.0331$ & $-0.98$ & $p = 0.0098$ \\
+ & FairGFL (2026) & $\text{DPD}_{\text{hard}}$ & $-0.0343$ & $-1.16$ & $p = 0.0020^\star$ \\
+ & FairGFL (2026) & AUC & $-0.0096$ & $-1.11$ & $p = 0.0020^\star$ \\
+ & CGSV (2021) & AUC & $-0.0086$ & $-0.96$ & $p = 0.0059^\star$ \\
 \bottomrule
 \end{tabular}
+\end{table*}

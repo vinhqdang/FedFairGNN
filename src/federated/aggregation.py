@@ -41,12 +41,13 @@ def bfwa_weights(perf: torch.Tensor, dpd: torch.Tensor, tau: float,
     """Solve  max_w  w.perf  s.t.  w.dpd <= tau,  w in simplex  via Frank-Wolfe
     with a dual variable enforcing the fairness budget."""
     K = perf.numel()
-    w = torch.full((K,), 1.0 / K)
+    dev = perf.device
+    w = torch.full((K,), 1.0 / K, device=dev)
     mu = 0.0
     for t in range(iters):
         violation = float(torch.dot(w, dpd) - tau)
         grad = -perf + mu * dpd                     # d/dw of Lagrangian
-        s = torch.zeros(K)
+        s = torch.zeros(K, device=dev)
         s[int(torch.argmin(grad))] = 1.0            # LMO on simplex
         gamma = 2.0 / (t + 2.0)                     # decaying step (spec-compliant)
         w = (1 - gamma) * w + gamma * s
@@ -68,7 +69,7 @@ def krum_scores(updates: List[torch.Tensor], f: int) -> torch.Tensor:
     mat = torch.stack([u.flatten() for u in updates])
     d = _pairwise_sq_dists(mat)
     m = max(1, K - f - 2)                            # neighbours to sum
-    scores = torch.empty(K)
+    scores = torch.empty(K, device=mat.device)
     for i in range(K):
         di = torch.cat([d[i, :i], d[i, i + 1:]])
         scores[i] = torch.sort(di).values[:m].sum()
@@ -82,13 +83,24 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
               *, tau: float = 0.05, fw_iters: int = 20, dual_step: float = 0.1,
               trimmed_beta: float = 0.1, krum_f: int = 1,
               q_ffl: float = 2.0, fairfed_beta: float = 1.0,
-              state: Dict = None) -> Tuple[torch.Tensor, Dict]:
+              state: Dict = None,
+              g_target: torch.Tensor = None, g_task: torch.Tensor = None,
+              g_fair: torch.Tensor = None, fu_alpha: float = 0.1,
+              fu_beta_ema: float = 0.9, fu_normalize: str = "target_norm",
+              fu_score: str = "dot", fu_warmup: bool = False,
+              fu_grad_clip: float = 0.0, fu_warmup_agg: str = "fedavg",
+              ) -> Tuple[torch.Tensor, Dict]:
     K = len(updates)
-    n = torch.tensor([m.get("n", 1) for m in meta], dtype=torch.float32)
-    perf = torch.tensor([m.get("perf", 0.5) for m in meta], dtype=torch.float32)
-    dpd = torch.tensor([m.get("dpd", 0.0) for m in meta], dtype=torch.float32)
-    loss = torch.tensor([m.get("loss", 1.0 - m.get("perf", 0.5)) for m in meta], dtype=torch.float32)
     stack = torch.stack([u.flatten() for u in updates])
+    # Every scalar summary below is built from python floats, so it must be
+    # placed on the same device as the updates or GPU runs die in the first
+    # weighted sum.
+    dev = stack.device
+    _t = lambda vals: torch.tensor(vals, dtype=torch.float32, device=dev)
+    n = _t([m.get("n", 1) for m in meta])
+    perf = _t([m.get("perf", 0.5) for m in meta])
+    dpd = _t([m.get("dpd", 0.0) for m in meta])
+    loss = _t([m.get("loss", 1.0 - m.get("perf", 0.5)) for m in meta])
     info: Dict = {"method": method}
 
     if method == "fedavg":
@@ -119,7 +131,7 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         # F2GNN (Meng et al.): softmax aggregation combining a model-fairness
         # weight (lower DPD -> higher weight) and a data-balance weight (group
         # balance per client), temperature-scaled.
-        gbal = torch.tensor([1.0 - abs(2.0 * m.get("group1_rate", 0.5) - 1.0) for m in meta])
+        gbal = _t([1.0 - abs(2.0 * m.get("group1_rate", 0.5) - 1.0) for m in meta])
         gamma_f = torch.softmax(-dpd / 0.1, dim=0)
         gamma_e = torch.softmax(gbal / 0.1, dim=0)
         w = torch.softmax((0.5 * gamma_e + gamma_f) / 0.1, dim=0)
@@ -146,14 +158,20 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         scores = krum_scores(updates, krum_f)
         sel = int(torch.argmin(scores))
         agg = stack[sel]
+        w_full = torch.zeros(K, device=stack.device)
+        w_full[sel] = 1.0
         info["selected"] = sel
+        info["weights"] = w_full.tolist()
 
     elif method == "multikrum":
         scores = krum_scores(updates, krum_f)
         m = max(1, K - krum_f)
         sel = torch.argsort(scores)[:m].tolist()
         agg = stack[sel].mean(0)
+        w_full = torch.zeros(K, device=stack.device)
+        w_full[sel] = 1.0 / len(sel)
         info["selected"] = sel
+        info["weights"] = w_full.tolist()
 
     elif method == "fairgfl":
         # FairGFL (Khan-family overlap-aware reweighting): weight ~
@@ -177,11 +195,12 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         # docs/BASELINES_AND_SOURCES.md.
         lam = state.get("fedgraphfair_lambda") if state is not None else None
         if lam is None or lam.numel() != K:
-            lam = torch.full((K,), 1.0 / K)
+            lam = torch.full((K,), 1.0 / K, device=dev)
+        lam = lam.to(dev)
         kappa_max = float(loss.mean())
         lam = lam + dual_step * (loss - kappa_max)
         lam = torch.clamp(lam, min=0.0)
-        lam = lam / lam.sum() if lam.sum() > 0 else torch.full((K,), 1.0 / K)
+        lam = lam / lam.sum() if lam.sum() > 0 else torch.full((K,), 1.0 / K, device=dev)
         if state is not None:
             state["fedgraphfair_lambda"] = lam
         agg = (lam[:, None] * stack).sum(0)
@@ -215,8 +234,94 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         # Stage 2: fairness-constrained Frank-Wolfe among survivors.
         w_sub = bfwa_weights(perf[keep], dpd[keep], tau, fw_iters, dual_step)
         agg = (w_sub[:, None] * stack[keep]).sum(0)
+        w_full = torch.zeros(K, device=stack.device)
+        w_full[keep] = w_sub
         info["kept"] = keep
-        info["weights"] = w_sub.tolist()
+        info["survivor_weights"] = w_sub.tolist()
+        info["weights"] = w_full.tolist()
+
+    elif method == "cgsv":
+        # CGSV (Xu et al., NeurIPS 2021): cosine-gradient Shapley value. No
+        # server validation set -- the reference is the mean client gradient.
+        mean_g = stack.mean(0)
+        denom = mean_g.norm() + 1e-12
+        cos = torch.stack([torch.dot(u, mean_g) / (u.norm() * denom + 1e-12) for u in stack])
+        w = torch.relu(cos)
+        w = w / w.sum() if float(w.sum()) > 0 else n / n.sum()
+        agg = (w[:, None] * stack).sum(0)
+        info["weights"] = w.tolist()
+
+    elif method in ("fu_shapley", "robust_fu_shapley"):
+        # FairShare-GNN FU-Shapley: score each client against the server target
+        # gradient, EMA-smooth, ReLU-gate onto the simplex. See
+        # src/trust/incentive.py and implementation_plan_and_ac_review.md PART B.
+        from ..trust.incentive import compute_fu_weights, decompose
+        if g_target is None:
+            # no server validation nodes this round -> fall back to FedAvg
+            w = n / n.sum()
+            agg = (w[:, None] * stack).sum(0)
+            info["weights"] = w.tolist(); info["fu_fallback"] = "no_target"
+        else:
+            grads = [u for u in stack]
+            phi_ema = state.get("fu_phi_ema") if state is not None else None
+            fu_info: Dict = {}
+            w, phi_raw, phi_ema_new = compute_fu_weights(
+                grads, g_target, phi_ema=phi_ema, beta_ema=fu_beta_ema,
+                normalize=fu_normalize, score=fu_score,
+                grad_clip=fu_grad_clip, info=fu_info)
+            if state is not None:
+                state["fu_phi_ema"] = phi_ema_new            # thread EMA across rounds
+            # SPEC 4.0(d): the status comes from compute_fu_weights itself now.
+            # It must not be re-derived from phi_ema_new here: the D2 guard holds
+            # the previous (finite) EMA when a score is non-finite, so a NaN
+            # round is no longer visible downstream of the guard.
+            info["phi_nan_frac"] = fu_info["phi_nan_frac"]
+            info["n_clipped"] = fu_info["n_clipped"]
+            info["g_norm_median"] = fu_info["g_norm_median"]
+            info["g_norm_max"] = fu_info["g_norm_max"]
+            info["phi_norm"] = fu_info["phi_norm"]
+            if fu_info["fu_status"] != "ok":
+                info["fu_fallback"] = fu_info["fu_status"]
+            if method == "robust_fu_shapley":
+                # F4: median-screen the krum_f farthest updates, then re-gate.
+                med = stack.median(dim=0).values
+                dist = ((stack - med) ** 2).sum(1)
+                keep = torch.argsort(dist)[: max(1, K - krum_f)]
+                mask = torch.zeros(K, device=dev); mask[keep] = 1.0
+                w = w * mask
+                w = w / w.sum() if float(w.sum()) > 0 else n / n.sum()
+                info["kept"] = keep.tolist()
+            warmup_median = False
+            if fu_warmup:
+                # Warm-up: keep feeding the EMA (done above) but do not let phi
+                # set the weights yet (F9).
+                #
+                # F25: with fu_warmup_agg="fedavg" this window is an attack
+                # surface -- the attacker holds ~1/K for the whole window, and
+                # under sign_flip a -10x gradient kills the model before the
+                # gate ever engages. "median" needs no score history, so it
+                # covers the same window without one. Which value to ship is
+                # decided by the D11 warm-up ablation, not asserted here.
+                if fu_warmup_agg == "median":
+                    warmup_median = True
+                else:
+                    w = n / n.sum()
+                info["fu_warmup"] = True
+                info["fu_warmup_agg"] = fu_warmup_agg
+            if warmup_median:
+                # Coordinate-wise median is not expressible as client weights,
+                # so aggregate directly and report no weight vector.
+                agg = stack.median(dim=0).values
+                info["weights"] = None
+            else:
+                agg = (w[:, None] * stack).sum(0)
+                info["weights"] = w.tolist()
+            info["phi_raw"] = phi_raw.tolist()
+            info["phi_ema"] = phi_ema_new.tolist()
+            if g_task is not None and g_fair is not None:
+                phi_util, phi_fair = decompose(grads, g_task, g_fair, fu_alpha, score=fu_score)
+                info["phi_util"] = phi_util.tolist()
+                info["phi_fair"] = phi_fair.tolist()
 
     else:
         raise ValueError(f"Unknown aggregator '{method}'")
@@ -224,6 +329,8 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
     return agg.view_as(updates[0]), info
 
 
-ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"}
-FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn", "fairgfl", "fedgraphfair", "popets_fairfed"}
-ALL_METHODS = {"fedavg"} | FAIR_METHODS | ROBUST_METHODS
+ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
+                  "robust_fu_shapley"}
+FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn", "fairgfl", "fedgraphfair",
+                "popets_fairfed", "fu_shapley", "robust_fu_shapley"}
+ALL_METHODS = {"fedavg", "cgsv"} | FAIR_METHODS | ROBUST_METHODS

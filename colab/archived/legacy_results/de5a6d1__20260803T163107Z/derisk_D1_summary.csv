@@ -1,0 +1,4 @@
+dataset,method,n_seeds,n_diverged,auc_mean,auc_std,auc_n_ok,dpd_mean,dpd_std,dpd_n_ok,eod_mean,eod_std,eod_n_ok,osc_mean,osc_std,osc_n_ok
+german,bfwa,1,0,0.5648,0.0,1,0.0913,0.0,1,0.0968,0.0,1,0.022,0.0,1
+german,fedavg-gat,1,0,0.7506,0.0,1,0.2765,0.0,1,0.3493,0.0,1,0.0,0.0,1
+german,fairshare_a0.1,1,0,0.6908,0.0,1,0.0464,0.0,1,0.089,0.0,1,0.0025,0.0,1

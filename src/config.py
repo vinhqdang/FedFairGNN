@@ -31,7 +31,10 @@ class ExperimentConfig:
     # ---- experiment identity ----
     exp_name: str = "default"
     seed: int = 42
-    device: str = "cpu"
+    # Compute device. Default is CPU; set FEDFAIR_DEVICE=cuda to move every run
+    # onto the GPU without touching call sites (no auto-detection on purpose --
+    # the device is part of the environment manifest and must be declared).
+    device: str = field(default_factory=lambda: os.environ.get("FEDFAIR_DEVICE", "cpu"))
     out_dir: str = "results"
 
     # ---- data ----
@@ -68,13 +71,63 @@ class ExperimentConfig:
 
     # ---- aggregation ----
     aggregator: str = "bfwa"         # fedavg | bfwa | krum | multikrum | median | trimmed_mean | robust_bfwa
+                                     #   | fu_shapley | robust_fu_shapley | cgsv   (FairShare-GNN + baseline)
     trimmed_beta: float = 0.1        # fraction trimmed each side for trimmed_mean
     krum_f: int = 1                  # assumed number of Byzantine clients for Krum/Multi-Krum
+
+    # ---- FU-Shapley incentive aggregation (FairShare-GNN) ----
+    #   Server scores each client g_k against a target gradient built on the pooled
+    #   validation set: g_target = g_task + fu_alpha * g_fair  (see src/trust/incentive.py).
+    #   Sign is '+': g_fair is the *ascent* gradient of the fairness surrogate, so a
+    #   client that descends fairness loss has g_k aligned with g_fair -> positive credit.
+    fu_alpha: float = 0.1            # fairness trade-off weight in the target gradient (F1)
+    fu_ema_beta: float = 0.9         # EMA decay for temporal Shapley smoothing (F6/F9)
+    fu_warmup_rounds: int = 0        # rounds before FU-SV gating; EMA is still fed (F9).
+                                     #   Was 5. The D11 warm-up ablation (R7) shows
+                                     #   nan_round_frac under sign_flip rises monotonically with
+                                     #   this window under "fedavg" -- 0 / .067 / .200 / .467 for
+                                     #   0 / 3 / 5 / 10 rounds -- because the attacker holds ~1/K
+                                     #   until the gate engages. 0 and warmup_agg="median" both
+                                     #   drive it to zero; AUC cannot separate them (seed range
+                                     #   0.113 at n=3). 0 wins on parsimony: it removes a knob
+                                     #   rather than adding a second defence whose credit would
+                                     #   not attribute to FU-Shapley. Warm-up is absent from the
+                                     #   maths, so dropping it touches no claim.
+    fu_warmup_agg: str = "fedavg"    # {fedavg, median} -- how to aggregate DURING warm-up.
+                                     #   F25: "fedavg" leaves the attacker ~1/K for the whole
+                                     #   window, long enough for sign_flip to kill the model
+                                     #   before the gate engages. "median" needs no score
+                                     #   history so it covers the window. Ship value is decided
+                                     #   by the D11 warm-up ablation, not asserted here.
+    fu_normalize: str = "target_norm"  # per-round phi scaling: none | target_norm | zscore.
+                                     #   target_norm (default) divides by ||g_target|| -> fixes cross-
+                                     #   round scale drift while PRESERVING sign (F6). zscore recenters
+                                     #   (drops ~half the clients, degenerate for small K) -> ablation only.
+    fu_score: str = "dot"            # contribution score: dot | cosine (cosine = CGSV-style, F4 ablation)
+    fu_fair_surrogate: str = "sq"    # server fairness target surrogate: sq=(mu0-mu1)^2 | abs (F5)
+    fu_grad_clip: float = 10.0       # SPEC 4.0(b): cap ||g_k|| before scoring. A defence-side bound on
+                                     #   single-client influence -- it does NOT weaken the adversary
+                                     #   (attack_intensity is untouched). 0 disables.
+    fu_val_source: str = "pooled"    # pooled | server_holdout. 'pooled' builds g_target from every
+                                     #   client's val nodes INCLUDING Byzantine ones, which assumes away
+                                     #   the very threat being studied (A1/F10). 'server_holdout' carves
+                                     #   fu_holdout_size nodes out before partitioning so no client owns
+                                     #   them. See src/trust/incentive.py.
+    fu_holdout_size: int = 200       # nodes REQUESTED for the server when fu_val_source='server_holdout'.
+                                     #   C16: this is a request, not a guarantee. carve_server_holdout caps
+                                     #   it at half the validation split, so on german (250 val nodes) any
+                                     #   request above 125 is clipped -- the default 200 already is. The
+                                     #   number actually scored against is holdout.granted_size /
+                                     #   holdout.num_nodes, and a clipped request now warns. Read that,
+                                     #   never this field, when reporting a D7/D8 holdout-size ablation.
+    skip_client_meta: bool = False   # F7: actually skip client meta() forward pass (only then may we
+                                     #   claim client compute savings). Default keeps meta() for logging.
 
     # ---- fairness ----
     fairness_weight: float = 1.0     # lambda: weight of fairness loss
     fairness_budget: float = 0.05    # tau: max allowed global DPD in BFWA
     beta_init: float = 0.5           # FSER coefficient init
+    fser_mode: str = "sub"           # sub (cross_penalize canonical) | add (cross_boost) | same_penalize
     fw_iterations: int = 20
     dual_step_size: float = 0.1
 
@@ -110,6 +163,12 @@ class ExperimentConfig:
     num_byzantine: int = 0
     attack_intensity: float = 10.0
 
+    # ---- logging ----
+    wandb: bool = False
+    wandb_project: str = "fedfairgnn"
+    wandb_entity: Optional[str] = None
+    save_dir: str = "checkpoints"
+
     # ---- uncertainty / trust ----
     mc_dropout_samples: int = 20     # forward passes for MC-dropout uncertainty
     eval_uncertainty: bool = False
@@ -121,7 +180,7 @@ class ExperimentConfig:
         return f"{self.exp_name}__{self.model}__{self.dataset}__{self.aggregator}__seed{self.seed}"
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return dataclasses.asdict(self)
 
     def save(self, path: str) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -138,6 +197,32 @@ class ExperimentConfig:
         with open(path) as f:
             return cls.from_dict(json.load(f))
 
+    @classmethod
+    def canonical(cls, **overrides) -> "ExperimentConfig":
+        """Cấu hình DUY NHẤT của arm 'Ours' (TrustFedGNN).
+        
+        Mọi bảng trong bài và mọi ablation đều khởi tạo từ đây.
+        Ablation = canonical(...) với override tường minh tương ứng với tên nhánh.
+        """
+        base = dict(
+            dataset="german",
+            num_clients=5,
+            rounds=20,
+            dirichlet_alpha=0.3,
+            model="trustfedgnn",
+            aggregator="fu_shapley",
+            fu_alpha=0.1,
+            fu_ema_beta=0.9,
+            fairness_weight=1.0,
+            beta_init=0.5,
+            fser_mode="sub",
+            dp_enabled=True,
+            dp_mode="ftgd",
+            fu_val_source="server_holdout",
+        )
+        base.update(overrides)
+        return cls(**base)
+
 
 def set_seed(seed: int) -> None:
     """Seed all RNGs for deterministic behaviour.
@@ -150,4 +235,4 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
-    torch.use_deterministic_algorithms(False)  # some scatter ops lack deterministic kernels
+    torch.use_deterministic_algorithms(False)  # some PyG scatter ops lack deterministic CUDA kernels

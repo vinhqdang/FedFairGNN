@@ -64,16 +64,28 @@ METHODS = {
     # (including the multi-hour ogbn-products study) rather than just
     # relabelling them. Only the internal `model=` dispatch string and every
     # user-facing display name (PRETTY dict, manuscript) were renamed.
-    "fedfairgnn":       dict(model="trustfedgnn", aggregator="bfwa", dp_enabled=True, dp_mode="ftgd"),
-    "fedfairgnn-nodp":  dict(model="trustfedgnn", aggregator="bfwa", dp_enabled=False),
-    "ours-nofser":      dict(model="gat",         aggregator="bfwa", local_fairness=True, dp_enabled=False),
+    "fedfairgnn":       dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd"),
+    "fedfairgnn-nodp":  dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, dp_mode="ftgd"),
+    "ours-nofser":      dict(model="gat",         aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd"),
     "ours-nobfwa":      dict(model="trustfedgnn", aggregator="fedavg", dp_enabled=False),
-    "ours-robust":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
+    "ours-robust":      dict(model="trustfedgnn", aggregator="robust_fu_shapley", dp_enabled=True, dp_mode="ftgd"),
     # + EquFL-style server-side fairness calibration (Yu et al. 2026) stacked
     # on top of FSER+BFWA -- see docs/BASELINES_AND_SOURCES.md. New method
     # key (not "fedfairgnn-nodp") so existing cached results are untouched;
     # only kept as the reported configuration if it's a genuine improvement.
-    "trustfedgnn-plus": dict(model="trustfedgnn", aggregator="bfwa", dp_enabled=False, server_calib=True),
+    "trustfedgnn-plus": dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, server_calib=True),
+
+    # --- FairShare-GNN (R1): FU-Shapley server aggregation, no self-report ---
+    # Same FSER+FTGD client backbone as TrustFedGNN; only the server aggregation
+    # rule changes (metadata ignored for weights). See incentive_mechanism_
+    # proposal.md / implementation_plan_and_ac_review.md.
+    "fairshare":        dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False),
+    "fairshare-robust": dict(model="trustfedgnn", aggregator="robust_fu_shapley", dp_enabled=False),
+    # GTG-Shapley-style utility-only ablation = FairShare with fu_alpha=0 (drops
+    # the fairness target); a free baseline (B4 in recommended_related_work).
+    "gtg-shapley":      dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, fu_alpha=0.0),
+    # CGSV (Xu et al., NeurIPS 2021): cosine-gradient SV on standard GCN backbone, no server D_val.
+    "cgsv":             dict(model="gcn", aggregator="cgsv", local_fairness=False, dp_enabled=False),
 }
 
 # robust aggregators to sweep in the Byzantine study (backbone = ours)

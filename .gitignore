@@ -229,3 +229,6 @@ manuscript/*.blg
 manuscript/*.out
 manuscript/*.log
 results_matrix.log
+# Fetch artifacts pulled back from the Colab VM (contain results/, regenerated)
+out.tgz
+*.tgz

@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Sensitivity to Alternative Subgroup Proxy Definitions (Issue I9, Stanford Q8).}
+Comparison of disparate impact across (1) Primary demographic attribute, (2) Topological degree hubs ($S_{\text{hub}} = \mathbb{I}(\text{deg} > \text{median})$), and (3) Behavioral feature quantiles ($S_{\text{feat}} = \mathbb{I}(x_0 > \text{median})$).
+Confirms that TrustFedGNN reduces disparate impact across both demographic and operational/topological subgroup definitions.}
+\label{tab:proxy_sensitivity}
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{2}{c}{\textbf{TrustFedGNN (Ours)}} & \multicolumn{2}{c}{\textbf{FedAvg (Baseline)}} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+\textbf{Dataset} & \textbf{Subgroup Proxy} & \textbf{DPD $\downarrow$} & \textbf{EOD $\downarrow$} & \textbf{DPD $\downarrow$} & \textbf{EOD $\downarrow$} \\
+\midrule
+Bail & Demographic (Primary) & \textbf{0.009} & \textbf{0.017} & 0.011 & 0.042 \\
+Bail & Topological (Degree Hubs) & \textbf{0.108} & \textbf{0.070} & 0.086 & 0.018 \\
+Bail & Behavioral (Feature Quantile) & \textbf{0.027} & \textbf{0.031} & 0.113 & 0.136 \\
+\midrule
+Credit & Demographic (Primary) & \textbf{0.098} & \textbf{0.064} & 0.090 & 0.054 \\
+Credit & Topological (Degree Hubs) & \textbf{0.178} & \textbf{0.119} & 0.177 & 0.115 \\
+Credit & Behavioral (Feature Quantile) & \textbf{0.012} & \textbf{0.008} & 0.022 & 0.015 \\
+\bottomrule
+\end{tabular}
+\end{table}

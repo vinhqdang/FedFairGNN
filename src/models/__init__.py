@@ -24,6 +24,8 @@ def build_model(name: str, in_channels: int, config=None):
             num_layers=config.num_layers,
             heads=config.heads,
             dropout=config.dropout,
+            beta_init=getattr(config, "beta_init", 0.5),
+            fser_mode=getattr(config, "fser_mode", "sub"),
         )
     return _REGISTRY[name](**kwargs)
 
