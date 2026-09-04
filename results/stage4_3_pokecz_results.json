@@ -2661,5 +2661,20 @@
         "wall_clock_s": 36.803207705000204
       }
     ]
+  },
+  "_STALENESS_NOTICE": {
+    "status": "PARTIALLY STALE -- see per-key notes below before citing",
+    "reason": "Commit 96d0086 (and the trainer.py wiring immediately after it) fixed two defects that change what a TrustFedGNN/FTGD run actually computes: (1) BFWA's Frank-Wolfe loop previously made the fairness budget tau have ZERO effect on aggregation weights at any setting used anywhere in the repo; (2) the DP-active FTGD path now computes its released group means from a second, sensitive-attribute-blind forward pass (dp_statistic_s_blind, default True) instead of the same s-aware pass used for the task loss -- this changes the actual fairness gradient (and hence the trained model) for ANY run with model='trustfedgnn' (or FairSIN/FaVGNN), dp_enabled=True, dp_mode='ftgd'. A third, much smaller change (replacing a 1e-12 numerical guard with an explicit skip-and-count branch in the gradient-surgery projection) touches every run that takes the dp_mode='ftgd' code path at all, DP-enabled or not, by a ~1e-12-relative amount.",
+    "per_result_impact": {
+      "material (re-run needed for a faithful number)": "any row/arm with model='trustfedgnn' (or FairSIN/FaVGNN) AND dp_enabled=True AND dp_mode='ftgd' (the published method's own default config) -- affected by BOTH the s-blind release change and the tolerance-branch change",
+      "negligible (~1e-12 relative, from the tolerance-branch change only)": "any row/arm with dp_mode='ftgd' but EITHER dp_enabled=False (no noise, so the s-blind gate never fires) OR a non-s-dependent backbone (GCN/GAT/FairGNN) -- e.g. this file's 'ours-nofser' column",
+      "unaffected": "any row/arm that never reaches dp_mode='ftgd' at all (dp_mode resolves to 'none' when dp_enabled=False and dp_mode='auto', or the arm explicitly sets a different dp_mode/aggregator), and any aggregator other than 'bfwa'/'robust_bfwa' for the BFWA-specific fix"
+    },
+    "action_required": "Re-run any 'material' row on the current code before citing its number in the manuscript. The 'negligible' rows are very likely fine as-is but were not independently re-verified bit-for-bit. See git log 96d0086 and the trainer.py commit immediately after it for the exact diffs.",
+    "this_file_specifically": {
+      "fedfairgnn row": "MATERIAL",
+      "ours-nofser row": "negligible (Fix C only)",
+      "every other method row": "unaffected (dp_enabled=False)"
+    }
   }
 }

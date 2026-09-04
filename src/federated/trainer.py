@@ -219,7 +219,8 @@ class FederatedTrainer:
         if self.byzantine_ids and self.cfg.attack not in ("none", "label_flip"):
             updates, metas = poison_updates(
                 self.cfg.attack, updates, metas, self.byzantine_ids,
-                self.cfg.attack_intensity)
+                self.cfg.attack_intensity,
+                ipm_epsilon=self.cfg.ipm_epsilon, alie_z=self.cfg.alie_z)
 
         # FairShare-GNN: build the server target gradient on the pooled client
         # validation nodes (current global model), then let the FU-Shapley rule
@@ -261,7 +262,8 @@ class FederatedTrainer:
             fu_alpha=self.cfg.fu_alpha, fu_beta_ema=self.cfg.fu_ema_beta,
             fu_normalize=self.cfg.fu_normalize, fu_score=self.cfg.fu_score,
             fu_warmup=fu_warmup, fu_grad_clip=self.cfg.fu_grad_clip,
-            fu_warmup_agg=self.cfg.fu_warmup_agg)
+            fu_warmup_agg=self.cfg.fu_warmup_agg,
+            bfwa_persist_dual=self.cfg.bfwa_persist_dual)
 
         if self.cfg.server_calib and (t + 1) >= self.cfg.rounds * self.cfg.server_calib_start_frac:
             g0 = self._server_calibration_grad()
@@ -273,10 +275,24 @@ class FederatedTrainer:
         rec = {"round": t + 1, **{f"g_{k}": v for k, v in self.evaluate_global().items()}}
         rec["agg_weights"] = info.get("weights")
         for key in ("phi_raw", "phi_util", "phi_fair", "phi_ema", "fu_warmup", "kept",
-                    "fu_fallback", "phi_nan_frac", "n_clipped",
-                    "g_norm_median", "g_norm_max", "phi_norm"):
+                    "fu_fallback", "phi_nan_frac", "n_clipped", "n_null",
+                    "g_norm_median", "g_norm_max", "phi_norm",
+                    # BFWA diagnostics: fulfils the manuscript's promise to report
+                    # the per-round constraint residual and feasibility rate (see
+                    # bfwa_weights' docstring in aggregation.py) -- neither was
+                    # computed anywhere before that fix.
+                    "bfwa_mu", "constraint_residual", "feasible",
+                    "constraint_residual_preclamp", "feasible_preclamp"):
             if key in info:
                 rec[key] = info[key]
+        # FTGD: how many local steps this round degraded to plain weighted-sum
+        # training because ||g_fair|| fell below cfg.ftgd_min_fair_norm (see
+        # Client._gradient_surgery). Client-local by construction; pooled here
+        # rather than left client-side only, so it is visible in the same
+        # per-round record as everything else.
+        skips = [getattr(c, "_ftgd_skipped_projection_count", 0) for c in self.clients]
+        if any(skips):
+            rec["ftgd_skipped_projection_total"] = sum(skips)
         return rec
 
     def run(self, verbose=False) -> Dict:

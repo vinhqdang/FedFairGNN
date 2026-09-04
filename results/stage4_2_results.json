@@ -148,5 +148,9 @@
       0.1663607954978943,
       0.06486750394105911
     ]
+  },
+  "_STALENESS_NOTICE": {
+    "status": "UNAFFECTED by the 96d0086 / trainer.py fixes",
+    "reason": "Every config in this file sets dp_enabled=False without an explicit dp_mode override, so dp_mode resolves via 'auto' to 'none' -- the FTGD gradient-surgery path (_ftgd_step) is never reached, so neither the s-blind release change nor the tolerance-branch change applies. No aggregator here is 'bfwa'/'robust_bfwa' either."
   }
 }

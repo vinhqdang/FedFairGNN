@@ -22,7 +22,15 @@ METHODS = {
     "fairsin":      dict(model="fairsin", aggregator="fedavg", local_fairness=False, dp_enabled=False),
 
     # --- federated fair-GNN peer ---
-    "f2gnn":        dict(model="gat", aggregator="f2gnn", local_fairness=True, dp_enabled=False),
+    # F2GNN's aggregation weight has a data-balance term built from each
+    # client's group1_rate (aggregation.py's "f2gnn" branch); report_group_rate
+    # defaults to False (the privacy-conscious choice for OUR method), which
+    # would silently flatten that term to a constant and degrade this baseline
+    # to its model-fairness term alone. F2GNN claims no DP protection of its
+    # own (dp_enabled=False here), so there is no privacy claim this weakens --
+    # set it explicitly so the baseline runs as designed.
+    "f2gnn":        dict(model="gat", aggregator="f2gnn", local_fairness=True, dp_enabled=False,
+                         report_group_rate=True),
 
     # --- 2026 competitors ---
     # FaVGNN (Wang & Jin, Information Fusion 2026): horizontal adaptation of the
@@ -66,7 +74,20 @@ METHODS = {
     # user-facing display name (PRETTY dict, manuscript) were renamed.
     "fedfairgnn":       dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd"),
     "fedfairgnn-nodp":  dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, dp_mode="ftgd"),
+    # "ours-nofser" swaps the WHOLE backbone (model="gat"), which removes FSER
+    # *and* TrustFedGNN's BatchNorm/residual/skip-concat scaffold at once -- any
+    # gain it shows is attributed to FSER when part of it is architecture. Kept
+    # only because its exp_name is baked into already-logged results (see the
+    # note above); do not use it for a new FSER-attribution claim.
     "ours-nofser":      dict(model="gat",         aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd"),
+    # The faithful w/o-FSER ablation: same backbone (BN, residual, skip-concat
+    # all unchanged), FSER's beta held at 0 and non-trainable (freeze_beta), so
+    # FSERLayer computes EXACTLY plain GAT attention (see
+    # tests/test_fser_init.py::test_frozen_zero_beta_is_exactly_plain_gat_attention)
+    # while every other architectural difference from the baselines is isolated
+    # out. Use this, not "ours-nofser", for any claim attributing a result to FSER.
+    "ours-nofser-true": dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd",
+                             beta_init=0.0, freeze_beta=True),
     "ours-nobfwa":      dict(model="trustfedgnn", aggregator="fedavg", dp_enabled=False),
     "ours-robust":      dict(model="trustfedgnn", aggregator="robust_fu_shapley", dp_enabled=True, dp_mode="ftgd"),
     # + EquFL-style server-side fairness calibration (Yu et al. 2026) stacked

@@ -90,10 +90,16 @@ def _utility_bucket(delta_auc: float) -> str:
 
 
 def _utility_cell(delta_auc: float) -> str:
-    """Human-readable utility cost: the bucket plus the number behind it."""
-    if delta_auc <= 0:
-        return f"None ({delta_auc:+.3f} AUC)"
-    return f"{_utility_bucket(delta_auc)} ({-delta_auc:+.3f} AUC)"
+    """Human-readable utility cost: the bucket plus the number behind it.
+
+    The parenthesised figure is always the signed CHANGE in global test AUC
+    (negative = utility lost), so a mitigation that happens to help reads
+    "None (+0.004 AUC)" rather than borrowing the cost's sign.
+    """
+    change = -delta_auc
+    if change == 0:            # avoid printing "-0.000"
+        change = 0.0
+    return f"{_utility_bucket(delta_auc)} ({change:+.3f} AUC)"
 
 
 def _base_cfg(dataset, seed, rounds, num_clients, **over) -> ExperimentConfig:

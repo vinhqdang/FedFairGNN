@@ -13,6 +13,7 @@ Outputs:
 """
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import os
@@ -99,13 +100,74 @@ def analyze_bfwa_slack(dataset="bail", seeds=(42, 43, 44), epsilons=(2.0, 4.0, 8
     return summary_by_eps
 
 
+
+# --------------------------------------------------------------------------- #
+# Caption text, derived from the measurement
+# --------------------------------------------------------------------------- #
+# The caption used to assert "a negligible slack of $<0.003$ ($<6\%$ of $\tau$)"
+# as a fixed string, printed verbatim whatever the run produced -- i.e. a
+# conclusion written before the experiment. Everything below is computed from
+# the results dict instead. Cut-offs, stated so a reader can disagree with them
+# rather than having to reverse-engineer them:
+#
+#   slack / tau  <  10%  -> "negligible"  (well inside the budget's own slack)
+#              <  50%  -> "moderate"    (eats a noticeable share of the budget)
+#              >= 50%  -> "substantial" (the reported constraint is no longer
+#                                        a reliable proxy for the true one)
+SLACK_BUCKETS = ((10.0, "negligible"), (50.0, "moderate"), (float("inf"), "substantial"))
+
+
+def slack_bucket(pct_of_tau: float) -> str:
+    """Qualitative label for a measured slack, as a percentage of tau."""
+    for hi, name in SLACK_BUCKETS:
+        if pct_of_tau < hi:
+            return name
+    return "substantial"                                  # pragma: no cover
+
+
+def _slack_caption_sentence(results: dict, tau: float) -> str:
+    """Sentence describing the slack at the *largest* epsilon tested.
+
+    The largest epsilon is the weakest-privacy / lowest-noise setting, i.e. the
+    deployed operating point and the most favourable case for the method; if
+    the slack is not negligible there it is not negligible anywhere.
+    """
+    if not results:
+        return "No slack measurements were produced by this run."
+    eps_key = max(results, key=lambda k: float(k))
+    v = results[eps_key]
+    pct = 100.0 * v["slack_ratio_of_tau"]
+    word = slack_bucket(pct)
+    if word == "negligible":
+        implication = ("so FTGD privacy does not destabilise the BFWA dual "
+                       "iteration at this operating point")
+    elif word == "moderate":
+        implication = ("so the reported constraint value carries a non-trivial "
+                       "DP-induced error that the budget $\\tau$ must absorb")
+    else:
+        implication = ("so at this noise level the reported disparity is no longer "
+                       "a reliable stand-in for the true one, and $\\tau$ must be "
+                       "tightened (or the privacy budget loosened) for the "
+                       "constraint to mean what it says")
+    return (f"At the weakest-privacy point tested ($\\epsilon = {eps_key}$), DP noise "
+            f"induces a {word} slack of ${v['mean_slack']:.4f} \\pm "
+            f"{v['std_slack']:.4f}$ (${pct:.1f}\\%$ of $\\tau = {tau}$), "
+            f"{implication}.")
+
+
 def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
-                              out_tex="manuscript/tables/revision/bfwa_slack.tex"):
+                              out_tex="manuscript/tables/revision/bfwa_slack.tex",
+                              dataset="bail", seeds=(42, 43),
+                              epsilons=(2.0, 4.0, 8.0), rounds=20,
+                              num_clients=10, tau=0.05):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 
-    print("[*] Running BFWA DP-induced disparity slack analysis on Bail...", flush=True)
-    results = analyze_bfwa_slack(dataset="bail", seeds=(42, 43), epsilons=(2.0, 4.0, 8.0), rounds=20, num_clients=10, tau=0.05)
+    print(f"[*] Running BFWA DP-induced disparity slack analysis on {dataset}...", flush=True)
+    results = analyze_bfwa_slack(dataset=dataset, seeds=seeds, epsilons=epsilons,
+                                 rounds=rounds, num_clients=num_clients, tau=tau)
+    for v in results.values():
+        v["slack_bucket"] = slack_bucket(100.0 * v["slack_ratio_of_tau"])
 
     with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
@@ -117,8 +179,11 @@ def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
         "\\centering",
         "\\small",
         "\\caption{\\textbf{BFWA Disparity Constraint Slack Induced by Differential Privacy Noise.}",
-        "Empirical slack between reported noisy disparity and true underlying disparity $\\Delta_{\\tau} = |\\sum_k w_k \\widehat{\\text{DPD}}_k - \\sum_k w_k \\text{DPD}_k|$ under budget $\\tau = 0.05$ (Bail, $n=10$ clients, 20 rounds).",
-        "At the deployed operating point $\\epsilon=8.0$, DP noise induces a negligible slack of $<0.003$ ($<6\\%$ of $\\tau$), proving that FTGD privacy does not destabilize BFWA dual convergence.}",
+        "Empirical slack between reported noisy disparity and true underlying disparity "
+        "$\\Delta_{\\tau} = |\\sum_k w_k \\widehat{\\text{DPD}}_k - \\sum_k w_k \\text{DPD}_k|$ "
+        f"under budget $\\tau = {tau}$ ({dataset.capitalize()}, $n={num_clients}$ clients, "
+        f"{rounds} rounds, {len(seeds)} seed" + ("s" if len(seeds) != 1 else "") + ").",
+        _slack_caption_sentence(results, tau) + "}",
         "\\label{tab:bfwa_slack}",
         "\\begin{tabular}{lcccc}",
         "\\toprule",
@@ -142,5 +207,22 @@ def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
     print(f"[+] Saved LaTeX BFWA slack table to {out_tex}")
 
 
+def main():
+    ap = argparse.ArgumentParser(description="BFWA DP-induced constraint slack.")
+    ap.add_argument("--dataset", default="bail")
+    ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43])
+    ap.add_argument("--epsilons", type=float, nargs="+", default=[2.0, 4.0, 8.0])
+    ap.add_argument("--rounds", type=int, default=20)
+    ap.add_argument("--num-clients", type=int, default=10)
+    ap.add_argument("--tau", type=float, default=0.05)
+    ap.add_argument("--out-json", default="results/revision/bfwa_slack.json")
+    ap.add_argument("--out-tex", default="manuscript/tables/revision/bfwa_slack.tex")
+    a = ap.parse_args()
+    run_bfwa_slack_experiment(out_json=a.out_json, out_tex=a.out_tex,
+                              dataset=a.dataset, seeds=tuple(a.seeds),
+                              epsilons=tuple(a.epsilons), rounds=a.rounds,
+                              num_clients=a.num_clients, tau=a.tau)
+
+
 if __name__ == "__main__":
-    run_bfwa_slack_experiment()
+    main()

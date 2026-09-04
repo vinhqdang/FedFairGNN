@@ -914,5 +914,9 @@
         0.08398408591747283
       ]
     }
-  ]
+  ],
+  "_STALENESS_NOTICE": {
+    "status": "UNAFFECTED by the 96d0086 / trainer.py fixes",
+    "reason": "Produced via method='fairshare' (dp_enabled=False, dp_mode resolves to 'none' via 'auto') -- the FTGD path is never reached. This file's own REFUTED-vs-'confirms' caption mismatch was fixed separately (task #7); the underlying numbers (r=0.7436, sign agreement=73.6%, etc.) are unaffected by anything in this round of fixes."
+  }
 }

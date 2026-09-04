@@ -65,6 +65,16 @@ def alie_z_from_counts(n: int, f: int) -> float:
     the safe perturbation points the other way; this is the paper's formula
     behaving as intended, not a sign bug.)
 
+    Practical consequence worth knowing before reading a robustness table: the
+    calibrated z is small, and sometimes zero or negative, for the small client
+    populations used in cross-silo FL. At ``n = 10, f = 2`` (the repo's 20%
+    Byzantine default) the closed form gives exactly ``z = 0``, i.e. the honest
+    ALIE attacker may not deviate from the benign mean at all without becoming
+    detectable -- calibrated ALIE is genuinely powerless at that operating
+    point, which the old hardcoded ``z = 1.5`` concealed by launching a
+    different, easily-screened attack instead. Set ``cfg.alie_z`` explicitly to
+    study a deliberately over-aggressive attacker.
+
     Returns 0.0 for degenerate inputs (``n <= 0`` or ``f >= n``).
     """
     n = int(n)

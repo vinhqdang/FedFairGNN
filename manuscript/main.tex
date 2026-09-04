@@ -901,8 +901,10 @@ pooled global test set. Because German is small ($1{,}000$ labelled nodes) and
 consequently high-variance, we run \textbf{10 seeds} there; the mid-size
 datasets use 3--5 seeds and the large ones 2--3 (stated per table). We add
 paired Wilcoxon signed-rank tests between TrustFedGNN and each baseline over
-shared seeds (Table~\ref{tab:significance}) so that differences are reported as
-significant or not, rather than by boldfacing a noisy mean. Unless stated, DP
+shared seeds (reported in the discussion below, with the 10-seed Pokec-z/Credit
+comparisons tabulated in Table~\ref{tab:statistical_significance}) so that
+differences are reported as significant or not, rather than by boldfacing a
+noisy mean. Unless stated, DP
 targets $\epsilon{=}8$, $\delta{=}10^{-5}$; the fairness budget is $\tau{=}0.05$.
 Every table and figure is regenerated from logged runs by
 \texttt{experiments/report.py}.
@@ -921,7 +923,7 @@ their design predicts. Aggregation-level methods (FairFed, F\textsuperscript{2}G
 and representation-level methods (FairGNN, FairSIN) both reduce $\dpd$ and
 $\eod$ appreciably. We are explicit that TrustFedGNN does \emph{not} win every
 cell---but we are equally careful not to concede gaps that are merely noise, and
-the significance tests (Table~\ref{tab:significance}) are decisive on this point.
+the paired significance tests below are decisive on this point.
 On German, once evaluated over \textbf{10 seeds} rather than three, the picture
 changes materially: TrustFedGNN's DPD ($0.079\!\pm\!0.059$) is
 \emph{statistically indistinguishable} from FedAvg-GAT ($0.080\!\pm\!0.060$,
@@ -964,21 +966,25 @@ statistic (Section~\ref{sec:ftgd}) and, in the robust variant, resilience to
 poisoning---axes the specialised fairness baselines are not built for and we do
 not attack them on.
 
-\begin{table}[t]\centering
-\caption{Paired Wilcoxon signed-rank tests (TrustFedGNN vs.\ each baseline over
-shared seeds): $p$-values, $^{*}$ marks $p<0.05$. ``--'' where fewer than five
-shared seeds are available (Credit/Elliptic remain at 2--3 seeds by cost). Note
-the Wilcoxon floor: at $n{=}5$ (Bail, Pokec) the smallest attainable $p$ is
-$0.0625$, so a uniform $0.06$ indicates our method wins on \emph{all five} paired
-seeds, not a weak effect. On German (10 seeds) TrustFedGNN's DPD is \emph{not}
-significantly different from the non-fair backbone or most fair baselines; its
-AUC is significantly higher than the other (collapsing) privacy methods and lower
-than the non-private ones. On Bail its AUC beats every baseline on all seeds
-while its DPD ties the fairest non-collapsed methods; on Pokec it beats the
-backbone on \emph{both} axes on all seeds.}
-\label{tab:significance}
+The paired significance analysis spans two granularities, reported
+separately rather than in one table. For German (10 seeds) and Bail/Pokec (5
+seeds each) we report per-baseline paired Wilcoxon signed-rank $p$-values
+directly in the discussion above and below; ``--'' where fewer than five
+shared seeds are available (Credit/Elliptic remain at 2--3 seeds by cost).
+Note the Wilcoxon floor: at $n{=}5$ (Bail, Pokec) the smallest attainable $p$
+is $0.0625$, so a uniform $0.06$ indicates our method wins on \emph{all five}
+paired seeds, not a weak effect. On German (10 seeds) TrustFedGNN's DPD is
+\emph{not} significantly different from the non-fair backbone or most fair
+baselines; its AUC is significantly higher than the other (collapsing)
+privacy methods and lower than the non-private ones. On Bail its AUC beats
+every baseline on all seeds while its DPD ties the fairest non-collapsed
+methods; on Pokec it beats the backbone on \emph{both} axes on all seeds.
+Table~\ref{tab:statistical_significance} tabulates the second, independent
+analysis at a larger seed count: 10-seed Pokec-z and Credit SOTA comparisons
+with Cohen's $d_z$ and bootstrap-CI-backed Wilcoxon tests under
+Holm--Bonferroni correction across baselines.
+
 {\footnotesize\setlength{\tabcolsep}{4pt}\input{tables/significance.tex}}
-\end{table}
 
 The five 2025--2026 reimplementations (Table~\ref{tab:main-auc}--\ref{tab:main-eod},
 between the F$^2$GNN-family rows and the DP rule) confirm this pattern rather
@@ -1016,8 +1022,9 @@ industrial-size graph}, not a demographic-fairness guarantee.
 \begin{table}[t]\centering\small
 \caption{Utility (AUC-ROC, higher is better). Mean\,$\pm$\,std over seeds:
 \textbf{10} on the small/high-variance German, \textbf{5} on Bail and Pokec, and
-2--3 on the larger Credit/Elliptic (see Table~\ref{tab:significance} for paired
-tests). Best per column in bold. TrustFedGNN is the only method that is
+2--3 on the larger Credit/Elliptic (see Section~\ref{sec:exp-main} for the
+paired Wilcoxon discussion, and Table~\ref{tab:statistical_significance} for
+the 10-seed Pokec-z/Credit comparisons). Best per column in bold. TrustFedGNN is the only method that is
 fair \emph{and} private (methods above the rule are non-private).
 $^{\ast}$FaVGNN is a horizontal adaptation of a vertical-FL method.
 FairGFL/FedGraph-Fair/PUFFLE/FedFACT/PoPETs'25 are 2025--2026 reimplementations
@@ -1516,9 +1523,10 @@ input rather than assumed. (4)~\emph{Statistical power is uneven across studies,
 Significance testing \emph{is} reported where seeds permit: paired Wilcoxon
 signed-rank tests over shared seeds for the main comparison on German (10 seeds),
 Bail and Pokec (5 seeds each, where $p{=}0.0625$ is the Wilcoxon floor)
-(Table~\ref{tab:significance}), and Wilcoxon tests with Cohen's $d_z$ and
-bootstrap CIs under Holm--Bonferroni correction for the 10-seed Pokec-z and
-Credit SOTA benchmarks (same table block). It is
+(reported in Section~\ref{sec:exp-main}), and Wilcoxon tests with Cohen's $d_z$
+and bootstrap CIs under Holm--Bonferroni correction for the 10-seed Pokec-z and
+Credit SOTA benchmarks (Table~\ref{tab:statistical_significance}, a separate,
+independent analysis at a larger seed count). It is
 \emph{not} available for the remaining studies, which are run at one to three
 seeds by cost: the Credit/Elliptic cells of the main tables ($2$--$3$ seeds), the
 $n{=}3$ ablation suite (Table~\ref{tab:ablation_suite}), and the single-seed

@@ -20,7 +20,7 @@ import math
 import os
 import sys
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -66,14 +66,15 @@ def craft_stealth_poison_updates(updates: List[torch.Tensor], metas: List[dict],
     return updates, metas
 
 
-def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rounds: int = 15, device: str = "cpu") -> dict:
+def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rounds: int = 15,
+                          device: str = "cpu", dataset: str = "bail",
+                          num_clients: int = 10) -> dict:
     t0 = time.perf_counter()
-    num_clients = 10
     num_byz = int(round(byz_ratio * num_clients))
     byz_indices = set(range(num_byz))
 
     cfg = ExperimentConfig.canonical(
-        dataset="bail",
+        dataset=dataset,
         seed=seed,
         num_clients=num_clients,
         rounds=rounds,
@@ -106,13 +107,19 @@ def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rou
         # Craft stealth updates
         updates, metas = craft_stealth_poison_updates(updates, metas, list(byz_indices), rho=0.85)
 
-        # Aggregate
+        # Aggregate. `state=trainer._agg_state` threads stateful-aggregator state
+        # (BFWA's dual multiplier, fedgraphfair's lambda, ...) across rounds the
+        # same way FederatedTrainer._round does -- omitting it silently restarts
+        # BFWA's dual every round, which is exactly the bug that made tau inert
+        # everywhere else in the repo (see aggregation.bfwa_weights).
         g_agg, info = aggregate(
             cfg.aggregator, updates, metas,
             tau=cfg.fairness_budget,
             fw_iters=cfg.fw_iterations,
             dual_step=cfg.dual_step_size,
             krum_f=cfg.krum_f,
+            state=trainer._agg_state,
+            bfwa_persist_dual=cfg.bfwa_persist_dual,
         )
 
         trainer.global_flat = trainer.global_flat - g_agg
@@ -161,14 +168,124 @@ def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rou
     }
 
 
+
+# --------------------------------------------------------------------------- #
+# Caption text, derived from the measurement
+# --------------------------------------------------------------------------- #
+# The final caption sentence used to be a fixed string asserting that "Krum and
+# Median retain robust utility up to their theoretical breakdown limits ... while
+# BFWA-based methods suffer fairness degradation" -- an interpretation written
+# before the runs and printed regardless of what they produced. It is now
+# derived from the records. Cut-offs, stated so they can be argued with:
+#
+#   |Delta AUC| from the lowest to the highest corruption ratio
+#       < 0.02  -> "holds"      (inside seed noise for these datasets)
+#       < 0.10  -> "degrades"
+#      >= 0.10  -> "breaks down"
+#   the same three bands, on DPD, decide whether fairness held.
+AUC_DROP_BANDS = ((0.02, "holds"), (0.10, "degrades"), (float("inf"), "breaks down"))
+DPD_RISE_BANDS = ((0.02, "holds"), (0.10, "degrades"), (float("inf"), "breaks down"))
+
+
+def _band(value: float, bands) -> str:
+    for hi, name in bands:
+        if value < hi:
+            return name
+    return bands[-1][1]                                   # pragma: no cover
+
+
+def summarise_breakdown(records: List[dict], aggregators: List[str],
+                        byz_ratios: List[float]) -> Dict[str, dict]:
+    """Per-aggregator change from the lowest to the highest corruption ratio."""
+    lo, hi = min(byz_ratios), max(byz_ratios)
+    out = {}
+    for agg in aggregators:
+        def at(r):
+            m = [x for x in records
+                 if x["aggregator"] == agg and abs(x["byz_ratio"] - r) < 1e-4]
+            if not m:
+                return None
+            w = [x["w_adv"] for x in m if not math.isnan(x["w_adv"])]
+            return (float(np.mean([x["auc"] for x in m])),
+                    float(np.mean([x["dpd_hard"] for x in m])),
+                    float(np.mean(w)) if w else float("nan"))
+        a, b = at(lo), at(hi)
+        if a is None or b is None:
+            continue
+        d_auc = a[0] - b[0]          # positive = utility lost as f grows
+        d_dpd = b[1] - a[1]          # positive = fairness worsened as f grows
+        out[agg] = {
+            "auc_low": a[0], "auc_high": b[0], "auc_drop": d_auc,
+            "dpd_low": a[1], "dpd_high": b[1], "dpd_rise": d_dpd,
+            "w_adv_high": b[2],
+            "utility_verdict": _band(abs(d_auc), AUC_DROP_BANDS),
+            "fairness_verdict": _band(abs(d_dpd), DPD_RISE_BANDS),
+        }
+    return out
+
+
+def _breakdown_caption_sentence(summary: Dict[str, dict], byz_ratios: List[float]) -> str:
+    """Interpretive sentence, assembled from the measured breakdown summary."""
+    if not summary:
+        return "No aggregator produced a complete corruption sweep in this run."
+    lo, hi = min(byz_ratios), max(byz_ratios)
+    held = [a for a, v in summary.items() if v["utility_verdict"] == "holds"]
+    lost = [a for a, v in summary.items() if v["utility_verdict"] != "holds"]
+    # direction matters: dpd_rise > 0 means disparity got WORSE as f grew.
+    unfair = [a for a, v in summary.items()
+              if v["fairness_verdict"] != "holds" and v["dpd_rise"] > 0]
+    fairer = [a for a, v in summary.items()
+              if v["fairness_verdict"] != "holds" and v["dpd_rise"] < 0]
+
+    def names(xs):
+        xs = [x.replace("_", "\\_") for x in xs]
+        if len(xs) == 1:
+            return xs[0]
+        return ", ".join(xs[:-1]) + " and " + xs[-1]
+
+    parts = []
+    if held:
+        parts.append(f"utility holds (within $0.02$ AUC) for {names(held)}")
+    if lost:
+        worst = max(lost, key=lambda a: abs(summary[a]["auc_drop"]))
+        parts.append(
+            f"utility {summary[worst]['utility_verdict']} for {names(lost)} "
+            f"(worst: {worst.replace('_', chr(92) + chr(92) + '_')}, "
+            f"${summary[worst]['auc_drop']:+.3f}$ AUC)")
+    if unfair:
+        worst_f = max(unfair, key=lambda a: summary[a]["dpd_rise"])
+        parts.append(
+            f"disparity worsens for {names(unfair)} "
+            f"(worst: {worst_f.replace('_', chr(92) + chr(92) + '_')}, "
+            f"DPD ${summary[worst_f]['dpd_rise']:+.3f}$)")
+    else:
+        parts.append("no aggregator shows a disparity increase above $0.02$")
+    if fairer:
+        best_f = min(fairer, key=lambda a: summary[a]["dpd_rise"])
+        parts.append(
+            f"disparity in fact falls for {names(fairer)} "
+            f"(largest: {best_f.replace('_', chr(92) + chr(92) + '_')}, "
+            f"DPD ${summary[best_f]['dpd_rise']:+.3f}$), which at a higher "
+            "corruption ratio reflects the attack flattening predictions rather "
+            "than the defence improving")
+
+    return (f"Measured from $f/K = {lo}$ to $f/K = {hi}$: " + "; ".join(parts) + ". "
+            "Verdicts use fixed thresholds on the measured change "
+            "($<0.02$ holds, $<0.10$ degrades, otherwise breaks down); "
+            "they are read off this run, not assumed.")
+
+
 def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results.json",
-                            out_tex="manuscript/tables/revision/adaptive_poisoner.tex"):
+                            out_tex="manuscript/tables/revision/adaptive_poisoner.tex",
+                            aggregators=("fedavg", "bfwa", "krum", "median", "robust_bfwa"),
+                            byz_ratios=(0.1, 0.2, 0.3, 0.4), seeds=(42,), rounds=15,
+                            dataset="bail"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 
-    aggregators = ["fedavg", "bfwa", "krum", "median", "robust_bfwa"]
-    byz_ratios = [0.1, 0.2, 0.3, 0.4]
-    seeds = [42]
+    aggregators = list(aggregators)
+    byz_ratios = list(byz_ratios)
+    seeds = list(seeds)
 
     records = []
     total = len(aggregators) * len(byz_ratios) * len(seeds)
@@ -181,12 +298,16 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
             for s in seeds:
                 idx += 1
                 print(f"[{idx}/{total}] RUNNING: agg={agg} | ratio={ratio} | seed={s}...", flush=True)
-                out = evaluate_adaptive_run(agg, ratio, seed=s, rounds=15)
+                out = evaluate_adaptive_run(agg, ratio, seed=s, rounds=rounds,
+                                            dataset=dataset)
                 records.append(out)
                 print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, w_adv={out['w_adv']:.3f} ({out['wall_clock_s']:.1f}s)", flush=True)
                 with open(out_json, "w") as f:
                     json.dump(records, f, indent=2)
 
+    summary = summarise_breakdown(records, aggregators, byz_ratios)
+    with open(out_json.replace(".json", "_breakdown_summary.json"), "w") as f:
+        json.dump(summary, f, indent=2)
     print(f"[+] Saved adaptive poisoner JSON to {out_json}")
 
     # Generate summary LaTeX table
@@ -194,15 +315,20 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
         "\\begin{table}[t]",
         "\\centering",
         "\\small",
-        "\\caption{\\textbf{Adaptive Stealth Poisoning Breakdown Point Analysis (Bail Recidivism).}",
+        "\\caption{\\textbf{Adaptive Stealth Poisoning Breakdown Point Analysis "
+        f"({dataset.capitalize()}).}}",
         "Performance under an omniscient adversary that projects malicious updates within the benign median radius ($\\rho=0.85$) while falsifying $\\widehat{\\text{DPD}} = 0.0$.",
-        "Reports AUC / DPD across corruption ratios $f/K \\in \\{0.1, 0.2, 0.3, 0.4\\}$.",
-        "While Krum and Median retain robust utility up to their theoretical breakdown limits ($f < 0.5$), BFWA-based methods suffer fairness degradation when stealth updates evade geometric screening, delineating the exact threat boundary of metadata-driven aggregation.}",
+        "Reports AUC / DPD across corruption ratios $f/K \\in \\{"
+        + ", ".join(f"{r:g}" for r in byz_ratios) + "\\}$"
+        + f" over {len(seeds)} seed" + ("s" if len(seeds) != 1 else "") + ".",
+        _breakdown_caption_sentence(
+            summarise_breakdown(records, aggregators, byz_ratios), byz_ratios) + "}",
         "\\label{tab:adaptive_poisoner}",
-        "\\begin{tabular}{lcccc}",
+        "\\begin{tabular}{l" + "c" * len(byz_ratios) + "}",
         "\\toprule",
-        "\\textbf{Aggregator} & \\textbf{$f=0.1$ (1/10)} & \\textbf{$f=0.2$ (2/10)} & \\textbf{$f=0.3$ (3/10)} & \\textbf{$f=0.4$ (4/10)} \\\\",
-        " & AUC / DPD & AUC / DPD & AUC / DPD & AUC / DPD \\\\",
+        "\\textbf{Aggregator} & " + " & ".join(
+            f"\\textbf{{$f={r:g}$ ({int(round(r * 10))}/10)}}" for r in byz_ratios) + " \\\\",
+        " & " + " & ".join(["AUC / DPD"] * len(byz_ratios)) + " \\\\",
         "\\midrule",
     ]
 
@@ -229,5 +355,21 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
     print(f"[+] Saved LaTeX adaptive poisoner table to {out_tex}")
 
 
+def main():
+    ap = argparse.ArgumentParser(description="Adaptive stealth fairness poisoner.")
+    ap.add_argument("--dataset", default="bail")
+    ap.add_argument("--aggregators", nargs="+",
+                    default=["fedavg", "bfwa", "krum", "median", "robust_bfwa"])
+    ap.add_argument("--byz-ratios", type=float, nargs="+", default=[0.1, 0.2, 0.3, 0.4])
+    ap.add_argument("--seeds", type=int, nargs="+", default=[42])
+    ap.add_argument("--rounds", type=int, default=15)
+    ap.add_argument("--out-json", default="results/revision/adaptive_poisoner_results.json")
+    ap.add_argument("--out-tex", default="manuscript/tables/revision/adaptive_poisoner.tex")
+    a = ap.parse_args()
+    run_adaptive_experiment(out_json=a.out_json, out_tex=a.out_tex,
+                            aggregators=a.aggregators, byz_ratios=a.byz_ratios,
+                            seeds=a.seeds, rounds=a.rounds, dataset=a.dataset)
+
+
 if __name__ == "__main__":
-    run_adaptive_experiment()
+    main()
