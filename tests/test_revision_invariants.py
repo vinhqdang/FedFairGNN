@@ -155,3 +155,110 @@ def test_robustness_screening_invariants():
         # Malicious client 0 with gaussian noise variance 10.0 should be excluded
         assert 0 not in r_entry["kept"], f"Malicious client 0 should be screened out, but kept set is {r_entry['kept']}"
 
+
+
+# --------------------------------------------------------------------------- #
+# BFWA: the fairness budget tau must actually bind, and the dual multiplier
+# must survive across communication rounds.
+#
+# Both were broken. `gamma = 2/(t+2)` evaluated at t=0 is 1.0, so the first
+# Frank-Wolfe step discarded the uniform iterate and jumped onto the vertex
+# argmin(-perf + mu*dpd); with mu=0 and a gradient that does not depend on w
+# (the objective is linear), every later step re-selected that same vertex.
+# `mu` was also a local restarted at 0 on every call, so it never reached the
+# value at which the vertex flips. Net effect: sweeping tau over
+# {1e6, 0.10, 0.05, 0.02, 0.0} at the shipped fw_iters=20 returned the
+# IDENTICAL weight vector every time -- tau had no effect anywhere in the repo.
+# --------------------------------------------------------------------------- #
+import torch
+
+from src.federated.aggregation import aggregate, bfwa_weights
+
+# A client set with a real utility/fairness trade-off: the most accurate client
+# (0) is also the most unfair, the second-most accurate (2) is middling, and the
+# fairest clients (1, 3) are the least accurate.
+_PERF = torch.tensor([0.90, 0.75, 0.85, 0.70, 0.80])
+_DPD = torch.tensor([0.20, 0.02, 0.15, 0.01, 0.10])
+_TAUS = [1e6, 0.10, 0.05, 0.02, 0.0]
+
+
+def test_bfwa_tau_actually_changes_the_weights():
+    """Different tau -> different weights at the shipped iteration budget."""
+    ws = [bfwa_weights(_PERF, _DPD, tau, iters=20, dual_step=0.1) for tau in _TAUS]
+    for i in range(len(ws) - 1):
+        assert not torch.allclose(ws[i], ws[i + 1], atol=1e-6), (
+            f"tau={_TAUS[i]} and tau={_TAUS[i+1]} gave identical weights "
+            f"{ws[i].tolist()} -- the fairness budget is not binding")
+    # ... and tightening the budget must move the achieved disparity DOWN.
+    gaps = [float(w.dot(_DPD)) for w in ws]
+    assert all(gaps[i] >= gaps[i + 1] - 1e-9 for i in range(len(gaps) - 1)), \
+        f"weighted DPD must be non-increasing as tau tightens, got {gaps}"
+    assert gaps[0] > gaps[-1] + 1e-3, \
+        f"tau=0 must buy a strictly smaller disparity than tau=1e6, got {gaps}"
+
+
+def test_bfwa_reports_constraint_residual_and_feasibility():
+    """The per-round residual/feasibility the manuscript promises to report."""
+    updates = [torch.randn(8) for _ in range(5)]
+    meta = [{"n": 100, "perf": float(p), "dpd": float(d), "loss": 1.0 - float(p)}
+            for p, d in zip(_PERF, _DPD)]
+    for method in ("bfwa", "robust_bfwa"):
+        _, info = aggregate(method, updates, meta, tau=0.05, fw_iters=20,
+                            dual_step=0.1, krum_f=1, state={})
+        for key in ("constraint_residual", "feasible",
+                    "constraint_residual_preclamp", "feasible_preclamp"):
+            assert key in info, f"{method} must report {key}"
+        w = torch.tensor(info["weights"])
+        # post-clamp residual is computed on the returned weights
+        assert abs(info["constraint_residual"] - (float(w.dot(_DPD)) - 0.05)) < 1e-5
+        assert info["feasible"] == (info["constraint_residual"] <= 0.0)
+        assert info["feasible_preclamp"] == (info["constraint_residual_preclamp"] <= 0.0)
+
+    # A budget nothing can violate is reported feasible; tau=0 with a strictly
+    # positive disparity everywhere cannot be.
+    _, loose = aggregate("bfwa", updates, meta, tau=1e6, state={})
+    _, tight = aggregate("bfwa", updates, meta, tau=0.0, state={})
+    assert loose["feasible"] is True and tight["feasible"] is False
+
+
+def test_bfwa_dual_persists_across_rounds():
+    """mu must accumulate across rounds through `state`, like fedgraphfair_lambda."""
+    updates = [torch.randn(8) for _ in range(5)]
+    meta = [{"n": 100, "perf": float(p), "dpd": float(d), "loss": 1.0 - float(p)}
+            for p, d in zip(_PERF, _DPD)]
+    kw = dict(tau=0.02, fw_iters=20, dual_step=0.1)
+
+    state = {}
+    persisted = [aggregate("bfwa", updates, meta, state=state, **kw)[1]
+                 for _ in range(2)]
+    assert "bfwa_mu" in state and state["bfwa_mu"] > 0.0
+    assert persisted[1]["bfwa_mu"] > persisted[0]["bfwa_mu"], \
+        "the dual multiplier must keep ascending across rounds"
+
+    independent = [aggregate("bfwa", updates, meta, state=None, **kw)[1]
+                   for _ in range(2)]
+    assert independent[0]["weights"] == independent[1]["weights"], \
+        "without state, every round restarts the dual from 0 (sanity)"
+    assert persisted[1]["weights"] != independent[1]["weights"], \
+        "persisting mu must change round 2's weights -- otherwise it does nothing"
+    # Carrying the dual over tightens the constraint, it does not loosen it.
+    assert persisted[1]["constraint_residual"] < independent[1]["constraint_residual"]
+
+    # bfwa_persist_dual=False reproduces the old reset-every-round behaviour.
+    off_state = {}
+    off = [aggregate("bfwa", updates, meta, state=off_state,
+                     bfwa_persist_dual=False, **kw)[1] for _ in range(2)]
+    assert "bfwa_mu" not in off_state
+    assert off[0]["weights"] == off[1]["weights"] == independent[1]["weights"]
+
+
+def test_bfwa_and_robust_bfwa_keep_separate_duals():
+    """The two rules solve different subproblems and must not share mu."""
+    updates = [torch.randn(8) for _ in range(5)]
+    meta = [{"n": 100, "perf": float(p), "dpd": float(d), "loss": 1.0 - float(p)}
+            for p, d in zip(_PERF, _DPD)]
+    state = {}
+    aggregate("bfwa", updates, meta, tau=0.02, state=state)
+    aggregate("robust_bfwa", updates, meta, tau=0.02, krum_f=1, state=state)
+    assert {"bfwa_mu", "robust_bfwa_mu"} <= set(state)
+    assert state["bfwa_mu"] != state["robust_bfwa_mu"]

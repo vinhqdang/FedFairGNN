@@ -7,16 +7,85 @@ audited place. Nothing here trains heavy by default -- callers pass tiny configs
 """
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
 
 from src.config import ExperimentConfig
+from src.data import load_dataset
+from src.data.partition import edge_retention, partition_summary
 from src.federated import FederatedTrainer
 from src.federated.client import load_flat_state
-from src.utils.metrics import all_metrics
+from src.utils.metrics import all_metrics, sensitive_homophily
 from experiments.methods import apply_method
+
+
+# --------------------------------------------------------------------------- #
+# Global-graph properties (measured BEFORE partitioning)
+# --------------------------------------------------------------------------- #
+# ``FederatedTrainer`` loads the dataset, optionally carves the server holdout
+# and immediately partitions it; it keeps ``clients_data`` and (maybe)
+# ``server_holdout``, but never a handle on the full pre-partition graph. Every
+# runner that wanted a graph-level property therefore guarded it behind
+# ``hasattr(trainer, "global_data")`` -- an attribute that does not exist, so
+# the guard never fired and the "measurement" was a hardcoded 0.0 in every row
+# ever written. These helpers reload the same graph the trainer loaded (same
+# name/root/seed => same object) and measure it directly.
+@lru_cache(maxsize=8)
+def _full_graph_cached(dataset: str, root: str, seed: int):
+    return load_dataset(dataset, root=root, seed=seed)
+
+
+def full_graph(cfg: ExperimentConfig):
+    """The unpartitioned graph the trainer was built from.
+
+    Cached per (dataset, root, seed); treat the returned ``Data`` as read-only.
+    """
+    return _full_graph_cached(cfg.dataset, cfg.data_root, cfg.seed)
+
+
+def global_sensitive_homophily(cfg: ExperimentConfig) -> float:
+    """h_s = P[s_u == s_v | (u,v) in E] on the FULL graph for this config.
+
+    Measured pre-partition on purpose: h_s is a property of the dataset, not of
+    the federation, and the per-client induced subgraphs drop every cross-client
+    edge (see ``edge_retention``), so a client-side average would silently
+    report the homophily of whatever survived the split.
+    """
+    d = full_graph(cfg)
+    return float(sensitive_homophily(d.edge_index, d.sensitive_attr))
+
+
+def partition_edge_retention(trainer) -> Dict[str, float]:
+    """Edge budget of a built trainer's partition, relative to the full graph.
+
+    Returns ``edge_retention`` (share of the ORIGINAL graph's edges still
+    visible to some client), ``edge_retention_post_holdout`` (the same ratio
+    against the graph that actually reached ``partition_graph``, i.e. after the
+    server holdout was carved out), ``expected_retention_iid`` (``sum_k p_k^2``,
+    what a topology-blind split of the same node shares would keep) and the raw
+    counts. The two retention figures differ only when
+    ``fu_val_source='server_holdout'``.
+    """
+    d = full_graph(trainer.cfg)
+    clients = trainer.clients_data
+    total = int(d.edge_index.shape[1])
+    kept = sum(int(c.edge_index.shape[1]) for c in clients)
+    holdout_edges = int(trainer.server_holdout.edge_index.shape[1]) \
+        if getattr(trainer, "server_holdout", None) is not None else 0
+    summary = partition_summary(d, clients)
+    post = int(total - holdout_edges)
+    return {
+        "edge_retention": summary["edge_retention"],
+        "edge_retention_post_holdout": float(kept) / float(post) if post > 0 else 0.0,
+        "expected_retention_iid": summary["expected_retention_iid"],
+        "original_edges": total,
+        "client_edges": kept,
+        "server_holdout_edges": holdout_edges,
+        "num_clients": len(clients),
+    }
 
 
 # --------------------------------------------------------------------------- #

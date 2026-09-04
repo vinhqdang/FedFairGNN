@@ -46,7 +46,25 @@ def test_ablation_arms_differ_from_M1_by_exactly_one_field():
         assert diff == exp_fields, f"{name} differs by {diff}, expected {exp_fields}"
 
 
+
+
+def test_bfwa_dual_persistence_is_on_and_recorded():
+    """The BFWA dual multiplier is carried across rounds in every reported run.
+
+    `bfwa_persist_dual=False` reproduces the pre-fix behaviour, in which the
+    multiplier restarted from 0 every round and the fairness budget tau never
+    bound. It exists so that regression stays testable; it must never be the
+    canonical setting, and it must be serialised into results so any run can be
+    told apart after the fact.
+    """
+    c = ExperimentConfig.canonical()
+    assert c.bfwa_persist_dual is True
+    assert c.to_dict()["bfwa_persist_dual"] is True
+    assert ExperimentConfig().bfwa_persist_dual is True
+
+
 if __name__ == "__main__":
     test_canonical_matches_protocol()
     test_ablation_arms_differ_from_M1_by_exactly_one_field()
+    test_bfwa_dual_persistence_is_on_and_recorded()
     print("✅ All canonical invariant tests PASSED!")

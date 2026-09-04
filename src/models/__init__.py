@@ -26,6 +26,7 @@ def build_model(name: str, in_channels: int, config=None):
             dropout=config.dropout,
             beta_init=getattr(config, "beta_init", 0.5),
             fser_mode=getattr(config, "fser_mode", "sub"),
+            freeze_beta=getattr(config, "freeze_beta", False),
         )
     return _REGISTRY[name](**kwargs)
 

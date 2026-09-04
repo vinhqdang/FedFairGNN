@@ -4,6 +4,10 @@ Evaluates whether TrustFedGNN maintains its fairness and utility gains under nat
 graph topological clustering (Louvain / greedy modularity community partitioning)
 compared to Dirichlet non-IID and Uniform IID partitioning on Bail and Credit.
 
+Also reports edge retention (sum_k |E_k| / |E|), the share of the global graph's
+edges that survive each partition -- the structural confound that makes an
+across-partition AUC comparison interpretable.
+
 Outputs:
   - results/revision/metis_partition.json
   - manuscript/tables/revision/partition_comparison.tex
@@ -25,6 +29,7 @@ import numpy as np
 from src.config import ExperimentConfig
 from src.federated.trainer import FederatedTrainer
 from src.utils.metrics import weight_oscillation
+from experiments.fairshare_common import partition_edge_retention
 
 
 PARTITIONS = ["uniform", "dirichlet", "community"]
@@ -55,6 +60,14 @@ def evaluate_partition_run(model_name: str, partition_method: str, seed: int,
     )
 
     trainer = FederatedTrainer(cfg)
+    # The point of this comparison: an induced-subgraph partition keeps only the
+    # edges whose endpoints land on the same client, so the three strategies do
+    # not hand the federation the same graph. Uniform and Dirichlet cut blindly
+    # and retain roughly sum_k p_k^2 (~1/K) of the edges; community partitioning
+    # cuts along sparse modularity boundaries and retains far more. Reporting
+    # AUC/DPD across partitions without this column would attribute a purely
+    # structural difference in available signal to the method.
+    part = partition_edge_retention(trainer)
     res = trainer.run(verbose=False)
     wall_clock = time.perf_counter() - t0
 
@@ -71,6 +84,11 @@ def evaluate_partition_run(model_name: str, partition_method: str, seed: int,
         "dpd_hard": float(final["dpd_hard"]),
         "eod": float(final["eod"]),
         "omega_w": omega,
+        "edge_retention": float(part["edge_retention"]),
+        "edge_retention_post_holdout": float(part["edge_retention_post_holdout"]),
+        "expected_retention_iid": float(part["expected_retention_iid"]),
+        "original_edges": int(part["original_edges"]),
+        "client_edges": int(part["client_edges"]),
         "wall_clock_s": float(wall_clock),
     }
 
@@ -95,7 +113,10 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
                     print(f"[{idx}/{total}] RUNNING: ds={ds} | part={p} | model={m} | seed={s}...", flush=True)
                     out = evaluate_partition_run(m, p, s, dataset=ds, num_clients=5, rounds=15)
                     records.append(out)
-                    print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, EOD={out['eod']:.4f} ({out['wall_clock_s']:.1f}s)", flush=True)
+                    print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, EOD={out['eod']:.4f}, "
+                          f"edge_ret={out['edge_retention'] * 100:.1f}% "
+                          f"(iid expect {out['expected_retention_iid'] * 100:.1f}%) "
+                          f"({out['wall_clock_s']:.1f}s)", flush=True)
 
                     with open(out_json, "w") as f:
                         json.dump(records, f, indent=2)
@@ -109,13 +130,14 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
         "\\small",
         "\\caption{\\textbf{Robustness to Graph Partition Topology (Bail Recidivism, $K=5$ Clients).}",
         "Comparison of TrustFedGNN vs FedAvg across Uniform (IID), Dirichlet ($\\alpha=0.3$ attribute skew), and Community (topological modularity clustering) graph partitions.",
+        "\\emph{Edge retention} $= \\sum_k |E_k| / |E|$ is the share of the global graph's edges that survives inside the induced client subgraphs; it is a property of the partition alone (identical for both methods at a given seed) and is reported because the three strategies do not leave the federation the same amount of relational signal to work with.",
         "Demonstrates that TrustFedGNN's fairness and utility gains are preserved under naturally cohesive graph community silos.}",
         "\\label{tab:partition_comparison}",
-        "\\begin{tabular}{lcccc}",
+        "\\begin{tabular}{lccccc}",
         "\\toprule",
-        " & \\multicolumn{2}{c}{\\textbf{TrustFedGNN (Ours)}} & \\multicolumn{2}{c}{\\textbf{FedAvg (Baseline)}} \\\\",
+        " & \\multicolumn{2}{c}{\\textbf{TrustFedGNN (Ours)}} & \\multicolumn{2}{c}{\\textbf{FedAvg (Baseline)}} & \\\\",
         "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}",
-        "\\textbf{Partition Topology} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} \\\\",
+        "\\textbf{Partition Topology} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{Edge ret.\\ (\\%)} \\\\",
         "\\midrule",
     ]
 
@@ -134,7 +156,9 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
                 return "-- & --"
             return f"{np.mean([x['auc'] for x in lst]):.3f} & {np.mean([x['dpd_hard'] for x in lst]):.3f}"
 
-        lines.append(f"{pretty_part[p]} & {fmt(m_ours)} & {fmt(m_base)} \\\\")
+        rets = [x["edge_retention"] for x in (m_ours + m_base) if "edge_retention" in x]
+        ret_cell = f"{100 * np.mean(rets):.1f}\\%" if rets else "--"
+        lines.append(f"{pretty_part[p]} & {fmt(m_ours)} & {fmt(m_base)} & {ret_cell} \\\\")
 
     lines.append("\\bottomrule")
     lines.append("\\end{tabular}")

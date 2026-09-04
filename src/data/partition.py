@@ -189,3 +189,48 @@ def partition_stats(clients: List[Data]) -> List[dict]:
             "train": int(c.train_mask.sum()),
         })
     return stats
+
+
+def edge_retention(original_data: Data, client_data_list: List[Data]) -> float:
+    """Fraction of the global graph's edges that survive partitioning.
+
+    ``sum_k |E_k| / |E|`` over the induced client subgraphs. Every edge whose
+    endpoints land on two different clients is dropped by ``_induced``, so this
+    is the share of relational signal the federation still sees at all -- the
+    quantity that separates "federated GNN training" from "K disconnected GNNs
+    that happen to average their weights", and the one the partition-strategy
+    comparisons need in order to be interpretable.
+
+    Order of magnitude: for a partition into shares ``p_k`` of the nodes that
+    ignores topology, an edge survives only if both endpoints fall in the same
+    client, so retention ~= ``sum_k p_k^2`` -- about ``1/K`` for near-equal
+    shares (20% at K=5, 10% at K=10). Community/METIS partitions do much better
+    because they cut along sparse boundaries; Dirichlet partitions sit near the
+    uniform figure. Returns 0.0 for an edgeless original graph.
+    """
+    total = int(original_data.edge_index.shape[1])
+    if total <= 0:
+        return 0.0
+    kept = sum(int(c.edge_index.shape[1]) for c in client_data_list)
+    return float(kept) / float(total)
+
+
+def partition_summary(original_data: Data, client_data_list: List[Data]) -> dict:
+    """``partition_stats`` plus the graph-level edge budget of the split."""
+    kept = sum(int(c.edge_index.shape[1]) for c in client_data_list)
+    total = int(original_data.edge_index.shape[1])
+    nodes = sum(int(c.num_nodes) for c in client_data_list)
+    shares = [c.num_nodes / max(nodes, 1) for c in client_data_list]
+    return {
+        "num_clients": len(client_data_list),
+        "original_nodes": int(original_data.num_nodes),
+        "original_edges": total,
+        "client_nodes": nodes,
+        "client_edges": kept,
+        "edge_retention": edge_retention(original_data, client_data_list),
+        # sum_k p_k^2: what a topology-blind split of the same node shares would
+        # retain in expectation. Compare against edge_retention to see whether a
+        # partition strategy actually respects the graph's community structure.
+        "expected_retention_iid": float(sum(p * p for p in shares)),
+        "per_client": partition_stats(client_data_list),
+    }

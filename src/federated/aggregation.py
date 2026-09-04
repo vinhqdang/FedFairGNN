@@ -35,26 +35,87 @@ import torch
 # --------------------------------------------------------------------------- #
 # Frank-Wolfe fairness-constrained weights
 # --------------------------------------------------------------------------- #
+def _scale(v: torch.Tensor) -> float:
+    """Positive scale of a K-vector: its range, falling back to its magnitude
+    and finally to 1.0 (K=1 or all-equal entries)."""
+    if v.numel() == 0:
+        return 1.0
+    rng = float(v.max() - v.min())
+    if rng > 1e-12:
+        return rng
+    mag = float(v.abs().max())
+    return mag if mag > 1e-12 else 1.0
+
+
 def bfwa_weights(perf: torch.Tensor, dpd: torch.Tensor, tau: float,
                  iters: int = 20, dual_step: float = 0.1,
-                 w_min_factor: float = 0.2) -> torch.Tensor:
+                 w_min_factor: float = 0.2, mu_init: float = 0.0,
+                 info: Dict = None) -> torch.Tensor:
     """Solve  max_w  w.perf  s.t.  w.dpd <= tau,  w in simplex  via Frank-Wolfe
-    with a dual variable enforcing the fairness budget."""
+    with a dual variable enforcing the fairness budget.
+
+    Args:
+        mu_init: starting value of the dual multiplier. The caller passes the
+            multiplier carried over from the previous communication round when
+            ``bfwa_persist_dual`` is on (see :func:`aggregate`); ``0.0``
+            restarts the dual ascent every call.
+        info: optional dict filled in-place with ``bfwa_mu`` (the multiplier
+            after this call, to be persisted), the constraint residual
+            ``w.dpd - tau`` and the feasibility flag, both BEFORE
+            (``*_preclamp``) and AFTER the weight-floor clamp.
+
+    Two properties this loop must have, and did not before (both are pinned by
+    ``tests/test_revision_invariants.py``):
+
+    * **The Frank-Wolfe averaging must actually average.** ``gamma = 2/(t+2)``
+      evaluated at ``t = 0`` is ``1.0``: the first step *discards* the uniform
+      iterate and jumps straight onto the vertex ``argmin(-perf + mu*dpd)``.
+      Because the objective is linear in ``w`` its gradient does not depend on
+      ``w``, so every later step re-selects that same vertex until ``mu`` grows
+      large enough to flip it -- which, at the shipped ``iters=20``, never
+      happened, and ``tau`` had literally no effect on the returned weights.
+      The classic schedule is therefore run from ``t = 1`` (``gamma_1 = 2/3``),
+      so the uniform initialisation is mixed into the iterate rather than
+      erased.
+    * **The dual must be able to reach the binding regime.** The vertex flips
+      only once ``mu`` exceeds (utility gap)/(disparity gap), a ratio in the
+      units of ``perf`` per unit of ``dpd``. With raw units and the shipped
+      ``dual_step=0.1`` that takes hundreds of iterations. The Lagrangian is
+      therefore evaluated on range-normalised terms, which makes ``mu``
+      dimensionless (order 1 at the flip point) and gives ``dual_step`` the
+      same meaning across datasets, scales and rounds -- necessary for the
+      multiplier to be persisted across rounds at all.
+    """
     K = perf.numel()
     dev = perf.device
     w = torch.full((K,), 1.0 / K, device=dev)
-    mu = 0.0
-    for t in range(iters):
+    mu = float(mu_init)
+    perf_scale = _scale(perf)                       # dimensionless Lagrangian
+    dpd_scale = _scale(dpd)
+    for t in range(1, iters + 1):                   # t=1 -> gamma=2/3, not 1.0
         violation = float(torch.dot(w, dpd) - tau)
-        grad = -perf + mu * dpd                     # d/dw of Lagrangian
+        grad = -perf / perf_scale + mu * dpd / dpd_scale   # d/dw of Lagrangian
         s = torch.zeros(K, device=dev)
         s[int(torch.argmin(grad))] = 1.0            # LMO on simplex
         gamma = 2.0 / (t + 2.0)                     # decaying step (spec-compliant)
         w = (1 - gamma) * w + gamma * s
-        mu = max(0.0, mu + dual_step * violation)
+        mu = max(0.0, mu + dual_step * violation / dpd_scale)
+    resid_pre = float(torch.dot(w, dpd)) - tau
     # weight floor + renormalise (avoid a single client dominating)
     w = torch.clamp(w, min=w_min_factor / K)
-    return w / w.sum()
+    w = w / w.sum()
+    resid_post = float(torch.dot(w, dpd)) - tau
+    if info is not None:
+        # The floor is part of the shipped rule, so the headline residual is the
+        # post-clamp one -- it is what the aggregated model actually incurs. The
+        # pre-clamp value is reported alongside it so the floor's cost in
+        # feasibility is visible rather than hidden.
+        info["bfwa_mu"] = mu
+        info["constraint_residual_preclamp"] = resid_pre
+        info["feasible_preclamp"] = bool(resid_pre <= 0.0)
+        info["constraint_residual"] = resid_post
+        info["feasible"] = bool(resid_post <= 0.0)
+    return w
 
 
 # --------------------------------------------------------------------------- #
@@ -77,6 +138,46 @@ def krum_scores(updates: List[torch.Tensor], f: int) -> torch.Tensor:
 
 
 # --------------------------------------------------------------------------- #
+# Null players
+# --------------------------------------------------------------------------- #
+def _zero_null_players(w: torch.Tensor, stack: torch.Tensor) -> torch.Tensor:
+    """Force weight 0 on clients whose update is exactly zero, then renormalise.
+
+    Null-player axiom: a client that submitted nothing must receive no credit.
+    Any *fallback* that spreads weight uniformly (or by sample size) over all K
+    clients silently breaks it, so the mask is applied to every weight vector
+    the FU-Shapley branch can produce, not just to the ReLU-gated one.
+    """
+    null = stack.abs().amax(dim=1) == 0
+    if not bool(null.any()):
+        return w
+    w = w.clone()
+    w[null] = 0.0
+    total = float(w.sum())
+    if total > 0:
+        return w / total
+    active = (~null).to(w.dtype)
+    if float(active.sum()) > 0:
+        return active / active.sum()
+    return torch.full_like(w, 1.0 / w.numel())   # everyone null: aggregate is 0
+
+
+# --------------------------------------------------------------------------- #
+# Cross-round dual state for BFWA
+# --------------------------------------------------------------------------- #
+def _read_mu(state: Dict, key: str, persist: bool) -> float:
+    """Dual multiplier carried in from the previous round (0.0 if none)."""
+    if not persist or state is None:
+        return 0.0
+    return float(state.get(key, 0.0))
+
+
+def _write_mu(state: Dict, key: str, mu: float, persist: bool) -> None:
+    if persist and state is not None:
+        state[key] = float(mu)
+
+
+# --------------------------------------------------------------------------- #
 # Dispatcher
 # --------------------------------------------------------------------------- #
 def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
@@ -89,7 +190,18 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
               fu_beta_ema: float = 0.9, fu_normalize: str = "target_norm",
               fu_score: str = "dot", fu_warmup: bool = False,
               fu_grad_clip: float = 0.0, fu_warmup_agg: str = "fedavg",
+              bfwa_persist_dual: bool = True,
               ) -> Tuple[torch.Tensor, Dict]:
+    """Aggregate client pseudo-gradients under ``method``.
+
+    ``bfwa_persist_dual`` (default True, matching ``cfg.bfwa_persist_dual``)
+    carries the BFWA dual multiplier across communication rounds through
+    ``state`` -- the same pattern as ``state['fedgraphfair_lambda']`` and
+    ``state['fu_phi_ema']``. ``bfwa`` and ``robust_bfwa`` keep separate keys so
+    the two rules never share a multiplier. False restores the pre-fix
+    behaviour (the dual restarts from 0 every round, so ``tau`` never binds);
+    it exists to keep that regression reproducible, not for reporting.
+    """
     K = len(updates)
     stack = torch.stack([u.flatten() for u in updates])
     # Every scalar summary below is built from python floats, so it must be
@@ -139,9 +251,15 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         info["weights"] = w.tolist()
 
     elif method == "bfwa":
-        w = bfwa_weights(perf, dpd, tau, fw_iters, dual_step)
+        mu0 = _read_mu(state, "bfwa_mu", bfwa_persist_dual)
+        fw_info: Dict = {}
+        w = bfwa_weights(perf, dpd, tau, fw_iters, dual_step,
+                         mu_init=mu0, info=fw_info)
+        _write_mu(state, "bfwa_mu", fw_info["bfwa_mu"], bfwa_persist_dual)
         agg = (w[:, None] * stack).sum(0)
         info["weights"] = w.tolist()
+        info.update(fw_info)
+        info["tau"] = tau
 
     elif method == "median":
         agg = stack.median(dim=0).values
@@ -231,14 +349,23 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         med = stack.median(dim=0).values
         dist = ((stack - med) ** 2).sum(1)
         keep = torch.argsort(dist)[: max(1, K - krum_f)].tolist()
-        # Stage 2: fairness-constrained Frank-Wolfe among survivors.
-        w_sub = bfwa_weights(perf[keep], dpd[keep], tau, fw_iters, dual_step)
+        # Stage 2: fairness-constrained Frank-Wolfe among survivors. The dual
+        # is keyed separately from plain BFWA: the two rules solve different
+        # subproblems (all clients vs survivors) and must not share a
+        # multiplier.
+        mu0 = _read_mu(state, "robust_bfwa_mu", bfwa_persist_dual)
+        fw_info: Dict = {}
+        w_sub = bfwa_weights(perf[keep], dpd[keep], tau, fw_iters, dual_step,
+                             mu_init=mu0, info=fw_info)
+        _write_mu(state, "robust_bfwa_mu", fw_info["bfwa_mu"], bfwa_persist_dual)
         agg = (w_sub[:, None] * stack[keep]).sum(0)
         w_full = torch.zeros(K, device=stack.device)
         w_full[keep] = w_sub
         info["kept"] = keep
         info["survivor_weights"] = w_sub.tolist()
         info["weights"] = w_full.tolist()
+        info.update(fw_info)
+        info["tau"] = tau
 
     elif method == "cgsv":
         # CGSV (Xu et al., NeurIPS 2021): cosine-gradient Shapley value. No
@@ -258,7 +385,8 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         from ..trust.incentive import compute_fu_weights, decompose
         if g_target is None:
             # no server validation nodes this round -> fall back to FedAvg
-            w = n / n.sum()
+            # (over the non-null clients: see _zero_null_players)
+            w = _zero_null_players(n / n.sum(), stack)
             agg = (w[:, None] * stack).sum(0)
             info["weights"] = w.tolist(); info["fu_fallback"] = "no_target"
         else:
@@ -280,8 +408,11 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
             info["g_norm_median"] = fu_info["g_norm_median"]
             info["g_norm_max"] = fu_info["g_norm_max"]
             info["phi_norm"] = fu_info["phi_norm"]
+            info["n_null"] = fu_info["n_null"]
             if fu_info["fu_status"] != "ok":
                 info["fu_fallback"] = fu_info["fu_status"]
+            robust_median_fallback = False
+            keep = None
             if method == "robust_fu_shapley":
                 # F4: median-screen the krum_f farthest updates, then re-gate.
                 med = stack.median(dim=0).values
@@ -289,7 +420,25 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                 keep = torch.argsort(dist)[: max(1, K - krum_f)]
                 mask = torch.zeros(K, device=dev); mask[keep] = 1.0
                 w = w * mask
-                w = w / w.sum() if float(w.sum()) > 0 else n / n.sum()
+                if float(w.sum()) > 0:
+                    w = w / w.sum()
+                else:
+                    # DEGENERATE: the screen kept a survivor set, but the FU gate
+                    # scored every survivor <= 0. The old fallback here was
+                    # `w = n / n.sum()` -- sample-size weights over ALL K clients
+                    # -- which hands weight straight back to the very updates the
+                    # distance screen had just flagged as Byzantine, so the
+                    # robustness of the rule evaporated exactly in the round it
+                    # was needed. Fall back to the coordinate-wise median of the
+                    # SURVIVORS instead: it is the standard robust estimator, it
+                    # needs no contribution score (which is what just failed),
+                    # and a screened client contributes nothing to it.
+                    # (Uniform-over-survivors was the alternative; the median is
+                    # strictly more robust to an outlier that slipped past the
+                    # screen and costs nothing, since no weight vector is needed
+                    # downstream.)
+                    robust_median_fallback = True
+                    info["fu_fallback"] = "robust_screen_degenerate_median"
                 info["kept"] = keep.tolist()
             warmup_median = False
             if fu_warmup:
@@ -305,7 +454,13 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                 if fu_warmup_agg == "median":
                     warmup_median = True
                 else:
-                    w = n / n.sum()
+                    w = _zero_null_players(n / n.sum(), stack)
+                # During warm-up the scores are deliberately not trusted, so an
+                # all-zero gate is expected rather than degenerate: the robust
+                # median fallback (and its flag) do not apply.
+                if robust_median_fallback and not warmup_median:
+                    robust_median_fallback = False
+                    info.pop("fu_fallback", None)
                 info["fu_warmup"] = True
                 info["fu_warmup_agg"] = fu_warmup_agg
             if warmup_median:
@@ -313,13 +468,24 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                 # so aggregate directly and report no weight vector.
                 agg = stack.median(dim=0).values
                 info["weights"] = None
+            elif robust_median_fallback:
+                # Median of the SURVIVORS only -- screened clients stay out.
+                agg = stack[keep].median(dim=0).values
+                info["weights"] = None
             else:
+                w = _zero_null_players(w, stack)
                 agg = (w[:, None] * stack).sum(0)
                 info["weights"] = w.tolist()
             info["phi_raw"] = phi_raw.tolist()
             info["phi_ema"] = phi_ema_new.tolist()
             if g_task is not None and g_fair is not None:
-                phi_util, phi_fair = decompose(grads, g_task, g_fair, fu_alpha, score=fu_score)
+                # The scores were computed on the CLIPPED gradients (SPEC
+                # 4.0(b)); decomposing the raw stack instead broke the
+                # explainability identity phi_util + phi_fair == phi_raw in
+                # every round where the clip bound.
+                scored = fu_info.get("grads_scored", grads)
+                phi_util, phi_fair = decompose(scored, g_task, g_fair, fu_alpha,
+                                               score=fu_score)
                 info["phi_util"] = phi_util.tolist()
                 info["phi_fair"] = phi_fair.tolist()
 

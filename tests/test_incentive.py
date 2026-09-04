@@ -408,3 +408,198 @@ def test_diverged_model_reports_nan_not_auc_half():
 
     ok = all_metrics(y, torch.tensor([0.1, 0.9, 0.2, 0.8]), s)
     assert ok["diverged"] == 0.0 and torch.isfinite(torch.tensor(ok["auc"]))
+
+
+# --------------------------------------------------------------------------- #
+# Null-player axiom: a client whose update is exactly zero contributed nothing
+# and must receive weight 0 in EVERY branch.
+#
+# The ReLU gate already gave it 0 (phi = <0, g_target> = 0), but the degenerate
+# branch -- taken whenever every score is non-positive -- handed uniform 1/K to
+# all K clients, null players included. A weight vector that pays a client for
+# submitting nothing is not a Shapley-style credit assignment.
+# --------------------------------------------------------------------------- #
+def test_null_player_gets_zero_weight_even_in_the_degenerate_fallback():
+    torch.manual_seed(11)
+    P = 32
+    g_target = torch.randn(P)
+    null = torch.zeros(P)
+    harmful = -g_target
+
+    info = {}
+    w, phi_raw, _ = compute_fu_weights([harmful, harmful, null], g_target,
+                                       normalize="none", info=info)
+    assert info["fu_status"] == "degenerate_nonpos"
+    assert info["n_null"] == 1
+    assert float(w[2]) == 0.0, \
+        "a null player must never be paid by the uniform fallback"
+    assert torch.isclose(w.sum(), torch.tensor(1.0))
+    assert torch.allclose(w[:2], torch.full((2,), 0.5)), \
+        "the fallback must be uniform over the NON-degenerate clients"
+    assert float(phi_raw[2]) == 0.0
+
+    # It also holds in the ReLU branch, including when the null client banked
+    # positive EMA credit in an earlier round.
+    ema = torch.tensor([0.1, 0.9, 5.0])          # client 2 looks great, historically
+    w2, _, _ = compute_fu_weights([g_target, g_target, null], g_target,
+                                  phi_ema=ema, normalize="none")
+    assert float(w2[2]) == 0.0, "stale EMA credit must not survive going null"
+
+    # Every client null: the aggregate is the zero vector whatever we return, so
+    # the simplex contract is kept rather than dividing by zero.
+    w3, _, _ = compute_fu_weights([null, null], g_target, normalize="none")
+    assert torch.isclose(w3.sum(), torch.tensor(1.0))
+
+
+def test_null_player_is_zeroed_by_the_aggregator_too():
+    from src.federated.aggregation import aggregate
+    torch.manual_seed(12)
+    P = 16
+    g_target = torch.randn(P)
+    updates = [-g_target, -g_target, torch.zeros(P)]
+    meta = [{"n": 100, "perf": 0.8, "dpd": 0.05, "loss": 0.2} for _ in range(3)]
+    _, info = aggregate("fu_shapley", updates, meta, state={}, g_target=g_target,
+                        fu_normalize="none")
+    assert info["weights"][2] == 0.0
+    assert info["n_null"] == 1
+
+    # ... and in the no-target FedAvg fallback, where sample-size weights would
+    # otherwise pay the null client its full share.
+    _, info2 = aggregate("fu_shapley", updates, meta, state={}, g_target=None)
+    assert info2["fu_fallback"] == "no_target"
+    assert info2["weights"][2] == 0.0
+
+
+# --------------------------------------------------------------------------- #
+# robust_fu_shapley: the degenerate fallback must not re-admit screened clients.
+#
+# The old code did `w = w * keep_mask; w = w / w.sum() if w.sum() > 0 else
+# n / n.sum()` -- so if the gate zeroed every survivor, the rule fell back to
+# sample-size weights over ALL K clients, handing weight straight back to the
+# updates the distance screen had just flagged as Byzantine.
+# --------------------------------------------------------------------------- #
+def test_robust_fu_shapley_fallback_does_not_readmit_screened_clients():
+    from src.federated.aggregation import aggregate
+    torch.manual_seed(13)
+    P = 32
+    base = torch.randn(P)
+    # Honest clients pull AGAINST the target (all scores <= 0), the Byzantine one
+    # is the only positively scored client -- and it is also the one the distance
+    # screen removes. That is the round in which the fallback decides everything.
+    honest = [-base + 0.01 * torch.randn(P) for _ in range(3)]
+    byz = 50.0 * base                           # far from the coordinate median
+    updates = [byz] + honest
+    g_target = base
+    meta = [{"n": 100, "perf": 0.8, "dpd": 0.05, "loss": 0.2} for _ in range(4)]
+
+    agg, info = aggregate("robust_fu_shapley", updates, meta, state={}, krum_f=1,
+                          g_target=g_target, fu_normalize="none")
+    assert 0 not in info["kept"], "sanity: the Byzantine client must be screened"
+    assert info["fu_fallback"] == "robust_screen_degenerate_median"
+    # No weight vector is claimed, and in particular none is handed to client 0.
+    assert info["weights"] is None
+    # The aggregate is the coordinate median of the SURVIVORS: it must be nowhere
+    # near the 50x Byzantine update that a sample-size fallback would have let in.
+    survivor_median = torch.stack(honest).median(dim=0).values
+    assert torch.allclose(agg, survivor_median, atol=1e-6)
+    assert float(agg.norm()) < 0.1 * float(byz.norm())
+
+
+# --------------------------------------------------------------------------- #
+# phi_util + phi_fair == phi_raw must survive clipping.
+#
+# compute_fu_weights scores the CLIPPED gradients (SPEC 4.0(b)) but the
+# decompose() call in the aggregator was handed the UNCLIPPED stack, so the
+# explainability identity broke in exactly the rounds where the defence acted.
+# --------------------------------------------------------------------------- #
+def test_decomposition_is_consistent_with_the_clipped_gradients():
+    from src.federated.aggregation import aggregate
+    torch.manual_seed(14)
+    P, alpha = 32, 0.4
+    g_task, g_fair = torch.randn(P), torch.randn(P)
+    g_target = g_task + alpha * g_fair
+    huge = 1e4 * torch.randn(P)                 # >> fu_grad_clip
+    updates = [torch.randn(P), huge]
+    meta = [{"n": 100, "perf": 0.8, "dpd": 0.05, "loss": 0.2} for _ in range(2)]
+
+    _, info = aggregate("fu_shapley", updates, meta, state={}, g_target=g_target,
+                        g_task=g_task, g_fair=g_fair, fu_alpha=alpha,
+                        fu_normalize="none", fu_score="dot", fu_grad_clip=10.0)
+    assert info["n_clipped"] == 1, "sanity: the clip must actually bind here"
+    phi_raw = torch.tensor(info["phi_raw"])
+    phi_sum = torch.tensor(info["phi_util"]) + torch.tensor(info["phi_fair"])
+    assert torch.allclose(phi_raw, phi_sum, atol=1e-3), (
+        "phi_util + phi_fair must equal phi_raw under `dot` even when clipping "
+        f"binds: {phi_raw.tolist()} vs {phi_sum.tolist()}")
+
+
+# --------------------------------------------------------------------------- #
+# Missing sensitive group in the scoring set.
+#
+# `mu_g = pred[mask].mean() if mask.any() else pred.sum()*0.0` silently replaced
+# a missing group's mean with ZERO, turning (mu0-mu1)^2 into mu_present^2 -- a
+# different objective (drive every present-group score to 0), with no warning.
+# --------------------------------------------------------------------------- #
+class _TinyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.lin = torch.nn.Linear(4, 1)
+
+    def forward(self, x, edge_index, s):
+        return torch.sigmoid(self.lin(x)).squeeze(-1)
+
+
+class _TinyData:
+    def __init__(self, s):
+        torch.manual_seed(15)
+        n = s.numel()
+        self.x = torch.randn(n, 4)
+        self.edge_index = torch.zeros(2, 1, dtype=torch.long)
+        self.y = torch.arange(n) % 2
+        self.val_mask = torch.ones(n, dtype=torch.bool)
+        self.sensitive_attr = s
+
+    def to(self, device):
+        return self
+
+
+def test_missing_group_warns_and_drops_the_fairness_term():
+    import warnings
+
+    model = _TinyModel()
+    one_group = _TinyData(torch.zeros(6, dtype=torch.long))     # s=1 absent
+
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        g_target, g_task, g_fair = get_server_target_gradients(model, one_group,
+                                                              alpha=0.5)
+    msgs = [str(w.message) for w in rec if issubclass(w.category, RuntimeWarning)]
+    assert msgs, "a missing sensitive group must raise a RuntimeWarning"
+    assert "s=1" in msgs[0], f"the warning must name the missing group: {msgs[0]}"
+    assert float(g_fair.norm()) == 0.0, \
+        "with no group contrast the fairness term must be exactly zero, not mu**2"
+    assert torch.allclose(g_target, g_task)
+
+    # Both groups present -> no warning, and a non-trivial fairness target.
+    both = _TinyData(torch.tensor([0, 0, 0, 1, 1, 1]))
+    with warnings.catch_warnings(record=True) as rec2:
+        warnings.simplefilter("always")
+        _, _, g_fair_ok = get_server_target_gradients(model, both, alpha=0.5)
+    assert not [w for w in rec2 if issubclass(w.category, RuntimeWarning)]
+    assert float(g_fair_ok.norm()) > 0.0
+
+
+def test_missing_group_warns_in_the_pooled_variant_too():
+    import warnings
+
+    model = _TinyModel()
+    clients = [_TinyData(torch.zeros(4, dtype=torch.long)),
+               _TinyData(torch.zeros(4, dtype=torch.long))]
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        g_target, g_task, g_fair = get_server_target_gradients_pooled(
+            model, clients, torch.device("cpu"), alpha=0.5)
+    msgs = [str(w.message) for w in rec if issubclass(w.category, RuntimeWarning)]
+    assert msgs and "s=1" in msgs[0]
+    assert float(g_fair.norm()) == 0.0
+    assert torch.allclose(g_target, g_task)

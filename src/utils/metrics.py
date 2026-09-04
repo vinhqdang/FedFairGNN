@@ -1,7 +1,10 @@
 """Performance and fairness metrics.
 
 Performance
-    AUC-ROC, Average Precision (AP), F1, accuracy, FPR@k%TPR.
+    AUC-ROC, Average Precision (AP), F1, accuracy, FPR@k%TPR, plus the per-group
+    (S=0 / S=1) AUC and AP that make "levelling down" -- closing a fairness gap
+    by degrading the worse-off group -- visible rather than hidden inside a
+    global average.
 Group fairness (binary sensitive attribute S in {0,1})
     - Demographic Parity Difference (DPD)
     - Equal Opportunity Difference (EOD)
@@ -136,6 +139,50 @@ def equalized_odds(y_true, y_score, sensitive, threshold=0.5) -> float:
     return float(max(tpr_gap, fpr_gap))
 
 
+def _group_subset(y_true, y_score, sensitive, group):
+    """(y, score) restricted to nodes with ``sensitive == group``; None if the
+    subset cannot support a ranking metric (empty, or single-class labels)."""
+    s = _np(sensitive).ravel()
+    m = (s == group)
+    if m.sum() == 0:
+        return None
+    yt = _np(y_true).ravel()[m]
+    if len(np.unique(yt)) < 2:
+        return None
+    return yt, _scores(y_score)[m]
+
+
+def auc_roc_group(y_true, y_score, sensitive, group) -> float:
+    """AUC-ROC computed on one sensitive group only.
+
+    Returns NaN -- not 0.5 -- when the group is empty or carries a single label
+    class, because AUC is undefined there. A 0.5 would read as "this group is
+    predicted at chance", which is a measurement the data cannot support and
+    which would silently dilute any per-group aggregate."""
+    sub = _group_subset(y_true, y_score, sensitive, group)
+    if sub is None:
+        return float("nan")
+    try:
+        return float(roc_auc_score(sub[0], sub[1]))
+    except ValueError:
+        return float("nan")
+
+
+def average_precision_group(y_true, y_score, sensitive, group) -> float:
+    """Average precision computed on one sensitive group only.
+
+    NaN on an empty or single-class group: with all-negative labels sklearn
+    returns 0.0 and with all-positive labels 1.0, and neither is a comparable
+    utility number next to the other group's AP."""
+    sub = _group_subset(y_true, y_score, sensitive, group)
+    if sub is None:
+        return float("nan")
+    try:
+        return float(average_precision_score(sub[0], sub[1]))
+    except ValueError:
+        return float("nan")
+
+
 def sensitive_homophily(edge_index, sensitive) -> float:
     """h_s = P[s_v == s_u | (v,u) in E]. Sensitive attribute homophily of the graph."""
     s = _np(sensitive).ravel()
@@ -155,7 +202,9 @@ def all_metrics(y_true, y_score, sensitive, threshold: float = 0.5) -> Dict[str,
     ``diverged=1.0``, rather than the pre-4.0(c) behaviour of silently reporting
     ``auc=0.5, dpd=0.0`` -- see :func:`diverged`."""
     if diverged(y_score):
-        keys = ("auc", "ap", "f1", "acc", "fpr@80tpr", "dpd", "dpd_soft", "dpd_hard", "eod", "eo", "pred_std")
+        keys = ("auc", "ap", "f1", "acc", "fpr@80tpr", "dpd", "dpd_soft", "dpd_hard",
+                "eod", "eo", "pred_std",
+                "auc_group0", "auc_group1", "ap_group0", "ap_group1")
         return {**{k: float("nan") for k in keys}, "diverged": 1.0}
     
     scores = _scores(y_score)
@@ -175,6 +224,14 @@ def all_metrics(y_true, y_score, sensitive, threshold: float = 0.5) -> Dict[str,
         "eod": equal_opportunity_difference(y_true, y_score, sensitive, threshold),
         "eo": equalized_odds(y_true, y_score, sensitive, threshold),
         "pred_std": float(np.std(scores)),
+        # Per-group utility. A DPD improvement bought by degrading the minority
+        # group ("levelling down") is invisible in the global auc/ap; it shows up
+        # here as auc_group{g} falling while the gap closes. NaN when a group is
+        # empty or single-class -- see auc_roc_group.
+        "auc_group0": auc_roc_group(y_true, y_score, sensitive, 0),
+        "auc_group1": auc_roc_group(y_true, y_score, sensitive, 1),
+        "ap_group0": average_precision_group(y_true, y_score, sensitive, 0),
+        "ap_group1": average_precision_group(y_true, y_score, sensitive, 1),
     }
 
 

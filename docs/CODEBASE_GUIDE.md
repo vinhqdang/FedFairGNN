@@ -11,8 +11,8 @@ FedFairGNN/
 ├── src/                          # Core source code
 │   ├── config.py                 # ExperimentConfig dataclass & deterministic seed setting
 │   ├── models/                   # Neural network architectures
-│   │   ├── trustfedgnn.py        # Proposed FSERLayer, Skip-GAT, attention debiasing
-│   │   ├── gnn.py                # Standard GCN and GAT baselines
+│   │   ├── trustfedgnn.py        # STALE, UNUSED duplicate - not on the training path (see note below)
+│   │   ├── gnn.py                # Actual FSERLayer / TrustFedGNN implementation + GCN, GAT, FairGNN, FairSIN, FaVGNN baselines
 │   │   └── baselines.py          # FairGNN and FairSIN baseline models
 │   ├── federated/                # Federated training & aggregation protocols
 │   │   ├── client.py             # Client lifecycle, FTGD step, local soft-DPD, weighted BCE
@@ -58,19 +58,24 @@ FedFairGNN/
   3. Evaluates 2D scalar group means $(\mu_0, \mu_1)$. When DP is enabled, injects calibrated Gaussian noise $\mathcal{N}(0, \sigma_{\text{DP}}^2)$ with sensitivity $\Delta \le \sqrt{2}/n_{\min}$.
   4. Releases privatised disparity $\widetilde{\text{DPD}}_k = |\tilde{\mu}_0 - \tilde{\mu}_1|$ to the server.
 
-### B. Graph Debiasing & FSER Layer (`src/models/trustfedgnn.py`)
+### B. Graph Debiasing & FSER Layer (`src/models/gnn.py`)
+
+> **Pointer note.** The classes that actually run are `FSERLayer` and `TrustFedGNN` in **`src/models/gnn.py`** — `src/models/__init__.py` builds its `_REGISTRY` (`"trustfedgnn" -> TrustFedGNN`) from imports out of `gnn.py`. The file `src/models/trustfedgnn.py` is a **stale, divergent duplicate that is never instantiated** (its `TrustFedGNN.__init__` accepts neither the `beta_init` nor the `fser_mode` kwargs that `build_model` passes, and hardcodes `beta = 0.5`, so instantiating it would raise `TypeError`); it should be deleted or clearly marked archived. Do not read it as the reference implementation.
+
 - **`FSERLayer.message(edge_index, x_j, x_i, s_j, s_i)`**:
   - Modifies attention logits $\tilde{e}_{vu} = e_{vu} - \beta \cdot \mathbb{I}(s_v \neq s_u) \cdot \max(0, \cos(h_v, h_u))$.
   - Clamps the learnable parameter $\beta \in [0.0, 5.0]$ to prevent numerical overflow in softmax.
 
 ### C. Server Aggregators (`src/federated/aggregation.py`)
 - **`bfwa_weights(perfs, dpds, tau, ...)`**:
-  - Implements the Bi-objective Frank–Wolfe optimization on simplex $\Delta_K$.
-  - Updates the Lagrange multiplier $\mu$ via dual gradient ascent.
+  - Implements a penalised Bi-objective Frank–Wolfe iteration on the simplex $\Delta_K$, updating the Lagrange multiplier $\mu$ by dual gradient ascent.
+  - This **steers** the aggregation weights toward the operator-chosen fairness budget $\tau$ on the *reported client* disparity; it does **not** strictly enforce it. Frank–Wolfe with a dual ascent step is not a hard-constraint solver: over a bounded iteration budget and a non-convex objective, feasibility ($w \cdot \text{dpd} \le \tau$) can fail. Check it empirically per round via the `constraint_residual` / `feasible` fields returned by `aggregate()`.
 - **`robust_bfwa_weights(updates, perfs, dpds, tau, ...)`**:
   - Combines Euclidean distance screening against the coordinate-wise median with BFWA weight optimization.
 - **`coordinate_median(updates)`**:
-  - Computes the coordinate-wise median across client parameter updates. Verified as the unique aggregator completely immune to metadata-deceptive fairness poisoners ($w_{\text{adv}} = 0.000$).
+  - Computes the coordinate-wise median across client parameter updates.
+  - It admits **no client-weight vector** and consumes **no self-reported metadata**, so metadata deception (a falsified $\widehat{\text{DPD}}$) cannot influence it by construction. Its robustness against parameter-space corruption is bounded by the standard $f < K/2$ breakdown point.
+  - For the same reason, `info["weights"]` is not populated for `aggregate("median", ...)` and the attacker weight share $w_{\text{adv}}$ is **not measurable** for this rule (it is reported as `NaN`, not `0.0`). Earlier "$w_{\text{adv}} = 0.000$" figures were a reporting artefact of a fallback default, not a measurement.
 
 ---
 

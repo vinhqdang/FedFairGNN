@@ -2,7 +2,7 @@
 \centering
 \small
 \caption{\textbf{Empirical Evaluation of FU-Shapley Alignment vs Exact Shapley (125 probe points, $K=5$, 5 seeds).} 
-Evaluating across 5 probing rounds confirms FU-Shapley functions as a fast, first-order ranking heuristic ($O(KP)$ vs $O(2^K P)$) with strong directional alignment ($\rho = 0.690$, $73.6\%$ sign agreement).}
+The three pre-registered fidelity criteria are \emph{not} met: pooled Pearson $r = 0.7436$ (target $\ge 0.80$), sign agreement $73.6\%$ (target $\ge 85\%$), and mean simplex $L_1$ distance $0.7554$ (target $\le 0.15$); hypothesis H3 (faithful approximation of exact Shapley in ranking \emph{and} allocation) is therefore recorded as \textsc{refuted} in \texttt{results/stage4\_3\_shapley\_results.json}. What the data do support is agreement at the \emph{ranking} level---pooled Spearman $\rho = 0.6897$, the one criterion met---so FU-Shapley is usable as a fast, first-order ranking proxy at $O(KP)$ instead of $O(2^K P)$ cost, but not as a faithful value allocation: its simplex weights depart substantially from the exact Shapley allocation.}
 \label{tab:shapley_fidelity}
 \begin{tabular}{lcc}
 \toprule

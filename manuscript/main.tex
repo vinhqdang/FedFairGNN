@@ -190,7 +190,7 @@ protect that statistic directly instead of blindly noising the entire gradient.
 \medskip
 \noindent Concretely, our contributions are:
 \begin{enumerate}
-\item \textbf{Privacy-Aware Fairness Feedback Loop (C1).} We introduce a closed-loop co-design coupling Fairness-Targeted Gradient Decomposition (FTGD, Section~\ref{sec:ftgd}) with Bi-objective Frank--Wolfe Aggregation (BFWA, Section~\ref{sec:bfwa}). FTGD establishes that sensitive attributes influence the global fairness objective solely through low-dimensional demographic-parity means, enabling rigorous $(\epsilon,\delta)$-differential privacy over the released fairness statistics at $O(1)$ noise without the catastrophic $O(\sqrt{|\theta|})$ utility collapse of full-gradient DP-SGD. The central server directly consumes these privatised signals within BFWA to solve a constrained Frank--Wolfe program, steering global aggregation to satisfy an operator-chosen disparity budget $\tau$.
+\item \textbf{Privacy-Aware Fairness Feedback Loop (C1).} We introduce a closed-loop co-design coupling Fairness-Targeted Gradient Decomposition (FTGD, Section~\ref{sec:ftgd}) with Bi-objective Frank--Wolfe Aggregation (BFWA, Section~\ref{sec:bfwa}). FTGD establishes that sensitive attributes influence the global fairness objective solely through low-dimensional demographic-parity means, enabling rigorous $(\epsilon,\delta)$-differential privacy over the released fairness statistics at $O(1)$ noise without the catastrophic $O(\sqrt{|\theta|})$ utility collapse of full-gradient DP-SGD. When differential privacy is active (\texttt{dp\_mode='ftgd'}), each client releases the noised disparity statistic $\widetilde{\mathrm{DPD}}_k = |\tilde\mu_0 - \tilde\mu_1|$ actually produced by its local FTGD training step, and BFWA and the other metadata-consuming aggregators operate on this privatised signal; without DP, clients report the (un-noised) validation-split DPD. BFWA's penalised Frank--Wolfe program then steers global aggregation \emph{toward} an operator-chosen disparity budget $\tau$ on these reported client statistics, with per-round feasibility reported as a residual rather than guaranteed (Section~\ref{sec:bfwa}).
 
 \item \textbf{Byzantine-Robust Fairness Aggregation (C2).} We uncover and defend against a deceptive fairness-poisoning threat model where adversarial clients fabricate zero-disparity statistics while transmitting biased or corrupted model updates (Section~\ref{sec:exp-robust}). To defend against this, we develop \texttt{robust\_bfwa}, pairing coordinate-wise distance screening with constrained dual reweighting. At the client level, Fairness-Sensitive Edge Reweighting (FSER, Section~\ref{sec:fser}) provides structural regularization by learning attention corrections that suppress biased cross-group edges, preventing topological bias amplification before local updates are computed.
 
@@ -643,7 +643,7 @@ By (A1) and (A3), altering the sensitive attribute of one node shifts at most on
 \paragraph{Scope, empirical leakage bounds, and complementary protection.}
 We state plainly what Proposition~\ref{prop:ftgd_privacy} does and does not cover, because the distinction is easy to overclaim. The guarantee is on the \emph{released group statistics} $(\tilde\mu_0,\tilde\mu_1)$ and on any quantity computed from them alone. It does \emph{not} certify that the full transmitted model update $g_k = \theta_{\text{global}} - \theta_{\text{local}, k}$ is DP with respect to $s$: the fairness-gradient term
 $\nabla_\theta|\tilde\mu_0-\tilde\mu_1| = \operatorname{sign}(\tilde\mu_0-\tilde\mu_1)\,(\nabla_\theta\mu_0-\nabla_\theta\mu_1)$
-still contains the raw group masks through $\nabla_\theta\mu_g$, and FSER's edge reweighting $\mathbb{I}(s_i\neq s_j)$ (Eq.~\ref{eq:fser}) uses $s$ directly in the local message-passing pass. Adding noise to the scalar value of the disparity randomises only its magnitude, not the parameter gradient directions. 
+still contains the raw group masks through $\nabla_\theta\mu_g$, and FSER's edge reweighting $\mathbb{I}(s_i\neq s_j)$ (Eq.~\ref{eq:fser}) uses $s$ directly in the local message-passing pass. The injected noise is a scalar constant added inside $|\tilde\mu_0-\tilde\mu_1|$, so it acts on the fairness gradient only through $\operatorname{sign}(\tilde\mu_0-\tilde\mu_1)$: it perturbs \emph{which side of the absolute value} the disparity falls on, and hence the sign of the fairness update, while leaving its magnitude $\|\nabla_\theta\mu_0-\nabla_\theta\mu_1\|$---which carries the group masks---entirely unaffected. 
 
 To quantify this residual leakage empirically, we trained linear and non-linear attribute inference probes on transmitted updates (Table~\ref{tab:update_attack}). While FTGD completely closes leakage on the fairness statistic channel ($1.000 \to 0.512$ attack AUC), unnoised model updates retain residual attribute correlation (AUC $\approx 0.905$). Injecting client-level DP noise on the entire update eliminates this leakage ($0.531$ AUC) but collapses classification utility by $>15\%$ AUC. Consequently, FTGD should be understood as \emph{statistic-level differential privacy} that is fundamentally \emph{complementary} to cryptographic Secure Aggregation (SecAgg) or parameter-level DP, protecting the explicit fairness signaling channel at negligible utility cost ($<1\%$). Table~\ref{tab:dp_accounting} provides the exact end-to-end RDP accounting across all five benchmark datasets.
 
@@ -1227,7 +1227,7 @@ Robust aggregation retains utility as corruption grows.}
 \end{figure}
 
 \paragraph{Breakdown Point under Adaptive Stealth Fairness Poisoning.}
-To delineate the exact boundary of Byzantine resilience (Issues~I4, I5), we evaluate an omniscient adaptive adversary that projects malicious parameter updates within the median client distance radius $\rho=0.85$ while falsifying its reported disparity to $\widehat{\mathrm{DPD}}=0.0$. Table~\ref{tab:adaptive_poisoner} sweeps the Byzantine client fraction $f \in \{0.1, 0.2, 0.3, 0.4\}$ on Bail. When the adversary conceals itself within the benign convex hull, distance-based screening in Krum and robust BFWA degrades ($w_{\text{adv}} \ge 0.85$, DPD rising to $0.125$). In contrast, coordinate-wise median demonstrates complete resilience across all fractions ($w_{\text{adv}} = 0.000, \mathrm{DPD} \le 0.038$), pinpointing coordinate-wise median as the unique aggregator immune to joint structural and metadata deception.
+To delineate the exact boundary of Byzantine resilience (Issues~I4, I5), we evaluate an omniscient adaptive adversary that projects malicious parameter updates within the median client distance radius $\rho=0.85$ while falsifying its reported disparity to $\widehat{\mathrm{DPD}}=0.0$. Table~\ref{tab:adaptive_poisoner} sweeps the Byzantine client fraction $f \in \{0.1, 0.2, 0.3, 0.4\}$ on Bail. When the adversary conceals itself within the benign convex hull, distance-based screening in Krum and robust BFWA degrades ($w_{\text{adv}} \ge 0.85$, DPD rising to $0.125$). Coordinate-wise median, by contrast, holds its disparity across all sweep points ($\mathrm{DPD} \le 0.038$ at $f \le 0.4$) with no utility loss. The reason is structural rather than empirical: the median admits no client-weight vector and consumes no self-reported metadata, so falsifying $\widehat{\mathrm{DPD}}$ cannot influence it \emph{by construction}, and its resilience to the parameter-space component of the attack is bounded by the standard $f < K/2$ breakdown point rather than being unlimited. We deliberately do \emph{not} report an attacker weight share for this rule: $w_{\text{adv}}$ is undefined for an aggregator that assigns no weights, and earlier ``$w_{\text{adv}}=0.000$'' figures for the median were a fallback default in the reporting path, not a measurement (the harness now emits \texttt{NaN} there).
 
 \input{tables/revision/adaptive_poisoner.tex}
 
@@ -1512,10 +1512,19 @@ not guarantee equal-opportunity improvement, and on Elliptic DPD improves while
 EOD \emph{worsens} ($0.020\!\to\!0.075$)---a real tension we report. Demographic
 parity itself can be an inappropriate criterion when base rates genuinely differ
 across groups (recidivism, default), and should be chosen with domain and legal
-input rather than assumed. (4)~\emph{Statistical power.} Small datasets use
-$2$--$3$ seeds and the large-scale, robustness, and calibration studies are
-single-seed; we report means (and, where $>1$ seed, standard deviations) but do
-not run significance tests, so small cross-method gaps should be read cautiously.
+input rather than assumed. (4)~\emph{Statistical power is uneven across studies, and we say which is which.}
+Significance testing \emph{is} reported where seeds permit: paired Wilcoxon
+signed-rank tests over shared seeds for the main comparison on German (10 seeds),
+Bail and Pokec (5 seeds each, where $p{=}0.0625$ is the Wilcoxon floor)
+(Table~\ref{tab:significance}), and Wilcoxon tests with Cohen's $d_z$ and
+bootstrap CIs under Holm--Bonferroni correction for the 10-seed Pokec-z and
+Credit SOTA benchmarks (same table block). It is
+\emph{not} available for the remaining studies, which are run at one to three
+seeds by cost: the Credit/Elliptic cells of the main tables ($2$--$3$ seeds), the
+$n{=}3$ ablation suite (Table~\ref{tab:ablation_suite}), and the single-seed
+large-scale, robustness/poisoning, partition, and calibration studies. For those,
+we report means (and standard deviations where $>1$ seed) only, and small
+cross-method gaps there should be read as unresolved rather than as differences.
 (5)~\emph{Binary $s$}; multi-valued/intersectional attributes are handled only by
 one-vs-rest, not exhaustively evaluated. (6)~\emph{Elliptic/ogbn-products
 subgroups are temporal/structural proxies}, not protected demographics; those

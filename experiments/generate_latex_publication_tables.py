@@ -157,7 +157,7 @@ Metrics reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes Holm-Bonferron
 \centering
 \small
 \caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=3$ seeds).} 
-Isolating each architectural component confirms that: (1) FTGD targeted DP avoids utility collapse ($12\sigma$ gain over Full DP-SGD M4); (2) Temporal EMA (M7) is essential to prevent Simplex weight instability ($\Omega_w$ reduces $17.7\times$); (3) FairScore (M5) is required to reduce demographic disparity.}
+At $n=3$ seeds only two effects are large relative to seed variance. (1)~Targeted FTGD noise avoids the utility collapse of client-wide DP-SGD (M4, AUC $0.4761$ vs $0.6426$, a $12\sigma$ gap); this is a privacy--utility result and \emph{not} a fairness result---removing FTGD (M3) in fact yields the \emph{lowest} $\text{DPD}_{\text{hard}}$ in the table ($0.0378$ vs $0.0740$) at indistinguishable AUC, so FTGD does not reduce disparity here. (2)~Removing the temporal EMA (M7) inflates weight instability $17.7\times$ ($\Omega_w$ $0.0781 \to 1.3837$); this is the expected behaviour of EMA smoothing, which suppresses first-difference variance by construction, and we report the magnitude rather than treat it as a discovery. Two results cut against the proposed design and we state them: M5 (FairScore removed, $\alpha=0$) is statistically indistinguishable from M1 on $\text{DPD}_{\text{hard}}$ at this sample size ($0.0870 \pm 0.0557$ vs $0.0740 \pm 0.0375$), so FairScore \emph{may} contribute to disparity reduction but $n=3$ is underpowered to establish it; and M6 (two-tier aggregation removed, CGSV with no server holdout) is the best arm on both AUC ($0.6768$) and $\Omega_w$ ($0.0332$) with $\text{DPD}_{\text{hard}}$ overlapping M1---i.e.\ the arm that removes the aggregation novelty wins on two of the four axes. Only the FSER ablation (M2) degrades every fairness axis unambiguously.}
 \label{tab:ablation_suite}
 \begin{tabular}{llcccc}
 \toprule
@@ -179,7 +179,7 @@ Isolating each architectural component confirms that: (1) FTGD targeted DP avoid
 \centering
 \small
 \caption{\textbf{Empirical Evaluation of FU-Shapley Alignment vs Exact Shapley (125 probe points, $K=5$, 5 seeds).} 
-Evaluating across 5 probing rounds confirms FU-Shapley functions as a fast, first-order ranking heuristic ($O(KP)$ vs $O(2^K P)$) with strong directional alignment ($\rho = 0.690$, $73.6\%$ sign agreement).}
+The three pre-registered fidelity criteria are \emph{not} met: pooled Pearson $r = 0.7436$ (target $\ge 0.80$), sign agreement $73.6\%$ (target $\ge 85\%$), and mean simplex $L_1$ distance $0.7554$ (target $\le 0.15$); hypothesis H3 (faithful approximation of exact Shapley in ranking \emph{and} allocation) is therefore recorded as \textsc{refuted} in \texttt{results/stage4\_3\_shapley\_results.json}. What the data do support is agreement at the \emph{ranking} level---pooled Spearman $\rho = 0.6897$, the one criterion met---so FU-Shapley is usable as a fast, first-order ranking proxy at $O(KP)$ instead of $O(2^K P)$ cost, but not as a faithful value allocation: its simplex weights depart substantially from the exact Shapley allocation.}
 \label{tab:shapley_fidelity}
 \begin{tabular}{lcc}
 \toprule

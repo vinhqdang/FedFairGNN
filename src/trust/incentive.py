@@ -40,6 +40,7 @@ package import graph acyclic (it imports from ``federated.client``).
 """
 from __future__ import annotations
 
+import warnings
 from typing import List, Optional, Tuple
 
 import torch
@@ -66,6 +67,34 @@ def _flat_from_grad_map(model, grad_map: dict) -> torch.Tensor:
 def _flat_grad_like_state(model) -> torch.Tensor:
     """Flatten ``model``'s current ``.grad`` in ``state_dict()`` order (F2)."""
     return _flat_from_grad_map(model, {n: p.grad for n, p in model.named_parameters()})
+
+
+def _missing_group(s: torch.Tensor, where: str) -> bool:
+    """True (with a RuntimeWarning) if either sensitive group is absent from the
+    scoring set.
+
+    The demographic-parity surrogate ``(mu0 - mu1)**2`` needs both group means.
+    The previous code substituted ``mu_g = 0`` for an empty group, which turns
+    the objective into ``mu_present**2`` -- not a fairness loss at all, and
+    silently so. Callers must drop the fairness term for that round instead;
+    ``alpha * g_fair`` is then exactly zero rather than corrupt, and this
+    warning records which group went missing.
+    """
+    has0 = bool((s == 0).any())
+    has1 = bool((s == 1).any())
+    if has0 and has1:
+        return False
+    missing = "s=0" if not has0 else "s=1"
+    warnings.warn(
+        f"FU-Shapley target gradient: sensitive group {missing} is absent from "
+        f"the scoring set ({where}, n={int(s.numel())} nodes). The "
+        f"demographic-parity surrogate is undefined there, so the fairness term "
+        f"is DROPPED for this round (g_fair = 0, g_target = g_task) rather than "
+        f"substituting mu_{missing} = 0, which would optimise a different "
+        f"objective. Fairness credit (phi_fair) is 0 for every client this "
+        f"round.",
+        RuntimeWarning, stacklevel=3)
+    return True
 
 
 def get_server_target_gradients(model, data_val, alpha: float, *,
@@ -101,11 +130,18 @@ def get_server_target_gradients(model, data_val, alpha: float, *,
     pred = model(x, ei, s)
     s_m = s[m]
     pm = pred[m]
-    mu0 = pm[s_m == 0].mean() if (s_m == 0).any() else pm.sum() * 0.0
-    mu1 = pm[s_m == 1].mean() if (s_m == 1).any() else pm.sum() * 0.0
-    loss_fair = (mu0 - mu1) ** 2 if fair_surrogate == "sq" else torch.abs(mu0 - mu1)
-    loss_fair.backward()
-    g_fair = _flat_grad_like_state(model)
+    if _missing_group(s_m, "server holdout (val_mask)"):
+        # D-degeneracy: with one group absent the demographic-parity surrogate
+        # is undefined, and the previous `mu_g = 0` substitution silently
+        # optimised `mu_present**2` -- a different objective that pushes every
+        # prediction of the present group to 0. Drop the term instead.
+        g_fair = torch.zeros_like(g_task)
+    else:
+        mu0 = pm[s_m == 0].mean()
+        mu1 = pm[s_m == 1].mean()
+        loss_fair = (mu0 - mu1) ** 2 if fair_surrogate == "sq" else torch.abs(mu0 - mu1)
+        loss_fair.backward()
+        g_fair = _flat_grad_like_state(model)
 
     g_target = g_task + alpha * g_fair                        # F1: PLUS sign
     model.zero_grad(set_to_none=True)
@@ -144,14 +180,19 @@ def get_server_target_gradients_pooled(model, clients_data, device, alpha: float
     params = [p for _, p in named]
 
     loss_task = _weighted_bce(pred, y.float())                           # F3
-    mu0 = pred[s == 0].mean() if (s == 0).any() else pred.sum() * 0.0
-    mu1 = pred[s == 1].mean() if (s == 1).any() else pred.sum() * 0.0
-    loss_fair = (mu0 - mu1) ** 2 if fair_surrogate == "sq" else torch.abs(mu0 - mu1)  # F5
-
     gt = torch.autograd.grad(loss_task, params, retain_graph=True, allow_unused=True)
-    gf = torch.autograd.grad(loss_fair, params, allow_unused=True)
     g_task = _flat_from_grad_map(model, {n: g for (n, _), g in zip(named, gt)})
-    g_fair = _flat_from_grad_map(model, {n: g for (n, _), g in zip(named, gf)})
+
+    if _missing_group(s, "pooled client validation nodes"):
+        # See get_server_target_gradients: no group contrast -> no fairness
+        # signal. Zero is the honest value; `mu_missing = 0` was not.
+        g_fair = torch.zeros_like(g_task)
+    else:
+        mu0 = pred[s == 0].mean()
+        mu1 = pred[s == 1].mean()
+        loss_fair = (mu0 - mu1) ** 2 if fair_surrogate == "sq" else torch.abs(mu0 - mu1)  # F5
+        gf = torch.autograd.grad(loss_fair, params, allow_unused=True)
+        g_fair = _flat_from_grad_map(model, {n: g for (n, _), g in zip(named, gf)})
     g_target = g_task + alpha * g_fair                                   # F1: PLUS
     return g_target, g_task, g_fair
 
@@ -224,13 +265,17 @@ def compute_fu_weights(client_grads: List[torch.Tensor], g_target: torch.Tensor,
         grad_clip: if set, cap ``||g_k||`` at this value before scoring
                    (SPEC 4.0(b)); ``None`` disables.
         info: optional dict filled in-place with diagnostics -- ``phi_nan_frac``,
-              ``n_clipped``, and ``fu_status`` in
-              ``{ok, degenerate_nan, degenerate_nonpos}`` (SPEC 4.0(d)).
+              ``n_clipped``, ``n_null``, ``fu_status`` in
+              ``{ok, degenerate_nan, degenerate_nonpos}`` (SPEC 4.0(d)), and
+              ``grads_scored`` (the post-clip gradients the scores were computed
+              on, to be passed to :func:`decompose`).
 
     Returns:
         weights: K-vector on the simplex (sums to 1). Clients with EMA-smoothed
                  score <= 0 receive exactly 0; if *all* are <= 0 the rule falls
-                 back to uniform FedAvg weights.
+                 back to uniform weights over the clients whose update is not
+                 identically zero (null-player axiom: a client that submitted
+                 nothing gets 0 in every branch, fallbacks included).
         phi_raw: unnormalised per-round scores (for logging / decomposition).
         phi_ema_new: updated EMA state to thread into the next round -- always
                  finite (see below), so it is safe to thread indefinitely.
@@ -256,6 +301,12 @@ def compute_fu_weights(client_grads: List[torch.Tensor], g_target: torch.Tensor,
     g_norm_median = _norms[len(_norms) // 2] if _norms else float("nan")
     g_norm_max = _norms[-1] if _norms else float("nan")
 
+    # Null players are identified BEFORE clipping (rescaling never changes
+    # whether a vector is exactly zero, but the intent is "what the client
+    # actually submitted").
+    null = torch.tensor([float(g.abs().max()) == 0.0 for g in client_grads],
+                        device=g_target.device)
+
     if grad_clip is not None and grad_clip > 0:
         client_grads, n_clipped = _clip_grads(client_grads, grad_clip)
     else:
@@ -274,14 +325,30 @@ def compute_fu_weights(client_grads: List[torch.Tensor], g_target: torch.Tensor,
     # Belt-and-braces: a NaN threaded in from an older checkpoint must not leak.
     phi_ema_new = torch.nan_to_num(phi_ema_new, nan=0.0, posinf=0.0, neginf=0.0)
 
-    clip = torch.relu(phi_ema_new)
+    # --- null-player axiom ---------------------------------------------------
+    # A client whose update is exactly zero contributed nothing: its score is
+    # <0, g_target> = 0 under every score mode, so the ReLU gate already gives
+    # it weight 0. The *fallback* did not: when every score was non-positive the
+    # rule handed uniform 1/K to all K clients, null players included, which is
+    # precisely the axiom violation (a null player must receive exactly 0 in
+    # every branch, not merely in the branch that happens to look at phi). The
+    # mask below enforces that for both branches, and also covers the case where
+    # a client goes null after banking positive EMA history in earlier rounds.
+    active = ~null
+    clip = torch.relu(phi_ema_new) * active.to(phi_ema_new.dtype)
     total = clip.sum()
+    n_active = int(active.sum())
     if total > 0:
         weights = clip / total
         status = "ok"
     else:
-        weights = torch.full((K,), 1.0 / K,
-                             device=phi_raw.device)           # FedAvg fallback
+        if n_active > 0:
+            # Uniform over the NON-degenerate clients only.
+            weights = active.to(phi_raw.dtype) / n_active
+        else:
+            # Every client is null: the aggregate is the zero vector whatever
+            # the weights are, so uniform keeps the simplex contract.
+            weights = torch.full((K,), 1.0 / K, device=phi_raw.device)
         # D3: "measurement broke" and "everyone contributed negatively" produce
         # the same weights but are different states -- label them apart.
         status = "degenerate_nan" if not bool(finite.all()) else "degenerate_nonpos"
@@ -298,6 +365,12 @@ def compute_fu_weights(client_grads: List[torch.Tensor], g_target: torch.Tensor,
         # changes every round -- so `phi_ema` cannot be re-derived from
         # `phi_raw` alone.
         info["phi_norm"] = [round(float(v), 8) for v in phi_n]
+        info["n_null"] = K - n_active
+        # The gradients the scores were ACTUALLY computed on (post-clip). The
+        # caller must feed these -- not the raw stack -- to `decompose`, or
+        # phi_util + phi_fair != phi_raw in every round where the clip binds.
+        # Tensors, not a log field: `aggregate` copies only scalars into `info`.
+        info["grads_scored"] = client_grads
     return weights, phi_raw, phi_ema_new
 
 

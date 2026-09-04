@@ -52,7 +52,14 @@ def test_metrics_report_divergence_instead_of_hiding_it():
 
     ok = M.all_metrics(y, np.array([0.1, 0.9, 0.2, 0.8]), s)
     assert ok["diverged"] == 0.0
-    assert all(np.isfinite(v) for v in ok.values()), "healthy runs stay finite"
+    # The *global* metrics of a healthy run stay finite. The per-group ones added
+    # for levelling-down detection are exempt on purpose: this fixture gives
+    # group S=0 the labels [0, 0], and a ranking metric on a single-class subset
+    # is undefined -- reporting 0.5/0.0 there would invent a measurement the data
+    # cannot support (the same argument as SPEC 4.0(c) above, one level down).
+    per_group = {"auc_group0", "auc_group1", "ap_group0", "ap_group1"}
+    assert all(np.isfinite(v) for k, v in ok.items() if k not in per_group), \
+        "healthy runs stay finite"
 
 
 def test_equalized_odds_bounds():
@@ -214,3 +221,127 @@ def test_models_forward_probabilities():
         out = model(d.x, d.edge_index, d.sensitive_attr)
         assert out.shape[0] == 200
         assert float(out.min()) >= 0.0 and float(out.max()) <= 1.0
+
+
+# ------------------- per-group utility metrics (D1) ------------------- #
+def test_per_group_utility_metrics_are_a_strict_addition():
+    """all_metrics gains auc/ap per sensitive group without disturbing any
+    existing key -- global utility can hide 'levelling down', where a fairness
+    gap closes because the worse-off group got *worse*."""
+    y = np.array([0, 1, 0, 1, 0, 1, 0, 1])
+    s = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+    # group 0 ranked perfectly, group 1 ranked backwards
+    sc = np.array([0.1, 0.9, 0.2, 0.8, 0.9, 0.1, 0.8, 0.2])
+    out = M.all_metrics(y, sc, s)
+
+    legacy = {"diverged", "auc", "ap", "f1", "acc", "fpr@80tpr", "dpd",
+              "dpd_soft", "dpd_hard", "eod", "eo", "pred_std"}
+    assert legacy <= set(out), "existing keys must survive unchanged"
+    assert {"auc_group0", "auc_group1", "ap_group0", "ap_group1"} <= set(out)
+
+    assert out["auc_group0"] == pytest.approx(1.0)
+    assert out["auc_group1"] == pytest.approx(0.0)
+    # the global AUC alone cannot tell these two groups apart
+    assert out["auc_group0"] > out["auc"] > out["auc_group1"]
+    assert out["ap_group0"] > out["ap_group1"]
+
+
+def test_per_group_metrics_are_nan_when_undefined():
+    """A group that is empty, or carries one label class, has no AUC/AP. That
+    must read as NaN, never as 0.5 / 0.0 -- a fabricated 'chance' number would
+    be averaged into cross-seed aggregates as if it were measured."""
+    y = np.array([0, 0, 0, 1])
+    s = np.array([0, 0, 1, 1])            # group 0 is all-negative
+    out = M.all_metrics(y, np.array([0.2, 0.3, 0.4, 0.9]), s)
+    assert math.isnan(out["auc_group0"]) and math.isnan(out["ap_group0"])
+    assert np.isfinite(out["auc_group1"])
+
+    empty = M.all_metrics(np.array([0, 1]), np.array([0.2, 0.9]), np.array([0, 0]))
+    assert math.isnan(empty["auc_group1"]), "an empty group is not a measurement"
+
+    # a diverged run keeps a stable key set, all NaN
+    bad = M.all_metrics(y, np.array([np.nan, 0.1, 0.2, 0.3]), s)
+    assert bad["diverged"] == 1.0
+    for k in ("auc_group0", "auc_group1", "ap_group0", "ap_group1"):
+        assert k in bad and math.isnan(bad[k])
+
+
+# --------------------- FTGD gradient surgery (C) --------------------- #
+def _ftgd_client(**over):
+    """A trustfedgnn client on tiny synthetic data, noise-free and dropout-free
+    so both FTGD paths are exactly reproducible."""
+    from src.federated.client import Client
+    d = load_synthetic(seed=0, num_nodes=90)
+    set_seed(7)
+    cfg = ExperimentConfig(model="trustfedgnn", dp_mode="ftgd", dp_enabled=False,
+                           hidden_channels=16, num_layers=2, heads=2, dropout=0.0,
+                           rounds=1, local_epochs=1, **over)
+    return Client(0, d, cfg)
+
+
+def test_sampled_ftgd_path_does_the_same_surgery_as_full_batch():
+    """C1. ``_ftgd_batch`` used to backprop task + lambda*|mu0-mu1| directly,
+    with no task/fairness decomposition at all -- so every sampled run (the
+    ogbn-products-scale ones) trained a different algorithm from the full-batch
+    runs it was compared with. On matched inputs the two paths must now produce
+    identical gradients, beta included."""
+    a, b = _ftgd_client(), _ftgd_client()
+    b.set_flat(a.get_flat())                      # identical weights
+    x, ei, s = a.data.x, a.data.edge_index, a.data.sensitive_attr
+    bs = 40
+    m = torch.zeros(x.size(0), dtype=torch.bool)
+    m[:bs] = True                                 # batch == the first bs nodes
+    opt_a = torch.optim.SGD(a.model.parameters(), lr=0.0)   # lr=0: compare grads
+    opt_b = torch.optim.SGD(b.model.parameters(), lr=0.0)
+    a.model.train(); b.model.train()
+
+    a._ftgd_step(opt_a, x, ei, s, a._y, m)
+    b._ftgd_batch(opt_b, x, ei, s, b._y[m].float(), s[m], bs)
+
+    g_a = torch.cat([p.grad.flatten() for p in a.model.parameters()])
+    g_b = torch.cat([p.grad.flatten() for p in b.model.parameters()])
+    assert torch.allclose(g_a, g_b, atol=1e-6), "sampled path must match full-batch"
+    assert a.model.layers[0].beta.grad is not None
+    assert torch.allclose(a.model.layers[0].beta.grad, b.model.layers[0].beta.grad)
+
+
+def test_min_fair_norm_skips_projection_cleanly_and_is_counted():
+    """C2. A near-zero ||g_fair|| used to be papered over with ``+1e-12`` in the
+    denominator, which scales the projection toward numerical garbage instead of
+    declining to project. Below cfg.ftgd_min_fair_norm the step must degrade to
+    plain weighted-sum training, and the skip must be countable."""
+    c = _ftgd_client(ftgd_min_fair_norm=1e-8)
+    g_total = torch.tensor([1.0, 2.0, 3.0])
+    assert c._ftgd_skipped_projection_count == 0
+
+    out = c._gradient_surgery(g_total, torch.tensor([1e-12, 0.0, 0.0]))
+    assert torch.equal(out, g_total), "must fall back to the un-decomposed sum"
+    assert c._ftgd_skipped_projection_count == 1
+
+    g_fair = torch.tensor([0.0, 1.0, 0.0])
+    out = c._gradient_surgery(g_total, g_fair)
+    assert not torch.equal(out, g_total), "a healthy g_fair must still be projected"
+    assert c._ftgd_skipped_projection_count == 1, "no spurious skip"
+    # g_task = g_total - <g_total,g_fair>/||g_fair||^2 * g_fair; g_final = g_task + g_fair
+    assert torch.allclose(out, torch.tensor([1.0, 1.0, 3.0]))
+
+
+def test_ftgd_projection_conflict_only_projects_on_conflict():
+    """C3. PCGrad (Yu et al., NeurIPS'20): when the task and fairness gradients
+    already agree there is no conflict to resolve, and projecting deletes a
+    cooperative component for no fairness gain. 'always' reproduces the
+    published unconditional rule."""
+    g_fair = torch.tensor([1.0, 0.0])
+
+    agree = torch.tensor([2.0, 0.0]) + g_fair          # <g_task, g_fair> > 0
+    assert torch.equal(_ftgd_client(ftgd_projection="conflict")
+                       ._gradient_surgery(agree, g_fair), agree)
+    assert not torch.equal(_ftgd_client(ftgd_projection="always")
+                           ._gradient_surgery(agree, g_fair), agree)
+
+    clash = torch.tensor([-2.0, 0.0]) + g_fair         # <g_task, g_fair> < 0
+    projected = _ftgd_client(ftgd_projection="conflict")._gradient_surgery(clash, g_fair)
+    assert not torch.equal(projected, clash), "a real conflict must be projected"
+    assert torch.allclose(
+        projected, _ftgd_client(ftgd_projection="always")._gradient_surgery(clash, g_fair)), \
+        "under conflict the two modes must agree"

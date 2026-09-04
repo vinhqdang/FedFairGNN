@@ -31,7 +31,8 @@ import torch
 
 from src.config import ExperimentConfig
 from src.federated import FederatedTrainer
-from src.utils.metrics import sensitive_homophily, weight_oscillation
+from src.utils.metrics import weight_oscillation
+from experiments.fairshare_common import global_sensitive_homophily
 
 
 ABLATION_CONFIGS = {
@@ -133,9 +134,17 @@ def evaluate_single_run(config_name: str, dataset: str, seed: int, device: str) 
     weights_hist = [r.get("agg_weights") for r in res.get("history", [])]
     omega_w = weight_oscillation(weights_hist)
 
-    h_s = 0.0
-    if hasattr(trainer, "global_data") and trainer.global_data is not None:
-        h_s = sensitive_homophily(trainer.global_data.edge_index, trainer.global_data.sensitive_attr)
+    # Sensitive homophily h_s of the FULL (pre-partition) graph.
+    #
+    # This used to be guarded by ``hasattr(trainer, "global_data")``. That
+    # attribute does not exist on FederatedTrainer -- it keeps ``clients_data``
+    # and ``server_holdout``, never the unpartitioned graph -- so the guard
+    # never fired and h_s was recorded as a constant 0.0 for every seed of
+    # every run. ``global_sensitive_homophily`` measures it on the same graph
+    # the trainer loaded (same dataset/root/seed), which is where a *dataset*
+    # property belongs: the induced client subgraphs drop every cross-client
+    # edge, so a post-partition h_s would describe the split, not the data.
+    h_s = global_sensitive_homophily(cfg)
 
     final = res["final"]
     return {

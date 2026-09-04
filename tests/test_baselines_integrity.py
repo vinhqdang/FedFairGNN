@@ -46,3 +46,46 @@ def test_all_aggregators():
         if "weights" in info and info["weights"] is not None:
             w = torch.tensor(info["weights"])
             assert torch.isclose(w.sum(), torch.tensor(1.0), atol=1e-4), f"Weight sum != 1 for {agg_name}: {w.sum()}"
+
+
+def test_bfwa_variants_report_the_feasibility_contract():
+    """Every BFWA round must expose the constraint residual and feasibility.
+
+    The manuscript states that the per-round constraint residual and the
+    empirical feasibility rate are reported; before the Frank-Wolfe fix nothing
+    in the repo computed either quantity (and tau did not bind at all).
+    """
+    K = 5
+    torch.manual_seed(7)
+    updates = [torch.randn(32) for _ in range(K)]
+    perf = [0.90, 0.75, 0.85, 0.70, 0.80]
+    dpd = [0.20, 0.02, 0.15, 0.01, 0.10]
+    meta = [{"n": 100, "perf": p, "dpd": d, "loss": 1.0 - p}
+            for p, d in zip(perf, dpd)]
+
+    for agg_name in ("bfwa", "robust_bfwa"):
+        _, info = aggregate(agg_name, updates, meta, tau=0.05, krum_f=1, state={})
+        for key in ("constraint_residual", "feasible",
+                    "constraint_residual_preclamp", "feasible_preclamp", "tau"):
+            assert key in info, f"{agg_name} must report {key}"
+        assert isinstance(info["feasible"], bool)
+        w = torch.tensor(info["weights"])
+        assert torch.isclose(w.sum(), torch.tensor(1.0), atol=1e-4)
+
+
+def test_fu_aggregators_never_pay_a_client_that_submitted_nothing():
+    """Null-player axiom, at the aggregator boundary."""
+    torch.manual_seed(8)
+    P = 32
+    g_target = torch.randn(P)
+    updates = [-g_target, -g_target, torch.randn(P), torch.zeros(P)]
+    meta = [{"n": 100, "perf": 0.8, "dpd": 0.05, "loss": 0.2} for _ in range(4)]
+
+    for agg_name in ("fu_shapley", "robust_fu_shapley"):
+        _, info = aggregate(agg_name, updates, meta, state={}, krum_f=1,
+                            g_target=g_target, fu_normalize="none")
+        w = info["weights"]
+        if w is None:
+            continue            # a median fallback pays nobody by construction
+        assert w[3] == 0.0, f"{agg_name} paid the null client: {w}"
+        assert abs(sum(w) - 1.0) < 1e-4

@@ -13,6 +13,7 @@ Models
 """
 from __future__ import annotations
 
+import warnings
 from typing import Optional
 
 import torch
@@ -36,7 +37,9 @@ class FSERLayer(MessagePassing):
     per-edge attention is cached in ``self.last_attention`` for explanation.
     """
 
-    def __init__(self, in_channels, out_channels, heads=4, concat=True, dropout=0.3, beta_init: float = 0.5, fser_mode: str = "sub"):
+    def __init__(self, in_channels, out_channels, heads=4, concat=True, dropout=0.3,
+                 beta_init: float = 0.5, fser_mode: str = "sub",
+                 freeze_beta: bool = False):
         super().__init__(node_dim=0, aggr="add")
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -45,10 +48,23 @@ class FSERLayer(MessagePassing):
         self.dropout = dropout
         self.beta_init = float(beta_init)
         self.fser_mode = str(fser_mode)
+        self.freeze_beta = bool(freeze_beta)
 
         self.lin = nn.Linear(in_channels, heads * out_channels, bias=False)
         self.att = Parameter(torch.empty(1, heads, 2 * out_channels))
-        self.beta = Parameter(torch.tensor(self.beta_init))  # fairness coefficient (clamped to [0,5])
+        # fairness coefficient (clamped to [0,5]). ``freeze_beta`` registers it as
+        # a *buffer* instead of a Parameter: it keeps its slot in ``state_dict``
+        # (so the federated flat-weight vector is unchanged in length and layout)
+        # but is excluded from ``parameters()``, so no optimiser ever touches it
+        # and no gradient is accumulated into it. With ``beta_init=0.0`` this is
+        # the faithful "w/o FSER" ablation -- the phi term is annihilated for
+        # every mode while the backbone (BN + residual + skip-concat) is held
+        # fixed. See ExperimentConfig.freeze_beta.
+        beta0 = torch.tensor(self.beta_init)
+        if self.freeze_beta:
+            self.register_buffer("beta", beta0)
+        else:
+            self.beta = Parameter(beta0)
         self.last_attention = None
         self.reset_parameters()
 
@@ -61,7 +77,29 @@ class FSERLayer(MessagePassing):
 
     def forward(self, x, edge_index, sensitive_attr):
         x = self.lin(x).view(-1, self.heads, self.out_channels)
-        s = sensitive_attr.float() if sensitive_attr is not None else torch.zeros(x.size(0), device=x.device)
+        if sensitive_attr is None:
+            # Substituting an all-zero s is NOT neutral: it silently changes what
+            # the layer computes, differently per mode, with no error. Warn once
+            # per (message, module, lineno) -- Python's default filter already
+            # deduplicates, so a full training run is not spammed.
+            mode = getattr(self, "fser_mode", "sub")
+            if mode == "same_penalize":
+                effect = ("every pair compares EQUAL, so the same-group gate fires on "
+                          "EVERY edge and the full beta*phi penalty is applied "
+                          "graph-wide (worst case)")
+            else:
+                effect = ("every pair compares equal, so the cross-group gate never "
+                          "fires, phi == 0 and the layer degenerates to plain GAT "
+                          "attention")
+            warnings.warn(
+                f"FSERLayer.forward received sensitive_attr=None with "
+                f"fser_mode={mode!r}: s is being zero-filled, so {effect}. Pass the "
+                f"real sensitive attribute, or use this deliberately (e.g. the "
+                f"s-blind DP release pass) and ignore this warning.",
+                RuntimeWarning, stacklevel=2)
+            s = torch.zeros(x.size(0), device=x.device)
+        else:
+            s = sensitive_attr.float()
         out = self.propagate(edge_index, x=x, s=s)
         return out.mean(dim=1) if not self.concat else out.reshape(-1, self.heads * self.out_channels)
 
@@ -100,12 +138,13 @@ class TrustFedGNN(nn.Module):
 
     def __init__(self, in_channels, hidden_channels=64, out_channels=1,
                  num_layers=2, heads=4, dropout=0.3, beta_init: float = 0.5,
-                 fser_mode: str = "sub", **_):
+                 fser_mode: str = "sub", freeze_beta: bool = False, **_):
         super().__init__()
         self.dropout = dropout
         self.num_layers = num_layers
         self.beta_init = float(beta_init)
         self.fser_mode = str(fser_mode)
+        self.freeze_beta = bool(freeze_beta)
 
         self.input_proj = nn.Linear(in_channels, hidden_channels)
         self.bn_in = nn.BatchNorm1d(hidden_channels)
@@ -115,7 +154,8 @@ class TrustFedGNN(nn.Module):
             self.layers.append(FSERLayer(hidden_channels, hidden_channels // heads,
                                          heads=heads, concat=True, dropout=dropout,
                                          beta_init=self.beta_init,
-                                         fser_mode=self.fser_mode))
+                                         fser_mode=self.fser_mode,
+                                         freeze_beta=self.freeze_beta))
             self.bns.append(nn.BatchNorm1d(hidden_channels))
         self.final_lin = nn.Linear(hidden_channels * (num_layers + 1), hidden_channels)
         self.classifier = nn.Linear(hidden_channels, out_channels)
@@ -133,6 +173,11 @@ class TrustFedGNN(nn.Module):
         return out if logits else torch.sigmoid(out)
 
     def clamp_beta(self):
+        # A frozen beta is a constant of the ablation, not a trained quantity:
+        # clamping is a no-op for it (beta_init is already inside [0, 5]) but we
+        # skip it explicitly so the frozen value can never be mutated in place.
+        if self.freeze_beta:
+            return
         for layer in self.layers:
             layer.beta.data.clamp_(0.0, 5.0)
 

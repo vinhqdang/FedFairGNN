@@ -12,6 +12,7 @@ level attacks are applied server-side (see attacks.py).
 """
 from __future__ import annotations
 
+import math
 import warnings
 from typing import Dict, List
 
@@ -60,6 +61,13 @@ def _weighted_bce(pred, y):
     w_neg = n / (2.0 * (n - npos).clamp(min=1.0))
     return -(w_pos * y * torch.log(pred + 1e-7)
              + w_neg * (1 - y) * torch.log(1 - pred + 1e-7)).mean()
+
+
+#: Backbones whose ``forward`` actually *consumes* ``sensitive_attr`` -- i.e. for
+#: which y_hat = f(X, A, s) rather than f(X, A). Only these need the s-blind
+#: release pass of Fix B; for every other model the second forward would be pure
+#: (stochastic, dropout-perturbed) waste.
+_S_DEPENDENT_BACKBONES = frozenset({"TrustFedGNN", "FairSIN", "FaVGNN"})
 
 
 def _soft_dpd(pred, s):
@@ -130,6 +138,19 @@ class Client:
         self._puffle_lambda = 0.0
         self._puffle_velocity = 0.0
 
+        # FTGD bookkeeping.
+        #   _last_privatised_dpd -- |mu0 - mu1| AFTER the Gaussian noise, i.e. the
+        #     disparity the DP mechanism actually released. None means "no
+        #     privatised statistic exists yet": either DP is off (sigma == 0) or
+        #     no FTGD step has run. meta() falls back to the un-noised val DPD
+        #     only in that case; see meta().
+        #   _ftgd_skipped_projection_count -- how many steps degraded to plain
+        #     weighted-sum training because ||g_fair|| < cfg.ftgd_min_fair_norm.
+        self._last_privatised_dpd = None
+        self._ftgd_skipped_projection_count = 0
+        # Does this backbone read s in forward()? (Fix B / dp_statistic_s_blind.)
+        self._model_uses_s = type(self.model).__name__ in _S_DEPENDENT_BACKBONES
+
     # ----- weight I/O -----
     def get_flat(self) -> torch.Tensor:
         return flatten_state(self.model.state_dict()).cpu()
@@ -180,17 +201,28 @@ class Client:
                 self.model.clamp_beta()
 
     def _ftgd_batch(self, opt, x, ei, s, y_s, s_s, bs):
+        """Mini-batch counterpart of :meth:`_ftgd_step` (cfg.sampling=True).
+
+        Identical objective *and* identical gradient surgery: this path used to
+        backprop ``task + lambda*|mu0-mu1|`` straight through with no
+        task/fairness decomposition, so the sampled runs (the ogbn-products-scale
+        ones) silently trained a different algorithm from the full-batch runs
+        they were compared against.
+        """
         opt.zero_grad()
         pred = self.model(x, ei, s)[:bs]
         task = _weighted_bce(pred, y_s)
-        n0 = int((s_s == 0).sum()); n1 = int((s_s == 1).sum())
-        mu0 = pred[s_s == 0].mean() if n0 else pred.sum() * 0.0
-        mu1 = pred[s_s == 1].mean() if n1 else pred.sum() * 0.0
-        if self.dp_sigma > 0 and n0 and n1:
-            sens = (1.0 / n0 ** 2 + 1.0 / n1 ** 2) ** 0.5
-            mu0 = mu0 + torch.randn(()) * self.noise_multiplier * sens
-            mu1 = mu1 + torch.randn(()) * self.noise_multiplier * sens
-        (task + self.cfg.fairness_weight * torch.abs(mu0 - mu1)).backward()
+        seed = slice(0, bs)
+        fair = self._released_disparity(pred, s_s, x, ei, seed)
+        total = task + self.cfg.fairness_weight * fair
+
+        total.backward(retain_graph=True)
+        g_total = self._flat_grad()
+        opt.zero_grad()
+        (self.cfg.fairness_weight * fair).backward()
+        g_fair = self._flat_grad()
+        self._write_grad(self._gradient_surgery(g_total, g_fair))
+
         opt.step()
         if hasattr(self.model, "clamp_beta"):
             self.model.clamp_beta()
@@ -285,6 +317,103 @@ class Client:
         if self.is_fair:
             self.model.clamp_beta()
 
+    # ----- FTGD internals (shared by the full-batch and sampled paths) -----
+    def _flat_grad(self) -> torch.Tensor:
+        return torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
+                          for p in self.model.parameters()])
+
+    def _write_grad(self, g: torch.Tensor) -> None:
+        idx = 0
+        for p in self.model.parameters():
+            n = p.numel()
+            if p.grad is not None:
+                p.grad.copy_(g[idx:idx + n].view_as(p))
+            idx += n
+
+    def _release_pred(self, pred, x, ei, sel):
+        """Predictions the RELEASED group means are computed from.
+
+        The FTGD sensitivity bound assumes y_hat is independent of s, so that
+        flipping one node's group moves exactly that node between the two means
+        (Delta = sqrt(1/n0^2 + 1/n1^2)). FSER breaks this: it reads s inside the
+        attention, so y_hat = f(X, A, s) and one flip perturbs predictions across
+        the node's whole L-hop neighbourhood -- the released statistic then has
+        no O(1/n_min) sensitivity and the reported epsilon is unsupported.
+
+        With ``cfg.dp_statistic_s_blind`` (default on) and the mechanism live,
+        the released means are therefore taken from a SEPARATE forward pass that
+        never sees s. FSER still runs with the real s in the task pathway; only
+        the released quantity is s-blind. Off, the pre-fix (sensitivity-broken)
+        behaviour is reproduced exactly -- the flag exists so the distinction is
+        testable rather than merely asserted.
+        """
+        if not (getattr(self.cfg, "dp_statistic_s_blind", True)
+                and self.dp_sigma > 0 and self._model_uses_s):
+            return pred
+        with warnings.catch_warnings():
+            # This s=None pass is deliberate, so the FSERLayer "s was zero-filled"
+            # warning is not actionable here; every other warning still surfaces.
+            warnings.filterwarnings(
+                "ignore", message="FSERLayer.forward received sensitive_attr=None",
+                category=RuntimeWarning)
+            return self.model(x, ei, None)[sel]
+
+    def _released_disparity(self, pred, s_sel, x, ei, sel):
+        """The (privatised) soft-DPD term, and the cache of what was released.
+
+        Returns a differentiable ``|mu0 - mu1|``; as a side effect caches the
+        post-noise value in ``self._last_privatised_dpd`` so ``meta()`` can report
+        the disparity the mechanism actually released instead of an un-noised,
+        unaccounted val-split statistic. When sigma == 0 there IS no privatised
+        statistic and the cache is left untouched (None).
+        """
+        pred_rel = self._release_pred(pred, x, ei, sel)
+        mask0, mask1 = (s_sel == 0), (s_sel == 1)
+        n0 = int(mask0.sum()); n1 = int(mask1.sum())
+        mu0 = pred_rel[mask0].mean() if n0 > 0 else pred_rel.sum() * 0.0
+        mu1 = pred_rel[mask1].mean() if n1 > 0 else pred_rel.sum() * 0.0
+        if self.dp_sigma > 0 and n0 > 0 and n1 > 0:
+            # L2 sensitivity of (mu0, mu1) to flipping one node's group.
+            sens = (1.0 / n0 ** 2 + 1.0 / n1 ** 2) ** 0.5
+            sigma = self.noise_multiplier * sens
+            mu0 = mu0 + torch.randn(()) * sigma          # additive constant ->
+            mu1 = mu1 + torch.randn(()) * sigma          # gradient still flows
+            # AFTER the noise, detached: this is the released statistic.
+            self._last_privatised_dpd = float(torch.abs(mu0.detach() - mu1.detach()))
+        return torch.abs(mu0 - mu1)
+
+    def _gradient_surgery(self, g_total: torch.Tensor, g_fair: torch.Tensor) -> torch.Tensor:
+        """Combine the task and fairness gradients into the update actually applied.
+
+        ``g_total`` is grad(task + lambda*fair); ``g_fair`` is grad(lambda*fair),
+        so the raw task gradient is ``g_total - g_fair``.
+
+        cfg.ftgd_projection
+            ``always``   -- project g_total orthogonal to g_fair and add g_fair
+                            back (the published FTGD rule).
+            ``conflict`` -- PCGrad (Yu et al., NeurIPS'20): project only when the
+                            task and fairness gradients actually oppose,
+                            <g_total - g_fair, g_fair> < 0. When they agree,
+                            projecting deletes a *cooperative* component for no
+                            fairness gain, so the un-decomposed sum is used.
+
+        cfg.ftgd_min_fair_norm
+            When ||g_fair|| falls below this the projection is skipped outright
+            and counted in ``_ftgd_skipped_projection_count`` -- the step degrades
+            cleanly to plain weighted-sum training. The previous ``+1e-12`` in the
+            denominator instead divided by a near-zero norm, silently scaling the
+            projection toward numerical garbage with no record that it happened.
+        """
+        min_norm = float(getattr(self.cfg, "ftgd_min_fair_norm", 1e-8))
+        if float(g_fair.norm(2)) < min_norm:
+            self._ftgd_skipped_projection_count += 1
+            return g_total
+        mode = getattr(self.cfg, "ftgd_projection", "always")
+        if mode == "conflict" and float(torch.dot(g_total - g_fair, g_fair)) >= 0.0:
+            return g_total                       # objectives agree -> nothing to resolve
+        g_task = g_total - (torch.dot(g_total, g_fair) / torch.dot(g_fair, g_fair)) * g_fair
+        return g_task + g_fair
+
     def _ftgd_step(self, opt, x, ei, s, y, m):
         """FTGD: split the objective into an S-independent task pathway
         (released in the clear) and an S-dependent fairness pathway that is
@@ -295,48 +424,34 @@ class Client:
         yields (eps, delta)-DP for the *released fairness statistic* at
         negligible utility cost, avoiding the curse of dimensionality of noising
         the full |theta|-dimensional gradient. NOTE (scope): this does NOT make
-        the whole transmitted update DP w.r.t. s -- the fairness-gradient still
-        contains the raw group masks (grad flows through mu_g below) and FSER
-        uses s in the forward pass. The guarantee is on the released statistic,
-        not the update. See the manuscript's FTGD "Scope and limitations".
+        the whole transmitted update DP w.r.t. s -- the fairness gradient still
+        contains the raw group masks (grad flows through mu_g). The guarantee is
+        on the released statistic, not the update. See the manuscript's FTGD
+        "Scope and limitations".
+
+        The released means come from :meth:`_released_disparity`, which under
+        ``cfg.dp_statistic_s_blind`` computes them from an s-blind forward pass
+        so the O(1/n_min) sensitivity the epsilon is derived from actually holds
+        for the FSER backbone; ``meta`` then reports the post-noise disparity
+        rather than an un-noised val-split one.
         """
         opt.zero_grad()
         pred = self.model(x, ei, s)[m]
         s_m = s[m]
         task = _weighted_bce(pred, y[m].float())
 
-        mask0, mask1 = (s_m == 0), (s_m == 1)
-        n0 = int(mask0.sum()); n1 = int(mask1.sum())
-        mu0 = pred[mask0].mean() if n0 > 0 else pred.sum() * 0.0
-        mu1 = pred[mask1].mean() if n1 > 0 else pred.sum() * 0.0
-        if self.dp_sigma > 0 and n0 > 0 and n1 > 0:
-            # L2 sensitivity of (mu0, mu1) to flipping one node's group.
-            sens = (1.0 / n0 ** 2 + 1.0 / n1 ** 2) ** 0.5
-            sigma = self.noise_multiplier * sens
-            mu0 = mu0 + torch.randn(()) * sigma          # additive constant ->
-            mu1 = mu1 + torch.randn(()) * sigma          # gradient still flows
-        fair = torch.abs(mu0 - mu1)
+        fair = self._released_disparity(pred, s_m, x, ei, m)
         total = task + self.cfg.fairness_weight * fair
 
         # gradient surgery: orthogonalise the task gradient against the fairness
         # gradient to reduce task/fairness conflict, then recombine.
         total.backward(retain_graph=True)
-        g_total = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
-                             for p in self.model.parameters()])
+        g_total = self._flat_grad()
         opt.zero_grad()
         (self.cfg.fairness_weight * fair).backward()
-        g_fair = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).flatten()
-                            for p in self.model.parameters()])
-        norm_sq = torch.dot(g_fair, g_fair) + 1e-12
-        g_task = g_total - (torch.dot(g_total, g_fair) / norm_sq) * g_fair
-        g_final = g_task + g_fair
+        g_fair = self._flat_grad()
+        self._write_grad(self._gradient_surgery(g_total, g_fair))
 
-        idx = 0
-        for p in self.model.parameters():
-            n = p.numel()
-            if p.grad is not None:
-                p.grad.copy_(g_final[idx:idx + n].view_as(p))
-            idx += n
         opt.step()
         if hasattr(self.model, "clamp_beta"):
             self.model.clamp_beta()
@@ -408,11 +523,37 @@ class Client:
         perfect fairness. Reporting stays honest; only the wire format is fixed.
         """
         v = self.evaluate("val")
-        s = self.data.sensitive_attr[self.data.train_mask]
         bad = bool(v.get("diverged", 0.0))
         auc = 0.5 if bad else v["auc"]
-        return {"n": int(self.data.train_mask.sum()), "perf": auc,
-                "dpd": 0.0 if bad else v["dpd"], "eod": 0.0 if bad else v["eod"],
-                "eo": 0.0 if bad else v["eo"],
-                "loss": 1.0 - auc, "diverged": float(bad),
-                "group1_rate": float((s == 1).float().mean()) if len(s) else 0.5}
+
+        # Which disparity goes on the wire. ``evaluate("val")`` runs an UN-noised
+        # forward pass, so reporting its dpd hands the server a raw, unaccounted
+        # s-dependent statistic every round -- the DP mechanism would be
+        # protecting a number that is never transmitted while the clear-text one
+        # is. When FTGD has actually released a privatised disparity we report
+        # THAT instead. Scope: FTGD only. The other dp_modes never compute this
+        # quantity, so they keep the evaluate()-based dpd (and say so by leaving
+        # _last_privatised_dpd at None); the same is true of an FTGD client with
+        # sigma == 0, where no privatised statistic exists.
+        dpd = 0.0 if bad else v["dpd"]
+        priv = self._last_privatised_dpd
+        if (not bad and getattr(self.cfg, "report_privatised_dpd", True)
+                and self.dp_mode == "ftgd" and priv is not None
+                and math.isfinite(priv)):
+            dpd = priv
+
+        out = {"n": int(self.data.train_mask.sum()), "perf": auc,
+               "dpd": dpd, "eod": 0.0 if bad else v["eod"],
+               "eo": 0.0 if bad else v["eo"],
+               "loss": 1.0 - auc, "diverged": float(bad)}
+
+        # group1_rate is the client's exact realised sensitive-attribute
+        # marginal, in the clear, with no privacy accounting whatsoever. Only
+        # FairFed-style aggregators need it, so it is omitted unless asked for --
+        # omitted, not zero-filled: a stand-in value would be indistinguishable
+        # from a measured one. Consumers already read it with
+        # ``m.get("group1_rate", 0.5)`` (see aggregation.py), so absence is safe.
+        if getattr(self.cfg, "report_group_rate", False):
+            s = self.data.sensitive_attr[self.data.train_mask]
+            out["group1_rate"] = float((s == 1).float().mean()) if len(s) else 0.5
+        return out
