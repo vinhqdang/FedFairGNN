@@ -128,8 +128,19 @@ class ExperimentConfig:
     fairness_budget: float = 0.05    # tau: max allowed global DPD in BFWA
     beta_init: float = 0.5           # FSER coefficient init
     fser_mode: str = "sub"           # sub (cross_penalize canonical) | add (cross_boost) | same_penalize
+    freeze_beta: bool = False        # hold FSER beta at beta_init (no gradient). With
+                                     #   beta_init=0.0 this is the ONLY faithful "w/o FSER"
+                                     #   ablation: FSERLayer at beta=0 is exactly GAT attention,
+                                     #   so the backbone (BN + residual + skip-concat) is held
+                                     #   fixed. The `ours-nofser` arm swaps model="gat" instead,
+                                     #   which removes FSER *and* the whole scaffold at once and
+                                     #   therefore attributes architecture gains to FSER.
     fw_iterations: int = 20
     dual_step_size: float = 0.1
+    bfwa_persist_dual: bool = True   # carry the BFWA dual multiplier mu across rounds.
+                                     #   False reproduces the pre-fix behaviour (mu reset to 0
+                                     #   every call), under which tau never binds -- kept only
+                                     #   so the regression is reproducible, never for reporting.
 
     # ---- privacy (DP) ----
     dp_enabled: bool = True
@@ -139,6 +150,24 @@ class ExperimentConfig:
     dp_mode: str = "auto"            # auto | none | ftgd | gradient
     #   ftgd     : privatise fairness statistics (ours)
     #   gradient : standard full-gradient DP-SGD (DP-FedAvg baseline)
+    dp_statistic_s_blind: bool = True  # compute the RELEASED group means from an s-blind forward
+                                     #   pass (sensitive_attr=None). Required for the sensitivity
+                                     #   bound to hold: FSER makes yhat a function of s, so
+                                     #   flipping one node's group perturbs predictions across its
+                                     #   whole L-hop neighbourhood and Delta is NOT O(1/n_min).
+                                     #   With this on, the released statistic is computed by a
+                                     #   forward pass that never reads s, restoring yhat _|_ s for
+                                     #   the released quantity while FSER still runs in the task
+                                     #   pathway. False = pre-fix behaviour; the reported epsilon
+                                     #   is then unsupported for the FSER backbone.
+    report_privatised_dpd: bool = True  # meta() reports the DP-noised disparity actually produced
+                                     #   by _ftgd_step instead of a raw val-split DPD. Off, the
+                                     #   server consumes un-noised fairness statistics and the
+                                     #   "privacy-aware feedback loop" is not implemented.
+    report_group_rate: bool = False  # transmit the client's raw sensitive-attribute marginal
+                                     #   (group1_rate) to the server. Default OFF: it is an
+                                     #   un-noised, unaccounted s-derived statistic released every
+                                     #   round. Only FairFed-style aggregators need it.
 
     # ---- generic fairness (for baselines that add a local DP penalty) ----
     local_fairness: bool = False     # add soft-DPD penalty for non-trustfedgnn models
@@ -158,10 +187,36 @@ class ExperimentConfig:
     server_calib_start_frac: float = 0.5 # start calibrating after this fraction of rounds (EquFL default)
     server_calib_gamma: float = 1.0      # weight on the calibration gradient g0
 
+    # ---- FTGD gradient surgery ----
+    ftgd_projection: str = "always"  # always | conflict.
+                                     #   always   : project the task gradient orthogonal to the
+                                     #              fairness gradient unconditionally (as published).
+                                     #   conflict : project only when <g_task, g_fair> < 0, i.e.
+                                     #              the PCGrad rule (Yu et al., NeurIPS'20). When
+                                     #              the objectives agree, 'always' deletes a
+                                     #              cooperative component PCGrad keeps -- strictly
+                                     #              slower on the task for no fairness gain. This
+                                     #              is the ablation that isolates that choice.
+    ftgd_min_fair_norm: float = 1e-8 # skip the projection when ||g_fair|| falls below this and
+                                     #   record it, instead of letting a numerical epsilon in the
+                                     #   denominator silently scale the projection to nothing.
+
     # ---- robustness (attack simulation) ----
     attack: str = "none"             # none | label_flip | gaussian | scaling | fairness_poison
+                                     #   | ipm | alie
     num_byzantine: int = 0
-    attack_intensity: float = 10.0
+    attack_intensity: float = 10.0   # scale for gaussian / scaling / sign_flip / fairness_poison.
+                                     #   NOT used by ipm or alie -- those have their own calibrated
+                                     #   parameters below, because a large intensity destroys the
+                                     #   stealth that defines both attacks.
+    ipm_epsilon: float = 0.5         # IPM (Xie et al.): g_byz = -eps * mean(benign). The attack
+                                     #   REQUIRES eps < 1 so the update stays inside the benign
+                                     #   radius; at the old attack_intensity=10.0 it degenerated
+                                     #   into plain scaling and lost its point.
+    alie_z: Optional[float] = None   # ALIE (Baruch et al.): g_byz = mean - z*std. None (default)
+                                     #   solves z from the benign quantile given (K, f), which is
+                                     #   the actual attack; a hardcoded value ignores K and f and
+                                     #   typically sits far outside the benign range.
 
     # ---- logging ----
     wandb: bool = False
