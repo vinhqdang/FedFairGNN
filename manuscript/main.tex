@@ -645,7 +645,7 @@ We state plainly what Proposition~\ref{prop:ftgd_privacy} does and does not cove
 $\nabla_\theta|\tilde\mu_0-\tilde\mu_1| = \operatorname{sign}(\tilde\mu_0-\tilde\mu_1)\,(\nabla_\theta\mu_0-\nabla_\theta\mu_1)$
 still contains the raw group masks through $\nabla_\theta\mu_g$, and FSER's edge reweighting $\mathbb{I}(s_i\neq s_j)$ (Eq.~\ref{eq:fser}) uses $s$ directly in the local message-passing pass. The injected noise is a scalar constant added inside $|\tilde\mu_0-\tilde\mu_1|$, so it acts on the fairness gradient only through $\operatorname{sign}(\tilde\mu_0-\tilde\mu_1)$: it perturbs \emph{which side of the absolute value} the disparity falls on, and hence the sign of the fairness update, while leaving its magnitude $\|\nabla_\theta\mu_0-\nabla_\theta\mu_1\|$---which carries the group masks---entirely unaffected. 
 
-To quantify this residual leakage empirically, we trained linear and non-linear attribute inference probes on transmitted updates (Table~\ref{tab:update_attack}). While FTGD completely closes leakage on the fairness statistic channel ($1.000 \to 0.512$ attack AUC), unnoised model updates retain residual attribute correlation (AUC $\approx 0.905$). Injecting client-level DP noise on the entire update eliminates this leakage ($0.531$ AUC) but collapses classification utility by $>15\%$ AUC. Consequently, FTGD should be understood as \emph{statistic-level differential privacy} that is fundamentally \emph{complementary} to cryptographic Secure Aggregation (SecAgg) or parameter-level DP, protecting the explicit fairness signaling channel at negligible utility cost ($<1\%$). Table~\ref{tab:dp_accounting} provides the exact end-to-end RDP accounting across all five benchmark datasets.
+To quantify this residual leakage empirically, we trained linear attribute inference probes on transmitted updates, grouped by client identity to avoid a client-re-identification confound (Table~\ref{tab:update_attack}). While FTGD closes leakage on the fairness statistic channel ($1.000 \to 0.500$ attack AUC), unnoised model updates retain residual attribute correlation (AUC $\approx 0.672$; an earlier, ungrouped probe reported $0.905$, largely client re-identification rather than attribute inference). Injecting client-level DP-SGD noise on the entire update drives the probe to $0.340$---below chance, reflecting the probe's own instability under the heavily perturbed release rather than a guarantee---at a severe utility cost ($>15\%$ AUC drop). Consequently, FTGD should be understood as \emph{statistic-level differential privacy} that is fundamentally \emph{complementary} to cryptographic Secure Aggregation (SecAgg) or parameter-level DP, protecting the explicit fairness signaling channel at negligible utility cost ($<1\%$). Table~\ref{tab:dp_accounting} provides the exact end-to-end RDP accounting across all five benchmark datasets.
 
 \paragraph{FTGD $\times$ FSER Formal Interaction and Information Flow.}
 A critical architectural question (Issue~I13) is whether local structural debiasing via FSER circumvents FTGD's privacy guarantees by encoding the sensitive attribute $s$ into the backpropagated parameter gradient. Formally, FSER modifies the adjacency matrix within local message passing via $\tilde{\mathbf{A}}_{ij} = \mathbf{A}_{ij} \cdot \sigma(\mathbf{W}_a [\mathbf{h}_i \,\|\, \mathbf{h}_j] - \beta \mathbb{I}(s_i \neq s_j))$. Notice two structural properties:
@@ -794,12 +794,7 @@ institutions over a partitioned benchmark graph, not genuine multi-institution
 cross-silo graph learning---a distinction we flag as a limitation in
 Section~\ref{sec:discussion}).
 
-\begin{table}[t]\centering\small
-\caption{Datasets. $^\dagger$Elliptic uses an operational early/late temporal
-subgroup as a documented proxy (not a protected demographic).}
-\label{tab:datasets}
 \input{tables/datasets.tex}
-\end{table}
 
 \subsection{Baselines and their reimplementation}
 \label{sec:baselines}
@@ -1047,7 +1042,7 @@ with approximated fidelity (Appendix~\ref{app:baselines}).}
 
 \subsection{Ablation}
 \label{sec:exp-ablation}
-Table~\ref{tab:ablation} isolates each component, and the honest reading is that
+Table~\ref{tab:ablation_suite} isolates each component, and the honest reading is that
 \textbf{FSER, not BFWA, is the primary fairness lever} on these clean, no-DP
 runs. FSER alone cuts DPD sharply (Bail $0.072\!\to\!0.059$; German
 $0.050\!\to\!0.009$), and on Bail it does so while \emph{raising} AUC
@@ -1068,11 +1063,7 @@ rather than hide it. A fuller ablation (FTGD noise, gradient surgery, the weight
 floor, robust screening, and varying $\tau$) is left to future work; the present
 table covers only the two client/server components in isolation.
 
-\begin{table}[t]\centering\small
-\caption{Ablation of TrustFedGNN components (no DP). AUC / DPD per dataset.}
-\label{tab:ablation}
 \input{tables/ablation.tex}
-\end{table}
 
 \subsection{Does a server-side fairness correction add anything on top of BFWA?}
 \label{sec:exp-equfl}
@@ -1106,7 +1097,7 @@ FSER+BFWA's built-in fairness mechanism is already sufficient on its own,
 without needing an additional server-side correction pass.
 
 \paragraph{Disparity Constraint Slack under Differential Privacy Noise.}
-Because BFWA enforces $\sum_k w_k \tilde{\dpd}_k \le \tau$ over privatised client fairness statistics $\tilde{\dpd}_k = \dpd_k + \mathcal{N}(0, \sigma^2)$, a key question (Issue~I4) is whether the injection of Gaussian DP noise causes constraint violation or slack on the true underlying disparity. Table~\ref{tab:bfwa_slack} reports Monte Carlo evaluations across 1,000 noise realizations on Bail ($K=10, \tau=0.05$). Under $\varepsilon=2.0$, the empirical slack $\big|\sum_k w_k \tilde{\dpd}_k - \sum_k w_k \dpd_k\big|$ is $0.1777 \pm 0.2372$. As the privacy budget relaxes to $\varepsilon=8.0$, the slack contracts monotonically to $0.0442 \pm 0.0653$, remaining strictly below the budget $\tau$. Importantly, the true post-aggregation disparity remains exceptionally low ($0.0159 \ll \tau=0.05$), confirming that BFWA acts as a robust regularizer whose dual optimization reliably absorbs finite DP perturbations.
+Because BFWA's dual-ascent penalty steers $\sum_k w_k \tilde{\dpd}_k$ toward $\tau$ over privatised client fairness statistics $\tilde{\dpd}_k = \dpd_k + \mathcal{N}(0, \sigma^2)$, a key question (Issue~I4) is whether the injection of Gaussian DP noise causes constraint violation or slack on the true underlying disparity. Table~\ref{tab:bfwa_slack} reports Monte Carlo evaluations across 40 noise realizations (2 seeds $\times$ 20 rounds) on Bail ($K=10, \tau=0.05$). Under $\varepsilon=2.0$, the empirical slack $\big|\sum_k w_k \tilde{\dpd}_k - \sum_k w_k \dpd_k\big|$ is $0.1777 \pm 0.2372$. As the privacy budget relaxes to $\varepsilon=8.0$, the slack contracts monotonically to $0.0442 \pm 0.0653$, remaining below the budget $\tau$ at this sample size. Importantly, the true post-aggregation disparity remains exceptionally low ($0.0159 \ll \tau=0.05$), consistent with BFWA's dual-ascent penalty absorbing finite DP perturbations rather than the budget being exactly enforced.
 
 \input{tables/revision/bfwa_slack.tex}
 
@@ -1172,7 +1163,7 @@ whole $\epsilon$ range, at the negligible utility cost of Figure~\ref{fig:privac
 \end{figure}
 
 \paragraph{Comprehensive Privacy Accounting and Update-Level Attack Validation.}
-To ground our privacy guarantees against rigorous review (Issue~I1), Table~\ref{tab:dp_accounting} provides the end-to-end analytical R\'enyi Differential Privacy (RDP) accounting converted to $(\epsilon, \delta)$-DP for all benchmark datasets under default training budgets ($z=1.0, \delta=10^{-5}$). Furthermore, Table~\ref{tab:update_attack} evaluates linear and non-linear attribute inference probes trained directly on transmitted model parameter updates $g_k$. While FTGD closes leakage on the released fairness statistic channel ($1.000 \to 0.512$ attack AUC), unnoised parameter updates preserve an attribute recovery AUC of $0.9051$. Adding full-gradient DP-SGD noise suppresses update-level inference to $0.5307$ but incurs a crippling $>15\%$ utility drop. This empirical boundary confirms that FTGD provides focused, lightweight statistic-level differential privacy, which operates complementarily alongside cryptographic Secure Aggregation (SecAgg).
+To ground our privacy guarantees against rigorous review (Issue~I1), Table~\ref{tab:dp_accounting} provides the end-to-end analytical R\'enyi Differential Privacy (RDP) accounting converted to $(\epsilon, \delta)$-DP for all benchmark datasets under default training budgets ($z=1.0, \delta=10^{-5}$). Furthermore, Table~\ref{tab:update_attack} evaluates linear attribute inference probes, grouped by client identity, trained directly on transmitted model parameter updates $g_k$. While FTGD closes leakage on the released fairness statistic channel ($1.000 \to 0.500$ attack AUC), unnoised parameter updates preserve an attribute recovery AUC of $0.672$ (client-grouped folds; an earlier ungrouped probe's $0.9051$ was largely measuring client re-identification). Adding full-gradient DP-SGD noise drives update-level inference to $0.340$---below chance---but incurs a crippling $>15\%$ utility drop. This empirical boundary confirms that FTGD provides focused, lightweight statistic-level differential privacy, which operates complementarily alongside cryptographic Secure Aggregation (SecAgg).
 
 \input{tables/revision/dp_accounting.tex}
 \input{tables/revision/update_attack.tex}
@@ -1397,28 +1388,31 @@ are configurable. We stress that the ranking is sensitive to these constants and
 to the choice of $p$; the composite is a \emph{transparent communication tool},
 not decisive evidence of superiority, and the per-axis results
 (Tables~\ref{tab:main-auc}--\ref{tab:efficiency}, \ref{tab:robustness}) are the
-primary findings. Table~\ref{tab:trust} reports the arithmetic-mean ($p{=}1$)
-composite over the three axes computable from the main runs (utility, fairness,
-privacy); Table~\ref{tab:efficiency} adds the calibration axis on Bail; the
-robustness axis is reported separately (Table~\ref{tab:robustness}) rather than
-folded in, because it needs a matched clean/attacked pair. On the three-axis
-composite, TrustFedGNN attains the highest score, but the reason is specific and
-worth naming: it is the only entry that carries a genuine privacy guarantee
-($\epsilon{=}8$, privacy sub-score $0.5$) \emph{while} keeping utility and
-fairness high---every non-private baseline scores $0$ on the privacy axis by
-construction. Read the composite as ``good on every axis at once,'' not as a
-claim of being best on any single axis.
+primary findings. We do not compute this composite over the full baseline
+roster, since it needs calibration and per-round communication figures we only
+instrumented for a focused subset; Table~\ref{tab:efficiency} reports the
+arithmetic-mean ($p{=}1$) composite, calibration included, for four
+representative methods on Bail (FedAvg-GAT, DP-FedAvg, TrustFedGNN without DP,
+and full TrustFedGNN). The robustness axis is reported separately
+(Table~\ref{tab:robustness}) rather than folded in, because it needs a matched
+clean/attacked pair.
 
-\begin{table}[t]\centering\small
-\caption{Composite trust score on Bail: utility, fairness, and privacy combined
-via the arithmetic-mean ($p{=}1$) power mean, from the same canonical runs as
-Tables~\ref{tab:main-auc}--\ref{tab:main-eod}. Non-private methods score $0$ on
-privacy by construction. The calibration-augmented composite is in
-Table~\ref{tab:efficiency}. Ranking is sensitive to the reference constants
-(stated in text); best in bold.}
-\label{tab:trust}
-\input{tables/trust.tex}
-\end{table}
+\paragraph{Contribution-scoring fidelity (FU-Shapley).}
+The two-tier aggregator's incentive layer (\S\ref{sec:trust}) scores each
+client's update by gradient alignment against a server target
+(\emph{FU-Shapley}) rather than the exact, exponential-cost Shapley value, on
+the pre-registered hypothesis (H3) that it approximates exact Shapley in both
+\emph{ranking} and \emph{allocation}. Table~\ref{tab:shapley_fidelity} reports
+the empirical test against 125 probe points ($K{=}5$, 5 seeds): H3 is
+\textsc{refuted} on allocation---sign agreement ($73.6\%$) and mean simplex
+$L_1$ distance ($0.7554$) both miss their pre-registered targets by a wide
+margin---while the weaker ranking-level claim holds (Spearman
+$\rho{=}0.6897$). We therefore use FU-Shapley only as a fast, first-order
+ranking heuristic ($O(KP)$ vs.\ $O(2^KP)$), not as a faithful value allocation,
+and report this negative result rather than the confirmation we had
+pre-registered.
+
+\input{tables/shapley_fidelity.tex}
 
 \paragraph{Explainability audit.}
 Because FSER retains its per-edge attention, its behaviour is inspectable. We

@@ -1,18 +1,17 @@
 \begin{table}[t]
 \centering
 \small
-\caption{\textbf{Empirical Attribute Inference Attack Success Across Release Channels (Bail Recidivism).}
-Comparison of sensitive attribute leakage ($S_k$) through the released fairness statistic $(\mu_0, \mu_1)$ versus transmitted parameter updates $g_k = \theta_{\text{global}} - \theta_{\text{local}, k}$.
-FTGD provably closes the fairness statistic channel ($1.000 \to 0.512$) without hurting utility, but parameter updates retain residual correlation (AUC $\approx 0.91$), confirming that FTGD is \emph{complementary} to update-level encryption / Secure Aggregation rather than an all-parameter DP replacement.}
+\caption{\textbf{Empirical Attribute Inference Attack Success Across Release Channels (Bail).}
+Sensitive-attribute leakage ($S_k$) through the released fairness statistic $(\mu_0, \mu_1)$ versus the transmitted parameter updates $g_k = \theta_{\text{global}} - \theta_{\text{local}, k}$. FTGD closes the fairness-statistic channel ($1.000 \to 0.500$) at a measured utility cost of $+0.002$ AUC, while parameter updates retain residual correlation (AUC $\approx 0.672$), so FTGD is \emph{complementary} to update-level encryption / Secure Aggregation rather than an all-parameter DP replacement. Update-channel probes use 5-fold cross-validation \emph{grouped by client}: a client's majority attribute is constant across rounds, so ungrouped folds measure client re-identification instead of attribute inference. Utility cost is the measured drop in global test AUC against the no-DP run (0.719); \emph{Negligible} $<0.01$, \emph{Moderate} $<0.05$, \emph{Severe} otherwise.}
 \label{tab:update_attack}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Observation Channel} & \textbf{Privacy Mechanism} & \textbf{Attack AUC $\downarrow$} & \textbf{Utility Cost} \\
 \midrule
-Fairness Statistic (Raw) & None & 1.000 & None \\
-Fairness Statistic (FTGD) & $(\epsilon=8.0,\delta=10^{-5})$ & \textbf{0.512} & Negligible ($<1\%$) \\
-Model Parameter Updates & None (TrustFedGNN default) & 0.905 & None \\
-Model Parameter Updates & Client DP-SGD ($\epsilon=8.0$) & 0.531 & Severe ($>15\%$) \\
+Fairness Statistic (Raw) & None & 1.000 & None (+0.000 AUC) \\
+Fairness Statistic (FTGD) & $(\epsilon=8,\delta=10^{-5})$ & \textbf{0.500} & None (+0.002 AUC) \\
+Model Parameter Updates & None (TrustFedGNN default) & 0.672 & None (+0.000 AUC) \\
+Model Parameter Updates & Client DP-SGD ($\epsilon=8$) & 0.340 & Severe (-0.214 AUC) \\
 Random Guess Baseline & -- & 0.500 & -- \\
 \bottomrule
 \end{tabular}

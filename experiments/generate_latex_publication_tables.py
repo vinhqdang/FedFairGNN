@@ -273,7 +273,7 @@ Mean Simplex $L_1$ Distance & $\le 0.15$ & $0.7554$ \\
 \end{tabular}
 \end{table}
 """
-    with open("manuscript/tables/trust.tex", "w") as f:
+    with open("manuscript/tables/shapley_fidelity.tex", "w") as f:
         f.write(trust_tex)
 
     # -------------------------------------------------------------
