@@ -76,11 +76,28 @@ def _atomic_save(data: dict, output_file: str) -> None:
     os.replace(tmp, output_file)
 
 
-def _load_checkpoint(output_file: str) -> dict:
-    """Load a prior (possibly partial) run to resume from. Audit markers left
-    by a staleness pass on an earlier, now-superseded file are dropped -- they
-    describe *that* file's provenance, not this run's, and a completed rerun
-    supersedes them regardless of how far this resume gets."""
+def _load_checkpoint(output_file: str, current_git_commit: str) -> dict:
+    """Load a prior (possibly partial) run to resume from -- but ONLY if it was
+    produced by the exact code now running.
+
+    ``output_file`` is a path INSIDE THE REPO, tracked by git: a completed run
+    from months ago, produced under a different (possibly since-fixed) commit,
+    already lives there as ordinary repo content. Without this check, a fresh
+    checkout resuming "from" that file would see every top-level section
+    already present, skip all of them, and silently emit the old file back out
+    -- a full run that computed nothing, wearing a fresh timestamp. (This is
+    not hypothetical: it happened on the first deploy of this function, against
+    the pre-fix results committed at git_commit f6ce3bd7 while HEAD had already
+    moved to 6b4ab40+.) So a checkpoint only counts as resumable when its own
+    manifest.git_commit matches the commit running right now, exactly; anything
+    else -- a mismatch, or no manifest, or an 'unknown' commit on either side --
+    is treated as unrelated prior content and a fresh run starts instead.
+
+    Audit markers left by a staleness pass on an earlier, now-superseded file
+    are dropped when a checkpoint IS accepted -- they describe that file's
+    provenance, not this run's, and a completed rerun supersedes them
+    regardless of how far the resume gets.
+    """
     if not os.path.exists(output_file):
         return {}
     try:
@@ -89,6 +106,17 @@ def _load_checkpoint(output_file: str) -> dict:
     except Exception as e:
         print(f"[resume] checkpoint at {output_file} is unreadable ({e}); starting fresh", flush=True)
         return {}
+
+    ckpt_commit = d.get("_manifest", {}).get("git_commit")
+    if not ckpt_commit or ckpt_commit == "unknown" or current_git_commit == "unknown" \
+            or ckpt_commit != current_git_commit:
+        print(f"[resume] {output_file} exists but its manifest.git_commit "
+              f"({ckpt_commit!r}) does not match the current commit "
+              f"({current_git_commit!r}) -- treating it as unrelated prior "
+              f"content (e.g. the file already committed to the repo), NOT a "
+              f"checkpoint of this run. Starting fresh.", flush=True)
+        return {}
+
     for k in list(d.keys()):
         if k.startswith("_STALENESS") or k == "_INVALID":
             del d[k]
@@ -193,7 +221,15 @@ def run_stage4_remediation(output_file="results/stage4_remediation_results.json"
     print("=" * 70, flush=True)
 
     seeds = (42, 43, 44)
-    all_results = _load_checkpoint(output_file) if resume else {}
+
+    # Resolved before loading any checkpoint: whether an existing output_file
+    # counts as "this run, interrupted" depends entirely on whether it was
+    # produced by this exact commit (see _load_checkpoint's docstring).
+    git_commit, git_dirty = _get_git_info()
+    if git_commit == "unknown":
+        print("⚠️ [WARNING] git_commit is 'unknown'! Canonical runs must have explicit provenance.", flush=True)
+
+    all_results = _load_checkpoint(output_file, git_commit) if resume else {}
     if all_results:
         done = sorted(k for k in all_results if not k.startswith("_"))
         print(f"[resume] loaded checkpoint from {output_file}: {len(done)} top-level "
@@ -204,13 +240,6 @@ def run_stage4_remediation(output_file="results/stage4_remediation_results.json"
 
     def have(key: str) -> bool:
         return key in all_results
-
-    # 0. Build/refresh Provenance Manifest. Keep the ORIGINAL start timestamp
-    # across resumes (that's when the run actually began); record every
-    # resume as a separate event so a reader can see the run was interrupted.
-    git_commit, git_dirty = _get_git_info()
-    if git_commit == "unknown":
-        print("⚠️ [WARNING] git_commit is 'unknown'! Canonical runs must have explicit provenance.", flush=True)
 
     prior_manifest = all_results.get("_manifest", {})
     manifest = {
