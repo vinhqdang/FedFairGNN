@@ -60,12 +60,12 @@ def generate_all_tables():
     pokec_tex = r"""\begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Main SOTA Benchmark on Pokec-z ($N=67,796$ nodes, $1.24\text{M}$ edges, $n=10$ independent random seeds).} 
-Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistically significant difference versus TrustFedGNN (Ours) under the two-sided Wilcoxon signed-rank test with family-wise Holm-Bonferroni correction ($p < 0.05$). Bold indicates the best result. TrustFedGNN is the only method with $(\epsilon=8.0, \delta=10^{-5})$-DP enabled.}
+\caption{\textbf{Main SOTA Benchmark on Pokec-z ($N=67,796$ nodes, $1.24\text{M}$ edges, $n=10$ independent random seeds).}
+Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistically significant difference versus TrustFedGNN (Ours) under the two-sided Wilcoxon signed-rank test with family-wise Holm-Bonferroni correction ($p < 0.05$). Bold indicates the best result. $^\dagger$FTGD's $(\epsilon=8.0, \delta=10^{-5})$ differential privacy guarantee strictly covers the released fairness statistics (two scalar group means per client per round), not transmitted model updates $\theta_k$ (see \S7.1).}
 \label{tab:main_pokecz_sota}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
+\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
 \midrule
 """ + "\n".join(pokec_rows) + r"""
 \bottomrule
@@ -108,12 +108,12 @@ Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistica
     credit_tex = r"""\begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Application Boundary Analysis on Tabular $k$-NN Graph (Credit Default, $N=30,000$ nodes, $n=10$ seeds).} 
-Metrics reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes Holm-Bonferroni statistical significance ($p < 0.05$). On synthetic $k$-NN graphs constructed from tabular attributes, TrustFedGNN reduces unfairness ($\text{DPD}_{\text{hard}}$ reduced by $31.3\%$ vs FedAvg) while operating under strict $(\epsilon,\delta)$-DP, although topological edge-reweighting provides minimal utility gain compared to natural social networks.}
+\caption{\textbf{Application Boundary Analysis on Tabular $k$-NN Graph (Credit Default, $N=30,000$ nodes, $n=10$ seeds).}
+Metrics reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes Holm-Bonferroni statistical significance ($p < 0.05$). On synthetic $k$-NN graphs constructed from tabular attributes, TrustFedGNN reduces unfairness ($\text{DPD}_{\text{hard}}$ reduced by $31.3\%$ vs FedAvg) while operating under strict $(\epsilon,\delta)$-DP on released fairness statistics ($^\dagger$), although topological edge-reweighting provides minimal utility gain compared to natural social networks. $^\dagger$FTGD covers released statistics $(\mu_0, \mu_1)$, not transmitted updates $\theta_k$.}
 \label{tab:credit_boundary_sota}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
+\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
 \midrule
 """ + "\n".join(credit_rows) + r"""
 \bottomrule
@@ -153,11 +153,88 @@ Metrics reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes Holm-Bonferron
             eod_s = f"\\textbf{{{eod_s}}}"
         abl_lines.append(f"{code} & {desc} & {auc_s} & {dpd_s} & {eod_s} & {omega_s} \\\\")
 
+    # Caption text computed FROM THE DATA, not hardcoded -- a hardcoded caption
+    # is exactly what shipped previously (M3 was reported as beating M1 on DPD
+    # by a wide margin; after fixing the BFWA/DP-scope/FTGD defects and
+    # rerunning, M1's own DPD improved and the gap closed/reversed, but the
+    # caption string still asserted the old numbers because nothing recomputed
+    # it). Every number and every comparison below is derived from
+    # ablation_matrix at generation time.
+    m1, m2, m3, m4, m5, m6, m7 = (ablation_matrix[k] for k in
+        ["M1_Full", "M2_wo_FSER", "M3_wo_FTGD", "M4_Full_DPSGD",
+         "M5_wo_FairScore", "M6_wo_TwoTier", "M7_wo_EMA"])
+
+    def indistinguishable(a, b, key):
+        """Gap much smaller than either arm's own std -> no claim either way."""
+        gap = abs(a[key] - b[key])
+        return gap < a[f"{key.rsplit('_mean',1)[0]}_std"] and gap < b[f"{key.rsplit('_mean',1)[0]}_std"]
+
+    m1_m4_sigma = abs(m1["auc_mean"] - m4["auc_mean"]) / m1["auc_std"]
+    m7_omega_ratio = m7["omega_w_mean"] / m1["omega_w_mean"]
+    m3_close = indistinguishable(m1, m3, "dpd_hard_mean")
+    m5_close = indistinguishable(m1, m5, "dpd_hard_mean")
+    m6_beats_auc = m6["auc_mean"] > m1["auc_mean"]
+    m6_beats_omega = m6["omega_w_mean"] < m1["omega_w_mean"]
+
+    m3_sentence = (
+        f"M3 and M1 are statistically indistinguishable on $\\text{{DPD}}_{{\\text{{hard}}}}$ "
+        f"at this sample size ($ {m3['dpd_hard_mean']:.4f} \\pm {m3['dpd_hard_std']:.4f} $ vs "
+        f"$ {m1['dpd_hard_mean']:.4f} \\pm {m1['dpd_hard_std']:.4f} $), so FTGD's effect on "
+        f"disparity is not established here in either direction"
+        if m3_close else
+        f"removing FTGD (M3) {'yields the lowest' if m3['dpd_hard_mean'] < m1['dpd_hard_mean'] else 'yields a higher'} "
+        f"$\\text{{DPD}}_{{\\text{{hard}}}}$ in the table "
+        f"($ {m3['dpd_hard_mean']:.4f} $ vs $ {m1['dpd_hard_mean']:.4f} $)"
+    )
+    m5_sentence = (
+        f"M5 (FairScore removed, $\\alpha=0$) is statistically indistinguishable from M1 on "
+        f"$\\text{{DPD}}_{{\\text{{hard}}}}$ at this sample size "
+        f"($ {m5['dpd_hard_mean']:.4f} \\pm {m5['dpd_hard_std']:.4f} $ vs "
+        f"$ {m1['dpd_hard_mean']:.4f} \\pm {m1['dpd_hard_std']:.4f} $), so FairScore \\emph{{may}} "
+        f"contribute to disparity reduction but $n=3$ is underpowered to establish it"
+        if m5_close else
+        f"M5 (FairScore removed, $\\alpha=0$) differs from M1 on $\\text{{DPD}}_{{\\text{{hard}}}}$ "
+        f"by more than either arm's own seed variance "
+        f"($ {m5['dpd_hard_mean']:.4f} $ vs $ {m1['dpd_hard_mean']:.4f} $)"
+    )
+    # Built as plain (non-f) string concatenation first: pre-3.12 Python
+    # forbids a backslash inside an f-string's {} expression part, and these
+    # LaTeX fragments (\Omega_w, \text{...}) are full of them.
+    auc_clause = "AUC (" + format(m6["auc_mean"], ".4f") + ")"
+    omega_clause = "$\\Omega_w$ (" + format(m6["omega_w_mean"], ".4f") + ")"
+    if m6_beats_auc and m6_beats_omega:
+        m6_win_clause = "both " + auc_clause + " and " + omega_clause
+        m6_win_count = "wins on two of the four axes"
+    elif m6_beats_auc:
+        m6_win_clause = auc_clause
+        m6_win_count = "wins on at least one axis"
+    else:
+        m6_win_clause = omega_clause
+        m6_win_count = "wins on at least one axis"
+    m6_sentence = (
+        f"M6 (two-tier aggregation removed, CGSV with no server holdout) is the best arm on "
+        f"{m6_win_clause} "
+        f"with $\\text{{DPD}}_{{\\text{{hard}}}}$ overlapping M1---i.e.\\ the arm that removes the "
+        f"aggregation novelty {m6_win_count}"
+    )
+
     ablation_tex = r"""\begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=3$ seeds).} 
-At $n=3$ seeds only two effects are large relative to seed variance. (1)~Targeted FTGD noise avoids the utility collapse of client-wide DP-SGD (M4, AUC $0.4761$ vs $0.6426$, a $12\sigma$ gap); this is a privacy--utility result and \emph{not} a fairness result---removing FTGD (M3) in fact yields the \emph{lowest} $\text{DPD}_{\text{hard}}$ in the table ($0.0378$ vs $0.0740$) at indistinguishable AUC, so FTGD does not reduce disparity here. (2)~Removing the temporal EMA (M7) inflates weight instability $17.7\times$ ($\Omega_w$ $0.0781 \to 1.3837$); this is the expected behaviour of EMA smoothing, which suppresses first-difference variance by construction, and we report the magnitude rather than treat it as a discovery. Two results cut against the proposed design and we state them: M5 (FairScore removed, $\alpha=0$) is statistically indistinguishable from M1 on $\text{DPD}_{\text{hard}}$ at this sample size ($0.0870 \pm 0.0557$ vs $0.0740 \pm 0.0375$), so FairScore \emph{may} contribute to disparity reduction but $n=3$ is underpowered to establish it; and M6 (two-tier aggregation removed, CGSV with no server holdout) is the best arm on both AUC ($0.6768$) and $\Omega_w$ ($0.0332$) with $\text{DPD}_{\text{hard}}$ overlapping M1---i.e.\ the arm that removes the aggregation novelty wins on two of the four axes. Only the FSER ablation (M2) degrades every fairness axis unambiguously.}
+\caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=3$ seeds).}
+""" + (
+        f"At $n=3$ seeds only two effects are large relative to seed variance. "
+        f"(1)~Targeted FTGD noise avoids the utility collapse of client-wide DP-SGD "
+        f"(M4, AUC ${m4['auc_mean']:.4f}$ vs ${m1['auc_mean']:.4f}$, a ${m1_m4_sigma:.1f}\\sigma$ "
+        f"gap in units of M1's own std); this is a privacy--utility result and \\emph{{not}} "
+        f"a fairness result---{m3_sentence}. "
+        f"(2)~Removing the temporal EMA (M7) inflates weight instability "
+        f"${m7_omega_ratio:.1f}\\times$ ($\\Omega_w$ ${m1['omega_w_mean']:.4f} \\to "
+        f"{m7['omega_w_mean']:.4f}$); this is the expected behaviour of EMA smoothing, which "
+        f"suppresses first-difference variance by construction, and we report the magnitude "
+        f"rather than treat it as a discovery. {m5_sentence}; and {m6_sentence}. "
+        f"Only the FSER ablation (M2) degrades every fairness axis unambiguously."
+    ) + r"""}
 \label{tab:ablation_suite}
 \begin{tabular}{llcccc}
 \toprule

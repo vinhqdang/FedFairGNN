@@ -1,20 +1,20 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=3$ seeds).} 
-At $n=3$ seeds only two effects are large relative to seed variance. (1)~Targeted FTGD noise avoids the utility collapse of client-wide DP-SGD (M4, AUC $0.4761$ vs $0.6426$, a $12\sigma$ gap); this is a privacy--utility result and \emph{not} a fairness result---removing FTGD (M3) in fact yields the \emph{lowest} $\text{DPD}_{\text{hard}}$ in the table ($0.0378$ vs $0.0740$) at indistinguishable AUC, so FTGD does not reduce disparity here. (2)~Removing the temporal EMA (M7) inflates weight instability $17.7\times$ ($\Omega_w$ $0.0781 \to 1.3837$); this is the expected behaviour of EMA smoothing, which suppresses first-difference variance by construction, and we report the magnitude rather than treat it as a discovery. Two results cut against the proposed design and we state them: M5 (FairScore removed, $\alpha=0$) is statistically indistinguishable from M1 on $\text{DPD}_{\text{hard}}$ at this sample size ($0.0870 \pm 0.0557$ vs $0.0740 \pm 0.0375$), so FairScore \emph{may} contribute to disparity reduction but $n=3$ is underpowered to establish it; and M6 (two-tier aggregation removed, CGSV with no server holdout) is the best arm on both AUC ($0.6768$) and $\Omega_w$ ($0.0332$) with $\text{DPD}_{\text{hard}}$ overlapping M1---i.e.\ the arm that removes the aggregation novelty wins on two of the four axes. Only the FSER ablation (M2) degrades every fairness axis unambiguously.}
+\caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=3$ seeds).}
+At $n=3$ seeds only two effects are large relative to seed variance. (1)~Targeted FTGD noise avoids the utility collapse of client-wide DP-SGD (M4, AUC $0.5346$ vs $0.6153$, a $3.5\sigma$ gap in units of M1's own std); this is a privacy--utility result and \emph{not} a fairness result---M3 and M1 are statistically indistinguishable on $\text{DPD}_{\text{hard}}$ at this sample size ($ 0.0786 \pm 0.0495 $ vs $ 0.0714 \pm 0.0389 $), so FTGD's effect on disparity is not established here in either direction. (2)~Removing the temporal EMA (M7) inflates weight instability $20.1\times$ ($\Omega_w$ $0.0670 \to 1.3454$); this is the expected behaviour of EMA smoothing, which suppresses first-difference variance by construction, and we report the magnitude rather than treat it as a discovery. M5 (FairScore removed, $\alpha=0$) is statistically indistinguishable from M1 on $\text{DPD}_{\text{hard}}$ at this sample size ($ 0.0785 \pm 0.0452 $ vs $ 0.0714 \pm 0.0389 $), so FairScore \emph{may} contribute to disparity reduction but $n=3$ is underpowered to establish it; and M6 (two-tier aggregation removed, CGSV with no server holdout) is the best arm on both AUC (0.6863) and $\Omega_w$ (0.0385) with $\text{DPD}_{\text{hard}}$ overlapping M1---i.e.\ the arm that removes the aggregation novelty wins on two of the four axes. Only the FSER ablation (M2) degrades every fairness axis unambiguously.}
 \label{tab:ablation_suite}
 \begin{tabular}{llcccc}
 \toprule
 \textbf{Ablation Arm} & \textbf{Description / Isolated Component} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
 \midrule
-M1 (Full Proposed) & \textbf{TrustFedGNN (Canonical)} & \textbf{0.6426 $\pm$ 0.0138} & \textbf{0.0740 $\pm$ 0.0375} & \textbf{0.0201 $\pm$ 0.0137} & 0.0781 \\
-M2 (w/o FSER) & GAT Backbone (No Topological Reweighting) & 0.6598 $\pm$ 0.0612 & 0.1797 $\pm$ 0.1193 & 0.1961 $\pm$ 0.1098 & 0.1369 \\
-M3 (w/o FTGD) & Standard Local Optimization (No Orthogonal Surgery) & 0.6409 $\pm$ 0.0094 & 0.0378 $\pm$ 0.0217 & 0.0339 $\pm$ 0.0217 & 0.0629 \\
-M4 (Full DP-SGD) & Standard Client-Wide DP-SGD ($\epsilon=8.0$) & 0.4761 $\pm$ 0.0191 & 0.1692 $\pm$ 0.0658 & 0.1478 $\pm$ 0.0805 & 0.2724 \\
-M5 (w/o FairScore) & GTG-Shapley Metric ($\alpha=0.0$) & 0.6406 $\pm$ 0.0125 & 0.0870 $\pm$ 0.0557 & 0.0339 $\pm$ 0.0165 & 0.0783 \\
-M6 (w/o Two-Tier) & CGSV Aggregation (No Server Holdout) & 0.6768 $\pm$ 0.0149 & 0.0901 $\pm$ 0.0225 & 0.0227 $\pm$ 0.0133 & 0.0332 \\
-M7 (w/o Temp EMA) & Instantaneous Gradient Alignment ($\beta_{\text{ema}}=0.0$) & 0.6563 $\pm$ 0.0190 & 0.0912 $\pm$ 0.0596 & 0.0407 $\pm$ 0.0343 & 1.3837 \\
+M1 (Full Proposed) & \textbf{TrustFedGNN (Canonical)} & \textbf{0.6153 $\pm$ 0.0230} & \textbf{0.0714 $\pm$ 0.0389} & \textbf{0.0472 $\pm$ 0.0154} & 0.0670 \\
+M2 (w/o FSER) & GAT Backbone (No Topological Reweighting) & 0.6434 $\pm$ 0.0525 & 0.1891 $\pm$ 0.1326 & 0.1813 $\pm$ 0.1193 & 0.1204 \\
+M3 (w/o FTGD) & Standard Local Optimization (No Orthogonal Surgery) & 0.6300 $\pm$ 0.0074 & 0.0786 $\pm$ 0.0495 & 0.0535 $\pm$ 0.0361 & 0.0544 \\
+M4 (Full DP-SGD) & Standard Client-Wide DP-SGD ($\epsilon=8.0$) & 0.5346 $\pm$ 0.0165 & 0.0927 $\pm$ 0.1063 & 0.1045 $\pm$ 0.0943 & 0.3290 \\
+M5 (w/o FairScore) & GTG-Shapley Metric ($\alpha=0.0$) & 0.6168 $\pm$ 0.0238 & 0.0785 $\pm$ 0.0452 & 0.0514 $\pm$ 0.0351 & 0.0681 \\
+M6 (w/o Two-Tier) & CGSV Aggregation (No Server Holdout) & 0.6863 $\pm$ 0.0084 & 0.0752 $\pm$ 0.0321 & 0.0354 $\pm$ 0.0121 & 0.0385 \\
+M7 (w/o Temp EMA) & Instantaneous Gradient Alignment ($\beta_{\text{ema}}=0.0$) & 0.6563 $\pm$ 0.0153 & 0.0831 $\pm$ 0.0361 & 0.0643 $\pm$ 0.0446 & 1.3454 \\
 \bottomrule
 \end{tabular}
 \end{table*}
