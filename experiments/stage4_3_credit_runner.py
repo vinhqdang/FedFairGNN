@@ -137,15 +137,25 @@ def main():
     commit, dirty = _get_git_info()
     out_path = "results/stage4_3_credit_results.json"
     
+    # Only adopt existing per-baseline/per-seed data as resumable progress if
+    # it was produced by the exact commit currently checked out -- otherwise
+    # it's unrelated (possibly stale/pre-fix) prior content and must not be
+    # silently reused (see stage4_remediation_runner for the incident this
+    # guards against).
     existing_results = {}
     if os.path.exists(out_path):
         try:
             with open(out_path) as f:
-                existing_results = json.load(f)
-            print(f"Loaded existing results from {out_path} with baselines: {list(existing_results.get('baselines', {}).keys())}")
+                candidate = json.load(f)
+            candidate_commit = candidate.get("manifest", {}).get("git_commit")
+            if candidate_commit == commit:
+                existing_results = candidate
+                print(f"Loaded existing results from {out_path} (commit {commit} matches) with baselines: {list(existing_results.get('baselines', {}).keys())}")
+            else:
+                print(f">>> Existing {out_path} was produced by commit {candidate_commit!r}, not the current commit {commit!r} -- treating as unrelated prior content, starting fresh.", flush=True)
         except Exception as e:
             print(f"Warning: Could not load existing results: {e}")
-            
+
     results = {
         "manifest": {
             "stage": "4.3_part1_credit_sota_matrix",

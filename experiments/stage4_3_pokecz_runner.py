@@ -156,13 +156,22 @@ def main():
     os.makedirs("results", exist_ok=True)
     out_path = "results/stage4_3_pokecz_results.json"
     
-    # Load existing checkpoint if available
+    # Load existing checkpoint if available -- but ONLY treat it as resumable
+    # progress from THIS run if it was produced by the exact commit currently
+    # checked out. Otherwise it's unrelated prior (possibly stale/pre-fix)
+    # content and must not be silently adopted (see stage4_remediation_runner
+    # for the incident this guards against).
     results = None
     if os.path.exists(out_path):
         try:
             with open(out_path) as f:
-                results = json.load(f)
-            print(f">>> Found existing checkpoint at {out_path} with {len(results.get('baselines', {}))} baselines.", flush=True)
+                candidate = json.load(f)
+            candidate_commit = candidate.get("manifest", {}).get("git_commit")
+            if candidate_commit == commit:
+                results = candidate
+                print(f">>> Found existing checkpoint at {out_path} (commit {commit} matches) with {len(results.get('baselines', {}))} baselines.", flush=True)
+            else:
+                print(f">>> Existing {out_path} was produced by commit {candidate_commit!r}, not the current commit {commit!r} -- treating as unrelated prior content, starting fresh.", flush=True)
         except Exception:
             results = None
             
