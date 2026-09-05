@@ -232,3 +232,9 @@ results_matrix.log
 # Fetch artifacts pulled back from the Colab VM (contain results/, regenerated)
 out.tgz
 *.tgz
+
+# Local mirror of in-progress GPU-run checkpoints, pulled from an ephemeral
+# Colab VM disk so a dead session doesn't lose progress. Scratch state for
+# resuming a run across sessions -- not a deliverable; the real result only
+# lands in results/ once the run is complete and its numbers are reviewed.
+.gpu_checkpoint_mirror/
