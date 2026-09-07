@@ -1,0 +1,74 @@
+{
+  "manifest": {
+    "git_commit": "abfbbd309e67eae85317bdb9b58510f09d2942ce",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-07T16:35:14.956940+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "privacy_attack"
+  },
+  "epsilons": [
+    16.0,
+    8.0,
+    4.0,
+    2.0,
+    1.0,
+    0.5
+  ],
+  "attack_auc": [
+    0.52025,
+    0.509,
+    0.49175,
+    0.5035,
+    0.497,
+    0.499
+  ],
+  "exact_release_auc": 1.0,
+  "random_chance": 0.5338248048568951,
+  "rows": [
+    {
+      "eps": null,
+      "z": 0.0,
+      "attack_acc": 1.0,
+      "norm_adv": 1.0
+    },
+    {
+      "eps": 16.0,
+      "z": 3.625305557250976,
+      "attack_acc": 0.52025,
+      "norm_adv": 0.0
+    },
+    {
+      "eps": 8.0,
+      "z": 6.377377319335937,
+      "attack_acc": 0.509,
+      "norm_adv": 0.0
+    },
+    {
+      "eps": 4.0,
+      "z": 11.575735092163084,
+      "attack_acc": 0.49175,
+      "norm_adv": 0.0
+    },
+    {
+      "eps": 2.0,
+      "z": 21.491276550292966,
+      "attack_acc": 0.5035,
+      "norm_adv": 0.0
+    },
+    {
+      "eps": 1.0,
+      "z": 40.45456848144531,
+      "attack_acc": 0.497,
+      "norm_adv": 0.0
+    },
+    {
+      "eps": 0.5,
+      "z": 76.67378501892088,
+      "attack_acc": 0.499,
+      "norm_adv": 0.0
+    }
+  ]
+}

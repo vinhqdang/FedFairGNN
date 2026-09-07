@@ -1,35 +1,67 @@
 {
   "dataset": "bail",
-  "total_updates": 240,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "rounds": 12,
+  "num_clients": 5,
+  "total_updates": 180,
   "param_dim": 22726,
+  "distinct_clients": 15,
+  "cv": "StratifiedGroupKFold(n_splits=5) grouped by (seed, client index)",
+  "dp_epsilon": 8.0,
+  "dp_delta": 1e-05,
+  "dp_releases_accounted": 36,
+  "noise_multiplier_z": 3.8266208648681634,
+  "dpsgd_clip_c": 1.0,
+  "dpsgd_sigma": 3.8266208648681634,
+  "utility_auc": {
+    "no_dp": 0.7249393889302146,
+    "ftgd": 0.7266884940496053,
+    "dpsgd": 0.5233077113811059
+  },
+  "utility_cost_auc": {
+    "ftgd": -0.001749105119390748,
+    "dpsgd": 0.2016316775491087
+  },
+  "utility_buckets": {
+    "negligible_below": 0.01,
+    "moderate_below": 0.05
+  },
+  "probe_folds_evaluated": 4,
+  "probe_measurable": true,
+  "attack_auc_update_nodp_ungrouped_leaky": 0.9541627097182653,
+  "wall_clock_s": 278.08042991696857,
   "channels": [
     {
       "channel": "Fairness Statistic (Unnoised)",
       "dp_level": "None",
       "probe": "MAP differencing",
       "attack_auc": 1.0,
-      "utility_impact": "None"
+      "utility_impact": "None (+0.000 AUC)"
     },
     {
       "channel": "Fairness Statistic (FTGD)",
       "dp_level": "eps=8.0 (stat)",
       "probe": "MAP differencing",
-      "attack_auc": 0.512,
-      "utility_impact": "Negligible (<1%)"
+      "attack_auc": 0.49825,
+      "utility_impact": "None (+0.002 AUC)"
     },
     {
       "channel": "Model Updates (TrustFedGNN)",
       "dp_level": "None (stat-only)",
-      "probe": "Linear Probe",
-      "attack_auc": 0.905059594402277,
-      "utility_impact": "Zero (flagship)"
+      "probe": "Grouped linear probe",
+      "attack_auc": 0.6449652777777778,
+      "utility_impact": "None (+0.000 AUC)"
     },
     {
       "channel": "Model Updates + Client DP-SGD",
       "dp_level": "eps=8.0 (param)",
-      "probe": "Linear Probe",
-      "attack_auc": 0.5306814812618595,
-      "utility_impact": "Severe (>15% AUC drop)"
+      "probe": "Grouped linear probe",
+      "attack_auc": 0.5277777777777778,
+      "utility_impact": "Severe (-0.202 AUC)"
     },
     {
       "channel": "Theoretical Baseline",
@@ -38,5 +70,23 @@
       "attack_auc": 0.5,
       "utility_impact": "Total collapse"
     }
-  ]
+  ],
+  "manifest": {
+    "git_commit": "abfbbd309e67eae85317bdb9b58510f09d2942ce",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-07T16:34:28.060601+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "dataset": "bail",
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "rounds": 12,
+    "num_clients": 5,
+    "dp_epsilon": 8.0
+  }
 }
