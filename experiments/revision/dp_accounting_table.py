@@ -33,12 +33,13 @@ DATASET_SPECS = [
     {
         "name": "German",
         "nodes": 1000,
-        "clients": 10,
-        "rounds": 20,
+        "clients": 5,          # canonical K=5 (src/config.py:288)
+        "rounds": 20,           # canonical R=20 (src/config.py:289)
         "local_epochs": 3,
         "sampling": False,
         "delta": 1e-4,
         "target_eps": 8.0,
+        "status": "measured (S3/S4 canonical run)",
     },
     {
         "name": "Bail",
@@ -137,6 +138,7 @@ def generate_dp_accounting(out_json="results/revision/dp_accounting.json",
             "composed_epsilon": float(composed_eps),
             "eps_at_z1": float(eps_z1),
             "eps_at_z15": float(eps_z15),
+            "status": spec.get("status", "planned"),
         })
 
     payload = {
