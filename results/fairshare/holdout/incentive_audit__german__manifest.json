@@ -1,0 +1,37 @@
+{
+  "manifest": {
+    "git_commit": "0a26480e2216ee71b95f6d3c6e051687a6e56b6b",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-07T15:33:03.974053+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "incentive_audit",
+    "args": {
+      "dataset": "german",
+      "rounds": 20,
+      "seeds": 3,
+      "num_clients": 5,
+      "num_byzantine": 1,
+      "aggregators": [
+        "fu_shapley",
+        "robust_fu_shapley",
+        "bfwa",
+        "cgsv"
+      ],
+      "attacks": [
+        "none",
+        "sign_flip",
+        "fairness_poison",
+        "scaling"
+      ],
+      "out": "results/fairshare/holdout",
+      "fu_val_source": "server_holdout",
+      "fu_grad_clip": null,
+      "fu_alpha": null,
+      "fu_holdout_size": null,
+      "tag": ""
+    }
+  }
+}
