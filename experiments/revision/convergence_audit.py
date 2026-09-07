@@ -30,9 +30,9 @@ def run_convergence_suite(
     out_path = os.path.join(out_dir, "convergence_empirical.json")
 
     arms = [
-        ("fu_shapley", "fairshare"),
-        ("bfwa", "fedfairgnn-nodp"),
-        ("fedavg", "fedavg-gat"),
+        ("fu_shapley", dict(aggregator="fu_shapley")),
+        ("bfwa", dict(aggregator="bfwa")),
+        ("fedavg", dict(aggregator="fedavg", model="gat", local_fairness=False)),
     ]
 
     manifest = build_manifest(
@@ -50,8 +50,7 @@ def run_convergence_suite(
         "methods": {},
     }
 
-    for label, method_key in arms:
-        overrides = dict(METHODS.get(method_key, {}))
+    for label, overrides in arms:
         cfg = ExperimentConfig.canonical(
             dataset=dataset,
             seed=seed,
@@ -99,6 +98,10 @@ def run_convergence_suite(
             "final": final_metrics,
             "rounds": rounds_data,
         }
+
+    finals = {k: tuple(v["final"].values()) for k, v in data["methods"].items()}
+    assert len(set(finals.values())) == len(finals), \
+        f"Hai nhánh cho kết quả trùng khít -> override không có hiệu lực: {finals}"
 
     with open(out_path, "w") as f:
         json.dump(data, f, indent=2)
