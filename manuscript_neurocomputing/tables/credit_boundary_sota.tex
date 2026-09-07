@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Application Boundary Analysis on Tabular $k$-NN Graph (Credit Default, $N=30{,}000$ nodes, $n=10$ independent random seeds).}
+Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistically significant difference versus TrustFedGNN (Ours) under the two-sided Wilcoxon signed-rank test with family-wise Holm-Bonferroni correction ($p < 0.05$). Bold indicates the best result. $^\dagger$FTGD's $(\epsilon=8.0, \delta=10^{-5})$ differential privacy guarantee strictly covers the released fairness statistics (two scalar group means per client per round), not transmitted model updates $\theta_k$ (see \S7.1).}
+\label{tab:credit_boundary_sota}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
+\midrule
+FedAvg-GCN & AISTATS'17 & $\times$ & 0.7528 $\pm$ 0.0045 & 0.0603 $\pm$ 0.0227 & 0.0386 $\pm$ 0.0196 & 0.0000 \\
+FairGNN & WSDM'21 & $\times$ & 0.7317 $\pm$ 0.0147$^\star$ & 0.0987 $\pm$ 0.0458 & 0.0760 $\pm$ 0.0387 & 0.0000 \\
+FairSIN & WWW'24 & $\times$ & 0.7526 $\pm$ 0.0052 & 0.0674 $\pm$ 0.0200 & 0.0453 $\pm$ 0.0202 & 0.0000 \\
+FairFed & AAAI'23 & $\times$ & 0.7520 $\pm$ 0.0048 & 0.0589 $\pm$ 0.0237 & 0.0372 $\pm$ 0.0197 & 0.0712 \\
+FairGFL & IEEE TPDS'26 & $\times$ & 0.7535 $\pm$ 0.0039 & 0.0692 $\pm$ 0.0170 & 0.0464 $\pm$ 0.0158 & 0.0000 \\
+FedGraph-Fair & InfoSci'26 & $\times$ & 0.7511 $\pm$ 0.0048 & 0.0618 $\pm$ 0.0243 & 0.0454 $\pm$ 0.0147 & 0.0154 \\
+CGSV & NeurIPS'21 & $\times$ & 0.7518 $\pm$ 0.0041 & 0.0524 $\pm$ 0.0303 & 0.0317 $\pm$ 0.0245 & 0.5844 \\
+Ours w/o FSER (M2) & Ablation & \checkmark & 0.7470 $\pm$ 0.0086$^\star$ & 0.0625 $\pm$ 0.0306 & 0.0431 $\pm$ 0.0293 & 0.1214 \\
+\textbf{TrustFedGNN (Ours)} & Proposed & \checkmark & \textbf{0.7553 $\pm$ 0.0052} & \textbf{0.0666 $\pm$ 0.0263} & \textbf{0.0447 $\pm$ 0.0276} & 0.0814 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

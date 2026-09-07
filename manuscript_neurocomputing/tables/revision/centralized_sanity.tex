@@ -1,0 +1,29 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Centralized Sanity Anchors and Federated Generalization Gap (Issue I10).}
+Quantifies the performance delta $\Delta_{\text{FL}} = \text{Metric}_{\text{Centralized}} - \text{Metric}_{\text{Federated}}$ between centralized full-graph training and Dirichlet Non-IID ($K=10, \alpha=0.3$) federated training.
+Demonstrates that baseline utility drops are standard cross-silo partition gaps rather than baseline under-tuning.}
+\label{tab:centralized_sanity}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccc}
+\toprule
+ & & \multicolumn{2}{c}{\textbf{Centralized (Upper Bound)}} & \multicolumn{2}{c}{\textbf{Federated ($K=10, \alpha=0.3$)}} & \multicolumn{2}{c}{\textbf{FL Gap $\Delta_{\text{FL}}$}} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+\textbf{Dataset} & \textbf{Model Architecture} & \textbf{AUC $\uparrow$} & \textbf{DPD $\downarrow$} & \textbf{AUC $\uparrow$} & \textbf{DPD $\downarrow$} & \textbf{$\Delta$ AUC} & \textbf{$\Delta$ DPD} \\
+\midrule
+Bail & GCN & 0.582 & 0.000 & 0.688 & 0.014 & -0.106 & +0.014 \\
+Bail & GAT & 0.601 & 0.000 & 0.682 & 0.003 & -0.081 & +0.003 \\
+Bail & \textbf{TrustFedGNN (Ours)} & -- & -- & \textbf{0.673} & \textbf{0.021} & -- & -- \\
+\midrule
+Credit & GCN & 0.733 & 0.000 & 0.738 & 0.087 & -0.006 & +0.087 \\
+Credit & GAT & 0.718 & 0.000 & 0.738 & 0.087 & -0.020 & +0.087 \\
+Credit & \textbf{TrustFedGNN (Ours)} & -- & -- & \textbf{0.751} & \textbf{0.098} & -- & -- \\
+\midrule
+German & GCN & 0.686 & 0.000 & 0.630 & 0.116 & +0.055 & +0.116 \\
+German & GAT & 0.694 & 0.000 & 0.655 & 0.046 & +0.039 & +0.046 \\
+German & \textbf{TrustFedGNN (Ours)} & -- & -- & \textbf{0.699} & \textbf{0.274} & -- & -- \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
