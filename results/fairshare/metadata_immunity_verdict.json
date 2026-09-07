@@ -1,0 +1,52 @@
+{
+  "manifest": {
+    "git_commit": "ad231facf267862f7a1f3f2f8b08a317c243dc33",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-07T10:49:35.881106+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "metadata_immunity_audit",
+    "args": {
+      "out_dir": "results/fairshare"
+    }
+  },
+  "verdict": {
+    "theorem_2_1_verified": true,
+    "fu_shapley_bit_exact": true,
+    "robust_fu_shapley_bit_exact": true,
+    "bfwa_vulnerable": true,
+    "max_diff_fu": 0.0,
+    "max_diff_robust_fu": 0.0,
+    "max_diff_bfwa": 0.8245595544576645,
+    "weights_fu_honest": [
+      0.2338947206735611,
+      0.0,
+      0.2825922667980194,
+      0.2911262810230255,
+      0.19238674640655518
+    ],
+    "weights_fu_lying": [
+      0.2338947206735611,
+      0.0,
+      0.2825922667980194,
+      0.2911262810230255,
+      0.19238674640655518
+    ],
+    "weights_bfwa_honest": [
+      0.03709651529788971,
+      0.23365989327430725,
+      0.3099406063556671,
+      0.03709651529788971,
+      0.3822064995765686
+    ],
+    "weights_bfwa_lying": [
+      0.8616560697555542,
+      0.034586019814014435,
+      0.034586019814014435,
+      0.034586019814014435,
+      0.034586019814014435
+    ]
+  }
+}

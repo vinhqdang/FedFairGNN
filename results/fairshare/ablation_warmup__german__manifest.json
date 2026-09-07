@@ -1,0 +1,36 @@
+{
+  "manifest": {
+    "git_commit": "ad231facf267862f7a1f3f2f8b08a317c243dc33",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-07T11:03:37.048864+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "ablation_warmup",
+    "args": {
+      "dataset": "german",
+      "seeds": 3,
+      "rounds": 25,
+      "num_clients": 5,
+      "num_byzantine": 1,
+      "warmup_rounds": [
+        0,
+        3,
+        5,
+        10
+      ],
+      "warmup_aggs": [
+        "fedavg",
+        "median"
+      ],
+      "attacks": [
+        "none",
+        "sign_flip",
+        "fairness_poison"
+      ],
+      "method": "fairshare",
+      "out": "results/fairshare"
+    }
+  }
+}

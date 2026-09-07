@@ -1,0 +1,58 @@
+{
+  "manifest": {
+    "git_commit": "ad231facf267862f7a1f3f2f8b08a317c243dc33",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-07T10:49:25.495310+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "run_fushapley_vs_bfwa",
+    "args": {
+      "datasets": [
+        "german",
+        "bail"
+      ],
+      "seeds": 3,
+      "rounds": 30,
+      "alphas": [
+        0.0,
+        0.1,
+        1.0
+      ],
+      "out": "results/fairshare"
+    }
+  },
+  "args": {
+    "datasets": [
+      "german",
+      "bail"
+    ],
+    "seeds": 3,
+    "rounds": 30,
+    "alphas": [
+      0.0,
+      0.1,
+      1.0
+    ],
+    "out": "results/fairshare"
+  },
+  "verdict": {
+    "german": {
+      "strict_pass": true,
+      "best_alpha": 1.0,
+      "pareto_ok": true,
+      "pareto_alpha": 0.0,
+      "monotone_dpd": false,
+      "auc_deficit_vs_bfwa": 0.0038
+    },
+    "bail": {
+      "strict_pass": false,
+      "best_alpha": null,
+      "pareto_ok": false,
+      "pareto_alpha": null,
+      "monotone_dpd": false,
+      "auc_deficit_vs_bfwa": 0.0017
+    }
+  }
+}

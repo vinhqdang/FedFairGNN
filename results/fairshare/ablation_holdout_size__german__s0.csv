@@ -1,0 +1,8 @@
+setting,val_nodes,pearson_vs_full,spearman_vs_full
+size=50,50,0.5798,0.5
+size=100,100,0.7442,0.7
+size=200,200,0.9717,0.9
+size=full,250,1.0,1.0
+shift=iid,100,0.7442,0.7
+shift=s_skew,100,0.8499,0.7
+shift=label_noise,100,0.8797,0.5

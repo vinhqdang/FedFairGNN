@@ -1,0 +1,1253 @@
+{
+  "_manifest": {
+    "git_commit": "ad231facf267862f7a1f3f2f8b08a317c243dc33",
+    "git_dirty": true,
+    "device": "cpu",
+    "timestamp": "2026-09-07T11:22:56.139445+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "script": "experiments/revision/convergence_audit.py",
+    "dataset": "german",
+    "seed": 42,
+    "rounds": 25
+  },
+  "dataset": "german",
+  "seed": 42,
+  "rounds": 25,
+  "methods": {
+    "fu_shapley": {
+      "final": {
+        "auc": 0.6161,
+        "dpd_soft": 0.019,
+        "dpd_hard": 0.0871,
+        "eod": 0.0917,
+        "omega_w_total": 0.6523
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "auc": 0.6564,
+          "dpd_soft": 0.0031,
+          "dpd_hard": 0.0269,
+          "eod": 0.0167,
+          "weights": [
+            0.2671,
+            0.0,
+            0.2341,
+            0.209,
+            0.2898
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 2,
+          "auc": 0.641,
+          "dpd_soft": 0.0528,
+          "dpd_hard": 0.1692,
+          "eod": 0.2439,
+          "weights": [
+            0.2617,
+            0.0,
+            0.2211,
+            0.2229,
+            0.2944
+          ],
+          "omega_w_round": 0.0185,
+          "omega_w_cum": 0.0185
+        },
+        {
+          "round": 3,
+          "auc": 0.6797,
+          "dpd_soft": 0.0052,
+          "dpd_hard": 0.0081,
+          "eod": 0.0083,
+          "weights": [
+            0.2495,
+            0.0,
+            0.224,
+            0.2217,
+            0.3048
+          ],
+          "omega_w_round": 0.0134,
+          "omega_w_cum": 0.0318
+        },
+        {
+          "round": 4,
+          "auc": 0.6762,
+          "dpd_soft": 0.0302,
+          "dpd_hard": 0.0701,
+          "eod": 0.1561,
+          "weights": [
+            0.2471,
+            0.0,
+            0.2164,
+            0.2239,
+            0.3126
+          ],
+          "omega_w_round": 0.01,
+          "omega_w_cum": 0.0418
+        },
+        {
+          "round": 5,
+          "auc": 0.6732,
+          "dpd_soft": 0.0069,
+          "dpd_hard": 0.0215,
+          "eod": 0.0462,
+          "weights": [
+            0.2396,
+            0.0,
+            0.2091,
+            0.2225,
+            0.3288
+          ],
+          "omega_w_round": 0.0162,
+          "omega_w_cum": 0.058
+        },
+        {
+          "round": 6,
+          "auc": 0.6722,
+          "dpd_soft": 0.0094,
+          "dpd_hard": 0.039,
+          "eod": 0.0447,
+          "weights": [
+            0.2294,
+            0.0,
+            0.2067,
+            0.2311,
+            0.3328
+          ],
+          "omega_w_round": 0.0126,
+          "omega_w_cum": 0.0706
+        },
+        {
+          "round": 7,
+          "auc": 0.652,
+          "dpd_soft": 0.0314,
+          "dpd_hard": 0.0354,
+          "eod": 0.0992,
+          "weights": [
+            0.221,
+            0.0,
+            0.1986,
+            0.2386,
+            0.3419
+          ],
+          "omega_w_round": 0.0165,
+          "omega_w_cum": 0.0871
+        },
+        {
+          "round": 8,
+          "auc": 0.6555,
+          "dpd_soft": 0.0267,
+          "dpd_hard": 0.0077,
+          "eod": 0.0773,
+          "weights": [
+            0.2197,
+            0.0,
+            0.1934,
+            0.2462,
+            0.3407
+          ],
+          "omega_w_round": 0.0076,
+          "omega_w_cum": 0.0948
+        },
+        {
+          "round": 9,
+          "auc": 0.6584,
+          "dpd_soft": 0.0465,
+          "dpd_hard": 0.049,
+          "eod": 0.1136,
+          "weights": [
+            0.2027,
+            0.0,
+            0.1973,
+            0.2616,
+            0.3384
+          ],
+          "omega_w_round": 0.0193,
+          "omega_w_cum": 0.1141
+        },
+        {
+          "round": 10,
+          "auc": 0.6668,
+          "dpd_soft": 0.0087,
+          "dpd_hard": 0.0396,
+          "eod": 0.1189,
+          "weights": [
+            0.2092,
+            0.0,
+            0.1907,
+            0.2699,
+            0.3301
+          ],
+          "omega_w_round": 0.0148,
+          "omega_w_cum": 0.1289
+        },
+        {
+          "round": 11,
+          "auc": 0.6572,
+          "dpd_soft": 0.0352,
+          "dpd_hard": 0.0007,
+          "eod": 0.0379,
+          "weights": [
+            0.1952,
+            0.0,
+            0.1784,
+            0.2853,
+            0.3411
+          ],
+          "omega_w_round": 0.0264,
+          "omega_w_cum": 0.1553
+        },
+        {
+          "round": 12,
+          "auc": 0.6321,
+          "dpd_soft": 0.028,
+          "dpd_hard": 0.0551,
+          "eod": 0.0924,
+          "weights": [
+            0.1898,
+            0.0,
+            0.181,
+            0.2889,
+            0.3403
+          ],
+          "omega_w_round": 0.0062,
+          "omega_w_cum": 0.1615
+        },
+        {
+          "round": 13,
+          "auc": 0.6496,
+          "dpd_soft": 0.0097,
+          "dpd_hard": 0.0511,
+          "eod": 0.0159,
+          "weights": [
+            0.1947,
+            0.0103,
+            0.1765,
+            0.2936,
+            0.3249
+          ],
+          "omega_w_round": 0.0199,
+          "omega_w_cum": 0.1814
+        },
+        {
+          "round": 14,
+          "auc": 0.6442,
+          "dpd_soft": 0.0092,
+          "dpd_hard": 0.045,
+          "eod": 0.0818,
+          "weights": [
+            0.17,
+            0.0218,
+            0.1806,
+            0.2966,
+            0.331
+          ],
+          "omega_w_round": 0.0247,
+          "omega_w_cum": 0.2061
+        },
+        {
+          "round": 15,
+          "auc": 0.6543,
+          "dpd_soft": 0.0186,
+          "dpd_hard": 0.0368,
+          "eod": 0.0212,
+          "weights": [
+            0.1649,
+            0.023,
+            0.1749,
+            0.3143,
+            0.3228
+          ],
+          "omega_w_round": 0.019,
+          "omega_w_cum": 0.2251
+        },
+        {
+          "round": 16,
+          "auc": 0.6455,
+          "dpd_soft": 0.0359,
+          "dpd_hard": 0.0881,
+          "eod": 0.0356,
+          "weights": [
+            0.163,
+            0.0513,
+            0.1734,
+            0.2996,
+            0.3127
+          ],
+          "omega_w_round": 0.0283,
+          "omega_w_cum": 0.2533
+        },
+        {
+          "round": 17,
+          "auc": 0.6302,
+          "dpd_soft": 0.0222,
+          "dpd_hard": 0.0419,
+          "eod": 0.0015,
+          "weights": [
+            0.1551,
+            0.0598,
+            0.1764,
+            0.3226,
+            0.2861
+          ],
+          "omega_w_round": 0.0345,
+          "omega_w_cum": 0.2878
+        },
+        {
+          "round": 18,
+          "auc": 0.6082,
+          "dpd_soft": 0.0139,
+          "dpd_hard": 0.0171,
+          "eod": 0.0159,
+          "weights": [
+            0.1569,
+            0.0779,
+            0.19,
+            0.2877,
+            0.2875
+          ],
+          "omega_w_round": 0.0349,
+          "omega_w_cum": 0.3227
+        },
+        {
+          "round": 19,
+          "auc": 0.6083,
+          "dpd_soft": 0.0147,
+          "dpd_hard": 0.0715,
+          "eod": 0.0803,
+          "weights": [
+            0.1299,
+            0.1054,
+            0.184,
+            0.3116,
+            0.2691
+          ],
+          "omega_w_round": 0.0514,
+          "omega_w_cum": 0.3741
+        },
+        {
+          "round": 20,
+          "auc": 0.6176,
+          "dpd_soft": 0.0012,
+          "dpd_hard": 0.0365,
+          "eod": 0.0455,
+          "weights": [
+            0.1274,
+            0.1089,
+            0.1815,
+            0.3084,
+            0.2739
+          ],
+          "omega_w_round": 0.0082,
+          "omega_w_cum": 0.3824
+        },
+        {
+          "round": 21,
+          "auc": 0.6182,
+          "dpd_soft": 0.0223,
+          "dpd_hard": 0.0429,
+          "eod": 0.0152,
+          "weights": [
+            0.0937,
+            0.1363,
+            0.1558,
+            0.333,
+            0.2813
+          ],
+          "omega_w_round": 0.0594,
+          "omega_w_cum": 0.4418
+        },
+        {
+          "round": 22,
+          "auc": 0.6218,
+          "dpd_soft": 0.0175,
+          "dpd_hard": 0.0212,
+          "eod": 0.0136,
+          "weights": [
+            0.0985,
+            0.1549,
+            0.1544,
+            0.3319,
+            0.2604
+          ],
+          "omega_w_round": 0.0234,
+          "omega_w_cum": 0.4652
+        },
+        {
+          "round": 23,
+          "auc": 0.6123,
+          "dpd_soft": 0.0225,
+          "dpd_hard": 0.0452,
+          "eod": 0.0098,
+          "weights": [
+            0.0741,
+            0.1747,
+            0.1362,
+            0.3798,
+            0.2352
+          ],
+          "omega_w_round": 0.0678,
+          "omega_w_cum": 0.5329
+        },
+        {
+          "round": 24,
+          "auc": 0.6094,
+          "dpd_soft": 0.0711,
+          "dpd_hard": 0.1131,
+          "eod": 0.1212,
+          "weights": [
+            0.122,
+            0.1771,
+            0.1554,
+            0.3106,
+            0.2349
+          ],
+          "omega_w_round": 0.0695,
+          "omega_w_cum": 0.6024
+        },
+        {
+          "round": 25,
+          "auc": 0.6161,
+          "dpd_soft": 0.019,
+          "dpd_hard": 0.0871,
+          "eod": 0.0917,
+          "weights": [
+            0.1168,
+            0.1889,
+            0.1464,
+            0.2749,
+            0.2729
+          ],
+          "omega_w_round": 0.0498,
+          "omega_w_cum": 0.6523
+        }
+      ]
+    },
+    "bfwa": {
+      "final": {
+        "auc": 0.6161,
+        "dpd_soft": 0.019,
+        "dpd_hard": 0.0871,
+        "eod": 0.0917,
+        "omega_w_total": 0.6523
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "auc": 0.6564,
+          "dpd_soft": 0.0031,
+          "dpd_hard": 0.0269,
+          "eod": 0.0167,
+          "weights": [
+            0.2671,
+            0.0,
+            0.2341,
+            0.209,
+            0.2898
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 2,
+          "auc": 0.641,
+          "dpd_soft": 0.0528,
+          "dpd_hard": 0.1692,
+          "eod": 0.2439,
+          "weights": [
+            0.2617,
+            0.0,
+            0.2211,
+            0.2229,
+            0.2944
+          ],
+          "omega_w_round": 0.0185,
+          "omega_w_cum": 0.0185
+        },
+        {
+          "round": 3,
+          "auc": 0.6797,
+          "dpd_soft": 0.0052,
+          "dpd_hard": 0.0081,
+          "eod": 0.0083,
+          "weights": [
+            0.2495,
+            0.0,
+            0.224,
+            0.2217,
+            0.3048
+          ],
+          "omega_w_round": 0.0134,
+          "omega_w_cum": 0.0318
+        },
+        {
+          "round": 4,
+          "auc": 0.6762,
+          "dpd_soft": 0.0302,
+          "dpd_hard": 0.0701,
+          "eod": 0.1561,
+          "weights": [
+            0.2471,
+            0.0,
+            0.2164,
+            0.2239,
+            0.3126
+          ],
+          "omega_w_round": 0.01,
+          "omega_w_cum": 0.0418
+        },
+        {
+          "round": 5,
+          "auc": 0.6732,
+          "dpd_soft": 0.0069,
+          "dpd_hard": 0.0215,
+          "eod": 0.0462,
+          "weights": [
+            0.2396,
+            0.0,
+            0.2091,
+            0.2225,
+            0.3288
+          ],
+          "omega_w_round": 0.0162,
+          "omega_w_cum": 0.058
+        },
+        {
+          "round": 6,
+          "auc": 0.6722,
+          "dpd_soft": 0.0094,
+          "dpd_hard": 0.039,
+          "eod": 0.0447,
+          "weights": [
+            0.2294,
+            0.0,
+            0.2067,
+            0.2311,
+            0.3328
+          ],
+          "omega_w_round": 0.0126,
+          "omega_w_cum": 0.0706
+        },
+        {
+          "round": 7,
+          "auc": 0.652,
+          "dpd_soft": 0.0314,
+          "dpd_hard": 0.0354,
+          "eod": 0.0992,
+          "weights": [
+            0.221,
+            0.0,
+            0.1986,
+            0.2386,
+            0.3419
+          ],
+          "omega_w_round": 0.0165,
+          "omega_w_cum": 0.0871
+        },
+        {
+          "round": 8,
+          "auc": 0.6555,
+          "dpd_soft": 0.0267,
+          "dpd_hard": 0.0077,
+          "eod": 0.0773,
+          "weights": [
+            0.2197,
+            0.0,
+            0.1934,
+            0.2462,
+            0.3407
+          ],
+          "omega_w_round": 0.0076,
+          "omega_w_cum": 0.0948
+        },
+        {
+          "round": 9,
+          "auc": 0.6584,
+          "dpd_soft": 0.0465,
+          "dpd_hard": 0.049,
+          "eod": 0.1136,
+          "weights": [
+            0.2027,
+            0.0,
+            0.1973,
+            0.2616,
+            0.3384
+          ],
+          "omega_w_round": 0.0193,
+          "omega_w_cum": 0.1141
+        },
+        {
+          "round": 10,
+          "auc": 0.6668,
+          "dpd_soft": 0.0087,
+          "dpd_hard": 0.0396,
+          "eod": 0.1189,
+          "weights": [
+            0.2092,
+            0.0,
+            0.1907,
+            0.2699,
+            0.3301
+          ],
+          "omega_w_round": 0.0148,
+          "omega_w_cum": 0.1289
+        },
+        {
+          "round": 11,
+          "auc": 0.6572,
+          "dpd_soft": 0.0352,
+          "dpd_hard": 0.0007,
+          "eod": 0.0379,
+          "weights": [
+            0.1952,
+            0.0,
+            0.1784,
+            0.2853,
+            0.3411
+          ],
+          "omega_w_round": 0.0264,
+          "omega_w_cum": 0.1553
+        },
+        {
+          "round": 12,
+          "auc": 0.6321,
+          "dpd_soft": 0.028,
+          "dpd_hard": 0.0551,
+          "eod": 0.0924,
+          "weights": [
+            0.1898,
+            0.0,
+            0.181,
+            0.2889,
+            0.3403
+          ],
+          "omega_w_round": 0.0062,
+          "omega_w_cum": 0.1615
+        },
+        {
+          "round": 13,
+          "auc": 0.6496,
+          "dpd_soft": 0.0097,
+          "dpd_hard": 0.0511,
+          "eod": 0.0159,
+          "weights": [
+            0.1947,
+            0.0103,
+            0.1765,
+            0.2936,
+            0.3249
+          ],
+          "omega_w_round": 0.0199,
+          "omega_w_cum": 0.1814
+        },
+        {
+          "round": 14,
+          "auc": 0.6442,
+          "dpd_soft": 0.0092,
+          "dpd_hard": 0.045,
+          "eod": 0.0818,
+          "weights": [
+            0.17,
+            0.0218,
+            0.1806,
+            0.2966,
+            0.331
+          ],
+          "omega_w_round": 0.0247,
+          "omega_w_cum": 0.2061
+        },
+        {
+          "round": 15,
+          "auc": 0.6543,
+          "dpd_soft": 0.0186,
+          "dpd_hard": 0.0368,
+          "eod": 0.0212,
+          "weights": [
+            0.1649,
+            0.023,
+            0.1749,
+            0.3143,
+            0.3228
+          ],
+          "omega_w_round": 0.019,
+          "omega_w_cum": 0.2251
+        },
+        {
+          "round": 16,
+          "auc": 0.6455,
+          "dpd_soft": 0.0359,
+          "dpd_hard": 0.0881,
+          "eod": 0.0356,
+          "weights": [
+            0.163,
+            0.0513,
+            0.1734,
+            0.2996,
+            0.3127
+          ],
+          "omega_w_round": 0.0283,
+          "omega_w_cum": 0.2533
+        },
+        {
+          "round": 17,
+          "auc": 0.6302,
+          "dpd_soft": 0.0222,
+          "dpd_hard": 0.0419,
+          "eod": 0.0015,
+          "weights": [
+            0.1551,
+            0.0598,
+            0.1764,
+            0.3226,
+            0.2861
+          ],
+          "omega_w_round": 0.0345,
+          "omega_w_cum": 0.2878
+        },
+        {
+          "round": 18,
+          "auc": 0.6082,
+          "dpd_soft": 0.0139,
+          "dpd_hard": 0.0171,
+          "eod": 0.0159,
+          "weights": [
+            0.1569,
+            0.0779,
+            0.19,
+            0.2877,
+            0.2875
+          ],
+          "omega_w_round": 0.0349,
+          "omega_w_cum": 0.3227
+        },
+        {
+          "round": 19,
+          "auc": 0.6083,
+          "dpd_soft": 0.0147,
+          "dpd_hard": 0.0715,
+          "eod": 0.0803,
+          "weights": [
+            0.1299,
+            0.1054,
+            0.184,
+            0.3116,
+            0.2691
+          ],
+          "omega_w_round": 0.0514,
+          "omega_w_cum": 0.3741
+        },
+        {
+          "round": 20,
+          "auc": 0.6176,
+          "dpd_soft": 0.0012,
+          "dpd_hard": 0.0365,
+          "eod": 0.0455,
+          "weights": [
+            0.1274,
+            0.1089,
+            0.1815,
+            0.3084,
+            0.2739
+          ],
+          "omega_w_round": 0.0082,
+          "omega_w_cum": 0.3824
+        },
+        {
+          "round": 21,
+          "auc": 0.6182,
+          "dpd_soft": 0.0223,
+          "dpd_hard": 0.0429,
+          "eod": 0.0152,
+          "weights": [
+            0.0937,
+            0.1363,
+            0.1558,
+            0.333,
+            0.2813
+          ],
+          "omega_w_round": 0.0594,
+          "omega_w_cum": 0.4418
+        },
+        {
+          "round": 22,
+          "auc": 0.6218,
+          "dpd_soft": 0.0175,
+          "dpd_hard": 0.0212,
+          "eod": 0.0136,
+          "weights": [
+            0.0985,
+            0.1549,
+            0.1544,
+            0.3319,
+            0.2604
+          ],
+          "omega_w_round": 0.0234,
+          "omega_w_cum": 0.4652
+        },
+        {
+          "round": 23,
+          "auc": 0.6123,
+          "dpd_soft": 0.0225,
+          "dpd_hard": 0.0452,
+          "eod": 0.0098,
+          "weights": [
+            0.0741,
+            0.1747,
+            0.1362,
+            0.3798,
+            0.2352
+          ],
+          "omega_w_round": 0.0678,
+          "omega_w_cum": 0.5329
+        },
+        {
+          "round": 24,
+          "auc": 0.6094,
+          "dpd_soft": 0.0711,
+          "dpd_hard": 0.1131,
+          "eod": 0.1212,
+          "weights": [
+            0.122,
+            0.1771,
+            0.1554,
+            0.3106,
+            0.2349
+          ],
+          "omega_w_round": 0.0695,
+          "omega_w_cum": 0.6024
+        },
+        {
+          "round": 25,
+          "auc": 0.6161,
+          "dpd_soft": 0.019,
+          "dpd_hard": 0.0871,
+          "eod": 0.0917,
+          "weights": [
+            0.1168,
+            0.1889,
+            0.1464,
+            0.2749,
+            0.2729
+          ],
+          "omega_w_round": 0.0498,
+          "omega_w_cum": 0.6523
+        }
+      ]
+    },
+    "fedavg": {
+      "final": {
+        "auc": 0.6908,
+        "dpd_soft": 0.0525,
+        "dpd_hard": 0.0932,
+        "eod": 0.0939,
+        "omega_w_total": 0.0
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "auc": 0.7005,
+          "dpd_soft": 0.0037,
+          "dpd_hard": 0.0185,
+          "eod": 0.0629,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 2,
+          "auc": 0.6914,
+          "dpd_soft": 0.0224,
+          "dpd_hard": 0.0679,
+          "eod": 0.128,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 3,
+          "auc": 0.6984,
+          "dpd_soft": 0.0003,
+          "dpd_hard": 0.024,
+          "eod": 0.0121,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 4,
+          "auc": 0.689,
+          "dpd_soft": 0.0059,
+          "dpd_hard": 0.0289,
+          "eod": 0.0515,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 5,
+          "auc": 0.695,
+          "dpd_soft": 0.0199,
+          "dpd_hard": 0.0247,
+          "eod": 0.0417,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 6,
+          "auc": 0.6904,
+          "dpd_soft": 0.0286,
+          "dpd_hard": 0.0526,
+          "eod": 0.0614,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 7,
+          "auc": 0.6847,
+          "dpd_soft": 0.0013,
+          "dpd_hard": 0.0237,
+          "eod": 0.0182,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 8,
+          "auc": 0.6709,
+          "dpd_soft": 0.0179,
+          "dpd_hard": 0.0185,
+          "eod": 0.0417,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 9,
+          "auc": 0.6703,
+          "dpd_soft": 0.0188,
+          "dpd_hard": 0.0123,
+          "eod": 0.0333,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 10,
+          "auc": 0.6682,
+          "dpd_soft": 0.0311,
+          "dpd_hard": 0.0341,
+          "eod": 0.0614,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 11,
+          "auc": 0.6621,
+          "dpd_soft": 0.0232,
+          "dpd_hard": 0.0247,
+          "eod": 0.05,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 12,
+          "auc": 0.6568,
+          "dpd_soft": 0.0213,
+          "dpd_hard": 0.0136,
+          "eod": 0.0561,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 13,
+          "auc": 0.6667,
+          "dpd_soft": 0.02,
+          "dpd_hard": 0.038,
+          "eod": 0.0485,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 14,
+          "auc": 0.6584,
+          "dpd_soft": 0.0371,
+          "dpd_hard": 0.0022,
+          "eod": 0.0545,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 15,
+          "auc": 0.6685,
+          "dpd_soft": 0.0148,
+          "dpd_hard": 0.0328,
+          "eod": 0.0235,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 16,
+          "auc": 0.6752,
+          "dpd_soft": 0.0283,
+          "dpd_hard": 0.0208,
+          "eod": 0.0197,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 17,
+          "auc": 0.6864,
+          "dpd_soft": 0.0178,
+          "dpd_hard": 0.0383,
+          "eod": 0.0644,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 18,
+          "auc": 0.6627,
+          "dpd_soft": 0.0562,
+          "dpd_hard": 0.1366,
+          "eod": 0.1583,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 19,
+          "auc": 0.6708,
+          "dpd_soft": 0.0363,
+          "dpd_hard": 0.0581,
+          "eod": 0.0674,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 20,
+          "auc": 0.6631,
+          "dpd_soft": 0.0321,
+          "dpd_hard": 0.0707,
+          "eod": 0.0621,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 21,
+          "auc": 0.6652,
+          "dpd_soft": 0.0408,
+          "dpd_hard": 0.0675,
+          "eod": 0.0773,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 22,
+          "auc": 0.6741,
+          "dpd_soft": 0.0347,
+          "dpd_hard": 0.0776,
+          "eod": 0.0561,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 23,
+          "auc": 0.6813,
+          "dpd_soft": 0.0467,
+          "dpd_hard": 0.0964,
+          "eod": 0.097,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 24,
+          "auc": 0.6908,
+          "dpd_soft": 0.032,
+          "dpd_hard": 0.0889,
+          "eod": 0.0841,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        },
+        {
+          "round": 25,
+          "auc": 0.6908,
+          "dpd_soft": 0.0525,
+          "dpd_hard": 0.0932,
+          "eod": 0.0939,
+          "weights": [
+            0.162,
+            0.08,
+            0.276,
+            0.248,
+            0.234
+          ],
+          "omega_w_round": 0.0,
+          "omega_w_cum": 0.0
+        }
+      ]
+    }
+  }
+}
