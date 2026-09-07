@@ -8,6 +8,9 @@ import os
 from typing import Dict, Optional
 
 
+from src.utils.provenance import build_manifest
+
+
 def _default(o):
     try:
         import numpy as np
@@ -34,7 +37,8 @@ class ResultLogger:
         return os.path.exists(os.path.join(self.runs_dir, f"{run_id}.json"))
 
     def save(self, run_id: str, config: Dict, result: Dict) -> None:
-        record = {"run_id": run_id, "config": config,
+        manifest = build_manifest()
+        record = {"run_id": run_id, "manifest": manifest, "config": config,
                   "final": result.get("final", {}),
                   "history": result.get("history", []),
                   "partition_stats": result.get("partition_stats", []),
@@ -45,7 +49,12 @@ class ResultLogger:
         # Without the second group, a summary line cannot tell whether a run used
         # dirichlet_alpha 0.3 or 0.5, a pooled or a held-out scoring set, or 20 vs
         # 60 rounds -- so two incompatible protocols read as one in the tables.
-        summary = {"run_id": run_id, **{k: config.get(k) for k in
+        summary = {"run_id": run_id,
+                   "git_commit": manifest["git_commit"],
+                   "git_dirty": manifest["git_dirty"],
+                   "device": manifest["device"],
+                   "timestamp": manifest["timestamp"],
+                   **{k: config.get(k) for k in
                    ("exp_name", "model", "dataset", "aggregator", "seed",
                     "attack", "num_byzantine", "dp_epsilon", "dp_enabled",
                     "fairness_weight", "num_clients",

@@ -1,6 +1,6 @@
 """Stage 4 Remediation Multi-Seed Runner (Q1 Independent Audit Remediation & Gate G0).
 
-Executes canonical configurations across seeds (42, 43, 44) for:
+Executes canonical configurations across 10 seeds (42..51) for:
   1. Stage 4.2 Canonical Matrix (German Credit & Bail Recidivism No-Leakage) with same_penalize
   2. Stage 4.2 FU-Shapley vs Exact Shapley Correlation (Per-round & Pooled)
   3. Stage 4.5 Component-wise Ablation Suite M1-M7 with canonical same_penalize
@@ -15,7 +15,7 @@ M1-M7 ablation arm, each FSER sign/beta combo, each Byzantine defense scenario)
 is written to ``output_file`` via an atomic save *as soon as it finishes* -- not
 only once at the very end. A run that dies partway through (a killed process, a
 lost remote session, an OOM) leaves a valid, loadable JSON file with everything
-computed so far. Re-invoking ``run_stage4_remediation`` on the same
+computed so far. Re-invoking ``run_canonical_suite`` on the same
 ``output_file`` picks up from that checkpoint automatically: every sub-result
 already present is skipped, and only the missing ones are computed. Pass
 ``resume=False`` to force a full fresh run, ignoring any existing checkpoint.
@@ -48,19 +48,7 @@ from experiments.fairshare_common import (
 from experiments.exact_shapley_correlation import exact_shapley
 
 
-def _get_git_info() -> Tuple[str, bool]:
-    env_commit = os.environ.get("FEDFAIR_GIT_COMMIT") or os.environ.get("GIT_COMMIT")
-    env_dirty = os.environ.get("FEDFAIR_GIT_DIRTY")
-    if env_commit:
-        dirty = (env_dirty == "1" or env_dirty == "true" or env_dirty == "True")
-        return env_commit.strip(), dirty
-    try:
-        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-        status = subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.DEVNULL).decode().strip()
-        dirty = bool(status)
-        return commit, dirty
-    except Exception:
-        return "unknown", False
+from src.utils.provenance import get_git_info as _get_git_info, build_manifest
 
 
 # --------------------------------------------------------------------------- #
@@ -177,7 +165,7 @@ def evaluate_single_run(cfg: ExperimentConfig) -> dict:
     }
 
 
-def run_multi_seed(cfg_fn: Callable[[int], ExperimentConfig], seeds=(42, 43, 44)) -> dict:
+def run_multi_seed(cfg_fn: Callable[[int], ExperimentConfig], seeds=tuple(range(42, 52))) -> dict:
     results = []
     aucs, dpds_soft, dpds_hard, eods, omegas, pred_stds, w_advs, wall_clocks = [], [], [], [], [], [], [], []
 
@@ -214,13 +202,13 @@ def run_multi_seed(cfg_fn: Callable[[int], ExperimentConfig], seeds=(42, 43, 44)
     }
 
 
-def run_stage4_remediation(output_file="results/stage4_remediation_results.json",
+def run_canonical_suite(output_file="results/canonical_suite.json",
                            run_sign_test: bool = True, resume: bool = True):
     print("=" * 70, flush=True)
     print("🚀 [START] STAGE 4 REMEDIATION & GATE G0-BIS SUITE (CANONICAL SUB UNDER SERVER_HOLDOUT)", flush=True)
     print("=" * 70, flush=True)
 
-    seeds = (42, 43, 44)
+    seeds = tuple(range(42, 52))
 
     # Resolved before loading any checkpoint: whether an existing output_file
     # counts as "this run, interrupted" depends entirely on whether it was
@@ -385,8 +373,8 @@ def run_stage4_remediation(output_file="results/stage4_remediation_results.json"
     print("🔬 [PART 2/5] Running Stage 4.5 Component-wise Ablation Suite (M1-M7)...", flush=True)
     print("-" * 70, flush=True)
 
-    ablation_results = all_results.get("stage4_5_ablation_matrix", {})
-    all_results["stage4_5_ablation_matrix"] = ablation_results
+    ablation_results = all_results.get("component_ablation_matrix", {})
+    all_results["component_ablation_matrix"] = ablation_results
     for arm_name, cfg_fn in ABLATION_ARMS.items():
         if arm_name in ablation_results:
             print(f"\n[skip] Ablation arm {arm_name} already checkpointed.", flush=True)
@@ -481,4 +469,4 @@ def run_stage4_remediation(output_file="results/stage4_remediation_results.json"
 
 
 if __name__ == "__main__":
-    run_stage4_remediation()
+    run_canonical_suite()

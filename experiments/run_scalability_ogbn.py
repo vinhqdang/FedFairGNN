@@ -5,7 +5,7 @@ for a GPU (see notebooks/large_scale_colab.ipynb). Runs a key subset of methods
 and logs results to results/summary.jsonl exactly like the main matrix, so the
 paper's tables/figures pick them up automatically.
 
-    python -m experiments.run_large_scale
+    python -m experiments.run_scalability_ogbn
 """
 from __future__ import annotations
 

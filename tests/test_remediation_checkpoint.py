@@ -1,4 +1,4 @@
-"""Checkpoint/resume for experiments/stage4_remediation_runner.py.
+"""Checkpoint/resume for experiments/run_canonical_suite.py.
 
 The runner drives GPU jobs on remote, unreliable sessions (a lost Colab
 connection has killed a run mid-flight more than once). Losing everything
@@ -29,7 +29,7 @@ import pytest
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from experiments.stage4_remediation_runner import _atomic_save, _get_git_info, _load_checkpoint
+from experiments.run_canonical_suite import _atomic_save, _get_git_info, _load_checkpoint
 
 HERE_COMMIT, _ = _get_git_info()
 
@@ -139,7 +139,7 @@ def test_load_checkpoint_strips_staleness_markers(tmp_path):
 def test_load_checkpoint_preserves_ordinary_keys(tmp_path):
     p = str(tmp_path / "out.json")
     payload = {
-        "stage4_5_ablation_matrix": {"M1_Full": {"auc_mean": 0.6}},
+        "component_ablation_matrix": {"M1_Full": {"auc_mean": 0.6}},
         "two_tier_defense_robustness": {"M1_no_attack": {"auc_mean": 0.5}},
         "_manifest": {"git_commit": HERE_COMMIT},
     }
@@ -154,7 +154,7 @@ def test_full_run_resumes_across_a_simulated_interrupt(tmp_path):
     couple of genuinely small sub-results and asserts resume skips them.
     Marked slow; not part of the default fast suite.
     """
-    from experiments.stage4_remediation_runner import run_stage4_remediation
+    from experiments.run_canonical_suite import run_canonical_suite
 
     p = str(tmp_path / "remediation.json")
     fake = {"auc_mean": 0.5, "auc_std": 0.0, "dpd_soft_mean": 0.0, "dpd_soft_std": 0.0,
@@ -171,7 +171,7 @@ def test_full_run_resumes_across_a_simulated_interrupt(tmp_path):
         "_manifest": {"git_commit": HERE_COMMIT, "timestamp": "2020-01-01T00:00:00+00:00"},
         "RUN-4.2-01": fake, "RUN-4.2-02": fake, "RUN-4.2-03": {"probes": []},
         "RUN-4.2-04": fake, "RUN-4.2-05": fake,
-        "stage4_5_ablation_matrix": {name: fake for name in
+        "component_ablation_matrix": {name: fake for name in
                                      ["M1_Full", "M2_wo_FSER", "M3_wo_FTGD", "M4_Full_DPSGD",
                                       "M5_wo_FairScore", "M6_wo_TwoTier"]},  # M7 missing
         "fser_sign_hypothesis": {f"fser_{m}_beta_{b}": fake
@@ -182,15 +182,15 @@ def test_full_run_resumes_across_a_simulated_interrupt(tmp_path):
     }
     json.dump(seeded, open(p, "w"))
 
-    result = run_stage4_remediation(output_file=p, run_sign_test=True)
+    result = run_canonical_suite(output_file=p, run_sign_test=True)
 
     # Only M7 should have actually run; everything else came from the seed.
-    assert result["stage4_5_ablation_matrix"]["M1_Full"] == fake
-    assert "M7_wo_EMA" in result["stage4_5_ablation_matrix"]
-    assert result["stage4_5_ablation_matrix"]["M7_wo_EMA"] != fake
+    assert result["component_ablation_matrix"]["M1_Full"] == fake
+    assert "M7_wo_EMA" in result["component_ablation_matrix"]
+    assert result["component_ablation_matrix"]["M7_wo_EMA"] != fake
     # And the checkpoint file on disk reflects the completed run.
     on_disk = json.load(open(p))
-    assert "M7_wo_EMA" in on_disk["stage4_5_ablation_matrix"]
+    assert "M7_wo_EMA" in on_disk["component_ablation_matrix"]
 
 
 @pytest.mark.skipif(HERE_COMMIT == "unknown", reason="requires a real git checkout")
@@ -200,10 +200,10 @@ def test_stale_committed_result_file_is_never_treated_as_a_checkpoint(tmp_path):
     confirm the runner would start every section fresh rather than skip them.
     Only checks the resume decision (not a full run) to stay fast.
     """
-    p = str(tmp_path / "stage4_remediation_results.json")
+    p = str(tmp_path / "canonical_suite.json")
     json.dump({
         "RUN-4.2-01": {"auc_mean": 0.7803},  # a real-looking stale number
-        "stage4_5_ablation_matrix": {"M1_Full": {"auc_mean": 0.6426}},
+        "component_ablation_matrix": {"M1_Full": {"auc_mean": 0.6426}},
         "_manifest": {"git_commit": "f6ce3bd77b13704fbff04cd9aea3553d59cdd6fa"},
     }, open(p, "w"))
     loaded = _load_checkpoint(p, HERE_COMMIT)

@@ -399,7 +399,7 @@
       }
     ]
   },
-  "stage4_5_ablation_matrix": {
+  "component_ablation_matrix": {
     "M1_Full": {
       "auc_mean": 0.6152888888888888,
       "auc_std": 0.023024599987525058,

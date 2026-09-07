@@ -9,7 +9,7 @@ correlating each phi against the full-clean phi. A high correlation at ~100
 nodes is the answer to the reviewer's "the server having D_val is a strong
 assumption" (plan risk table).
 
-    python -m experiments.ablation_val_size --dataset german --sizes 50 100 full
+    python -m experiments.ablation_holdout_size --dataset german --sizes 50 100 full
 """
 from __future__ import annotations
 
@@ -110,7 +110,7 @@ def main():
                      "pearson_vs_full": round(pr, 4), "spearman_vs_full": round(sr, 4)})
         print(f"shift={mode:11s} nodes={n:4d} pearson={pr:.3f}")
 
-    path = os.path.join(args.out, f"ablation_val_size__{args.dataset}__s{args.seed}.csv")
+    path = os.path.join(args.out, f"ablation_holdout_size__{args.dataset}__s{args.seed}.csv")
     with open(path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=["setting", "val_nodes", "pearson_vs_full", "spearman_vs_full"])
         w.writeheader(); w.writerows(rows)

@@ -11,7 +11,7 @@ def format_cell(mean, std, digits=4):
         return "—"
     return f"${mean:.{digits}f} \\pm {std:.{digits}f}$"
 
-def render_markdown_tables(json_path="results/stage4_remediation_results.json"):
+def render_markdown_tables(json_path="results/canonical_suite.json"):
     if not os.path.exists(json_path):
         print(f"Error: {json_path} not found.")
         return
@@ -39,5 +39,5 @@ def render_markdown_tables(json_path="results/stage4_remediation_results.json"):
         print(f"| `{rid}` | {res.get('dataset', '')} | {res.get('method', rid)} | canonical | {auc} | {dpd_s} | {dpd_h} | {eod} | {omg} |")
 
 if __name__ == "__main__":
-    path = sys.argv[1] if len(sys.argv) > 1 else "results/stage4_remediation_results.json"
+    path = sys.argv[1] if len(sys.argv) > 1 else "results/canonical_suite.json"
     render_markdown_tables(path)

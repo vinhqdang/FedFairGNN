@@ -57,6 +57,7 @@ from src.config import ExperimentConfig
 from src.federated import FederatedTrainer
 from src.federated.client import load_flat_state
 from src.trust.explain import fser_edge_attention
+from src.utils.provenance import build_manifest
 from experiments.fairshare_common import full_graph
 
 
@@ -129,7 +130,8 @@ def generate_attention_figure(out_pdf="manuscript/figures/revision/fser_attentio
                                         num_clients=num_clients)
 
     with open(out_json, "w") as f:
-        json.dump({"seed": seed, "rounds": rounds, "num_clients": num_clients,
+        json.dump({"manifest": build_manifest(seed=seed, rounds=rounds, num_clients=num_clients, datasets=datasets),
+                   "seed": seed, "rounds": rounds, "num_clients": num_clients,
                    "results": results}, f, indent=2)
     print(f"[+] Saved FSER attention audit JSON to {out_json}")
 

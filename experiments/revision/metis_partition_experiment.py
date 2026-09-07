@@ -29,6 +29,7 @@ import numpy as np
 from src.config import ExperimentConfig
 from src.federated.trainer import FederatedTrainer
 from src.utils.metrics import weight_oscillation
+from src.utils.provenance import build_manifest
 from experiments.fairshare_common import partition_edge_retention
 
 
@@ -112,14 +113,19 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
                     idx += 1
                     print(f"[{idx}/{total}] RUNNING: ds={ds} | part={p} | model={m} | seed={s}...", flush=True)
                     out = evaluate_partition_run(m, p, s, dataset=ds, num_clients=5, rounds=15)
+                    out["manifest"] = build_manifest(dataset=ds, partition=p, model=m, seed=s)
                     records.append(out)
                     print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, EOD={out['eod']:.4f}, "
                           f"edge_ret={out['edge_retention'] * 100:.1f}% "
                           f"(iid expect {out['expected_retention_iid'] * 100:.1f}%) "
                           f"({out['wall_clock_s']:.1f}s)", flush=True)
 
+                    payload = {
+                        "manifest": build_manifest(experiment="partition_comparison", datasets=datasets, partitions=PARTITIONS),
+                        "records": records,
+                    }
                     with open(out_json, "w") as f:
-                        json.dump(records, f, indent=2)
+                        json.dump(payload, f, indent=2)
 
     print(f"[+] Saved partition comparison JSON to {out_json}")
 

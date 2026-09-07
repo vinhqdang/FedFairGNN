@@ -10,8 +10,8 @@
 
 ## 1. Cấu hình chuẩn — chỉ còn **một** họ
 
-Từ 07-09-2026, dự án dùng **duy nhất Họ B**. Họ A đã bị loại bỏ hoàn toàn
-(xem [`legacy_family_a/README.md`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/legacy_family_a/README.md)).
+Từ 07-09-2026, dự án dùng **duy nhất giao thức chuẩn tắc**. giao thức tiền chuẩn hoá đã bị loại bỏ hoàn toàn
+(xem [`legacy/README.md`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/legacy/README.md)).
 
 ```python
 # src/config.py :: ExperimentConfig.canonical()   ◄── NGUỒN CHÂN LÝ DUY NHẤT
@@ -36,29 +36,44 @@ experiments/
 ├── colab/                         điều phối VM từ xa  (§3)
 │   ├── 00_pack.sh                 [LOCAL]  đóng gói repo + manifest
 │   ├── 01_setup.py                [VM]     giải nén, symlink, pytest — GATE 0
-│   ├── 11_stage4_1_smoke.py       [VM]     smoke test — STAGE 2
-│   ├── 15_stage4_remediation.py   [VM]     canonical + ablation — STAGE 3
+│   ├── 11_smoke_test.py           [VM]     smoke test
+│   ├── 15_canonical_suite.py      [VM]     canonical suite
 │   ├── run_local.sh               [LOCAL]  chạy CPU không cần Colab
 │   └── archived/                  script các pha cũ + legacy_results/
 │
-├── stage4_1_smoke_test.py         STAGE 2  · CPU
-├── stage4_remediation_runner.py   STAGE 3  · CPU hoặc GPU
-├── stage4_3_pokecz_runner.py      STAGE 4  · GPU
-├── stage4_3_credit_runner.py      STAGE 4  · GPU
-├── stage4_3_byzantine_sweep_runner.py  STAGE 5 · GPU
-├── stage4_3_shapley_runner.py     STAGE 6  · CPU
-├── run_large_scale.py             STAGE 8  · CPU (ogbn-products, NeighborLoader)
+├── run_smoke_test.py              toàn vẹn đường ống · CPU
+├── run_canonical_suite.py         canonical + ablation M1–M7 + FSER sign + two-tier · CPU
+├── run_sota_pokecz.py             ma trận SOTA Pokec-z · GPU
+├── run_sota_credit.py             ma trận SOTA Credit · GPU
+├── run_byzantine_sweep.py         quét tỷ lệ Byzantine · GPU
+├── run_shapley_fidelity.py        FU-Shapley vs Exact Shapley · CPU
+├── run_scalability_ogbn.py        ogbn-products 2,4M · CPU (NeighborLoader)
 │
-├── revision/                      STAGE 5–7 · bộ thực nghiệm phản biện
+├── run_pareto_sweep.py            quét lưới Pareto cục bộ · CPU
+│
+│   ── Họ kiểm chứng cơ chế FU-Shapley (FS-WI) ──
+├── run_fushapley_vs_bfwa.py       FU-Shapley ↔ BFWA head-to-head + α-sweep (cùng backbone)
+├── incentive_audit.py             kháng tấn công: FU-Shapley vs các aggregator khác
+├── exact_shapley_correlation.py   FU-Shapley vs Exact Shapley (K=4, 16 liên minh)
+├── topology_shapley_analysis.py   cấu trúc đồ thị ↔ tín dụng công bằng φ_fair
+├── ablation_holdout_size.py       độ nhạy φ_k theo kích thước/phân phối server holdout
+├── ablation_warmup.py             warm-up window là attack surface
+├── privacy_attack.py              DP mức thống kê thực sự mua được gì
+├── trust_eval.py                  trust 5 trục + model card EU AI Act/NIST
+│
+├── revision/                      bộ thực nghiệm phản biện
 ├── methods.py                     đăng ký 16 baseline + CGSV + biến thể Ours
 ├── fairshare_common.py            tiện ích dùng chung (make_trainer, homophily)
 ├── run_experiment.py              `run_one()` — vòng huấn luyện đơn
 │
-├── generate_publication_stats.py  results → consolidated_statistics.json
-├── generate_latex_publication_tables.py   results → 6 bảng .tex
-├── plot_pareto_frontier.py        results → pareto_frontier PNG
+├── make_stats.py                  results → consolidated_statistics.json
+├── make_tables.py                 results → 6 bảng .tex
+├── make_figure_pareto.py          results → pareto_frontier PNG
+├── make_figure_shapley.py         results → hình điểm đóng góp Shapley
+├── render_run_matrix.py           artifact → bảng Markdown cho docs/04
+├── stats.py                       Wilcoxon · Cohen d_z · bootstrap CI · Holm–Bonferroni
 │
-└── legacy_family_a/               ⛔ ĐÃ NGỪNG — không chạy, không trích dẫn
+└── legacy/                        ⛔ ĐÃ NGỪNG — không chạy, không trích dẫn
 ```
 
 ---
@@ -127,26 +142,26 @@ HOME=$P colab exec    -s $S -f $C/01_setup.py --timeout 900     # GATE 0 trên V
 | # | Lệnh trên VM | Stage | Thiết bị | Artifact | Phút |
 |:--:|---|:--:|:--:|---|:--:|
 | 1 | `python experiments/preflight_dataset_audit.py` ¹ | 1 | CPU | `preflight_dataset_audit.json` | 2 |
-| 2 | `python experiments/stage4_3_pokecz_runner.py` | 4 | GPU | `stage4_3_pokecz_results.json` | 50 |
-| 3 | `python experiments/stage4_3_credit_runner.py` | 4 | GPU | `stage4_3_credit_results.json` | 60 |
-| 4 | `python experiments/stage4_4_elliptic_runner.py` ¹ | 4 | GPU | `stage4_4_elliptic_results.json` | 30 |
-| 5 | `python experiments/stage4_3_byzantine_sweep_runner.py` | 5 | GPU | `stage4_3_byzantine_results.json` | 13 |
+| 2 | `python experiments/run_sota_pokecz.py` | 4 | GPU | `sota_pokecz.json` | 50 |
+| 3 | `python experiments/run_sota_credit.py` | 4 | GPU | `sota_credit.json` | 60 |
+| 4 | `python experiments/run_sota_elliptic.py` ¹ | 4 | GPU | `sota_elliptic.json` | 30 |
+| 5 | `python experiments/run_byzantine_sweep.py` | 5 | GPU | `byzantine_sweep.json` | 13 |
 | 6 | `python experiments/revision/robustness_multiseed.py` ² | 5 | GPU | `revision/robustness_multiseed.json` | 25 |
 | 7 | `python experiments/revision/adaptive_poisoner.py` ² | 5 | GPU | `revision/adaptive_poisoner_results.json` | 15 |
-| 8 | `python experiments/stage4_3_shapley_runner.py` | 6 | CPU | `stage4_3_shapley_results.json` | 2 |
+| 8 | `python experiments/run_shapley_fidelity.py` | 6 | CPU | `shapley_fidelity.json` | 2 |
 | 9 | `python experiments/revision/ablation_grid_runner.py` | 7 | GPU | `revision/ablation_grid_results.json` | 30 |
 | 10 | `python experiments/revision/fser_beta_analysis.py` | 7 | GPU | `revision/fser_beta_analysis.json` | 10 |
 
 ¹ chưa tồn tại — phải viết trước (xem §6) · ² phải sửa danh sách aggregator trước (xem §6)
 
-**STAGE 3 không chạy lại** — `stage4_remediation_results.json` đã ở commit hậu-fix `73a251e`.
+**STAGE 3 không chạy lại** — `canonical_suite.json` đã ở commit hậu-fix `73a251e`.
 Tổng ≈ **4 giờ**; ngân sách **6 giờ** tính dự phòng session death.
 
 ### Bước 3 — Tải về & nghiệm thu
 
 ```bash
-for f in preflight_dataset_audit stage4_3_pokecz_results stage4_3_credit_results \
-         stage4_4_elliptic_results stage4_3_byzantine_results stage4_3_shapley_results; do
+for f in preflight_dataset_audit sota_pokecz sota_credit \
+         sota_elliptic byzantine_sweep shapley_fidelity; do
   HOME=$P colab download -s $S /content/FedFairGNN/results/$f.json $REPO/results/$f.json
 done
 HOME=$P colab download -s $S /content/FedFairGNN/results/revision $REPO/results/revision
@@ -158,12 +173,12 @@ bash experiments/verify_artifacts.sh      # §5
 ### Bước 4 — Sinh bảng & hình (LOCAL, CPU)
 
 ```bash
-python experiments/generate_publication_stats.py        # → consolidated_statistics.json
-python experiments/generate_latex_publication_tables.py # → 6 bảng .tex
+python experiments/make_stats.py        # → consolidated_statistics.json
+python experiments/make_tables.py # → 6 bảng .tex
 python experiments/revision/dp_accounting_table.py      # → dp_accounting.{json,tex}
-python experiments/plot_pareto_frontier.py              # → pareto PNG
+python experiments/make_figure_pareto.py              # → pareto PNG
 git add -f results/ manuscript/tables/
-git commit -m "data: post-fix re-run (Họ B)"
+git commit -m "data: post-fix re-run (giao thức chuẩn tắc)"
 ```
 
 ---
@@ -204,11 +219,11 @@ và suýt phát hành lại 100% số liệu tiền-fix dưới nhãn "vừa ch�
 |:--:|---|---|
 | P1 | `ResultLogger.save()` phải ghi `git_commit`, `git_dirty`, `device`, `timestamp` | `src/utils/logging_utils.py` |
 | P2 | Viết `preflight_dataset_audit.py`: đo $h_s$ + zero-leakage cho **6** bộ dữ liệu, ghi manifest | `experiments/` |
-| P3 | `datasets.tex` phải **đọc** artifact P2 thay vì chuỗi cứng | `generate_latex_publication_tables.py:315-333` |
-| P4 | `DATASET_SPECS` đặt theo **Họ B** ($K{=}10$, $E{=}3$, $R{=}50$) | `revision/dp_accounting_table.py` |
+| P3 | `datasets.tex` phải **đọc** artifact P2 thay vì chuỗi cứng | `make_tables.py:315-333` |
+| P4 | `DATASET_SPECS` đặt theo **giao thức chuẩn tắc** ($K{=}10$, $E{=}3$, $R{=}50$) | `revision/dp_accounting_table.py` |
 | P5 | Thêm `fu_shapley`, `robust_fu_shapley`, `cgsv` vào danh sách aggregator quét | `revision/robustness_multiseed.py`, `revision/adaptive_poisoner.py` |
-| P6 | Viết `stage4_4_elliptic_runner.py` theo khuôn `stage4_3_pokecz_runner.py` | `experiments/` |
-| P7 | Viết `make_figures.py` sinh 5 hình từ artifact Họ B (thay `report.py` đã loại) | `experiments/` |
+| P6 | Viết `run_sota_elliptic.py` theo khuôn `run_sota_pokecz.py` | `experiments/` |
+| P7 | Viết `make_figures.py` sinh 5 hình từ artifact giao thức chuẩn tắc (thay `report.py` đã loại) | `experiments/` |
 
 ---
 
@@ -237,4 +252,4 @@ và suýt phát hành lại 100% số liệu tiền-fix dưới nhãn "vừa ch�
 2. **Thay đổi đi một chiều:** `docs/02` (toán) → `docs/03` (ánh xạ AST) → code → test → artifact → bảng → `docs/04` + `docs/CHANGELOG.md`.
 3. **Không con số nào vào bản thảo** nếu artifact tương ứng không qua cổng §5.
 4. **Thiết bị phải khai báo** trong manifest; không trộn CPU/GPU trong một bảng.
-5. **`legacy_family_a/` không bao giờ được chạy lại.**
+5. **`legacy/` không bao giờ được chạy lại.**

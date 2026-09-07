@@ -26,6 +26,7 @@ import torch
 
 from src.config import ExperimentConfig
 from src.federated import FederatedTrainer
+from src.utils.provenance import build_manifest
 
 
 def run_beta_stability_analysis(datasets=("bail", "credit"), seeds=range(42, 52),
@@ -61,8 +62,12 @@ def run_beta_stability_analysis(datasets=("bail", "credit"), seeds=range(42, 52)
                         })
             print(f"    Seed {s} -> betas={betas}", flush=True)
 
+    payload = {
+        "manifest": build_manifest(experiment="fser_beta_analysis", datasets=list(datasets), seeds=list(seeds)),
+        "beta_records": beta_records,
+    }
     with open(out_json, "w") as f:
-        json.dump(beta_records, f, indent=2)
+        json.dump(payload, f, indent=2)
     print(f"[+] Saved beta stability records to {out_json}")
 
     # Plotting

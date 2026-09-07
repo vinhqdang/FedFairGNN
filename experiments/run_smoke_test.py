@@ -27,7 +27,7 @@ from src.trust.incentive import (
 from src.utils.metrics import all_metrics
 
 
-def run_stage4_1_smoke_test():
+def run_run_smoke_test():
     print("=" * 70)
     print("🚀 [STAGE 4.1] EXECUTING FAST SMOKE TEST (OFFLINE LOCAL)")
     print("=" * 70)
@@ -128,4 +128,4 @@ def run_stage4_1_smoke_test():
 
 
 if __name__ == "__main__":
-    run_stage4_1_smoke_test()
+    run_run_smoke_test()

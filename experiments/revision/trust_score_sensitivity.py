@@ -25,6 +25,7 @@ import numpy as np
 from scipy.stats import kendalltau, spearmanr
 
 from src.trust.trust_score import TrustWeights, sub_scores, trust_score
+from src.utils.provenance import build_manifest
 
 
 # Standard benchmark methods with representative metrics from main results
@@ -117,7 +118,8 @@ def run_trust_sensitivity_analysis(num_samples=2000, perturbation_pct=0.25,
             "kendall_std": float(np.std(kendall_diri)),
             "kendall_ci95": [float(np.percentile(kendall_diri, 2.5)), float(np.percentile(kendall_diri, 97.5))],
             "ours_rank1_pct": float(np.mean(np.array(ours_rank_diri) == 1)) * 100.0,
-        }
+        },
+        "manifest": build_manifest(experiment="trust_score_sensitivity", num_samples=num_samples),
     }
 
     with open(out_json, "w") as f:

@@ -123,8 +123,8 @@ def plot_pareto(credit_json_path: str, pokecz_json_path: str, out_png_path: str)
 
 
 def main():
-    credit_json = "results/stage4_3_credit_results.json"
-    pokecz_json = "results/stage4_3_pokecz_results.json"
+    credit_json = "results/sota_credit.json"
+    pokecz_json = "results/sota_pokecz.json"
     out_png = "results/pareto_frontier_credit_pokecz.png"
     plot_pareto(credit_json, pokecz_json, out_png)
 

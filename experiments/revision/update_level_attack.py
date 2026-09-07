@@ -65,6 +65,7 @@ from src.config import ExperimentConfig
 from src.federated.trainer import FederatedTrainer
 from src.federated.client import flatten_state, load_flat_state
 from src.trust.privacy import calibrate_noise_multiplier
+from src.utils.provenance import build_manifest
 from experiments.privacy_attack import attack as statistic_attack
 
 # Utility-cost buckets, in absolute global test-AUC lost against the no-DP run.
@@ -347,6 +348,7 @@ def run_update_attack_experiment(out_json="results/revision/update_level_attack.
              "probe": "Random Chance", "attack_auc": 0.500,
              "utility_impact": "Total collapse"},
         ],
+        "manifest": build_manifest(dataset=dataset, seeds=list(seeds), rounds=rounds, num_clients=num_clients, dp_epsilon=dp_epsilon),
     }
 
     with open(out_json, "w") as f:

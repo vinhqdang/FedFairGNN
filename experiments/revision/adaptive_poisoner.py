@@ -31,6 +31,7 @@ import torch
 from src.config import ExperimentConfig
 from src.federated.trainer import FederatedTrainer
 from src.federated.aggregation import aggregate
+from src.utils.provenance import build_manifest
 
 
 def craft_stealth_poison_updates(updates: List[torch.Tensor], metas: List[dict],
@@ -277,7 +278,7 @@ def _breakdown_caption_sentence(summary: Dict[str, dict], byz_ratios: List[float
 
 def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results.json",
                             out_tex="manuscript/tables/revision/adaptive_poisoner.tex",
-                            aggregators=("fedavg", "bfwa", "krum", "median", "robust_bfwa"),
+                            aggregators=("fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa", "fu_shapley", "robust_fu_shapley", "cgsv"),
                             byz_ratios=(0.1, 0.2, 0.3, 0.4), seeds=(42,), rounds=15,
                             dataset="bail"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
@@ -288,8 +289,8 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
     seeds = list(seeds)
 
     records = []
-    total = len(aggregators) * len(byz_ratios) * len(seeds)
     idx = 0
+    total = len(aggregators) * len(byz_ratios) * len(seeds)
 
     print(f"[*] Running Adaptive Stealth Poisoner suite ({total} total runs)...", flush=True)
 
@@ -300,12 +301,18 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
                 print(f"[{idx}/{total}] RUNNING: agg={agg} | ratio={ratio} | seed={s}...", flush=True)
                 out = evaluate_adaptive_run(agg, ratio, seed=s, rounds=rounds,
                                             dataset=dataset)
+                out["manifest"] = build_manifest(dataset=dataset, rounds=rounds)
                 records.append(out)
                 print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, w_adv={out['w_adv']:.3f} ({out['wall_clock_s']:.1f}s)", flush=True)
+                out_payload = {
+                    "manifest": build_manifest(dataset=dataset, rounds=rounds),
+                    "records": records,
+                }
                 with open(out_json, "w") as f:
-                    json.dump(records, f, indent=2)
+                    json.dump(out_payload, f, indent=2)
 
     summary = summarise_breakdown(records, aggregators, byz_ratios)
+    summary["manifest"] = build_manifest(dataset=dataset, rounds=rounds)
     with open(out_json.replace(".json", "_breakdown_summary.json"), "w") as f:
         json.dump(summary, f, indent=2)
     print(f"[+] Saved adaptive poisoner JSON to {out_json}")
@@ -359,7 +366,7 @@ def main():
     ap = argparse.ArgumentParser(description="Adaptive stealth fairness poisoner.")
     ap.add_argument("--dataset", default="bail")
     ap.add_argument("--aggregators", nargs="+",
-                    default=["fedavg", "bfwa", "krum", "median", "robust_bfwa"])
+                    default=["fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa", "fu_shapley", "robust_fu_shapley", "cgsv"])
     ap.add_argument("--byz-ratios", type=float, nargs="+", default=[0.1, 0.2, 0.3, 0.4])
     ap.add_argument("--seeds", type=int, nargs="+", default=[42])
     ap.add_argument("--rounds", type=int, default=15)

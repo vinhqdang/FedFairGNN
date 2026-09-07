@@ -156,8 +156,8 @@ def analyze_dataset_runs(raw_runs: Dict[str, List[dict]]) -> Dict:
 
 
 def main():
-    credit_path = "results/stage4_3_credit_results.json"
-    pokecz_path = "results/stage4_3_pokecz_results.json"
+    credit_path = "results/sota_credit.json"
+    pokecz_path = "results/sota_pokecz.json"
     
     consolidated = {}
     

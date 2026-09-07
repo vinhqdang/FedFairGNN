@@ -44,9 +44,13 @@ import torch
 
 from src.config import ExperimentConfig
 from src.federated import FederatedTrainer
+from src.utils.provenance import build_manifest
 
 
-AGGREGATORS = ["fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa"]
+AGGREGATORS = [
+    "fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
+    "fu_shapley", "robust_fu_shapley", "cgsv",
+]
 ATTACKS = ["gaussian", "alie", "fairness_poison"]
 DEFAULT_SEEDS = list(range(42, 52))
 DEFAULT_BYZ_RATIOS = [0.1, 0.2, 0.3, 0.4]
@@ -256,18 +260,13 @@ def main():
         except Exception:
             results_store = {}
 
+    if "manifest" not in results_store:
+        results_store["manifest"] = build_manifest(
+            experiment="robustness_multiseed",
+            dp_enabled=dp_enabled,
+        )
     if "_manifest" not in results_store:
-        results_store["_manifest"] = {
-            "experiment": "robustness_multiseed",
-            "git_commit": git_commit,
-            "git_dirty": git_dirty,
-            "device": device,
-            "dp_enabled": dp_enabled,
-            "platform": platform.platform(),
-            "python_version": sys.version.split()[0],
-            "torch_version": torch.__version__,
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        }
+        results_store["_manifest"] = results_store["manifest"]
 
     if "raw_runs" not in results_store:
         results_store["raw_runs"] = []
@@ -292,9 +291,10 @@ def main():
 
                     print(f"[{run_idx}/{total_tasks}] RUNNING: agg={agg} | atk={atk} | byz_ratio={ratio} | seed={s} (dp={dp_enabled})...", flush=True)
                     out = evaluate_single_byz_run(agg, atk, ratio, s, device, dp_enabled=dp_enabled)
-                    out["git_commit"] = git_commit
-                    out["git_dirty"] = git_dirty
-                    out["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    out["manifest"] = build_manifest(aggregator=agg, attack=atk, byz_ratio=ratio, seed=s, dp_enabled=dp_enabled)
+                    out["git_commit"] = out["manifest"]["git_commit"]
+                    out["git_dirty"] = out["manifest"]["git_dirty"]
+                    out["timestamp"] = out["manifest"]["timestamp"]
 
                     results_store["raw_runs"].append(out)
                     completed_keys.add(key)

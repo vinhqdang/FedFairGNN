@@ -28,6 +28,7 @@ import torch
 from src.config import ExperimentConfig
 from src.federated.trainer import FederatedTrainer
 from src.federated.client import _soft_dpd
+from src.utils.provenance import build_manifest
 
 
 def analyze_bfwa_slack(dataset="bail", seeds=(42, 43, 44), epsilons=(2.0, 4.0, 8.0),
@@ -132,10 +133,11 @@ def _slack_caption_sentence(results: dict, tau: float) -> str:
     deployed operating point and the most favourable case for the method; if
     the slack is not negligible there it is not negligible anywhere.
     """
-    if not results:
+    clean_results = {k: v for k, v in results.items() if k not in ("manifest", "_manifest")}
+    if not clean_results:
         return "No slack measurements were produced by this run."
-    eps_key = max(results, key=lambda k: float(k))
-    v = results[eps_key]
+    eps_key = max(clean_results, key=lambda k: float(k))
+    v = clean_results[eps_key]
     pct = 100.0 * v["slack_ratio_of_tau"]
     word = slack_bucket(pct)
     if word == "negligible":
@@ -166,8 +168,19 @@ def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
     print(f"[*] Running BFWA DP-induced disparity slack analysis on {dataset}...", flush=True)
     results = analyze_bfwa_slack(dataset=dataset, seeds=seeds, epsilons=epsilons,
                                  rounds=rounds, num_clients=num_clients, tau=tau)
-    for v in results.values():
+    for k, v in list(results.items()):
+        if k in ("manifest", "_manifest"):
+            continue
         v["slack_bucket"] = slack_bucket(100.0 * v["slack_ratio_of_tau"])
+
+    results["manifest"] = build_manifest(
+        dataset=dataset,
+        seeds=list(seeds),
+        epsilons=list(epsilons),
+        rounds=rounds,
+        num_clients=num_clients,
+        tau=tau,
+    )
 
     with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
@@ -192,6 +205,8 @@ def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
     ]
 
     for eps_str, v in results.items():
+        if eps_str in ("manifest", "_manifest"):
+            continue
         line = (
             f"$\\epsilon = {eps_str}$ & {v['mean_noisy_dpd_agg']:.4f} & {v['mean_true_dpd_agg']:.4f} & "
             f"{v['mean_slack']:.4f} $\\pm$ {v['std_slack']:.4f} & {v['slack_ratio_of_tau'] * 100:.1f}\\% \\\\"

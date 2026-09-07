@@ -8,7 +8,7 @@ difference) on the two cheap datasets, then reports:
   * paired Wilcoxon (fairshare vs BFWA) on AUC and DPD across seeds,
   * the D1 gate verdict per dataset: fairshare AUC >= BFWA and DPD <= BFWA.
 
-    python -m experiments.derisk_phase3 --datasets german bail --seeds 3 --rounds 50
+    python -m experiments.run_fushapley_vs_bfwa --datasets german bail --seeds 3 --rounds 50
 """
 from __future__ import annotations
 

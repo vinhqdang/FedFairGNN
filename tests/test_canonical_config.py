@@ -12,7 +12,7 @@ except ImportError:
     pytest = None
 
 from src.config import ExperimentConfig
-from experiments.stage4_remediation_runner import ABLATION_ARMS
+from experiments.run_canonical_suite import ABLATION_ARMS
 
 
 def test_canonical_matches_protocol():

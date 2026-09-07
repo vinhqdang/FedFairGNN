@@ -32,6 +32,7 @@ from src.data.datasets import load_dataset
 from src.federated.client import load_flat_state
 from src.federated.trainer import FederatedTrainer
 from src.utils.metrics import all_metrics
+from src.utils.provenance import build_manifest
 
 
 def run_proxy_evaluation(dataset: str, seed: int = 42, rounds: int = 15) -> dict:
@@ -118,11 +119,16 @@ def run_all_proxy_sensitivity(out_json="results/revision/proxy_sensitivity.json"
         for s in [42, 43]:
             print(f"[*] Evaluating ds={ds} | seed={s}...", flush=True)
             out = run_proxy_evaluation(ds, seed=s, rounds=15)
+            out["manifest"] = build_manifest(dataset=ds, seed=s, rounds=15)
             records.append(out)
             print(f"    -> Done in {out['wall_clock_s']:.1f}s", flush=True)
 
+    payload = {
+        "manifest": build_manifest(experiment="proxy_sensitivity", datasets=datasets),
+        "records": records,
+    }
     with open(out_json, "w") as f:
-        json.dump(records, f, indent=2)
+        json.dump(payload, f, indent=2)
     print(f"[+] Saved proxy sensitivity JSON to {out_json}")
 
     # Generate LaTeX table

@@ -217,7 +217,7 @@ def main():
     }
     
     os.makedirs("results", exist_ok=True)
-    out_path = "results/stage4_3_byzantine_results.json"
+    out_path = "results/byzantine_sweep.json"
     with open(out_path, "w") as f:
         json.dump(output, f, indent=2)
         

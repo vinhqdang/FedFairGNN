@@ -2,7 +2,7 @@
 
 Executes:
 1. Unit Tests Suite (41 tests): verifying all guards and fixes on the VM.
-2. Stage 4 Remediation Suite (experiments/stage4_remediation_runner.py):
+2. Stage 4 Remediation Suite (experiments/run_canonical_suite.py):
    - Part 1: Stage 4.2 Canonical 3-seed Matrix (German & Bail without leakage)
    - Part 2: FSER Ablation M1 vs M2 Beta Sweep across 3 seeds
    - Part 3: Two-Tier Defense Validation (M1 vs M6) under Byzantine Attacks across 3 seeds
@@ -31,7 +31,7 @@ r_test = subprocess.run(["python", "-m", "pytest", "-v", "tests/"], env=env)
 
 # 2. Run Remediation Suite
 print("\n[*] [2/2] Running Stage 4 remediation suite (3 seeds)...", flush=True)
-r_rem = subprocess.run(["python", "-u", "experiments/stage4_remediation_runner.py"], env=env)
+r_rem = subprocess.run(["python", "-u", "experiments/run_canonical_suite.py"], env=env)
 
 success = (r_test.returncode == 0) and (r_rem.returncode == 0)
 report = {

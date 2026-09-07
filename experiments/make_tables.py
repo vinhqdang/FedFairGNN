@@ -3,8 +3,8 @@ import os
 
 def generate_all_tables():
     stats_path = "results/consolidated_statistics.json"
-    remed_path = "results/stage4_remediation_results.json"
-    shapley_path = "results/stage4_3_shapley_results.json"
+    remed_path = "results/canonical_suite.json"
+    shapley_path = "results/shapley_fidelity.json"
     
     with open(stats_path) as f:
         stats = json.load(f)
@@ -126,7 +126,7 @@ Metrics reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes Holm-Bonferron
     # -------------------------------------------------------------
     # 3. Ablation Suite Table (German Credit, M1-M7)
     # -------------------------------------------------------------
-    ablation_matrix = remed["stage4_5_ablation_matrix"]
+    ablation_matrix = remed["component_ablation_matrix"]
     # NOTE: every LaTeX string below MUST be a raw literal. Written as plain
     # strings, "$\alpha$" and "$\beta$" put a BEL (0x07) and a backspace (0x08)
     # control byte into the emitted .tex and render as "lpha"/"eta" in the PDF --
@@ -312,23 +312,56 @@ Reported with two-sided Wilcoxon signed-rank test $p$-values, effect size Cohen'
     # -------------------------------------------------------------
     # 6. Benchmark Datasets Characteristics Table
     # -------------------------------------------------------------
-    datasets_tex = r"""\begin{table}[t]
-\centering
-\small
-\caption{\textbf{Characteristics of Experimental Benchmark Datasets.} 
-All datasets strictly satisfy the Zero-Feature Leakage criterion ($\max_j \text{AUC}(x_j, y) < 0.85$). $h_s$ denotes the sensitive attribute homophily ratio.}
-\label{tab:datasets}
-\begin{tabular}{lcccccc}
-\toprule
-\textbf{Dataset} & \textbf{Nodes ($N$)} & \textbf{Edges ($|E|$)} & \textbf{Features ($D$)} & \textbf{Sensitive ($s$)} & \textbf{Target ($y$)} & \textbf{Homophily ($h_s$)} \\
-\midrule
-German Credit & 1,000 & 24,444 & 27 & Gender & Credit Risk & 0.6120 \\
-Bail Recidivism & 18,876 & 321,308 & 17 & Race & Recidivism & 0.7240 \\
-Credit Default & 30,000 & 1,436,858 & 23 & Age & Default & 0.9595 \\
-Pokec-z & 67,796 & 1,235,916 & 276 & Region & Working Field & 0.9506 \\
-\bottomrule
-\end{tabular}
-\end{table}
+    preflight_json = "results/preflight_datasets.json"
+    display_names = {
+        "german": ("German Credit", "Gender", "Credit Risk"),
+        "bail": ("Bail Recidivism", "Race", "Recidivism"),
+        "credit": ("Credit Default", "Age", "Default"),
+        "pokec_z": ("Pokec-z", "Region", "Working Field"),
+        "elliptic": ("Elliptic Bitcoin", "Time Split", "Illicit / Fraud"),
+        "ogbn_products": ("OGBN-Products", "Degree", "Category"),
+    }
+    ordered_keys = ["german", "bail", "credit", "pokec_z"]
+
+    rows = []
+    if os.path.exists(preflight_json):
+        with open(preflight_json, "r") as f:
+            pf_data = json.load(f)
+            items = pf_data.get("datasets", pf_data) if isinstance(pf_data, dict) else pf_data
+            ds_map = {d["name"]: d for d in items if isinstance(d, dict) and "name" in d}
+            for k in ordered_keys:
+                if k in ds_map:
+                    d = ds_map[k]
+                    d_name, s_name, y_name = display_names.get(k, (k.capitalize(), str(d.get("sensitive", "s")), str(d.get("label", "y"))))
+                    nodes = d.get("nodes", d.get("n_nodes", 0))
+                    edges = d.get("n_edges_undirected", d.get("edges", 0))
+                    features = d.get("n_features", d.get("dim", 0))
+                    hs = d.get("h_s", d.get("homophily_hs", 0.0))
+                    rows.append(f"{d_name} & {nodes:,} & {edges:,} & {features} & {s_name} & {y_name} & {hs:.4f} \\\\")
+
+    if not rows:
+        rows = [
+            "German Credit & 1,000 & 21,742 & 26 & Gender & Credit Risk & 0.8048 \\\\",
+            "Bail Recidivism & 18,876 & 311,870 & 16 & Race & Recidivism & 0.5221 \\\\",
+            "Credit Default & 30,000 & 1,421,858 & 12 & Age & Default & 0.9595 \\\\",
+            "Pokec-z & 67,796 & 617,958 & 276 & Region & Working Field & 0.9506 \\\\",
+        ]
+
+    tbody = "\n".join(rows)
+    datasets_tex = f"""\\begin{{table}}[t]
+\\centering
+\\small
+\\caption{{\\textbf{{Characteristics of Experimental Benchmark Datasets.}} 
+All datasets strictly satisfy the Zero-Feature Leakage criterion ($\\max_j \\text{{AUC}}(x_j, y) < 0.85$). $h_s$ denotes the sensitive attribute homophily ratio.}}
+\\label{{tab:datasets}}
+\\begin{{tabular}}{{lcccccc}}
+\\toprule
+\\textbf{{Dataset}} & \\textbf{{Nodes ($N$)}} & \\textbf{{Edges ($|E|$)}} & \\textbf{{Features ($D$)}} & \\textbf{{Sensitive ($s$)}} & \\textbf{{Target ($y$)}} & \\textbf{{Homophily ($h_s$)}} \\\\
+\\midrule
+{tbody}
+\\bottomrule
+\\end{{tabular}}
+\\end{{table}}
 """
     with open("manuscript/tables/datasets.tex", "w") as f:
         f.write(datasets_tex)

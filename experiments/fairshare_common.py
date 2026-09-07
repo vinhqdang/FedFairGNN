@@ -1,7 +1,7 @@
 """Shared helpers for the FairShare-GNN experiment harness (Phase 2).
 
 Kept deliberately small and dependency-light so every analysis script
-(exact_shapley_correlation, incentive_audit, ablation_val_size, plot_shapley,
+(exact_shapley_correlation, incentive_audit, ablation_holdout_size, make_figure_shapley,
 topology_shapley_analysis) draws its trainer/gradient/metric plumbing from one
 audited place. Nothing here trains heavy by default -- callers pass tiny configs.
 """

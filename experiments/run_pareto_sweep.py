@@ -57,7 +57,7 @@ def aggregate_seeds(results_list: list[dict]) -> dict:
     }
 
 
-def run_targeted_local_pareto_sweep(results_file="results/stage4_5_results.json"):
+def run_targeted_local_pareto_sweep(results_file="results/pareto_sweep.json"):
     print("=" * 70)
     print("🚀 [STAGE 4.5 TARGETED] RUNNING LOCAL PARETO 2D GRID SWEEP")
     print("=" * 70)

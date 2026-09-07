@@ -30,6 +30,7 @@ from src.data.datasets import load_dataset
 from src.federated.trainer import FederatedTrainer
 from src.models import build_model
 from src.utils.metrics import all_metrics
+from src.utils.provenance import build_manifest
 
 
 def train_centralized(dataset: str, model_type: str, seed: int = 42, epochs: int = 50, lr: float = 0.005) -> dict:
@@ -139,8 +140,12 @@ def run_sanity_anchors(out_json="results/revision/centralized_sanity.json",
             records.append(t_res)
             print(f"    -> Ours Fed AUC={t_res['auc']:.4f}, DPD={t_res['dpd_hard']:.4f}", flush=True)
 
+    payload = {
+        "manifest": build_manifest(experiment="centralized_sanity_anchors", datasets=datasets),
+        "records": records,
+    }
     with open(out_json, "w") as f:
-        json.dump(records, f, indent=2)
+        json.dump(payload, f, indent=2)
     print(f"[+] Saved centralized sanity JSON to {out_json}")
 
     # Generate LaTeX table

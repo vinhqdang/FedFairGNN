@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import numpy as np
 
 from src.trust.privacy import calibrate_noise_multiplier, compute_epsilon, gaussian_rdp, rdp_to_dp
+from src.utils.provenance import build_manifest
 
 
 DATASET_SPECS = [
@@ -138,8 +139,12 @@ def generate_dp_accounting(out_json="results/revision/dp_accounting.json",
             "eps_at_z15": float(eps_z15),
         })
 
+    payload = {
+        "manifest": build_manifest(experiment="dp_accounting", specs=DATASET_SPECS),
+        "records": records,
+    }
     with open(out_json, "w") as f:
-        json.dump(records, f, indent=2)
+        json.dump(payload, f, indent=2)
     print(f"[+] Saved DP accounting data to {out_json}")
 
     # Format publication-ready LaTeX table

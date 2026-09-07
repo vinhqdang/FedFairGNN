@@ -10,8 +10,8 @@ Thư mục lưu trữ các script điều phối từ xa (*remote orchestration*
 |---|:---:|---|:---:|
 | [`00_pack.sh`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/00_pack.sh) | **Local** | Đóng gói repo `FedFairGNN` thành tarball + sinh manifest provenance | ✅ Active |
 | [`01_setup.py`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/01_setup.py) | **Colab VM** | Giải nén repo, liên kết dữ liệu, chạy toàn bộ unit test trên VM (hiện tại 120) | **GATE 0a (PASS)** |
-| [`11_stage4_1_smoke.py`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/11_stage4_1_smoke.py) | **Colab VM** | Chạy Fast Smoke Test trên đồ thị tổng hợp để xác thực đường ống | **STAGE 4.1 PASS** |
-| [`15_stage4_remediation.py`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/15_stage4_remediation.py) | **Colab GPU** | Chạy bộ thực nghiệm Canonical 3 seeds (German, Bail no-leakage, FSER sweep, Byzantine defense) | **STAGE 4.2 & 4.5 PASS** |
+| [`11_smoke_test.py`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/11_smoke_test.py) | **Colab VM** | Chạy Fast Smoke Test trên đồ thị tổng hợp để xác thực đường ống | **STAGE 4.1 PASS** |
+| [`15_canonical_suite.py`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/15_canonical_suite.py) | **Colab GPU** | Chạy bộ thực nghiệm Canonical 3 seeds (German, Bail no-leakage, FSER sweep, Byzantine defense) | **STAGE 4.2 & 4.5 PASS** |
 | [`run_local.sh`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/colab/run_local.sh) | **Local** | Chạy kiểm thử nội bộ trên máy local | ✅ Active |
 
 ---
@@ -29,7 +29,7 @@ Toàn bộ các script và kết quả thử nghiệm từ các pha trước (Ph
 
 ```bash
 P=/Users/anson/.colab-profiles/gnn
-S=stage4_gpu
+S=trustfedgnn_gpu
 REPO=/Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN
 SP=/Users/anson/.gemini/antigravity-ide/brain/5b909278-b945-4704-8f79-513c211c7d29/scratch
 C=/Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/colab
@@ -47,10 +47,10 @@ HOME=$P colab upload -s $S $SP/manifest_local.json /content/manifest_local.json
 HOME=$P colab exec -s $S -f $C/01_setup.py --timeout 300
 
 # 4. Chạy bộ thực nghiệm Canonical (Stage 4 Remediation)
-HOME=$P colab exec -s $S -f $C/15_stage4_remediation.py --timeout 1800
+HOME=$P colab exec -s $S -f $C/15_canonical_suite.py --timeout 1800
 
 # 5. Tải kết quả về local
-HOME=$P colab download -s $S /content/FedFairGNN/results/stage4_remediation_results.json $REPO/results/stage4_remediation_results.json
+HOME=$P colab download -s $S /content/FedFairGNN/results/canonical_suite.json $REPO/results/canonical_suite.json
 
 # 6. Dọn dẹp máy ảo
 HOME=$P colab stop -s $S

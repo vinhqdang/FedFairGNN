@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import numpy as np
 from scipy.stats import wilcoxon
+from src.utils.provenance import build_manifest
 
 
 def extract_fser_fairness(results_json="results/revision/ablation_grid_results.json",
@@ -120,6 +121,14 @@ def extract_fser_fairness(results_json="results/revision/ablation_grid_results.j
 
     with open(out_tex, "w") as f:
         f.write("\n".join(lines) + "\n")
+
+    out_json = out_tex.replace(".tex", ".json").replace("manuscript/tables/", "results/")
+    os.makedirs(os.path.dirname(out_json), exist_ok=True)
+    with open(out_json, "w") as f:
+        json.dump({
+            "manifest": build_manifest(source=results_json),
+            "rows_by_ds": rows_by_ds,
+        }, f, indent=2)
 
     print(f"[+] Saved FSER fairness ablation table to {out_tex}")
 

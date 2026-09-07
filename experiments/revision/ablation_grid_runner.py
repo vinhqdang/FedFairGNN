@@ -32,6 +32,7 @@ import torch
 from src.config import ExperimentConfig
 from src.federated import FederatedTrainer
 from src.utils.metrics import weight_oscillation
+from src.utils.provenance import build_manifest
 from experiments.fairshare_common import global_sensitive_homophily
 
 
@@ -195,19 +196,14 @@ def main():
         except Exception:
             results_store = {}
 
+    if "manifest" not in results_store:
+        results_store["manifest"] = build_manifest(
+            experiment="ablation_grid_7x3x10",
+            configs=ABLATION_CONFIGS,
+            dataset_params=DATASET_PARAMS,
+        )
     if "_manifest" not in results_store:
-        results_store["_manifest"] = {
-            "experiment": "ablation_grid_7x3x10",
-            "git_commit": git_commit,
-            "git_dirty": git_dirty,
-            "device": device,
-            "platform": platform.platform(),
-            "python_version": sys.version.split()[0],
-            "torch_version": torch.__version__,
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "configs": ABLATION_CONFIGS,
-            "dataset_params": DATASET_PARAMS,
-        }
+        results_store["_manifest"] = results_store["manifest"]
 
     if "raw_runs" not in results_store:
         results_store["raw_runs"] = []

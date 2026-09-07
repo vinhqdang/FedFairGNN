@@ -1,7 +1,7 @@
 """Phase 4 · Stage 4.1 — Fast Smoke Test on Colab VM.
 
 Executes Stage 4.1 Synthetic Smoke Test on the remote Colab VM.
-Output: /content/stage4_1_report.json
+Output: /content/smoke_test_report.json
 """
 import json
 import os
@@ -18,7 +18,7 @@ print("=" * 70)
 env = os.environ.copy()
 env["PYTHONPATH"] = f"{REPO}:{env.get('PYTHONPATH', '')}"
 
-cmd = "python -u experiments/stage4_1_smoke_test.py"
+cmd = "python -u experiments/run_smoke_test.py"
 r = subprocess.run(cmd, shell=True, capture_output=True, text=True, env=env)
 
 print("--- STDOUT ---")
@@ -38,9 +38,9 @@ report = {
     "stderr": r.stderr,
 }
 
-with open("/content/stage4_1_report.json", "w") as f:
+with open("/content/smoke_test_report.json", "w") as f:
     json.dump(report, f, indent=2)
 
-print("\n[*] Written report to /content/stage4_1_report.json")
+print("\n[*] Written report to /content/smoke_test_report.json")
 if r.returncode != 0:
     sys.exit(r.returncode)

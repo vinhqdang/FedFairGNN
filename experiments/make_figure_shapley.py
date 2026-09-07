@@ -8,7 +8,7 @@ Produces two figures from a fairshare run's per-round history:
 
 Reads a logged run if --run_id is given, else trains a short one on the fly.
 
-    python -m experiments.plot_shapley --dataset german --rounds 20
+    python -m experiments.make_figure_shapley --dataset german --rounds 20
 """
 from __future__ import annotations
 
