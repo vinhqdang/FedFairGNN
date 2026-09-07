@@ -1,9 +1,9 @@
 {
   "manifest": {
-    "git_commit": "ad231facf267862f7a1f3f2f8b08a317c243dc33",
-    "git_dirty": true,
+    "git_commit": "3da938276903a74baf1c844500cc1bde9c3a0359",
+    "git_dirty": false,
     "device": "cpu",
-    "timestamp": "2026-09-07T11:22:44.227345+00:00",
+    "timestamp": "2026-09-07T15:39:35.406475+00:00",
     "torch_version": "2.14.0",
     "python_version": "3.12.12",
     "platform": "macOS-15.7.9-arm64-arm-64bit",
@@ -27,7 +27,7 @@
         "scaling"
       ],
       "out": "results/fairshare",
-      "fu_val_source": null,
+      "fu_val_source": "pooled",
       "fu_grad_clip": null,
       "fu_alpha": null,
       "fu_holdout_size": null,
