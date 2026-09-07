@@ -238,3 +238,7 @@ out.tgz
 # resuming a run across sessions -- not a deliverable; the real result only
 # lands in results/ once the run is complete and its numbers are reviewed.
 .gpu_checkpoint_mirror/
+
+# CodeGraph local database
+.codegraph
+.codegraph/
