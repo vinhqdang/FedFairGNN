@@ -32,6 +32,7 @@ import os
 
 from experiments.fairshare_common import make_trainer
 from experiments.incentive_audit import attacker_weight_stats
+from src.utils.provenance import build_manifest
 
 
 def main():
@@ -90,7 +91,11 @@ def main():
     with open(path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
-    print(f"\nwrote {path}  ({len(rows)} rows)")
+    mpath = os.path.join(args.out, f"ablation_warmup__{args.dataset}__manifest.json")
+    with open(mpath, "w") as fh:
+        import json
+        json.dump({"manifest": build_manifest(experiment="ablation_warmup", args=vars(args))}, fh, indent=2)
+    print(f"\nwrote {path} and {mpath} ({len(rows)} rows)")
 
 
 if __name__ == "__main__":

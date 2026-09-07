@@ -36,6 +36,7 @@ from src.federated.trainer import FederatedTrainer
 from src.federated.client import load_flat_state
 from src.trust.privacy import calibrate_noise_multiplier
 from experiments.methods import apply_method
+from src.utils.provenance import build_manifest
 
 FIG = "manuscript/figures"
 TAB = "manuscript/tables"
@@ -157,6 +158,10 @@ def main():
     with open(os.path.join(TAB, "privacy_attack.tex"), "w") as f:
         f.write("\n".join(lines))
     print("[table] privacy_attack.tex")
+    import json
+    os.makedirs("results/fairshare", exist_ok=True)
+    with open("results/fairshare/privacy_attack__manifest.json", "w") as f:
+        json.dump({"manifest": build_manifest(experiment="privacy_attack")}, f, indent=2)
 
 
 if __name__ == "__main__":

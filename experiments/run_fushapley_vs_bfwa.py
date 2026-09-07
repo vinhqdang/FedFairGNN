@@ -21,6 +21,7 @@ from collections import defaultdict
 import numpy as np
 
 from experiments.fairshare_common import make_trainer, wilcoxon_holm
+from src.utils.provenance import build_manifest
 
 
 def weight_oscillation(history) -> float:
@@ -147,8 +148,9 @@ def main():
     # The verdict decides GATE 1/D1; printing it to stdout only meant the
     # decision vanished with the log. Persist it next to the summary CSV.
     vpath = os.path.join(args.out, "derisk_D1_verdict.json")
+    manifest = build_manifest(experiment="run_fushapley_vs_bfwa", args=vars(args))
     with open(vpath, "w") as fh:
-        json.dump({"args": vars(args), "verdict": verdict}, fh, indent=2)
+        json.dump({"manifest": manifest, "args": vars(args), "verdict": verdict}, fh, indent=2)
     print("=" * 60)
     print("D1 VERDICT:", verdict)
     print(f"wrote {path}")

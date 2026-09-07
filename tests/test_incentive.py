@@ -603,3 +603,53 @@ def test_missing_group_warns_in_the_pooled_variant_too():
     assert msgs and "s=1" in msgs[0]
     assert float(g_fair.norm()) == 0.0
     assert torch.allclose(g_target, g_task)
+
+
+def test_weights_are_independent_of_self_reported_metadata():
+    """Theorem 2(1) / Novelty N4: FU-Shapley and Robust FU-Shapley compute weights
+    purely from gradient alignment against the server target, completely ignoring
+    any self-reported client metadata (accuracy, DPD, EOD, sample count).
+    
+    Negative control (BFWA): BFWA weights explicitly optimize over client-reported
+    perf and DPD, so fabricated metadata changes BFWA weights.
+    """
+    from copy import deepcopy
+    from src.federated.aggregation import aggregate
+
+    torch.manual_seed(42)
+    K, P = 5, 32
+    updates = [torch.randn(P) for _ in range(K)]
+    g_target = torch.randn(P)
+    
+    meta_honest = [
+        {"perf": 0.72, "dpd": 0.15, "eod": 0.10, "n": 100},
+        {"perf": 0.68, "dpd": 0.08, "eod": 0.05, "n": 120},
+        {"perf": 0.75, "dpd": 0.18, "eod": 0.12, "n": 90},
+        {"perf": 0.70, "dpd": 0.11, "eod": 0.07, "n": 110},
+        {"perf": 0.65, "dpd": 0.05, "eod": 0.03, "n": 80},
+    ]
+    meta_lying = deepcopy(meta_honest)
+    # Attacker at index 0 lies aggressively about its performance and fairness
+    meta_lying[0].update(perf=0.99, dpd=0.0, eod=0.0)
+
+    # 1. FU-Shapley: BIT-EXACT weights under honest vs lying metadata
+    _, info_fu_h = aggregate("fu_shapley", updates, meta_honest, g_target=g_target)
+    _, info_fu_l = aggregate("fu_shapley", updates, meta_lying, g_target=g_target)
+    w_fu_h = info_fu_h["weights"]
+    w_fu_l = info_fu_l["weights"]
+    assert w_fu_h == w_fu_l, "FU-Shapley weights must be bit-exact identical"
+
+    # 2. Robust FU-Shapley: BIT-EXACT weights under honest vs lying metadata
+    _, info_rfu_h = aggregate("robust_fu_shapley", updates, meta_honest, g_target=g_target)
+    _, info_rfu_l = aggregate("robust_fu_shapley", updates, meta_lying, g_target=g_target)
+    w_rfu_h = info_rfu_h["weights"]
+    w_rfu_l = info_rfu_l["weights"]
+    assert w_rfu_h == w_rfu_l, "Robust FU-Shapley weights must be bit-exact identical"
+
+    # 3. NEGATIVE CONTROL (BFWA): BFWA weights MUST CHANGE because it relies on reported metadata
+    _, info_bfwa_h = aggregate("bfwa", updates, meta_honest)
+    _, info_bfwa_l = aggregate("bfwa", updates, meta_lying)
+    w_bfwa_h = info_bfwa_h["weights"]
+    w_bfwa_l = info_bfwa_l["weights"]
+    assert w_bfwa_h != w_bfwa_l, "BFWA weights must change under lying metadata"
+

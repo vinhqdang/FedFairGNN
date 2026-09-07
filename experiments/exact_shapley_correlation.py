@@ -23,6 +23,7 @@ from src.trust.incentive import get_server_target_gradients_pooled, compute_fu_w
 from experiments.fairshare_common import (
     make_trainer, client_pseudo_grads, value_of_coalition, pearson_spearman,
 )
+from src.utils.provenance import build_manifest
 
 
 def exact_shapley(trainer, grads, alpha, game: str = "loss") -> list:
@@ -148,7 +149,12 @@ def main():
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["round", "pearson", "spearman", "phi_grad", "phi_exact"])
         w.writeheader(); w.writerows(rows)
-    print(f"wrote {path}  (POOLED pearson={ppool:.3f} spearman={spool:.3f})")
+    mpath = os.path.join(args.out,
+                         f"exact_sv_corr__{args.dataset}__s{args.seed}__{args.game}__manifest.json")
+    with open(mpath, "w") as f:
+        import json
+        json.dump({"manifest": build_manifest(experiment="exact_shapley_correlation", args=vars(args))}, f, indent=2)
+    print(f"wrote {path} and {mpath} (POOLED pearson={ppool:.3f} spearman={spool:.3f})")
 
 
 if __name__ == "__main__":

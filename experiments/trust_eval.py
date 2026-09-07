@@ -15,6 +15,7 @@ from src.trust import uncertainty as U
 from src.trust import sustainability as S
 from src.trust.trust_score import trust_score
 from experiments.methods import apply_method
+from src.utils.provenance import build_manifest
 
 TAB = "manuscript/tables"
 os.makedirs(TAB, exist_ok=True)
@@ -70,6 +71,10 @@ def main():
     with open("manuscript/model_card.md", "w") as f:
         f.write(card)
     print("[doc] model_card.md written")
+    import json
+    os.makedirs("results/fairshare", exist_ok=True)
+    with open("results/fairshare/trust_eval__manifest.json", "w") as f:
+        json.dump({"manifest": build_manifest(experiment="trust_eval")}, f, indent=2)
 
 
 if __name__ == "__main__":

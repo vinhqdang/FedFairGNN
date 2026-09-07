@@ -21,6 +21,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from experiments.fairshare_common import make_trainer, topology_metrics, pearson_spearman
+from src.utils.provenance import build_manifest
 
 
 def main():
@@ -62,10 +63,13 @@ def main():
         ax.scatter(xs, ys, c="#1b7837", s=50)
         ax.set_xlabel(key); ax.set_ylabel(r"$\bar\phi^{\mathrm{fair}}_k$")
         ax.set_title(f"r={pr:.2f}")
-    fig.tight_layout()
     fpng = os.path.join(args.out, "figures", f"topology_shapley__{args.dataset}.png")
     fig.savefig(fpng); plt.close(fig)
-    print(f"wrote {path} and {fpng}")
+    mpath = os.path.join(args.out, f"topology_shapley__{args.dataset}__s{args.seed}__manifest.json")
+    with open(mpath, "w") as fh:
+        import json
+        json.dump({"manifest": build_manifest(experiment="topology_shapley_analysis", args=vars(args))}, fh, indent=2)
+    print(f"wrote {path}, {mpath} and {fpng}")
 
 
 if __name__ == "__main__":

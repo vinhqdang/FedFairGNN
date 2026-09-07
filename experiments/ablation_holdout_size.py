@@ -24,6 +24,7 @@ from src.trust.incentive import get_server_target_gradients_pooled, compute_fu_w
 from experiments.fairshare_common import (
     make_trainer, warm_rounds, client_pseudo_grads, pearson_spearman,
 )
+from src.utils.provenance import build_manifest
 
 
 def _subsample_val(clients_data, size, mode, seed):
@@ -114,7 +115,11 @@ def main():
     with open(path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=["setting", "val_nodes", "pearson_vs_full", "spearman_vs_full"])
         w.writeheader(); w.writerows(rows)
-    print(f"wrote {path}")
+    mpath = os.path.join(args.out, f"ablation_holdout_size__{args.dataset}__s{args.seed}__manifest.json")
+    with open(mpath, "w") as fh:
+        import json
+        json.dump({"manifest": build_manifest(experiment="ablation_holdout_size", args=vars(args))}, fh, indent=2)
+    print(f"wrote {path} and {mpath}")
 
 
 if __name__ == "__main__":

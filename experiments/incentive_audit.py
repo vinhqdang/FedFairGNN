@@ -22,6 +22,7 @@ import os
 import numpy as np
 
 from experiments.fairshare_common import make_trainer
+from src.utils.provenance import build_manifest
 
 
 def attacker_weight_fraction(history, byzantine_ids, thresh=1e-3) -> float:
@@ -201,7 +202,11 @@ def main():
     with open(path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
-    print(f"wrote {path}")
+    mpath = os.path.join(args.out, f"incentive_audit__{args.dataset}{args.tag}__manifest.json")
+    with open(mpath, "w") as fh:
+        import json
+        json.dump({"manifest": build_manifest(experiment="incentive_audit", args=vars(args))}, fh, indent=2)
+    print(f"wrote {path} and {mpath}")
 
 
 if __name__ == "__main__":
