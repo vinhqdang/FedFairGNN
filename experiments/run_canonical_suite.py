@@ -34,6 +34,8 @@ from typing import Callable, Tuple
 import numpy as np
 import torch
 
+sys.path.insert(0, os.path.abspath("."))
+
 from src.config import ExperimentConfig, set_seed
 from src.federated import FederatedTrainer
 from src.trust.incentive import get_server_target_gradients_pooled, fairness_gradient_ratio
