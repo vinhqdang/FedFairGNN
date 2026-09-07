@@ -29,7 +29,8 @@ def get_git_info() -> Tuple[str, bool]:
         return env_commit.strip(), dirty
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-        status = subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.DEVNULL).decode().strip()
+        # Exclude results directory so output artifacts written during the experiment do not flag git_dirty
+        status = subprocess.check_output(["git", "status", "--porcelain", "--", ".", ":!results"], stderr=subprocess.DEVNULL).decode().strip()
         dirty = bool(status)
         return commit, dirty
     except Exception:
