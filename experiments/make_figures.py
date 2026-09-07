@@ -1,11 +1,16 @@
 """Figure generation orchestrator for TrustFedGNN publication manuscript.
 
-Re-implements and unifies the generation of the 5 core manuscript figures:
+Re-implements and unifies the generation of the 5 core manuscript figures from real artifacts:
   1. pareto.pdf           -- Pareto frontier (AUC vs DPD) across baselines on Credit and Pokec-z
   2. privacy_bail.pdf     -- Utility & fairness vs DP epsilon on Bail (TrustFedGNN vs DP-FedAvg)
   3. privacy_attack.pdf   -- Attribute inference attack accuracy vs DP budget epsilon
   4. robustness_byz.pdf   -- Robustness breakdown under Byzantine corruption across aggregators
   5. convergence.pdf      -- Training convergence across communication rounds on Bail
+
+Strict Governance:
+  - Every figure MUST be generated directly from real experiment artifacts in results/.
+  - No fabricated data, no analytic formula simulations, no hardcoded metric values.
+  - Missing artifacts MUST raise FileNotFoundError indicating which stage produces them.
 
 Outputs:
   - manuscript/figures/{pareto,privacy_bail,privacy_attack,robustness_byz,convergence}.pdf
@@ -33,14 +38,33 @@ RESULTS_DIR = "results"
 
 def plot_pareto(out_path: str = os.path.join(FIG_DIR, "pareto.pdf")):
     """Figure 1: Pareto frontier (AUC vs DPD) on Credit and Pokec-z."""
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-
     pokec_path = os.path.join(RESULTS_DIR, "sota_pokecz.json")
     credit_path = os.path.join(RESULTS_DIR, "sota_credit.json")
 
+    if not os.path.exists(pokec_path):
+        raise FileNotFoundError(
+            f"Artifact for Pokec-z SOTA matrix missing at '{pokec_path}'. "
+            "Run Stage S6 (experiments/run_sota_pokecz.py) first."
+        )
+    if not os.path.exists(credit_path):
+        raise FileNotFoundError(
+            f"Artifact for Credit SOTA matrix missing at '{credit_path}'. "
+            "Run Stage S6 (experiments/run_sota_credit.py) first."
+        )
+
+    with open(pokec_path) as f:
+        pokec_data = json.load(f).get("baselines", {})
+    with open(credit_path) as f:
+        credit_data = json.load(f).get("baselines", {})
+
+    if not pokec_data or not credit_data:
+        raise FileNotFoundError(
+            "SOTA baseline records in artifacts are empty. Run Stage S6 first."
+        )
+
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
 
-    # Benchmark method styles
     styles = {
         "fedavg-gcn": ("#757575", "o", "FedAvg-GCN"),
         "fairgnn": ("#8e24aa", "s", "FairGNN"),
@@ -50,54 +74,18 @@ def plot_pareto(out_path: str = os.path.join(FIG_DIR, "pareto.pdf")):
         "fedgraphfair": ("#3949ab", "P", "FedGraph-Fair"),
         "cgsv": ("#f4511e", "X", "CGSV Non-DP"),
         "ours-nofser": ("#d81b60", "*", "Ours w/o FSER"),
+        "ours-nofser-true": ("#8c510a", "p", "Ours w/o FSER (True)"),
         "fedfairgnn": ("#e53935", "h", "TrustFedGNN (Ours)"),
     }
 
-    # Data loaders with fallback
-    for ax_idx, (ds_name, jpath) in enumerate([("Credit Default", credit_path), ("Pokec-z", pokec_path)]):
+    for ax_idx, (ds_name, data) in enumerate([("Credit Default", credit_data), ("Pokec-z", pokec_data)]):
         ax = axes[ax_idx]
-        data = {}
-        if os.path.exists(jpath):
-            try:
-                with open(jpath) as f:
-                    content = json.load(f)
-                data = content.get("baselines", {})
-            except Exception:
-                data = {}
-
-        if not data:
-            # High-fidelity empirical fallback anchors from consolidated stats
-            if "Credit" in ds_name:
-                data = {
-                    "fedavg-gcn": {"auc": {"mean": 0.728, "std": 0.008}, "dpd_hard": {"mean": 0.038, "std": 0.005}},
-                    "fairgnn": {"auc": {"mean": 0.655, "std": 0.012}, "dpd_hard": {"mean": 0.022, "std": 0.004}},
-                    "fairsin": {"auc": {"mean": 0.722, "std": 0.007}, "dpd_hard": {"mean": 0.031, "std": 0.005}},
-                    "fairfed": {"auc": {"mean": 0.724, "std": 0.008}, "dpd_hard": {"mean": 0.015, "std": 0.003}},
-                    "fairgfl": {"auc": {"mean": 0.732, "std": 0.006}, "dpd_hard": {"mean": 0.035, "std": 0.004}},
-                    "fedgraphfair": {"auc": {"mean": 0.718, "std": 0.009}, "dpd_hard": {"mean": 0.032, "std": 0.005}},
-                    "cgsv": {"auc": {"mean": 0.739, "std": 0.007}, "dpd_hard": {"mean": 0.039, "std": 0.006}},
-                    "ours-nofser": {"auc": {"mean": 0.748, "std": 0.007}, "dpd_hard": {"mean": 0.019, "std": 0.003}},
-                    "fedfairgnn": {"auc": {"mean": 0.756, "std": 0.006}, "dpd_hard": {"mean": 0.012, "std": 0.002}},
-                }
-            else:
-                data = {
-                    "fedavg-gcn": {"auc": {"mean": 0.727, "std": 0.010}, "dpd_hard": {"mean": 0.040, "std": 0.006}},
-                    "fairgnn": {"auc": {"mean": 0.584, "std": 0.015}, "dpd_hard": {"mean": 0.020, "std": 0.005}},
-                    "fairsin": {"auc": {"mean": 0.721, "std": 0.009}, "dpd_hard": {"mean": 0.034, "std": 0.005}},
-                    "fairfed": {"auc": {"mean": 0.723, "std": 0.008}, "dpd_hard": {"mean": 0.006, "std": 0.002}},
-                    "fairgfl": {"auc": {"mean": 0.732, "std": 0.007}, "dpd_hard": {"mean": 0.040, "std": 0.005}},
-                    "fedgraphfair": {"auc": {"mean": 0.716, "std": 0.011}, "dpd_hard": {"mean": 0.037, "std": 0.006}},
-                    "cgsv": {"auc": {"mean": 0.739, "std": 0.008}, "dpd_hard": {"mean": 0.044, "std": 0.007}},
-                    "ours-nofser": {"auc": {"mean": 0.766, "std": 0.008}, "dpd_hard": {"mean": 0.016, "std": 0.003}},
-                    "fedfairgnn": {"auc": {"mean": 0.786, "std": 0.007}, "dpd_hard": {"mean": 0.015, "std": 0.003}},
-                }
-
         for method, (col, marker, label) in styles.items():
             if method in data:
                 entry = data[method]
                 if isinstance(entry, dict) and "summary" in entry:
                     entry = entry["summary"]
-                if "auc" not in entry or "dpd_hard" not in entry:
+                if not isinstance(entry, dict) or "auc" not in entry or "dpd_hard" not in entry:
                     continue
                 auc_val = entry["auc"]["mean"] if isinstance(entry["auc"], dict) else entry["auc"]
                 dpd_val = entry["dpd_hard"]["mean"] if isinstance(entry["dpd_hard"], dict) else entry["dpd_hard"]
@@ -122,17 +110,28 @@ def plot_pareto(out_path: str = os.path.join(FIG_DIR, "pareto.pdf")):
 
 def plot_privacy_bail(out_path: str = os.path.join(FIG_DIR, "privacy_bail.pdf")):
     """Figure 2: Utility & Fairness vs DP Epsilon on Bail Recidivism."""
+    artifact_path = os.path.join(RESULTS_DIR, "revision", "privacy_bail_sweep.json")
+    if not os.path.exists(artifact_path):
+        raise FileNotFoundError(
+            f"Artifact for privacy_bail plot missing at '{artifact_path}'. "
+            "Run Stage S5 (experiments/revision/dp_accounting_table.py and bfwa_slack_analysis.py) first."
+        )
+
+    with open(artifact_path) as f:
+        data = json.load(f)
+
+    if "epsilons" not in data or "ftgd" not in data or "dp_fedavg" not in data:
+        raise FileNotFoundError(
+            f"Artifact at '{artifact_path}' does not contain complete epsilon sweep data. Run Stage S5 first."
+        )
+
+    epsilons = data["epsilons"]
+    ftgd_auc = data["ftgd"]["auc"]
+    ftgd_dpd = data["ftgd"]["dpd"]
+    dp_auc = data["dp_fedavg"]["auc"]
+    dp_dpd = data["dp_fedavg"]["dpd"]
+
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-
-    epsilons = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
-    # FTGD maintains strong utility and fairness
-    ftgd_auc = [0.738, 0.742, 0.745, 0.748, 0.750, 0.751]
-    ftgd_dpd = [0.038, 0.036, 0.035, 0.034, 0.032, 0.031]
-
-    # DP-FedAvg suffers under heavy DP noise
-    dp_auc = [0.521, 0.558, 0.612, 0.680, 0.715, 0.725]
-    dp_dpd = [0.089, 0.075, 0.062, 0.051, 0.045, 0.042]
-
     fig, ax = plt.subplots(1, 2, figsize=(10, 4), dpi=300)
 
     # Left: Utility (AUC)
@@ -163,14 +162,27 @@ def plot_privacy_bail(out_path: str = os.path.join(FIG_DIR, "privacy_bail.pdf"))
 
 def plot_privacy_attack(out_path: str = os.path.join(FIG_DIR, "privacy_attack.pdf")):
     """Figure 3: Attribute Inference Attack AUC vs DP Epsilon on Bail."""
+    artifact_path = os.path.join(RESULTS_DIR, "privacy_attack.json")
+    if not os.path.exists(artifact_path):
+        raise FileNotFoundError(
+            f"Artifact for privacy_attack plot missing at '{artifact_path}'. "
+            "Run Stage S5 (experiments/privacy_attack.py and experiments/revision/update_level_attack.py) first."
+        )
+
+    with open(artifact_path) as f:
+        data = json.load(f)
+
+    if "epsilons" not in data or "attack_auc" not in data:
+        raise FileNotFoundError(
+            f"Artifact at '{artifact_path}' does not contain required attack accuracy sweep. Run Stage S5 first."
+        )
+
+    epsilons = data["epsilons"]
+    ftgd_attack_auc = data["attack_auc"]
+    exact_leakage = data.get("exact_release_auc", 1.0)
+    random_chance = data.get("random_chance", 0.500)
+
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-
-    epsilons = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
-    # Attribute inference success drops toward random chance under FTGD DP release
-    ftgd_attack_auc = [0.505, 0.512, 0.528, 0.549, 0.575, 0.610]
-    exact_leakage = 0.985
-    random_chance = 0.500
-
     fig, ax = plt.subplots(figsize=(6, 4), dpi=300)
     ax.plot(epsilons, ftgd_attack_auc, "o-", color="#1b7837", linewidth=2, label="FTGD (Released Statistic + DP Noise)")
     ax.axhline(exact_leakage, linestyle="--", color="#762a83", linewidth=1.5, label=f"No DP Exact Release (AUC = {exact_leakage:.3f})")
@@ -192,21 +204,53 @@ def plot_privacy_attack(out_path: str = os.path.join(FIG_DIR, "privacy_attack.pd
 
 def plot_robustness_byz(out_path: str = os.path.join(FIG_DIR, "robustness_byz.pdf")):
     """Figure 4: Robustness breakdown under Byzantine corruption ratios."""
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    artifact_path = os.path.join(RESULTS_DIR, "revision", "robustness_multiseed.json")
+    if not os.path.exists(artifact_path):
+        raise FileNotFoundError(
+            f"Artifact for robustness_byz plot missing at '{artifact_path}'. "
+            "Run Stage S7 (experiments/revision/robustness_multiseed.py) first."
+        )
 
-    byz_ratios = [0.1, 0.2, 0.3, 0.4]
-    perf = {
-        "FedAvg": ([0.710, 0.620, 0.540, 0.480], "#757575", "x--"),
-        "BFWA": ([0.725, 0.635, 0.530, 0.470], "#fb8c00", "^--"),
-        "Krum": ([0.730, 0.710, 0.640, 0.510], "#8e24aa", "s-"),
-        "Multi-Krum": ([0.735, 0.720, 0.660, 0.530], "#00acc1", "d-"),
-        "Robust BFWA": ([0.742, 0.735, 0.710, 0.620], "#3949ab", "v-"),
-        "FU-Shapley (Ours)": ([0.752, 0.748, 0.742, 0.715], "#e53935", "o-"),
+    with open(artifact_path) as f:
+        data = json.load(f)
+
+    runs = data.get("raw_runs", [])
+    if not runs:
+        raise FileNotFoundError(
+            f"Artifact at '{artifact_path}' does not contain raw_runs. Run Stage S7 first."
+        )
+
+    # Group runs by aggregator and byz_ratio
+    agg_ratios = {}
+    for r in runs:
+        agg = r.get("aggregator")
+        ratio = r.get("byz_ratio")
+        auc = r.get("auc")
+        if agg is not None and ratio is not None and auc is not None:
+            agg_ratios.setdefault(agg, {}).setdefault(ratio, []).append(auc)
+
+    if not agg_ratios:
+        raise FileNotFoundError(
+            "No valid aggregator curves could be extracted from robustness artifact. Run Stage S7 first."
+        )
+
+    styles = {
+        "fedavg": ("#757575", "x--", "FedAvg"),
+        "bfwa": ("#fb8c00", "^--", "BFWA"),
+        "krum": ("#8e24aa", "s-", "Krum"),
+        "multikrum": ("#00acc1", "d-", "Multi-Krum"),
+        "robust_bfwa": ("#3949ab", "v-", "Robust BFWA"),
+        "fu_shapley": ("#e53935", "o-", "FU-Shapley (Ours)"),
     }
 
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig, ax = plt.subplots(figsize=(6.5, 4.2), dpi=300)
-    for name, (vals, col, fmt) in perf.items():
-        ax.plot(byz_ratios, vals, fmt, color=col, linewidth=2, label=name, markersize=6)
+
+    for agg, (col, fmt, name) in styles.items():
+        if agg in agg_ratios:
+            ratios = sorted(agg_ratios[agg].keys())
+            mean_aucs = [float(np.mean(agg_ratios[agg][r])) for r in ratios]
+            ax.plot(ratios, mean_aucs, fmt, color=col, linewidth=2, label=name, markersize=6)
 
     ax.set_xlabel("Byzantine Corruption Ratio $f / K$", fontsize=10)
     ax.set_ylabel("AUC-ROC under Attack ($\\uparrow$)", fontsize=10)
@@ -222,14 +266,34 @@ def plot_robustness_byz(out_path: str = os.path.join(FIG_DIR, "robustness_byz.pd
 
 def plot_convergence(out_path: str = os.path.join(FIG_DIR, "convergence.pdf")):
     """Figure 5: Training convergence across communication rounds on Bail."""
+    artifact_path = os.path.join(RESULTS_DIR, "canonical_suite.json")
+    if not os.path.exists(artifact_path):
+        raise FileNotFoundError(
+            f"Artifact for convergence plot missing at '{artifact_path}'. "
+            "Run Stage S3 (experiments/run_canonical_suite.py) first."
+        )
+
+    with open(artifact_path) as f:
+        data = json.load(f)
+
+    # Search for canonical bail run with recorded history
+    history = None
+    for k, v in data.items():
+        if isinstance(v, dict) and "history" in v and len(v["history"]) > 1:
+            history = v["history"]
+            break
+
+    if history is None:
+        raise FileNotFoundError(
+            f"Artifact at '{artifact_path}' does not contain training history for Bail. Run Stage S3 first."
+        )
+
+    rounds = [entry["round"] for entry in history]
+    auc_curve = [entry["g_auc"] for entry in history]
+    dpd_curve = [entry["g_dpd"] for entry in history]
+    eod_curve = [entry.get("g_eod", 0.0) for entry in history]
+
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-
-    rounds = np.arange(1, 26)
-    # Synthetic smooth progression reflecting canonical run dynamics
-    auc_curve = 0.52 + 0.23 * (1 - np.exp(-rounds / 4.5))
-    dpd_curve = 0.12 * np.exp(-rounds / 5.0) + 0.03
-    eod_curve = 0.15 * np.exp(-rounds / 4.0) + 0.025
-
     fig, ax = plt.subplots(figsize=(6, 3.8), dpi=300)
     ax.plot(rounds, auc_curve, "o-", color="#1b7837", linewidth=2, label="Test AUC-ROC ($\\uparrow$)", markersize=4)
     ax.plot(rounds, dpd_curve, "s-", color="#d73027", linewidth=2, label="Test DPD ($\\downarrow$)", markersize=4)
@@ -247,22 +311,42 @@ def plot_convergence(out_path: str = os.path.join(FIG_DIR, "convergence.pdf")):
     print(f"[+] Saved convergence figure to {out_path}")
 
 
-def generate_all_figures(out_dir: str = FIG_DIR):
+def generate_all_figures(out_dir: str = FIG_DIR, strict: bool = False):
     os.makedirs(out_dir, exist_ok=True)
-    plot_pareto(os.path.join(out_dir, "pareto.pdf"))
-    plot_privacy_bail(os.path.join(out_dir, "privacy_bail.pdf"))
-    plot_privacy_attack(os.path.join(out_dir, "privacy_attack.pdf"))
-    plot_robustness_byz(os.path.join(out_dir, "robustness_byz.pdf"))
-    plot_convergence(os.path.join(out_dir, "convergence.pdf"))
-    print(f"[+] All 5 manuscript figures successfully generated in {out_dir}/")
+    plotters = [
+        ("pareto", plot_pareto, os.path.join(out_dir, "pareto.pdf")),
+        ("privacy_bail", plot_privacy_bail, os.path.join(out_dir, "privacy_bail.pdf")),
+        ("privacy_attack", plot_privacy_attack, os.path.join(out_dir, "privacy_attack.pdf")),
+        ("robustness_byz", plot_robustness_byz, os.path.join(out_dir, "robustness_byz.pdf")),
+        ("convergence", plot_convergence, os.path.join(out_dir, "convergence.pdf")),
+    ]
+
+    generated = []
+    skipped = []
+
+    for name, func, out_file in plotters:
+        try:
+            func(out_file)
+            generated.append(name)
+        except FileNotFoundError as e:
+            skipped.append((name, str(e)))
+            print(f"[!] SKIPPED {name}: {e}")
+            if strict:
+                raise
+
+    print(f"\n[Figures Report] Generated: {len(generated)}/5 | Skipped (missing artifacts): {len(skipped)}/5")
+    return {"generated": generated, "skipped": skipped}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate all publication manuscript figures.")
+    parser = argparse.ArgumentParser(description="Generate all publication manuscript figures from real artifacts.")
     parser.add_argument("--out-dir", default=FIG_DIR, help="Output directory for figures.")
+    parser.add_argument("--strict", action="store_true", help="Fail with exit code 1 if any artifact is missing.")
     args = parser.parse_args()
 
-    generate_all_figures(out_dir=args.out_dir)
+    res = generate_all_figures(out_dir=args.out_dir, strict=args.strict)
+    if args.strict and res["skipped"]:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
