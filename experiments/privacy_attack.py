@@ -159,9 +159,29 @@ def main():
         f.write("\n".join(lines))
     print("[table] privacy_attack.tex")
     import json
+    os.makedirs("results", exist_ok=True)
     os.makedirs("results/fairshare", exist_ok=True)
+    payload = {
+        "manifest": build_manifest(experiment="privacy_attack"),
+        "epsilons": [float(x) for x in xs],
+        "attack_auc": [float(y) for y in ys],
+        "exact_release_auc": float(nodp),
+        "random_chance": float(base_rate),
+        "rows": [
+            {
+                "eps": eps,
+                "z": float(z),
+                "attack_acc": float(acc),
+                "norm_adv": float(adv),
+            }
+            for eps, z, acc, adv in rows
+        ],
+    }
+    with open("results/privacy_attack.json", "w") as f:
+        json.dump(payload, f, indent=2)
     with open("results/fairshare/privacy_attack__manifest.json", "w") as f:
-        json.dump({"manifest": build_manifest(experiment="privacy_attack")}, f, indent=2)
+        json.dump(payload, f, indent=2)
+    print("[json] results/privacy_attack.json")
 
 
 if __name__ == "__main__":
