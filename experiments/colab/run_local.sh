@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Chạy Phase 0b / Phase 1 NGAY TRÊN MÁY LOCAL, không cần Colab.
 #
-#   bash colab/run_local.sh setup     # dựng venv + cài torch/PyG (một lần)
-#   bash colab/run_local.sh gate0     # GATE 0a + 0b — BẮT BUỘC trước khi tin số local
-#   bash colab/run_local.sh phase1    # GATE 1 + GATE 1-C
+#   bash experiments/colab/run_local.sh setup     # dựng venv + cài torch/PyG (một lần)
+#   bash experiments/colab/run_local.sh gate0     # GATE 0a + 0b — BẮT BUỘC trước khi tin số local
+#   bash experiments/colab/run_local.sh phase1    # GATE 1 + GATE 1-C
 #
 # Vì sao chạy local là hợp lệ, và vì sao `gate0` là bắt buộc
 # ----------------------------------------------------------
@@ -77,5 +77,5 @@ phase1)
   ;;
 
 *)
-  echo "dùng: bash colab/run_local.sh {setup|gate0|phase1}" >&2; exit 1;;
+  echo "dùng: bash experiments/colab/run_local.sh {setup|gate0|phase1}" >&2; exit 1;;
 esac

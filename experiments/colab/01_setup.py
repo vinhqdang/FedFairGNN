@@ -1,8 +1,9 @@
 """Phase 0 · bước 2 — giải nén repo trên VM, dựng cây thư mục, chạy test suite.
 
-    colab exec -s $S -f colab/01_setup.py --timeout 900
+    colab exec -s $S -f experiments/colab/01_setup.py --timeout 900
 
-Cổng ra: phải thấy `26 passed`. Chưa xanh thì DỪNG, không chạy gì tiếp.
+Cổng ra: pytest phải trả exit code 0 (hiện tại 120 passed). Chưa xanh thì DỪNG.
+Không khớp chuỗi số test — xem ghi chú ở dòng 50.
 
 Lưu ý bố cục: dataset cache và results nằm NGOÀI thư mục repo, vì mỗi lần
 deploy code lại là xoá sạch repo. Không có symlink thì mỗi lần re-upload là

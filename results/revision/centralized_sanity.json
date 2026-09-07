@@ -1,0 +1,302 @@
+[
+  {
+    "dataset": "bail",
+    "paradigm": "centralized",
+    "model": "gcn",
+    "seed": 42,
+    "auc": 0.5945680963838456,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 8.167572958001983
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "federated",
+    "model": "gcn",
+    "seed": 42,
+    "auc": 0.6797455903916148,
+    "dpd_hard": 0.01404240184940031,
+    "eod": 0.021881334070388836,
+    "wall_clock_s": 3.9575122500100406
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "centralized",
+    "model": "gcn",
+    "seed": 43,
+    "auc": 0.568560054703021,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 8.193229333002819
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "federated",
+    "model": "gcn",
+    "seed": 43,
+    "auc": 0.695436357611434,
+    "dpd_hard": 0.014728594446330512,
+    "eod": 0.06920546996711086,
+    "wall_clock_s": 3.934232500003418
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "centralized",
+    "model": "gat",
+    "seed": 42,
+    "auc": 0.6235218398826962,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 14.032259917003103
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "federated",
+    "model": "gat",
+    "seed": 42,
+    "auc": 0.6746773531941728,
+    "dpd_hard": 0.0023453399458615576,
+    "eod": 0.019885142190283145,
+    "wall_clock_s": 5.714723666998907
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "centralized",
+    "model": "gat",
+    "seed": 43,
+    "auc": 0.5784295381007919,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 13.33285458300088
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "federated",
+    "model": "gat",
+    "seed": 43,
+    "auc": 0.6884223673214499,
+    "dpd_hard": 0.0028829935711937593,
+    "eod": 0.0293924182101436,
+    "wall_clock_s": 6.0031666249997215
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "federated",
+    "model": "trustfedgnn",
+    "seed": 42,
+    "auc": 0.6732524764825989,
+    "dpd_hard": 0.0075596214261721695,
+    "eod": 0.01567778391990665,
+    "wall_clock_s": 11.764761416998226
+  },
+  {
+    "dataset": "bail",
+    "paradigm": "federated",
+    "model": "trustfedgnn",
+    "seed": 43,
+    "auc": 0.6732060806984355,
+    "dpd_hard": 0.03399615241605636,
+    "eod": 0.03175812128555766,
+    "wall_clock_s": 12.324716666989843
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "centralized",
+    "model": "gcn",
+    "seed": 42,
+    "auc": 0.7304420570886995,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 32.84030629199697
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "federated",
+    "model": "gcn",
+    "seed": 42,
+    "auc": 0.7358468884965345,
+    "dpd_hard": 0.09925824795150162,
+    "eod": 0.057704000182077664,
+    "wall_clock_s": 10.130855791008798
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "centralized",
+    "model": "gcn",
+    "seed": 43,
+    "auc": 0.7351691948345027,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 30.87171574999229
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "federated",
+    "model": "gcn",
+    "seed": 43,
+    "auc": 0.7408045163891549,
+    "dpd_hard": 0.0744949494949495,
+    "eod": 0.045392544093750375,
+    "wall_clock_s": 9.769963749989984
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "centralized",
+    "model": "gat",
+    "seed": 42,
+    "auc": 0.718716057913655,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 71.45127933399635
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "federated",
+    "model": "gat",
+    "seed": 42,
+    "auc": 0.7333428687215429,
+    "dpd_hard": 0.0874821785499248,
+    "eod": 0.04750602319539854,
+    "wall_clock_s": 15.822500499998569
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "centralized",
+    "model": "gat",
+    "seed": 43,
+    "auc": 0.717287865217494,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 76.71377233399835
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "federated",
+    "model": "gat",
+    "seed": 43,
+    "auc": 0.7430740729389089,
+    "dpd_hard": 0.08636363636363642,
+    "eod": 0.05746242987106953,
+    "wall_clock_s": 15.572303167005884
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "federated",
+    "model": "trustfedgnn",
+    "seed": 42,
+    "auc": 0.7525164807936745,
+    "dpd_hard": 0.11760509390673901,
+    "eod": 0.07547080091429015,
+    "wall_clock_s": 38.44615862501087
+  },
+  {
+    "dataset": "credit",
+    "paradigm": "federated",
+    "model": "trustfedgnn",
+    "seed": 43,
+    "auc": 0.7499900673039486,
+    "dpd_hard": 0.07796384901648068,
+    "eod": 0.049642386933779314,
+    "wall_clock_s": 41.871479209003155
+  },
+  {
+    "dataset": "german",
+    "paradigm": "centralized",
+    "model": "gcn",
+    "seed": 42,
+    "auc": 0.6757714285714286,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 0.7819312500068918
+  },
+  {
+    "dataset": "german",
+    "paradigm": "federated",
+    "model": "gcn",
+    "seed": 42,
+    "auc": 0.6484571428571428,
+    "dpd_hard": 0.09609988776655443,
+    "eod": 0.23712121212121218,
+    "wall_clock_s": 1.1518582080025226
+  },
+  {
+    "dataset": "german",
+    "paradigm": "centralized",
+    "model": "gcn",
+    "seed": 43,
+    "auc": 0.6953142857142858,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 0.7178386660089018
+  },
+  {
+    "dataset": "german",
+    "paradigm": "federated",
+    "model": "gcn",
+    "seed": 43,
+    "auc": 0.6121904761904762,
+    "dpd_hard": 0.13536104016716977,
+    "eod": 0.13965995836224843,
+    "wall_clock_s": 1.0330757909978274
+  },
+  {
+    "dataset": "german",
+    "paradigm": "centralized",
+    "model": "gat",
+    "seed": 42,
+    "auc": 0.7088761904761904,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 1.3375889580056537
+  },
+  {
+    "dataset": "german",
+    "paradigm": "federated",
+    "model": "gat",
+    "seed": 42,
+    "auc": 0.630552380952381,
+    "dpd_hard": 0.027918069584736194,
+    "eod": 0.1659090909090909,
+    "wall_clock_s": 1.3406720830098493
+  },
+  {
+    "dataset": "german",
+    "paradigm": "centralized",
+    "model": "gat",
+    "seed": 43,
+    "auc": 0.6791619047619049,
+    "dpd_hard": 0.0,
+    "eod": 0.0,
+    "wall_clock_s": 1.2792511670122622
+  },
+  {
+    "dataset": "german",
+    "paradigm": "federated",
+    "model": "gat",
+    "seed": 43,
+    "auc": 0.6790095238095238,
+    "dpd_hard": 0.06377215385806045,
+    "eod": 0.0579458709229701,
+    "wall_clock_s": 1.272395249994588
+  },
+  {
+    "dataset": "german",
+    "paradigm": "federated",
+    "model": "trustfedgnn",
+    "seed": 42,
+    "auc": 0.6809142857142857,
+    "dpd_hard": 0.24200336700336705,
+    "eod": 0.1598484848484849,
+    "wall_clock_s": 2.609836791001726
+  },
+  {
+    "dataset": "german",
+    "paradigm": "federated",
+    "model": "trustfedgnn",
+    "seed": 43,
+    "auc": 0.7175619047619048,
+    "dpd_hard": 0.30655522018419634,
+    "eod": 0.29389312977099236,
+    "wall_clock_s": 2.3862775419984246
+  }
+]

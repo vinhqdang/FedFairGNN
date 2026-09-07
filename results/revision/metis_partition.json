@@ -1,0 +1,134 @@
+[
+  {
+    "dataset": "bail",
+    "model": "trustfedgnn",
+    "partition": "uniform",
+    "seed": 42,
+    "auc": 0.6983541262975513,
+    "dpd_hard": 0.009703424156803864,
+    "eod": 0.03923284810515326,
+    "omega_w": 1.1822661177388258,
+    "wall_clock_s": 13.27881374998833
+  },
+  {
+    "dataset": "bail",
+    "model": "trustfedgnn",
+    "partition": "uniform",
+    "seed": 43,
+    "auc": 0.694416702635357,
+    "dpd_hard": 0.003149737836192046,
+    "eod": 0.010289846710133999,
+    "omega_w": 1.0640395198549544,
+    "wall_clock_s": 13.293998875000398
+  },
+  {
+    "dataset": "bail",
+    "model": "fedavg",
+    "partition": "uniform",
+    "seed": 42,
+    "auc": 0.6850434149746076,
+    "dpd_hard": 0.011254470372053516,
+    "eod": 0.030050365456667283,
+    "omega_w": 0.0,
+    "wall_clock_s": 4.079847458007862
+  },
+  {
+    "dataset": "bail",
+    "model": "fedavg",
+    "partition": "uniform",
+    "seed": 43,
+    "auc": 0.6980742210100008,
+    "dpd_hard": 0.001152658551174468,
+    "eod": 0.04518685207624101,
+    "omega_w": 0.0,
+    "wall_clock_s": 3.979085999992094
+  },
+  {
+    "dataset": "bail",
+    "model": "trustfedgnn",
+    "partition": "dirichlet",
+    "seed": 42,
+    "auc": 0.6135537295705491,
+    "dpd_hard": 0.01790124676453736,
+    "eod": 0.022848719366132336,
+    "omega_w": 0.47290643943207605,
+    "wall_clock_s": 15.158453249998274
+  },
+  {
+    "dataset": "bail",
+    "model": "trustfedgnn",
+    "partition": "dirichlet",
+    "seed": 43,
+    "auc": 0.660586236083178,
+    "dpd_hard": 0.015237294620387892,
+    "eod": 0.048587309830169456,
+    "omega_w": 1.3004927252020155,
+    "wall_clock_s": 16.574499416994513
+  },
+  {
+    "dataset": "bail",
+    "model": "fedavg",
+    "partition": "dirichlet",
+    "seed": 42,
+    "auc": 0.7202477707064863,
+    "dpd_hard": 0.008057536899093054,
+    "eod": 0.008967508138320812,
+    "omega_w": 0.0,
+    "wall_clock_s": 4.121255542006111
+  },
+  {
+    "dataset": "bail",
+    "model": "fedavg",
+    "partition": "dirichlet",
+    "seed": 43,
+    "auc": 0.7156083836129707,
+    "dpd_hard": 0.019854934230025156,
+    "eod": 0.05529975188967745,
+    "omega_w": 0.0,
+    "wall_clock_s": 4.291601207994972
+  },
+  {
+    "dataset": "bail",
+    "model": "trustfedgnn",
+    "partition": "community",
+    "seed": 42,
+    "auc": 0.655169791350984,
+    "dpd_hard": 0.045292525340341006,
+    "eod": 0.021221055217738427,
+    "omega_w": 1.418719347034182,
+    "wall_clock_s": 43.79536575000384
+  },
+  {
+    "dataset": "bail",
+    "model": "trustfedgnn",
+    "partition": "community",
+    "seed": 43,
+    "auc": 0.6178809734811264,
+    "dpd_hard": 0.04148600805082692,
+    "eod": 0.037035754813147914,
+    "omega_w": 0.0,
+    "wall_clock_s": 43.56162074999884
+  },
+  {
+    "dataset": "bail",
+    "model": "fedavg",
+    "partition": "community",
+    "seed": 42,
+    "auc": 0.7454931039602293,
+    "dpd_hard": 0.002953903301653793,
+    "eod": 0.018057858853878672,
+    "omega_w": 0.0,
+    "wall_clock_s": 10.648342459011474
+  },
+  {
+    "dataset": "bail",
+    "model": "fedavg",
+    "partition": "community",
+    "seed": 43,
+    "auc": 0.733955859529254,
+    "dpd_hard": 0.0032796072662215625,
+    "eod": 0.0408131863904756,
+    "omega_w": 0.0,
+    "wall_clock_s": 10.654418749996694
+  }
+]

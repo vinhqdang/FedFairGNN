@@ -1,0 +1,42 @@
+{
+  "dataset": "bail",
+  "total_updates": 240,
+  "param_dim": 22726,
+  "channels": [
+    {
+      "channel": "Fairness Statistic (Unnoised)",
+      "dp_level": "None",
+      "probe": "MAP differencing",
+      "attack_auc": 1.0,
+      "utility_impact": "None"
+    },
+    {
+      "channel": "Fairness Statistic (FTGD)",
+      "dp_level": "eps=8.0 (stat)",
+      "probe": "MAP differencing",
+      "attack_auc": 0.512,
+      "utility_impact": "Negligible (<1%)"
+    },
+    {
+      "channel": "Model Updates (TrustFedGNN)",
+      "dp_level": "None (stat-only)",
+      "probe": "Linear Probe",
+      "attack_auc": 0.905059594402277,
+      "utility_impact": "Zero (flagship)"
+    },
+    {
+      "channel": "Model Updates + Client DP-SGD",
+      "dp_level": "eps=8.0 (param)",
+      "probe": "Linear Probe",
+      "attack_auc": 0.5306814812618595,
+      "utility_impact": "Severe (>15% AUC drop)"
+    },
+    {
+      "channel": "Theoretical Baseline",
+      "dp_level": "Infinite Noise",
+      "probe": "Random Chance",
+      "attack_auc": 0.5,
+      "utility_impact": "Total collapse"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "dataset": "German",
+    "nodes": 1000,
+    "clients": 10,
+    "rounds": 20,
+    "local_epochs": 3,
+    "total_releases": 60,
+    "delta": 0.0001,
+    "calibrated_z": 4.50682258605957,
+    "composed_epsilon": 7.998483892830104,
+    "eps_at_z1": 61.51113823906793,
+    "eps_at_z15": 33.96726191762625
+  },
+  {
+    "dataset": "Bail",
+    "nodes": 18876,
+    "clients": 10,
+    "rounds": 50,
+    "local_epochs": 3,
+    "total_releases": 150,
+    "delta": 1e-05,
+    "calibrated_z": 7.810223770141601,
+    "composed_epsilon": 7.999519999342656,
+    "eps_at_z1": 131.68837010237718,
+    "eps_at_z15": 70.7573738065291
+  },
+  {
+    "dataset": "Credit",
+    "nodes": 30000,
+    "clients": 10,
+    "rounds": 50,
+    "local_epochs": 3,
+    "total_releases": 150,
+    "delta": 1e-05,
+    "calibrated_z": 7.810223770141601,
+    "composed_epsilon": 7.999519999342656,
+    "eps_at_z1": 131.68837010237718,
+    "eps_at_z15": 70.7573738065291
+  },
+  {
+    "dataset": "Pokec-z",
+    "nodes": 67796,
+    "clients": 10,
+    "rounds": 100,
+    "local_epochs": 3,
+    "total_releases": 300,
+    "delta": 1e-05,
+    "calibrated_z": 11.044994735717772,
+    "composed_epsilon": 7.999806230308848,
+    "eps_at_z1": 231.03553359954904,
+    "eps_at_z15": 120.02170343571052
+  },
+  {
+    "dataset": "Elliptic",
+    "nodes": 203769,
+    "clients": 10,
+    "rounds": 30,
+    "local_epochs": 3,
+    "total_releases": 90,
+    "delta": 1e-05,
+    "calibrated_z": 6.049477386474609,
+    "composed_epsilon": 7.999989151233162,
+    "eps_at_z1": 88.61630842505602,
+    "eps_at_z15": 48.80169282486775
+  },
+  {
+    "dataset": "ogbn-products",
+    "nodes": 2449029,
+    "clients": 10,
+    "rounds": 20,
+    "local_epochs": 1,
+    "total_releases": 4800,
+    "delta": 1e-06,
+    "calibrated_z": 47.75682373046874,
+    "composed_epsilon": 7.999918861340353,
+    "eps_at_z1": 2774.8041085088007,
+    "eps_at_z15": 1308.1374418421342
+  }
+]

@@ -4,7 +4,7 @@
 # Chạy trên máy local. Không đụng tới Colab.
 # Sinh ra 2 file trong $SP:  fedfairgnn.tgz  và  manifest_local.json
 #
-#   SP=<scratchpad> bash colab/00_pack.sh
+#   SP=<scratchpad> bash experiments/colab/00_pack.sh
 #
 set -euo pipefail
 

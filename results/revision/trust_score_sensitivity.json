@@ -1,0 +1,34 @@
+{
+  "num_samples": 2000,
+  "perturbation_range": "+/-25%",
+  "perturbation_regime": {
+    "spearman_mean": 0.9646016483516483,
+    "spearman_std": 0.0606825021849674,
+    "spearman_ci95": [
+      0.7637362637362637,
+      1.0
+    ],
+    "kendall_mean": 0.9229615384615384,
+    "kendall_std": 0.07272962796340247,
+    "kendall_ci95": [
+      0.6923076923076922,
+      0.9999999999999998
+    ],
+    "ours_rank1_pct": 100.0
+  },
+  "dirichlet_regime": {
+    "spearman_mean": 0.7772912087912088,
+    "spearman_std": 0.18003482460089154,
+    "spearman_ci95": [
+      0.34065934065934067,
+      0.989010989010989
+    ],
+    "kendall_mean": 0.6772051282051281,
+    "kendall_std": 0.17662196412593426,
+    "kendall_ci95": [
+      0.282051282051282,
+      0.9487179487179485
+    ],
+    "ours_rank1_pct": 98.85000000000001
+  }
+}
