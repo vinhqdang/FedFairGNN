@@ -57,6 +57,22 @@ if os.path.exists("/content/data_raw.tgz"):
     if os.path.exists(credit_zip) and not os.path.exists("/content/data/raw/credit/credit_edges.txt"):
         sh(f"unzip -o -q {credit_zip} -d /content/data/raw/credit")
 
+# Nạp provenance từ manifest_local.json vào môi trường
+if os.path.exists("/content/manifest_local.json"):
+    try:
+        import json
+        with open("/content/manifest_local.json") as f:
+            man = json.load(f)
+        c = man.get("commit", "")
+        d = "1" if man.get("dirty", False) else "0"
+        os.environ["FEDFAIR_GIT_COMMIT"] = c
+        os.environ["FEDFAIR_GIT_DIRTY"] = d
+        os.environ["GIT_COMMIT"] = c
+        os.environ["GIT_DIRTY"] = d
+        print(f"Loaded provenance: commit={c}, dirty={d}")
+    except Exception as e:
+        print(f"Warning: Could not read manifest_local.json: {e}")
+
 os.chdir(REPO)
 print("repo:", sorted(os.listdir("."))[:12])
 print("data ->", os.path.realpath(link))
@@ -68,7 +84,7 @@ print("dataset đã cache:", cached or "(trống, sẽ tự tải)")
 # --- GATE 0a: test suite ----------------------------------------------------
 # Stream output trực tiếp ra stdout để tránh timeout websocket khi test chạy lâu.
 print(">>> Running test suite (streaming per-test output)...", flush=True)
-p = subprocess.Popen("python -u -m pytest tests/ -v", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+p = subprocess.Popen("python -u -m pytest tests/ -v", shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 lines = []
 for line in p.stdout:
     lines.append(line)
