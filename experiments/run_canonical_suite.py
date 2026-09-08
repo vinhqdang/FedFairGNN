@@ -117,6 +117,7 @@ def _load_checkpoint(output_file: str, current_git_commit: str) -> dict:
 ABLATION_ARMS = {
     "M1_Full": lambda s: ExperimentConfig.canonical(seed=s),
     "M2_wo_FSER": lambda s: ExperimentConfig.canonical(seed=s, model="gat"),
+    "M2_wo_FSER_true": lambda s: ExperimentConfig.canonical(seed=s, beta_init=0.0, freeze_beta=True),
     "M3_wo_FTGD": lambda s: ExperimentConfig.canonical(seed=s, dp_enabled=False),
     "M4_Full_DPSGD": lambda s: ExperimentConfig.canonical(seed=s, dp_mode="gradient"),
     "M5_wo_FairScore": lambda s: ExperimentConfig.canonical(seed=s, fu_alpha=0.0),
