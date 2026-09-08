@@ -1,9 +1,9 @@
 {
   "manifest": {
-    "git_commit": "69f5b22921373c35f1eea965448aab57c1602d6c",
-    "git_dirty": true,
+    "git_commit": "476d72dcde31103b2c8dd0918ec0494a97ecdfe1",
+    "git_dirty": false,
     "device": "cpu",
-    "timestamp": "2026-09-07T07:21:39.603395+00:00",
+    "timestamp": "2026-09-08T15:52:44.619363+00:00",
     "torch_version": "2.14.0",
     "python_version": "3.12.12",
     "platform": "macOS-15.7.9-arm64-arm-64bit",
@@ -12,7 +12,8 @@
       "german",
       "bail",
       "credit",
-      "pokec_z"
+      "pokec_z",
+      "elliptic"
     ]
   },
   "datasets": [
@@ -86,6 +87,24 @@
       "homophily_hs": 0.9506131484664007,
       "max_feat_auc": 0.7604788395993998,
       "max_feat_idx": 1,
+      "status": "PASS (Zero Leakage)"
+    },
+    {
+      "name": "elliptic",
+      "n_nodes": 203769,
+      "nodes": 203769,
+      "n_edges_directed": 234355,
+      "edges": 234355,
+      "n_edges_undirected": 234355,
+      "n_features": 165,
+      "dim": 165,
+      "sensitive_attr": "time_period(early/late)",
+      "sensitive": "time_period(early/late)",
+      "label": "illicit",
+      "h_s": 1.0,
+      "homophily_hs": 1.0,
+      "max_feat_auc": 0.8084505195891633,
+      "max_feat_idx": 89,
       "status": "PASS (Zero Leakage)"
     }
   ]
