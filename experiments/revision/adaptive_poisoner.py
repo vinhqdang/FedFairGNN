@@ -280,7 +280,7 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
                             out_tex="manuscript/tables/revision/adaptive_poisoner.tex",
                             aggregators=("fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa", "fu_shapley", "robust_fu_shapley", "cgsv"),
                             byz_ratios=(0.1, 0.2, 0.3, 0.4), seeds=(42,), rounds=15,
-                            dataset="bail"):
+                            dataset="bail", device="cpu"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 
@@ -292,7 +292,7 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
     idx = 0
     total = len(aggregators) * len(byz_ratios) * len(seeds)
 
-    print(f"[*] Running Adaptive Stealth Poisoner suite ({total} total runs)...", flush=True)
+    print(f"[*] Running Adaptive Stealth Poisoner suite ({total} total runs on device={device})...", flush=True)
 
     for ratio in byz_ratios:
         for agg in aggregators:
@@ -300,19 +300,19 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
                 idx += 1
                 print(f"[{idx}/{total}] RUNNING: agg={agg} | ratio={ratio} | seed={s}...", flush=True)
                 out = evaluate_adaptive_run(agg, ratio, seed=s, rounds=rounds,
-                                            dataset=dataset)
-                out["manifest"] = build_manifest(dataset=dataset, rounds=rounds)
+                                            dataset=dataset, device=device)
+                out["manifest"] = build_manifest(dataset=dataset, rounds=rounds, device=device)
                 records.append(out)
                 print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, w_adv={out['w_adv']:.3f} ({out['wall_clock_s']:.1f}s)", flush=True)
                 out_payload = {
-                    "manifest": build_manifest(dataset=dataset, rounds=rounds),
+                    "manifest": build_manifest(dataset=dataset, rounds=rounds, device=device),
                     "records": records,
                 }
                 with open(out_json, "w") as f:
                     json.dump(out_payload, f, indent=2)
 
     summary = summarise_breakdown(records, aggregators, byz_ratios)
-    summary["manifest"] = build_manifest(dataset=dataset, rounds=rounds)
+    summary["manifest"] = build_manifest(dataset=dataset, rounds=rounds, device=device)
     with open(out_json.replace(".json", "_breakdown_summary.json"), "w") as f:
         json.dump(summary, f, indent=2)
     print(f"[+] Saved adaptive poisoner JSON to {out_json}")
@@ -370,12 +370,14 @@ def main():
     ap.add_argument("--byz-ratios", type=float, nargs="+", default=[0.1, 0.2, 0.3, 0.4])
     ap.add_argument("--seeds", type=int, nargs="+", default=[42])
     ap.add_argument("--rounds", type=int, default=15)
+    ap.add_argument("--device", default=os.environ.get("FEDFAIR_DEVICE", "cpu"))
     ap.add_argument("--out-json", default="results/revision/adaptive_poisoner_results.json")
     ap.add_argument("--out-tex", default="manuscript/tables/revision/adaptive_poisoner.tex")
     a = ap.parse_args()
     run_adaptive_experiment(out_json=a.out_json, out_tex=a.out_tex,
                             aggregators=a.aggregators, byz_ratios=a.byz_ratios,
-                            seeds=a.seeds, rounds=a.rounds, dataset=a.dataset)
+                            seeds=a.seeds, rounds=a.rounds, dataset=a.dataset,
+                            device=a.device)
 
 
 if __name__ == "__main__":
