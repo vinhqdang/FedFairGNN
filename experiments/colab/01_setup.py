@@ -33,8 +33,7 @@ os.makedirs(REPO, exist_ok=True)
 r = sh(f"tar -xzf /content/fedfairgnn.tgz -C {REPO}")
 assert r.returncode == 0, r.stderr[-2000:]
 
-# data/ trong repo -> trỏ ra cache bền. Không script nào nhận --data_root nên
-# symlink là cách rẻ nhất, và không đụng một dòng mã nguồn nào.
+# data/ và results/ trong repo -> trỏ ra cache bền.
 link = os.path.join(REPO, "data")
 if os.path.islink(link) or os.path.exists(link):
     shutil.rmtree(link, ignore_errors=True)
@@ -42,9 +41,18 @@ if os.path.islink(link) or os.path.exists(link):
         os.unlink(link)
 os.symlink(DATA, link)
 
+rlink = os.path.join(REPO, "results")
+if os.path.islink(rlink) or os.path.exists(rlink):
+    shutil.rmtree(rlink, ignore_errors=True)
+    if os.path.islink(rlink):
+        os.unlink(rlink)
+os.makedirs("/content/results/fairshare", exist_ok=True)
+os.symlink("/content/results", rlink)
+
 os.chdir(REPO)
 print("repo:", sorted(os.listdir("."))[:12])
 print("data ->", os.path.realpath(link))
+print("results ->", os.path.realpath(rlink))
 print("dataset đã cache:", sorted(os.listdir(DATA)) or "(trống, sẽ tự tải)")
 
 # --- GATE 0a: test suite ----------------------------------------------------

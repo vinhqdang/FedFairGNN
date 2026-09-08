@@ -40,19 +40,7 @@ from experiments.fairshare_common import global_sensitive_homophily
 from experiments.methods import METHODS, apply_method
 
 
-def _get_git_info() -> Tuple[str, bool]:
-    env_commit = os.environ.get("FEDFAIR_GIT_COMMIT") or os.environ.get("GIT_COMMIT")
-    env_dirty = os.environ.get("FEDFAIR_GIT_DIRTY")
-    if env_commit:
-        dirty = (env_dirty == "1" or env_dirty == "true" or env_dirty == "True")
-        return env_commit.strip(), dirty
-    try:
-        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-        status = subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.DEVNULL).decode().strip()
-        dirty = bool(status)
-        return commit, dirty
-    except Exception:
-        return "unknown", False
+from src.utils.provenance import get_git_info as _get_git_info, build_manifest
 
 
 SOTA_BASELINES = [
