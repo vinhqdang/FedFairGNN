@@ -177,8 +177,8 @@ def test_full_run_resumes_across_a_simulated_interrupt(tmp_path):
         "fser_sign_hypothesis": {f"fser_{m}_beta_{b}": fake
                                  for m in ["sub", "add", "same_penalize"] for b in [0.5, 2.0]},
         "two_tier_defense_robustness": {f"{arm}_{sc}": fake
-                                        for sc in ["no_attack", "sign_flip_20pct", "fairness_poison_20pct"]
-                                        for arm in ["M1", "M6"]},
+                                        for sc in ["no_attack", "sign_flip_20pct", "fairness_poison_20pct", "scaling_20pct"]
+                                        for arm in ["M1", "M6", "M5", "M7", "M1_robust", "FedAvg"]},
     }
     json.dump(seeded, open(p, "w"))
 

@@ -66,7 +66,7 @@ def _atomic_save(data: dict, output_file: str) -> None:
     os.replace(tmp, output_file)
 
 
-def _load_checkpoint(output_file: str, current_git_commit: str) -> dict:
+def _load_checkpoint(output_file: str, current_git_commit: str, force_resume: bool = False) -> dict:
     """Load a prior (possibly partial) run to resume from -- but ONLY if it was
     produced by the exact code now running.
 
@@ -98,14 +98,16 @@ def _load_checkpoint(output_file: str, current_git_commit: str) -> dict:
         return {}
 
     ckpt_commit = d.get("_manifest", {}).get("git_commit")
-    if not ckpt_commit or ckpt_commit == "unknown" or current_git_commit == "unknown" \
-            or ckpt_commit != current_git_commit:
+    if not force_resume and (not ckpt_commit or ckpt_commit == "unknown" or current_git_commit == "unknown" \
+            or ckpt_commit != current_git_commit):
         print(f"[resume] {output_file} exists but its manifest.git_commit "
               f"({ckpt_commit!r}) does not match the current commit "
               f"({current_git_commit!r}) -- treating it as unrelated prior "
               f"content (e.g. the file already committed to the repo), NOT a "
               f"checkpoint of this run. Starting fresh.", flush=True)
         return {}
+    if force_resume and ckpt_commit != current_git_commit:
+        print(f"[resume] forcing resume across commit boundary: checkpoint ({ckpt_commit!r}) -> current ({current_git_commit!r})", flush=True)
 
     for k in list(d.keys()):
         if k.startswith("_STALENESS") or k == "_INVALID":
@@ -206,12 +208,18 @@ def run_multi_seed(cfg_fn: Callable[[int], ExperimentConfig], seeds=tuple(range(
 
 
 def run_canonical_suite(output_file="results/canonical_suite.json",
-                           run_sign_test: bool = True, resume: bool = True):
+                        run_sign_test: bool = True, resume: bool = True,
+                        part: str = "all", force_resume: bool = False):
     print("=" * 70, flush=True)
     print("🚀 [START] STAGE 4 REMEDIATION & GATE G0-BIS SUITE (CANONICAL SUB UNDER SERVER_HOLDOUT)", flush=True)
     print("=" * 70, flush=True)
 
     seeds = tuple(range(42, 52))
+
+    run_p1 = part in ("all", "1", "part1")
+    run_p2 = part in ("all", "2", "part2")
+    run_p3 = part in ("all", "3", "part3") and run_sign_test
+    run_p4 = part in ("all", "4", "part4", "two_tier")
 
     # Resolved before loading any checkpoint: whether an existing output_file
     # counts as "this run, interrupted" depends entirely on whether it was
@@ -220,7 +228,7 @@ def run_canonical_suite(output_file="results/canonical_suite.json",
     if git_commit == "unknown":
         print("⚠️ [WARNING] git_commit is 'unknown'! Canonical runs must have explicit provenance.", flush=True)
 
-    all_results = _load_checkpoint(output_file, git_commit) if resume else {}
+    all_results = _load_checkpoint(output_file, git_commit, force_resume=force_resume or (part != "all")) if resume else {}
     if all_results:
         done = sorted(k for k in all_results if not k.startswith("_"))
         print(f"[resume] loaded checkpoint from {output_file}: {len(done)} top-level "
@@ -253,16 +261,17 @@ def run_canonical_suite(output_file="results/canonical_suite.json",
     # -------------------------------------------------------------
     # PART 1: Stage 4.2 Canonical Benchmark (German & Bail 3 seeds)
     # -------------------------------------------------------------
-    print("\n" + "-" * 70, flush=True)
-    print("📊 [PART 1/5] Running Stage 4.2 Canonical Matrix (with canonical sub)...", flush=True)
-    print("-" * 70, flush=True)
+    if run_p1:
+        print("\n" + "-" * 70, flush=True)
+        print("📊 [PART 1/5] Running Stage 4.2 Canonical Matrix (with canonical sub)...", flush=True)
+        print("-" * 70, flush=True)
 
-    # RUN-4.2-01: German Credit - FedAvg Baseline (3 seeds)
-    if have("RUN-4.2-01"):
-        print("\n[skip] RUN-4.2-01 already checkpointed.", flush=True)
-    else:
-        print("\n[+] RUN-4.2-01: German Credit - FedAvg (3 seeds)...", flush=True)
-        all_results["RUN-4.2-01"] = run_multi_seed(
+        # RUN-4.2-01: German Credit - FedAvg Baseline (3 seeds)
+        if have("RUN-4.2-01"):
+            print("\n[skip] RUN-4.2-01 already checkpointed.", flush=True)
+        else:
+            print("\n[+] RUN-4.2-01: German Credit - FedAvg (3 seeds)...", flush=True)
+            all_results["RUN-4.2-01"] = run_multi_seed(
             lambda s: ExperimentConfig(
                 dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
                 model="gat", aggregator="fedavg", fairness_weight=0.0, dp_enabled=False,
@@ -372,24 +381,25 @@ def run_canonical_suite(output_file="results/canonical_suite.json",
     # -------------------------------------------------------------
     # PART 2: Stage 4.5 Component-wise Ablation Suite (M1-M7 Canonical sub)
     # -------------------------------------------------------------
-    print("\n" + "-" * 70, flush=True)
-    print("🔬 [PART 2/5] Running Stage 4.5 Component-wise Ablation Suite (M1-M7)...", flush=True)
-    print("-" * 70, flush=True)
+    if run_p2:
+        print("\n" + "-" * 70, flush=True)
+        print("🔬 [PART 2/5] Running Stage 4.5 Component-wise Ablation Suite (M1-M7)...", flush=True)
+        print("-" * 70, flush=True)
 
-    ablation_results = all_results.get("component_ablation_matrix", {})
-    all_results["component_ablation_matrix"] = ablation_results
-    for arm_name, cfg_fn in ABLATION_ARMS.items():
-        if arm_name in ablation_results:
-            print(f"\n[skip] Ablation arm {arm_name} already checkpointed.", flush=True)
-            continue
-        print(f"\n[+] Running Ablation Arm {arm_name} (3 seeds)...", flush=True)
-        ablation_results[arm_name] = run_multi_seed(cfg_fn, seeds=seeds)
-        checkpoint()
+        ablation_results = all_results.get("component_ablation_matrix", {})
+        all_results["component_ablation_matrix"] = ablation_results
+        for arm_name, cfg_fn in ABLATION_ARMS.items():
+            if arm_name in ablation_results:
+                print(f"\n[skip] Ablation arm {arm_name} already checkpointed.", flush=True)
+                continue
+            print(f"\n[+] Running Ablation Arm {arm_name} (3 seeds)...", flush=True)
+            ablation_results[arm_name] = run_multi_seed(cfg_fn, seeds=seeds)
+            checkpoint()
 
     # -------------------------------------------------------------
     # PART 3: FSER Sign Hypothesis Sweep (+ vs - vs same_penalize)
     # -------------------------------------------------------------
-    if run_sign_test:
+    if run_p3:
         print("\n" + "-" * 70, flush=True)
         print("💡 [PART 3/5] Testing FSER Sign Hypothesis (sub vs add vs same_penalize)...", flush=True)
         print("-" * 70, flush=True)
@@ -415,51 +425,117 @@ def run_canonical_suite(output_file="results/canonical_suite.json",
     # -------------------------------------------------------------
     # PART 4: Two-Tier Defense under Byzantine Attacks (20% Byz)
     # -------------------------------------------------------------
-    print("\n" + "-" * 70, flush=True)
-    print("🛡️ [PART 4/5] Evaluating Two-Tier Defense against Byzantine Attacks (20% Byz)...", flush=True)
-    print("-" * 70, flush=True)
+    if run_p4:
+        print("\n" + "-" * 70, flush=True)
+        print("🛡️ [PART 4/5] Evaluating Two-Tier Defense against Byzantine Attacks (20% Byz)...", flush=True)
+        print("-" * 70, flush=True)
 
-    defense_results = all_results.get("two_tier_defense_robustness", {})
-    all_results["two_tier_defense_robustness"] = defense_results
-    attack_scenarios = [
-        ("no_attack", "none", 0),
-        ("sign_flip_20pct", "sign_flip", 1),         # 1 of 5 clients = 20%
-        ("fairness_poison_20pct", "fairness_poison", 1), # 1 of 5 clients = 20%
-    ]
+        defense_results = all_results.get("two_tier_defense_robustness", {})
+        all_results["two_tier_defense_robustness"] = defense_results
+        attack_scenarios = [
+            ("no_attack", "none", 0),
+            ("sign_flip_20pct", "sign_flip", 1),              # 1 of 5 clients = 20%
+            ("fairness_poison_20pct", "fairness_poison", 1),  # 1 of 5 clients = 20%
+            ("scaling_20pct", "scaling", 1),                  # 1 of 5 clients = 20%
+        ]
 
-    for sc_name, att_type, n_byz in attack_scenarios:
-        print(f"\n[*] Attack Scenario: {sc_name} (attack={att_type}, num_byz={n_byz}/5 = {n_byz*20}%)...", flush=True)
+        for sc_name, att_type, n_byz in attack_scenarios:
+            print(f"\n[*] Attack Scenario: {sc_name} (attack={att_type}, num_byz={n_byz}/5 = {n_byz*20}%)...", flush=True)
 
-        # M1: Full Two-Tier Defense (Ours)
-        key1 = f"M1_{sc_name}"
-        if key1 in defense_results:
-            print(f"  [skip] {key1} already checkpointed.", flush=True)
-        else:
-            print(f"  [+] Running M1 Full Two-Tier under {sc_name}...", flush=True)
-            defense_results[key1] = run_multi_seed(
-                lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
-                    dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
-                    attack=at, num_byzantine=nb, attack_intensity=10.0,
-                ),
-                seeds=seeds
-            )
-            checkpoint()
+            # M1: Full Two-Tier Defense (Ours, canonical fu_shapley)
+            key1 = f"M1_{sc_name}"
+            if key1 in defense_results:
+                print(f"  [skip] {key1} already checkpointed.", flush=True)
+            else:
+                print(f"  [+] Running M1 Full Two-Tier under {sc_name}...", flush=True)
+                defense_results[key1] = run_multi_seed(
+                    lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
+                        dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
+                        attack=at, num_byzantine=nb, attack_intensity=10.0,
+                    ),
+                    seeds=seeds
+                )
+                checkpoint()
 
-        # M6: w/o Two-Tier Defense (Plain CGSV Cosine)
-        key6 = f"M6_{sc_name}"
-        if key6 in defense_results:
-            print(f"  [skip] {key6} already checkpointed.", flush=True)
-        else:
-            print(f"  [+] Running M6 w/o Two-Tier (CGSV) under {sc_name}...", flush=True)
-            defense_results[key6] = run_multi_seed(
-                lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
-                    dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
-                    fu_score="cosine", fu_val_source="pooled",
-                    attack=at, num_byzantine=nb, attack_intensity=10.0,
-                ),
-                seeds=seeds
-            )
-            checkpoint()
+            # M6: w/o Two-Tier Defense (Plain CGSV Cosine)
+            key6 = f"M6_{sc_name}"
+            if key6 in defense_results:
+                print(f"  [skip] {key6} already checkpointed.", flush=True)
+            else:
+                print(f"  [+] Running M6 w/o Two-Tier (CGSV) under {sc_name}...", flush=True)
+                defense_results[key6] = run_multi_seed(
+                    lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
+                        dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
+                        fu_score="cosine", fu_val_source="pooled",
+                        attack=at, num_byzantine=nb, attack_intensity=10.0,
+                    ),
+                    seeds=seeds
+                )
+                checkpoint()
+
+            # M5: w/o FairScore (fu_alpha=0.0)
+            key5 = f"M5_{sc_name}"
+            if key5 in defense_results:
+                print(f"  [skip] {key5} already checkpointed.", flush=True)
+            else:
+                print(f"  [+] Running M5 w/o FairScore under {sc_name}...", flush=True)
+                defense_results[key5] = run_multi_seed(
+                    lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
+                        dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
+                        fu_alpha=0.0,
+                        attack=at, num_byzantine=nb, attack_intensity=10.0,
+                    ),
+                    seeds=seeds
+                )
+                checkpoint()
+
+            # M7: w/o EMA (fu_ema_beta=0.0)
+            key7 = f"M7_{sc_name}"
+            if key7 in defense_results:
+                print(f"  [skip] {key7} already checkpointed.", flush=True)
+            else:
+                print(f"  [+] Running M7 w/o EMA under {sc_name}...", flush=True)
+                defense_results[key7] = run_multi_seed(
+                    lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
+                        dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
+                        fu_ema_beta=0.0,
+                        attack=at, num_byzantine=nb, attack_intensity=10.0,
+                    ),
+                    seeds=seeds
+                )
+                checkpoint()
+
+            # M1_robust: Two-Tier with distance pre-screen (robust_fu_shapley)
+            key_robust = f"M1_robust_{sc_name}"
+            if key_robust in defense_results:
+                print(f"  [skip] {key_robust} already checkpointed.", flush=True)
+            else:
+                print(f"  [+] Running M1 Robust (robust_fu_shapley) under {sc_name}...", flush=True)
+                defense_results[key_robust] = run_multi_seed(
+                    lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
+                        dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
+                        aggregator="robust_fu_shapley",
+                        attack=at, num_byzantine=nb, attack_intensity=10.0,
+                    ),
+                    seeds=seeds
+                )
+                checkpoint()
+
+            # FedAvg Baseline
+            key_fed = f"FedAvg_{sc_name}"
+            if key_fed in defense_results:
+                print(f"  [skip] {key_fed} already checkpointed.", flush=True)
+            else:
+                print(f"  [+] Running FedAvg baseline under {sc_name}...", flush=True)
+                defense_results[key_fed] = run_multi_seed(
+                    lambda s, at=att_type, nb=n_byz: ExperimentConfig.canonical(
+                        dataset="german", seed=s, num_clients=5, rounds=20, dirichlet_alpha=0.3,
+                        aggregator="fedavg",
+                        attack=at, num_byzantine=nb, attack_intensity=10.0,
+                    ),
+                    seeds=seeds
+                )
+                checkpoint()
 
     # Final save (idempotent -- every section above already checkpointed itself,
     # this just ensures the file's ".tmp" swap has definitely landed).
@@ -472,4 +548,23 @@ def run_canonical_suite(output_file="results/canonical_suite.json",
 
 
 if __name__ == "__main__":
-    run_canonical_suite()
+    import argparse
+    parser = argparse.ArgumentParser(description="Stage 4 Canonical Remediation Suite")
+    parser.add_argument("--output-file", default="results/canonical_suite.json")
+    parser.add_argument("--no-sign-test", action="store_true")
+    parser.add_argument("--no-resume", action="store_true")
+    parser.add_argument("--force-resume", action="store_true")
+    parser.add_argument("--part", default="all", choices=["all", "1", "2", "3", "4", "two_tier"])
+    parser.add_argument("--device", default=None)
+    args = parser.parse_args()
+
+    if args.device:
+        os.environ["FEDFAIR_DEVICE"] = args.device
+
+    run_canonical_suite(
+        output_file=args.output_file,
+        run_sign_test=not args.no_sign_test,
+        resume=not args.no_resume,
+        part=args.part,
+        force_resume=args.force_resume or (args.part != "all"),
+    )
