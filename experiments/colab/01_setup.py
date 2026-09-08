@@ -49,19 +49,31 @@ if os.path.islink(rlink) or os.path.exists(rlink):
 os.makedirs("/content/results/fairshare", exist_ok=True)
 os.symlink("/content/results", rlink)
 
+# Nếu có data_raw.tgz được tải lên, bung ra vào /content
+if os.path.exists("/content/data_raw.tgz"):
+    sh("tar -xzf /content/data_raw.tgz -C /content/")
+    credit_zip = "/content/data/raw/credit/credit_edges.txt.zip"
+    if os.path.exists(credit_zip) and not os.path.exists("/content/data/raw/credit/credit_edges.txt"):
+        sh(f"unzip -o -q {credit_zip} -d /content/data/raw/credit")
+
 os.chdir(REPO)
 print("repo:", sorted(os.listdir("."))[:12])
 print("data ->", os.path.realpath(link))
 print("results ->", os.path.realpath(rlink))
-print("dataset đã cache:", sorted(os.listdir(DATA)) or "(trống, sẽ tự tải)")
+raw_dir = os.path.join(DATA, "raw")
+cached = sorted(os.listdir(raw_dir)) if os.path.exists(raw_dir) else []
+print("dataset đã cache:", cached or "(trống, sẽ tự tải)")
 
 # --- GATE 0a: test suite ----------------------------------------------------
-# Phán quyết bằng EXIT CODE của pytest, không bằng khớp chuỗi trên stdout.
-# Hai lần đã sai vì chuỗi: hard-code "26 passed" hoá đỏ ngay khi thêm test đúng,
-# rồi tìm "error" lại bắt nhầm chữ trong một UserWarning. Exit code là hợp đồng
-# duy nhất pytest thực sự bảo đảm.
-r = sh("python -u -m pytest tests/ -q")
-tail = "\n".join((r.stdout + r.stderr).strip().splitlines()[-12:])
-print(tail)
-print("pytest exit code:", r.returncode)
-print("GATE 0a:", "PASS" if r.returncode == 0 else "*** FAIL — DỪNG LẠI ***")
+# Stream output trực tiếp ra stdout để tránh timeout websocket khi test chạy lâu.
+print(">>> Running test suite (streaming output)...", flush=True)
+p = subprocess.Popen("python -u -m pytest tests/ -q", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+lines = []
+for line in p.stdout:
+    lines.append(line)
+    sys.stdout.write(line)
+    sys.stdout.flush()
+p.wait()
+print("\npytest exit code:", p.returncode, flush=True)
+print("GATE 0a:", "PASS" if p.returncode == 0 else "*** FAIL — DỪNG LẠI ***", flush=True)
+assert p.returncode == 0, f"GATE 0a failed with exit code {p.returncode}"
