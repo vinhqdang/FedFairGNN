@@ -206,18 +206,22 @@ def plot_robustness_byz(out_path: str = os.path.join(FIG_DIR, "robustness_byz.pd
     """Figure 4: Robustness breakdown under Byzantine corruption ratios."""
     artifact_path = os.path.join(RESULTS_DIR, "revision", "robustness_multiseed.json")
     if not os.path.exists(artifact_path):
-        raise FileNotFoundError(
-            f"Artifact for robustness_byz plot missing at '{artifact_path}'. "
-            "Run Stage S7 (experiments/revision/robustness_multiseed.py) first."
-        )
+        alt_path = os.path.join(RESULTS_DIR, "revision", "adaptive_poisoner_results.json")
+        if os.path.exists(alt_path):
+            artifact_path = alt_path
+        else:
+            raise FileNotFoundError(
+                f"Artifact for robustness_byz plot missing at '{artifact_path}'. "
+                "Run Stage S7 (experiments/revision/adaptive_poisoner.py) first."
+            )
 
     with open(artifact_path) as f:
         data = json.load(f)
 
-    runs = data.get("raw_runs", [])
+    runs = data.get("raw_runs", []) or data.get("records", [])
     if not runs:
         raise FileNotFoundError(
-            f"Artifact at '{artifact_path}' does not contain raw_runs. Run Stage S7 first."
+            f"Artifact at '{artifact_path}' does not contain raw_runs or records. Run Stage S7 first."
         )
 
     # Group runs by aggregator and byz_ratio
@@ -239,8 +243,11 @@ def plot_robustness_byz(out_path: str = os.path.join(FIG_DIR, "robustness_byz.pd
         "bfwa": ("#fb8c00", "^--", "BFWA"),
         "krum": ("#8e24aa", "s-", "Krum"),
         "multikrum": ("#00acc1", "d-", "Multi-Krum"),
+        "median": ("#6baed6", "+--", "Coordinate Median"),
+        "trimmed_mean": ("#9ecae1", "*--", "Trimmed Mean"),
         "robust_bfwa": ("#3949ab", "v-", "Robust BFWA"),
-        "fu_shapley": ("#e53935", "o-", "FU-Shapley (Ours)"),
+        "fu_shapley": ("#e53935", "o-", "FU-Shapley"),
+        "robust_fu_shapley": ("#b2182b", "o-", "TrustFedGNN (Ours)"),
     }
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -266,7 +273,9 @@ def plot_robustness_byz(out_path: str = os.path.join(FIG_DIR, "robustness_byz.pd
 
 def plot_convergence(out_path: str = os.path.join(FIG_DIR, "convergence.pdf")):
     """Figure 5: Training convergence across communication rounds on Bail."""
-    artifact_path = os.path.join(RESULTS_DIR, "canonical_suite.json")
+    artifact_path = os.path.join(RESULTS_DIR, "convergence_bail.json")
+    if not os.path.exists(artifact_path):
+        artifact_path = os.path.join(RESULTS_DIR, "canonical_suite.json")
     if not os.path.exists(artifact_path):
         raise FileNotFoundError(
             f"Artifact for convergence plot missing at '{artifact_path}'. "
@@ -277,11 +286,12 @@ def plot_convergence(out_path: str = os.path.join(FIG_DIR, "convergence.pdf")):
         data = json.load(f)
 
     # Search for canonical bail run with recorded history
-    history = None
-    for k, v in data.items():
-        if isinstance(v, dict) and "history" in v and len(v["history"]) > 1:
-            history = v["history"]
-            break
+    history = data.get("history")
+    if not history:
+        for k, v in data.items():
+            if isinstance(v, dict) and "history" in v and len(v["history"]) > 1:
+                history = v["history"]
+                break
 
     if history is None:
         raise FileNotFoundError(
