@@ -1,26 +1,52 @@
 {
   "2.0": {
-    "mean_slack": 0.17769061759203506,
-    "std_slack": 0.26002180816261666,
-    "slack_ratio_of_tau": 3.5538123518407008,
-    "mean_true_dpd_agg": 0.02636669639162991,
-    "mean_noisy_dpd_agg": 0.19794759248543448,
-    "tau": 0.05
+    "mean_slack": 1.1058289531821053,
+    "std_slack": 1.4752127529484511,
+    "slack_ratio_of_tau": 22.116579063642103,
+    "mean_true_dpd_agg": 0.18495164704925124,
+    "mean_noisy_dpd_agg": 1.2354195476818834,
+    "tau": 0.05,
+    "slack_bucket": "substantial"
   },
   "4.0": {
-    "mean_slack": 0.07955222597615805,
-    "std_slack": 0.11923597095540246,
-    "slack_ratio_of_tau": 1.5910445195231608,
-    "mean_true_dpd_agg": 0.02073841941552147,
-    "mean_noisy_dpd_agg": 0.09096824186187105,
-    "tau": 0.05
+    "mean_slack": 0.7158596321555238,
+    "std_slack": 0.8636137360391181,
+    "slack_ratio_of_tau": 14.317192643110475,
+    "mean_true_dpd_agg": 0.19039747046759128,
+    "mean_noisy_dpd_agg": 0.8538647202050764,
+    "tau": 0.05,
+    "slack_bucket": "substantial"
   },
   "8.0": {
-    "mean_slack": 0.04417363584564958,
-    "std_slack": 0.06528650939145246,
-    "slack_ratio_of_tau": 0.8834727169129916,
-    "mean_true_dpd_agg": 0.01590126036408295,
-    "mean_noisy_dpd_agg": 0.052378948857182396,
+    "mean_slack": 0.3526254628546242,
+    "std_slack": 0.42785413245555476,
+    "slack_ratio_of_tau": 7.052509257092484,
+    "mean_true_dpd_agg": 0.13497950588052907,
+    "mean_noisy_dpd_agg": 0.42459980939451747,
+    "tau": 0.05,
+    "slack_bucket": "substantial"
+  },
+  "manifest": {
+    "git_commit": "6cc71268cecfe84c990104afcdd3c9512ea0aa8d",
+    "git_dirty": true,
+    "device": "cpu",
+    "timestamp": "2026-09-08T17:36:12.955983+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "dataset": "german",
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "epsilons": [
+      2.0,
+      4.0,
+      8.0
+    ],
+    "rounds": 20,
+    "num_clients": 10,
     "tau": 0.05
   }
 }

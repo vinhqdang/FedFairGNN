@@ -30,5 +30,16 @@
       0.9487179487179485
     ],
     "ours_rank1_pct": 98.85000000000001
+  },
+  "manifest": {
+    "git_commit": "6cc71268cecfe84c990104afcdd3c9512ea0aa8d",
+    "git_dirty": true,
+    "device": "cpu",
+    "timestamp": "2026-09-08T17:34:38.694373+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "trust_score_sensitivity",
+    "num_samples": 2000
   }
 }
