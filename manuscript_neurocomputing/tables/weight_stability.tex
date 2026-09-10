@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Total variation $\Omega_w$ of the aggregation weights across rounds.}
+German, seed $42$, $R = 25$. $\Omega_w = \sum_t \lVert \bm{w}^{(t)} - \bm{w}^{(t-1)}\rVert_1$.
+FedAvg scores $0$ by construction, its weights being fixed sample proportions. FU-Shapley re-scores
+every round and so cannot reach $0$; the comparison that matters is against BFWA, which re-solves a
+dual programme each round and is $27\times$ less stable.}
+\label{tab:weight_stability}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Aggregation rule} & \textbf{$\Omega_w$ $\downarrow$} & \textbf{AUC $\uparrow$} & \textbf{$\dpd_{\mathrm{hard}}$ $\downarrow$} \\
+\midrule
+FedAvg & 0.0000 & 0.6376 & 0.0704 \\
+BFWA (baseline) & 16.5407 & 0.6481 & 0.1141 \\
+\textbf{FU-Shapley (ours)} & 0.6036 & 0.6182 & 0.0579 \\
+\bottomrule
+\end{tabular}
+\end{table}

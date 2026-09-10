@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Metadata immunity under a falsifying client (Theorem~\ref{thm:metadata_immunity}).}
+A single client reports $\widehat{\dpd}_k = 0.0$ and $\mathrm{Perf}_k = 0.99$ while transmitting an
+unchanged parameter update. Columns give that client's own aggregation weight when it reports
+honestly and when it lies, and the resulting $\ell_\infty$ change over the full weight vector.
+FU-Shapley never reads the reported fields, so the two weight vectors are identical to the last bit;
+BFWA reads them, and the falsifying client captures $86.2\%$ of the aggregate.
+German, $K=5$; uniform share is $1/K = 0.20$.}
+\label{tab:metadata_immunity}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Aggregation rule} & \textbf{$w_k$ (honest)} & \textbf{$w_k$ (falsified)} & \textbf{$\lVert \Delta \bm{w}\rVert_\infty$} \\
+\midrule
+\textbf{FU-Shapley (ours)} & 0.2339 & 0.2339 & 0.0000 \\
+\textbf{robust FU-Shapley (ours)} & \multicolumn{2}{c}{identical, bit-exact} & 0.0000 \\
+BFWA (baseline) & 0.0371 & 0.8617 & 0.8246 \\
+\bottomrule
+\end{tabular}
+\end{table}

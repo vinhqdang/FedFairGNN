@@ -4,8 +4,10 @@
 \caption{\textbf{Adaptive Stealth Poisoning Breakdown Point Analysis (Bail).}
 Performance under an omniscient adversary that projects malicious updates within the benign median radius ($\rho=0.85$) while falsifying $\widehat{\text{DPD}} = 0.0$.
 Reports AUC / DPD across corruption ratios $f/K \in \{0.1, 0.2, 0.3, 0.4\}$ over 1 seed.
-Measured from $f/K = 0.1$ to $f/K = 0.4$: utility holds (within $0.02$ AUC) for fedavg, bfwa, multikrum, median, fu\_shapley and robust\_fu\_shapley; utility degrades for krum, trimmed\_mean, robust\_bfwa and cgsv (worst: robust\\_bfwa, $+0.030$ AUC); disparity worsens for bfwa, krum, robust\_bfwa and cgsv (worst: robust\\_bfwa, DPD $+0.094$). Verdicts use fixed thresholds on the measured change ($<0.02$ holds, $<0.10$ degrades, otherwise breaks down); they are read off this run, not assumed.}
+Measured from $f/K = 0.1$ to $f/K = 0.4$: utility holds (within $0.02$ AUC) for fedavg, bfwa, multikrum, median, fu\_shapley and robust\_fu\_shapley; utility degrades for krum, trimmed\_mean, robust\_bfwa and cgsv (worst: robust\_bfwa, $+0.030$ AUC); disparity worsens for bfwa, krum, robust\_bfwa and cgsv (worst: robust\_bfwa, DPD $+0.094$). Verdicts use fixed thresholds on the measured change ($<0.02$ holds, $<0.10$ degrades, otherwise breaks down); they are read off this run, not assumed.}
 \label{tab:adaptive_poisoner}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{4pt}%
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Aggregator} & \textbf{$f=0.1$ (1/10)} & \textbf{$f=0.2$ (2/10)} & \textbf{$f=0.3$ (3/10)} & \textbf{$f=0.4$ (4/10)} \\
@@ -22,5 +24,6 @@ fu\_shapley & 0.690 / 0.026 & 0.686 / 0.008 & 0.677 / 0.020 & 0.684 / 0.016 \\
 robust\_fu\_shapley & 0.690 / 0.026 & 0.686 / 0.008 & 0.677 / 0.020 & 0.684 / 0.016 \\
 cgsv & 0.686 / 0.014 & 0.685 / 0.004 & 0.678 / 0.022 & 0.664 / 0.053 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

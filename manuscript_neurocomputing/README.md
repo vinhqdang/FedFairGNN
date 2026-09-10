@@ -7,8 +7,9 @@ Submitted to: **Elsevier *Neurocomputing*** (Specialized in Neural Networks, Dee
 ---
 
 ## 👤 Author Information
-- **Ngoc-Son-An Nguyen** (corresponding author) --- Industrial University of Ho Chi Minh City, Ho Chi Minh City, Vietnam --- `annns25871@pgr.iuh.edu.vn`
-- **Quang-Vinh Dang** --- British University Vietnam, Hung Yen, Vietnam --- `vinh.dq4@buv.edu.vn`
+- **Author:** Ngoc-Son-An Nguyen
+- **Affiliation:** Industrial University of Ho Chi Minh City, Ho Chi Minh City, Vietnam
+- **Contact:** `ngngsonan@gmail.com`
 
 ---
 

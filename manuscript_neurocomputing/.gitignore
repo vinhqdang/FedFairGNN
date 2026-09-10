@@ -3,6 +3,11 @@
 *.blg
 *.log
 *.out
-*.spl
+*.synctex.gz
 *.fls
 *.fdb_latexmk
+*.toc
+*.lot
+*.lof
+*.spl
+.DS_Store

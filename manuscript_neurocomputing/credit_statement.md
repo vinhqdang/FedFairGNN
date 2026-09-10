@@ -7,6 +7,3 @@
 
 **Ngoc-Son-An Nguyen:**  
 Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data Curation, Writing - Original Draft, Writing - Review & Editing, Visualization, Project administration.
-
-**Quang-Vinh Dang:**  
-Supervision, Funding acquisition, Writing - Review & Editing.

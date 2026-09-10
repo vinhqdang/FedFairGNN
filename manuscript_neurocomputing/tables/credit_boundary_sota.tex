@@ -1,23 +1,24 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Application Boundary Analysis on Tabular $k$-NN Graph (Credit Default, $N=30{,}000$ nodes, $n=10$ independent random seeds).}
-Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistically significant difference versus TrustFedGNN (Ours) under the two-sided Wilcoxon signed-rank test with family-wise Holm-Bonferroni correction ($p < 0.05$). Bold indicates the best result. $^\dagger$FTGD's $(\epsilon=8.0, \delta=10^{-5})$ differential privacy guarantee strictly covers the released fairness statistics (two scalar group means per client per round), not transmitted model updates $\theta_k$ (see \S7.1).}
+\caption{\textbf{Application Boundary Analysis on Tabular $k$-NN Graph (Credit Default, $N=30,000$ nodes, $K=10$, $R=50$, $n=10$ seeds).} Metrics reported as $\text{Mean} \pm \text{Std}$. Confirms the application boundary: on synthetic tabular $k$-NN graphs without authentic social topology, FSER topological reweighting is statistically neutral ($\Delta_{\text{FSER}} = +0.000062$, $p=0.9219$). $^\dagger$FTGD covers released statistics $(\mu_0, \mu_1)$, not transmitted updates $\theta_k$. $^\star$ marks a paired Wilcoxon signed-rank difference against TrustFedGNN that remains significant at $\alpha=0.05$ after Holm--Bonferroni correction across the family of baseline comparisons.}
 \label{tab:credit_boundary_sota}
-\resizebox{\textwidth}{!}{%
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{4pt}%
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
 \midrule
-FedAvg-GCN & AISTATS'17 & $\times$ & 0.7528 $\pm$ 0.0045 & 0.0603 $\pm$ 0.0227 & 0.0386 $\pm$ 0.0196 & 0.0000 \\
-FairGNN & WSDM'21 & $\times$ & 0.7317 $\pm$ 0.0147$^\star$ & 0.0987 $\pm$ 0.0458 & 0.0760 $\pm$ 0.0387 & 0.0000 \\
-FairSIN & WWW'24 & $\times$ & 0.7526 $\pm$ 0.0052 & 0.0674 $\pm$ 0.0200 & 0.0453 $\pm$ 0.0202 & 0.0000 \\
-FairFed & AAAI'23 & $\times$ & 0.7520 $\pm$ 0.0048 & 0.0589 $\pm$ 0.0237 & 0.0372 $\pm$ 0.0197 & 0.0712 \\
-FairGFL & IEEE TPDS'26 & $\times$ & 0.7535 $\pm$ 0.0039 & 0.0692 $\pm$ 0.0170 & 0.0464 $\pm$ 0.0158 & 0.0000 \\
-FedGraph-Fair & InfoSci'26 & $\times$ & 0.7511 $\pm$ 0.0048 & 0.0618 $\pm$ 0.0243 & 0.0454 $\pm$ 0.0147 & 0.0154 \\
-CGSV & NeurIPS'21 & $\times$ & 0.7518 $\pm$ 0.0041 & 0.0524 $\pm$ 0.0303 & 0.0317 $\pm$ 0.0245 & 0.5844 \\
-Ours w/o FSER (M2) & Ablation & \checkmark & 0.7470 $\pm$ 0.0086$^\star$ & 0.0625 $\pm$ 0.0306 & 0.0431 $\pm$ 0.0293 & 0.1214 \\
-\textbf{TrustFedGNN (Ours)} & Proposed & \checkmark & \textbf{0.7553 $\pm$ 0.0052} & \textbf{0.0666 $\pm$ 0.0263} & \textbf{0.0447 $\pm$ 0.0276} & 0.0814 \\
+FedAvg-GCN & AISTATS'17 & $\times$ & 0.7529 $\pm$ 0.0047 & 0.0605 $\pm$ 0.0230 & 0.0384 $\pm$ 0.0200 & 0.0000 \\
+FairGNN & WSDM'21 & $\times$ & 0.6792 $\pm$ 0.0967$^\star$ & 0.0561 $\pm$ 0.0641 & 0.0423 $\pm$ 0.0465 & 0.0000 \\
+FairSIN & AAAI'24 & $\times$ & 0.7527 $\pm$ 0.0050 & 0.0672 $\pm$ 0.0183 & 0.0440 $\pm$ 0.0166 & 0.0000 \\
+FairFed & AAAI'23 & $\times$ & 0.7522 $\pm$ 0.0048 & 0.0611 $\pm$ 0.0204 & 0.0389 $\pm$ 0.0174 & 0.0712 \\
+FairGFL & IEEE TPDS'26 & $\times$ & 0.7536 $\pm$ 0.0038 & 0.0665 $\pm$ 0.0150 & 0.0442 $\pm$ 0.0132 & 0.0000 \\
+FedGraph-Fair & InfoSci'26 & $\times$ & 0.7513 $\pm$ 0.0051 & 0.0655 $\pm$ 0.0246 & 0.0465 $\pm$ 0.0195 & 0.0154 \\
+CGSV & NeurIPS'21 & $\times$ & 0.7518 $\pm$ 0.0044 & 0.0566 $\pm$ 0.0281 & 0.0341 $\pm$ 0.0260 & 0.5912 \\
+Ours w/o FSER (Confounded) & Ablation & \checkmark & 0.7480 $\pm$ 0.0082 & 0.0650 $\pm$ 0.0310 & 0.0447 $\pm$ 0.0305 & 0.1260 \\
+Ours w/o FSER (Clean Arm) & Ablation & \checkmark & 0.7521 $\pm$ 0.0063 & 0.0647 $\pm$ 0.0408 & 0.0545 $\pm$ 0.0343 & 0.0904 \\
+\textbf{TrustFedGNN (Ours)} & Proposed & \checkmark & \textbf{0.7522 $\pm$ 0.0065} & \textbf{0.0615 $\pm$ 0.0371} & \textbf{0.0502 $\pm$ 0.0341} & 0.0872 \\
 \bottomrule
 \end{tabular}%
 }

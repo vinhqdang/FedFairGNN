@@ -1,3 +1,5 @@
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{6pt}%
 \begin{tabular}{lcccc}
 \toprule
 Method & AUC $\uparrow$ & DPD $\downarrow$ & EOD $\downarrow$ & Time/run (s) \\
@@ -9,4 +11,5 @@ DP-FedAvg & 0.556 & 0.009$^{\dagger}$ & 0.021$^{\dagger}$ & 1251 \\
 TrustFedGNN (no DP) & 0.861 & 0.114 & 0.071 & 3550 \\
 \textbf{TrustFedGNN} & 0.862 & 0.103 & 0.053 & 3665 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}

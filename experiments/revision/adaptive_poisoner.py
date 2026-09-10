@@ -251,13 +251,13 @@ def _breakdown_caption_sentence(summary: Dict[str, dict], byz_ratios: List[float
         worst = max(lost, key=lambda a: abs(summary[a]["auc_drop"]))
         parts.append(
             f"utility {summary[worst]['utility_verdict']} for {names(lost)} "
-            f"(worst: {worst.replace('_', chr(92) + chr(92) + '_')}, "
+            f"(worst: {worst.replace('_', r'\_')}, "
             f"${summary[worst]['auc_drop']:+.3f}$ AUC)")
     if unfair:
         worst_f = max(unfair, key=lambda a: summary[a]["dpd_rise"])
         parts.append(
             f"disparity worsens for {names(unfair)} "
-            f"(worst: {worst_f.replace('_', chr(92) + chr(92) + '_')}, "
+            f"(worst: {worst_f.replace('_', r'\_')}, "
             f"DPD ${summary[worst_f]['dpd_rise']:+.3f}$)")
     else:
         parts.append("no aggregator shows a disparity increase above $0.02$")
@@ -265,7 +265,7 @@ def _breakdown_caption_sentence(summary: Dict[str, dict], byz_ratios: List[float
         best_f = min(fairer, key=lambda a: summary[a]["dpd_rise"])
         parts.append(
             f"disparity in fact falls for {names(fairer)} "
-            f"(largest: {best_f.replace('_', chr(92) + chr(92) + '_')}, "
+            f"(largest: {best_f.replace('_', r'\_')}, "
             f"DPD ${summary[best_f]['dpd_rise']:+.3f}$), which at a higher "
             "corruption ratio reflects the attack flattening predictions rather "
             "than the defence improving")

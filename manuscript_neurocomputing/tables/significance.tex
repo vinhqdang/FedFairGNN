@@ -5,6 +5,8 @@
 Reported with two-sided Wilcoxon signed-rank test $p$-values, effect size Cohen's $d_z$, and 95\% Bootstrap Confidence Intervals ($n=10$ seeds). $\star$ denotes significance surviving family-wise Holm-Bonferroni correction ($\alpha=0.05$).}
 \label{tab:statistical_significance}
 \label{tab:significance}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{3.5pt}%
 \begin{tabular}{llcccc}
 \toprule
 \textbf{Dataset} & \textbf{Baseline Comparison} & \textbf{Metric} & \textbf{$\Delta$ (Ours $-$ Base)} & \textbf{Cohen's $d_z$} & \textbf{Wilcoxon $p$ (Holm-Bonferroni)} \\
@@ -23,5 +25,6 @@ Reported with two-sided Wilcoxon signed-rank test $p$-values, effect size Cohen'
  & FairGFL (2026) & AUC & $-0.0096$ & $-1.11$ & $p = 0.0020^\star$ \\
  & CGSV (2021) & AUC & $-0.0086$ & $-0.96$ & $p = 0.0059^\star$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}

@@ -5,6 +5,8 @@
 Comparison of disparate impact across (1) Primary demographic attribute, (2) Topological degree hubs ($S_{\text{hub}} = \mathbb{I}(\text{deg} > \text{median})$), and (3) Behavioral feature quantiles ($S_{\text{feat}} = \mathbb{I}(x_0 > \text{median})$).
 Confirms that TrustFedGNN reduces disparate impact across both demographic and operational/topological subgroup definitions.}
 \label{tab:proxy_sensitivity}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{4pt}%
 \begin{tabular}{llcccc}
 \toprule
  & & \multicolumn{2}{c}{\textbf{TrustFedGNN (Ours)}} & \multicolumn{2}{c}{\textbf{FedAvg (Baseline)}} \\
@@ -19,5 +21,6 @@ Credit & Demographic (Primary) & \textbf{0.098} & \textbf{0.064} & 0.090 & 0.054
 Credit & Topological (Degree Hubs) & \textbf{0.178} & \textbf{0.119} & 0.177 & 0.115 \\
 Credit & Behavioral (Feature Quantile) & \textbf{0.012} & \textbf{0.008} & 0.022 & 0.015 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

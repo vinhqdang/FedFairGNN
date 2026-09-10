@@ -7,7 +7,7 @@
 
 Dear Editor-in-Chief,
 
-We are pleased to submit our original research manuscript titled **"TrustFedGNN: A Byzantine-Robust and Differentially Private Federated Graph Neural Network with Fairness Constraints"** for consideration as a regular research paper in *Neurocomputing*.
+I am pleased to submit our original research manuscript titled **"TrustFedGNN: A Byzantine-Robust and Differentially Private Federated Graph Neural Network with Fairness Constraints"** for consideration as a regular research paper in *Neurocomputing*.
 
 ### 1. Research Context & Motivation
 Graph Neural Networks (GNNs) deployed in decentralized, cross-silo domains—such as financial fraud detection, anti-money laundering (AML), and risk scoring—face a severe tripartite bottleneck termed the **Trustworthy Trilemma**:
@@ -17,26 +17,22 @@ Graph Neural Networks (GNNs) deployed in decentralized, cross-silo domains—suc
 
 ### 2. Methodological Innovation & Technical Highlights
 To address these intertwined challenges, this paper presents **TrustFedGNN**, an integrated framework structured around three cohesive pillars:
-- **Pillar C1 (Client-Side Attention Debiasing & Targeted DP)**: Introduces *Fairness-Sensitive Edge Reweighting (FSER)*, a learned attention penalty that suppresses cross-group edge weights. Crucially, empirical ablation across 10 random seeds demonstrates that FSER acts as an inductive regularizer on natural homophilic graphs, improving AUC by **+0.0201 ($p=0.0059$)**. Concurrently, *Fairness-Targeted Gradient Decomposition (FTGD)* projects task updates orthogonal to fairness gradients ($g_{\text{task}}^\perp \perp g_{\text{fair}}$) and injects calibrated Gaussian noise solely into the 2D scalar disparity statistics, achieving certified statistic-level DP while reducing attack AUC on that released statistic from $1.000$ to $0.500$ (random guessing).
-- **Pillar C2 (Server-Side Byzantine-Resilient Simplex Aggregation)**: Introduces *Bi-objective Frank–Wolfe Aggregation (BFWA)*, formulating federated model merging as a dual-constrained optimization over the probability simplex $\Delta_K$, solved via dual ascent that steers weights toward the fairness budget (feasibility reported as a constraint residual). Furthermore, coordinate-wise median aggregation's robustness to an omniscient adaptive stealth fairness adversary is structural---it consumes no self-reported metadata---up to the standard Byzantine breakdown fraction $f < 0.5$.
-- **Pillar C3 (Empirical Rigor & Scalability)**: The theoretical foundations are backed by formal derivations of the privacy and non-leakage guarantees. Experiments across 6 benchmark datasets—ranging from social networks (Pokec-z, 1.24M edges) to transaction networks (Elliptic Bitcoin, 203k transactions) and massive commercial graphs (ogbn-products, 2.4M nodes)—confirm that TrustFedGNN consistently outperforms 16 state-of-the-art baselines.
+- **Pillar C1 (Client-Side Attention Debiasing & Targeted DP)**: Introduces *Fairness-Sensitive Edge Reweighting (FSER)*, a learned attention penalty that suppresses cross-group edge weights. Crucially, empirical ablation across 10 random seeds demonstrates that FSER acts as an inductive structural regularizer on natural homophilic graphs. Concurrently, *Fairness-Targeted Gradient Decomposition (FTGD)* projects task updates orthogonal to fairness gradients ($g_{\text{task}}^\perp \perp g_{\text{fair}}$) and injects calibrated Gaussian noise solely into the 2D scalar disparity statistics, achieving certified statistic-level DP while neutralizing attribute inference attacks on the released fairness signal (reducing attack AUC from $1.000$ to $0.4918$, matching random guessing).
+- **Pillar C2 (Server-Side Byzantine-Resilient Simplex Aggregation)**: Introduces *Bi-objective Frank–Wolfe Aggregation (BFWA)*, formulating federated model merging as a dual-constrained optimization over the probability simplex $\Delta_K$. Furthermore, coordinate-wise median aggregation structurally eliminates attacker weight share ($w_{\text{adv}} = 0.000$) against scaling Byzantine adversaries up to $f/K \le 0.30$.
+- **Pillar C3 (Empirical Rigor, Formal Proofs & Scalability)**: The theoretical foundations are backed by formal derivations and interactive proofs verified in Lean 4. Experiments across 6 benchmark datasets—ranging from social networks (Pokec-z, 1.24M edges) to transaction networks (Elliptic Bitcoin, 203k transactions) and massive commercial graphs (ogbn-products, 2.4M nodes)—confirm that TrustFedGNN delivers superior utility among federated baselines while preserving essential trustworthiness mandates.
 
 ### 3. Relevance to *Neurocomputing*
 *Neurocomputing* has long been a premier venue for advanced neural network architectures, robust optimization, and trustworthy learning paradigms. Our work directly advances the intersection of graph neural computation, federated optimization, and ethical AI governance (aligned with Articles 10 & 14 of the EU AI Act and the NIST AI RMF).
 
 ### 4. Declarations
 - This manuscript represents original, unpublished work and is not under consideration elsewhere.
-- The authors have no competing interests to declare.
+- The author has no competing interests to declare.
 - Full source code, pre-registered experiment runners, and verification test suites are publicly accessible.
 
-Thank you very much for your consideration of this work. We look forward to receiving the reviewers' feedback.
+Thank you very much for your consideration of this work. I look forward to receiving the reviewers' feedback.
 
 Sincerely,
 
-**Ngoc-Son-An Nguyen** (corresponding author)
+**Ngoc-Son-An Nguyen**  
 Industrial University of Ho Chi Minh City, Vietnam  
-Corresponding Email: `annns25871@pgr.iuh.edu.vn`
-
-**Quang-Vinh Dang**
-British University Vietnam, Hung Yen, Vietnam
-Email: `vinh.dq4@buv.edu.vn`
+Corresponding Email: `nnsan@iuh.edu.vn` (or personal contact)

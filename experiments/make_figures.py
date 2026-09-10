@@ -376,6 +376,14 @@ def generate_all_figures(out_dir: str = FIG_DIR, strict: bool = False):
             if strict:
                 raise
 
+    if os.path.exists("../manuscripts/manuscript_neurocomputing/figures"):
+        import shutil
+        for name, _, out_file in plotters:
+            if os.path.exists(out_file):
+                dst = os.path.join("../manuscripts/manuscript_neurocomputing/figures", os.path.basename(out_file))
+                shutil.copyfile(out_file, dst)
+        print("[+] Mirrored figures to ../manuscripts/manuscript_neurocomputing/figures")
+
     print(f"\n[Figures Report] Generated: {len(generated)}/5 | Skipped (missing artifacts): {len(skipped)}/5")
     return {"generated": generated, "skipped": skipped}
 

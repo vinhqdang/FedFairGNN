@@ -1,0 +1,27 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Per-run wall-clock time on Pokec-z.} Single NVIDIA T4, $K = 10$, $R = 50$,
+mean over $n = 10$ seeds, read from the same artifact as Table~\ref{tab:main_pokecz_sota}. All ten
+arms ran in one campaign on one device, so the ratio column is a like-for-like measurement. The
+overhead is dominated by the server-side scoring pass---one target-gradient evaluation on the
+holdout split plus $K$ inner products per round---and not by any term that grows with the local
+graph.}
+\label{tab:cost}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Time / run (s)} & \textbf{vs.\ FedAvg} \\
+\midrule
+FedGraph-Fair & 34.3 & 0.96$\times$ \\
+FairFed & 34.5 & 0.97$\times$ \\
+FairGFL & 34.5 & 0.97$\times$ \\
+FedAvg-GCN & 35.5 & 1.00$\times$ \\
+CGSV & 36.5 & 1.03$\times$ \\
+FairGNN & 38.0 & 1.07$\times$ \\
+FairSIN & 39.1 & 1.10$\times$ \\
+Ours w/o FSER (confounded) & 43.4 & 1.22$\times$ \\
+Ours w/o FSER (clean arm) & 72.0 & 2.03$\times$ \\
+\textbf{TrustFedGNN (ours)} & \textbf{73.2} & \textbf{2.06}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}

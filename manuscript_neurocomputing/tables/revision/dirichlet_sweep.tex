@@ -5,7 +5,8 @@
 Comparison of TrustFedGNN vs FedAvg across non-IID skew $\alpha \in \{0.1, 0.3, 0.5, 1.0\}$ and client counts $K \in \{5, 10, 20\}$.
 Results reported as $\text{Mean} \pm \text{Std}$ over random seeds. Lower $\alpha$ indicates more severe label/sensitive distribution skew.}
 \label{tab:dirichlet_sweep}
-\resizebox{\textwidth}{!}{%
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{3.5pt}%
 \begin{tabular}{lcccccccc}
 \toprule
  & \multicolumn{4}{c}{\textbf{TrustFedGNN (Ours)}} & \multicolumn{4}{c}{\textbf{FedAvg (Baseline)}} \\

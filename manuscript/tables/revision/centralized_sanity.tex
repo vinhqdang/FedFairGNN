@@ -5,6 +5,8 @@
 Quantifies the performance delta $\Delta_{\text{FL}} = \text{Metric}_{\text{Centralized}} - \text{Metric}_{\text{Federated}}$ between centralized full-graph training and Dirichlet Non-IID ($K=10, \alpha=0.3$) federated training.
 Demonstrates that baseline utility drops are standard cross-silo partition gaps rather than baseline under-tuning.}
 \label{tab:centralized_sanity}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{3.5pt}%
 \begin{tabular}{llcccccc}
 \toprule
  & & \multicolumn{2}{c}{\textbf{Centralized (Upper Bound)}} & \multicolumn{2}{c}{\textbf{Federated ($K=10, \alpha=0.3$)}} & \multicolumn{2}{c}{\textbf{FL Gap $\Delta_{\text{FL}}$}} \\
@@ -23,5 +25,6 @@ German & GCN & 0.686 & 0.000 & 0.630 & 0.116 & +0.055 & +0.116 \\
 German & GAT & 0.694 & 0.000 & 0.655 & 0.046 & +0.039 & +0.046 \\
 German & \textbf{TrustFedGNN (Ours)} & -- & -- & \textbf{0.699} & \textbf{0.274} & -- & -- \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}

@@ -1,20 +1,20 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Main SOTA Benchmark on Pokec-z ($N=67,796$ nodes, $1.24\text{M}$ edges, $K=10$, $R=50$, $n=10$ independent random seeds).} Metrics are reported as $\text{Mean} \pm \text{Std}$. Bold indicates our full proposed method. Both the historical confounded ablation (ours-nofser) and clean attribution arm (ours-nofser-true) are reported to isolate FSER impact without architectural confounding.}
+\caption{\textbf{Main SOTA Benchmark on Pokec-z ($N=67,796$ nodes, $1.24\text{M}$ edges, $K=10$, $R=50$, $n=10$ independent random seeds).} Metrics are reported as $\text{Mean} \pm \text{Std}$. Bold indicates our full proposed method. Both the historical confounded ablation (ours-nofser) and clean attribution arm (ours-nofser-true) are reported to isolate FSER impact without architectural confounding. $^\dagger$FTGD's $(\epsilon=8.0, \delta=10^{-5})$ differential privacy guarantee strictly covers the released fairness statistics (two scalar group means per client per round), not transmitted model updates $\theta_k$ (see \S7.1).}
 \label{tab:main_pokecz_sota}
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
 \midrule
-FedAvg-GCN & AISTATS'17 & $\times$ & 0.7305 $\pm$ 0.0134 & 0.0086 $\pm$ 0.0059 & 0.0265 $\pm$ 0.0237 & 0.0000 \\
-FairGNN & WSDM'21 & $\times$ & 0.5660 $\pm$ 0.0860 & 0.0162 $\pm$ 0.0212 & 0.0068 $\pm$ 0.0097 & 0.0000 \\
-FairSIN & WWW'24 & $\times$ & 0.7207 $\pm$ 0.0232 & 0.0074 $\pm$ 0.0049 & 0.0191 $\pm$ 0.0171 & 0.0000 \\
-FairFed & AAAI'23 & $\times$ & 0.7231 $\pm$ 0.0146 & 0.0087 $\pm$ 0.0066 & 0.0326 $\pm$ 0.0272 & 0.0682 \\
-FairGFL & IEEE TPDS'26 & $\times$ & 0.7310 $\pm$ 0.0105 & 0.0063 $\pm$ 0.0064 & 0.0292 $\pm$ 0.0254 & 0.0000 \\
-FedGraph-Fair & InfoSci'26 & $\times$ & 0.7151 $\pm$ 0.0111 & 0.0050 $\pm$ 0.0033 & 0.0327 $\pm$ 0.0140 & 0.0195 \\
-CGSV & NeurIPS'21 & $\times$ & 0.7338 $\pm$ 0.0161 & 0.0057 $\pm$ 0.0049 & 0.0287 $\pm$ 0.0140 & 0.1265 \\
-Ours w/o FSER (Confounded) & Ablation & \checkmark & 0.7662 $\pm$ 0.0133 & 0.0175 $\pm$ 0.0129 & 0.0282 $\pm$ 0.0150 & 0.1491 \\
+FedAvg-GCN & AISTATS'17 & $\times$ & 0.7305 $\pm$ 0.0134$^\star$ & 0.0086 $\pm$ 0.0059 & 0.0265 $\pm$ 0.0237 & 0.0000 \\
+FairGNN & WSDM'21 & $\times$ & 0.5660 $\pm$ 0.0860$^\star$ & 0.0162 $\pm$ 0.0212 & 0.0068 $\pm$ 0.0097 & 0.0000 \\
+FairSIN & WWW'24 & $\times$ & 0.7207 $\pm$ 0.0232$^\star$ & 0.0074 $\pm$ 0.0049 & 0.0191 $\pm$ 0.0171 & 0.0000 \\
+FairFed & AAAI'23 & $\times$ & 0.7231 $\pm$ 0.0146$^\star$ & 0.0087 $\pm$ 0.0066 & 0.0326 $\pm$ 0.0272 & 0.0682 \\
+FairGFL & IEEE TPDS'26 & $\times$ & 0.7310 $\pm$ 0.0105$^\star$ & 0.0063 $\pm$ 0.0064 & 0.0292 $\pm$ 0.0254 & 0.0000 \\
+FedGraph-Fair & InfoSci'26 & $\times$ & 0.7151 $\pm$ 0.0111$^\star$ & 0.0050 $\pm$ 0.0033 & 0.0327 $\pm$ 0.0140 & 0.0195 \\
+CGSV & NeurIPS'21 & $\times$ & 0.7338 $\pm$ 0.0161$^\star$ & 0.0057 $\pm$ 0.0049 & 0.0287 $\pm$ 0.0140 & 0.1265 \\
+Ours w/o FSER (Confounded) & Ablation & \checkmark & 0.7662 $\pm$ 0.0133$^\star$ & 0.0175 $\pm$ 0.0129 & 0.0282 $\pm$ 0.0150 & 0.1491 \\
 Ours w/o FSER (Clean Arm) & Ablation & \checkmark & 0.7917 $\pm$ 0.0097 & 0.0151 $\pm$ 0.0118 & 0.0253 $\pm$ 0.0265 & 0.0998 \\
 \textbf{TrustFedGNN (Ours)} & Proposed & \checkmark & \textbf{0.7899 $\pm$ 0.0095} & \textbf{0.0155 $\pm$ 0.0108} & \textbf{0.0329 $\pm$ 0.0310} & 0.0976 \\
 \bottomrule
