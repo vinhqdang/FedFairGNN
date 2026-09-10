@@ -51,8 +51,8 @@ def _get_git_info() -> Tuple[str, bool]:
 
 SEEDS = [42, 43, 44, 45, 46]
 BYZ_RATIOS = [0.1, 0.2, 0.3]  # 1/10, 2/10, 3/10
-ATTACKS = ["sign_flip", "fairness_poison"]
-MODELS = ["fedfairgnn", "m6_no_defense"]
+ATTACKS = ["sign_flip", "fairness_poison", "scaling"]
+MODELS = ["fedfairgnn", "m6_no_defense", "m1_robust"]
 
 
 def evaluate_byzantine_run(model_name: str, attack: str, byz_ratio: float, seed: int, device: str) -> dict:
@@ -70,29 +70,13 @@ def evaluate_byzantine_run(model_name: str, attack: str, byz_ratio: float, seed:
         krum_f=num_byz,
     )
     
-    # The two arms MUST differ by fields that src/ actually reads.
-    #
-    # This block previously set `cfg.fu_cosine_filter` and `cfg.fu_multikrum`,
-    # neither of which is a field of ExperimentConfig nor read anywhere in src/.
-    # Both arms therefore ran the identical canonical config, results agreed to
-    # 3-4 decimals across all 30 seed-pairs, and "Hypothesis H2" was scored on
-    # CUDA float non-determinism. ExperimentConfig.__setattr__ now rejects
-    # undeclared fields so this cannot recur silently.
-    #
-    # M6 is wired to the definition the repo already codifies for it in
-    # tests/test_canonical_config.py and manuscript/tables/ablation.tex --
-    # "CGSV Aggregation (No Server Holdout)" = {fu_val_source, fu_score} --
-    # rather than to a mechanism that has no implementation.
-    #
-    # CAVEAT for whoever reports this: M1 (= canonical) uses aggregator
-    # "fu_shapley", which has NO Byzantine screen; the distance screen lives in
-    # "robust_fu_shapley". So this comparison is score-rule vs score-rule, and
-    # calling M1 a "two-tier defense" overclaims. If the intended contrast is
-    # screen-vs-no-screen, set aggregator="robust_fu_shapley" for M1 and say so.
+    # The arms MUST differ by fields that src/ actually reads.
     if model_name == "m6_no_defense":
         cfg.fu_val_source = "pooled"     # target built from all clients, Byzantine included
         cfg.fu_score = "cosine"          # CGSV-style norm-invariant credit
-    # else: M1 keeps canonical (server_holdout + dot)
+    elif model_name == "m1_robust":
+        cfg.aggregator = "robust_fu_shapley"  # two-tier defense with median screening
+    # else: fedfairgnn keeps canonical (server_holdout + dot, aggregator="fu_shapley")
 
 
     trainer = FederatedTrainer(cfg)
@@ -196,6 +180,16 @@ def main():
             wins = int(np.sum(np.array(m1_w) < np.array(m6_w)))
             r_wins[str(ratio)] = f"{wins}/{len(SEEDS)}"
         h2_eval[attack] = r_wins
+
+    # Evaluate Protocol P8: robust_fu_shapley eliminates attacker weight under scaling (w_adv == 0)
+    p8_eval = {}
+    if "scaling" in sweep_results:
+        for ratio in BYZ_RATIOS:
+            if "m1_robust" in sweep_results["scaling"][str(ratio)]:
+                rob_runs = sweep_results["scaling"][str(ratio)]["m1_robust"]["per_seed"]
+                rob_w = [r["w_adv"] for r in rob_runs]
+                zeros = int(np.sum(np.isclose(np.array(rob_w), 0.0, atol=1e-5)))
+                p8_eval[str(ratio)] = f"{zeros}/{len(SEEDS)}"
         
     output = {
         "manifest": {
@@ -213,6 +207,7 @@ def main():
             "wall_clock_s": total_time,
         },
         "hypothesis_h2_evaluation": h2_eval,
+        "protocol_p8_evaluation": p8_eval,
         "results": sweep_results,
     }
     
@@ -224,6 +219,7 @@ def main():
     print("\n" + "=" * 80, flush=True)
     print(f"  STAGE 4.3 PART 4 COMPLETE in {total_time/60:.2f} minutes!", flush=True)
     print(f"  Hypothesis H2 Attacker Weight Share Wins (M1 < M6): {h2_eval}", flush=True)
+    print(f"  Protocol P8 Attacker Weight Elimination (w_adv == 0): {p8_eval}", flush=True)
     print(f"  Results saved to: {out_path}", flush=True)
     print("=" * 80, flush=True)
 

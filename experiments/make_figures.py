@@ -131,12 +131,23 @@ def plot_privacy_bail(out_path: str = os.path.join(FIG_DIR, "privacy_bail.pdf"))
     dp_auc = data["dp_fedavg"]["auc"]
     dp_dpd = data["dp_fedavg"]["dpd"]
 
+    ftgd_auc_std = data["ftgd"].get("auc_std")
+    ftgd_dpd_std = data["ftgd"].get("dpd_std")
+    dp_auc_std = data["dp_fedavg"].get("auc_std")
+    dp_dpd_std = data["dp_fedavg"].get("dpd_std")
+
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig, ax = plt.subplots(1, 2, figsize=(10, 4), dpi=300)
 
     # Left: Utility (AUC)
     ax[0].plot(epsilons, ftgd_auc, "o-", color="#1b7837", linewidth=2, label="TrustFedGNN (FTGD)")
+    if ftgd_auc_std:
+        ax[0].fill_between(epsilons, np.array(ftgd_auc) - np.array(ftgd_auc_std),
+                           np.array(ftgd_auc) + np.array(ftgd_auc_std), color="#1b7837", alpha=0.15)
     ax[0].plot(epsilons, dp_auc, "s--", color="#d73027", linewidth=2, label="DP-FedAvg (Standard DP-SGD)")
+    if dp_auc_std:
+        ax[0].fill_between(epsilons, np.array(dp_auc) - np.array(dp_auc_std),
+                           np.array(dp_auc) + np.array(dp_auc_std), color="#d73027", alpha=0.15)
     ax[0].set_xscale("log")
     ax[0].set_xlabel("Privacy Budget $\\epsilon$ (Lower = Stricter Privacy)", fontsize=10)
     ax[0].set_ylabel("AUC-ROC ($\\uparrow$)", fontsize=10)
@@ -146,7 +157,13 @@ def plot_privacy_bail(out_path: str = os.path.join(FIG_DIR, "privacy_bail.pdf"))
 
     # Right: Fairness (DPD)
     ax[1].plot(epsilons, ftgd_dpd, "o-", color="#1b7837", linewidth=2, label="TrustFedGNN (FTGD)")
+    if ftgd_dpd_std:
+        ax[1].fill_between(epsilons, np.array(ftgd_dpd) - np.array(ftgd_dpd_std),
+                           np.array(ftgd_dpd) + np.array(ftgd_dpd_std), color="#1b7837", alpha=0.15)
     ax[1].plot(epsilons, dp_dpd, "s--", color="#d73027", linewidth=2, label="DP-FedAvg (Standard DP-SGD)")
+    if dp_dpd_std:
+        ax[1].fill_between(epsilons, np.array(dp_dpd) - np.array(dp_dpd_std),
+                           np.array(dp_dpd) + np.array(dp_dpd_std), color="#d73027", alpha=0.15)
     ax[1].set_xscale("log")
     ax[1].set_xlabel("Privacy Budget $\\epsilon$ (Lower = Stricter Privacy)", fontsize=10)
     ax[1].set_ylabel("Demographic Parity Diff (DPD $\\downarrow$)", fontsize=10)
@@ -303,11 +320,26 @@ def plot_convergence(out_path: str = os.path.join(FIG_DIR, "convergence.pdf")):
     dpd_curve = [entry["g_dpd"] for entry in history]
     eod_curve = [entry.get("g_eod", 0.0) for entry in history]
 
+    auc_std = [entry.get("g_auc_std") for entry in history]
+    dpd_std = [entry.get("g_dpd_std") for entry in history]
+    eod_std = [entry.get("g_eod_std") for entry in history]
+
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig, ax = plt.subplots(figsize=(6, 3.8), dpi=300)
     ax.plot(rounds, auc_curve, "o-", color="#1b7837", linewidth=2, label="Test AUC-ROC ($\\uparrow$)", markersize=4)
+    if all(s is not None for s in auc_std):
+        ax.fill_between(rounds, np.array(auc_curve) - np.array(auc_std),
+                        np.array(auc_curve) + np.array(auc_std), color="#1b7837", alpha=0.15)
+
     ax.plot(rounds, dpd_curve, "s-", color="#d73027", linewidth=2, label="Test DPD ($\\downarrow$)", markersize=4)
+    if all(s is not None for s in dpd_std):
+        ax.fill_between(rounds, np.array(dpd_curve) - np.array(dpd_std),
+                        np.array(dpd_curve) + np.array(dpd_std), color="#d73027", alpha=0.15)
+
     ax.plot(rounds, eod_curve, "^-", color="#4575b4", linewidth=2, label="Test EOD ($\\downarrow$)", markersize=4)
+    if all(s is not None for s in eod_std):
+        ax.fill_between(rounds, np.array(eod_curve) - np.array(eod_std),
+                        np.array(eod_curve) + np.array(eod_std), color="#4575b4", alpha=0.15)
 
     ax.set_xlabel("Communication Round", fontsize=10)
     ax.set_ylabel("Metric Value", fontsize=10)

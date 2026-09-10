@@ -17,6 +17,10 @@ import sys
 from typing import Dict, List, Tuple
 import numpy as np
 
+sys.path.insert(0, os.path.abspath("."))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from src.utils.provenance import build_manifest
+
 
 def exact_wilcoxon_p(diffs: np.ndarray) -> float:
     """Exact two-sided Wilcoxon signed-rank test."""
@@ -173,6 +177,7 @@ def main():
         consolidated["pokecz_67.8k"] = analyze_dataset_runs(pokecz_data["raw_runs"])
         print("Analyzed Pokec-z (67.8k).")
         
+    consolidated["manifest"] = build_manifest(extra={"experiment": "make_stats"})
     out_file = "results/consolidated_statistics.json"
     os.makedirs("results", exist_ok=True)
     with open(out_file, "w") as f:
