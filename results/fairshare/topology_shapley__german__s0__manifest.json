@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "git_commit": "51fb2a9a83ec0b1151fb78ff58b35084d3c509fb",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-10T06:34:33.421882+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "topology_shapley_analysis",
+    "args": {
+      "dataset": "german",
+      "seed": 0,
+      "rounds": 20,
+      "alpha": 0.3,
+      "num_clients": 5,
+      "out": "results/fairshare"
+    }
+  }
+}
