@@ -27,7 +27,7 @@ from src.utils.provenance import build_manifest
 
 
 def extract_fser_fairness(results_json="results/revision/ablation_grid_results.json",
-                          out_tex="manuscript/tables/revision/fser_fairness_ablation.tex"):
+                          out_tex="manuscript_neurocomputing/tables/revision/fser_fairness_ablation.tex"):
     if not os.path.exists(results_json):
         print(f"[!] Results file {results_json} not found. Run ablation_grid_runner.py first.")
         return
@@ -122,7 +122,7 @@ def extract_fser_fairness(results_json="results/revision/ablation_grid_results.j
     with open(out_tex, "w") as f:
         f.write("\n".join(lines) + "\n")
 
-    out_json = out_tex.replace(".tex", ".json").replace("manuscript/tables/", "results/")
+    out_json = out_tex.replace(".tex", ".json").replace("manuscript_neurocomputing/tables/", "results/")
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     with open(out_json, "w") as f:
         json.dump({

@@ -48,7 +48,7 @@ BASELINES = {
 
 def run_trust_sensitivity_analysis(num_samples=2000, perturbation_pct=0.25,
                                    out_json="results/revision/trust_score_sensitivity.json",
-                                   out_tex="manuscript/tables/revision/trust_score_sensitivity.tex"):
+                                   out_tex="manuscript_neurocomputing/tables/revision/trust_score_sensitivity.tex"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 

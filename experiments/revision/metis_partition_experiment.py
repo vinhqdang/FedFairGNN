@@ -95,7 +95,7 @@ def evaluate_partition_run(model_name: str, partition_method: str, seed: int,
 
 
 def run_partition_experiment(out_json="results/revision/metis_partition.json",
-                             out_tex="manuscript/tables/revision/partition_comparison.tex"):
+                             out_tex="manuscript_neurocomputing/tables/revision/partition_comparison.tex"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 

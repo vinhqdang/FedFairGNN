@@ -45,10 +45,38 @@ The `experiments/revision/` directory contains 14 specialized, self-contained sc
 
 ---
 
-## 3. Results Artifacts & LaTeX Tables
+## 3. Pillar C2 Evidence Tables Generation (`experiments/make_tables_c2.py`)
 
-All experimental logs are automatically recorded as structured JSON files:
-- **`results/`**: Primary matrix logs, convergence curves, and historical summaries.
+The central defensive and systemic claims of TrustFedGNN (Metadata Immunity, Byzantine Defense, Weight Stability, and Computational Cost) are generated directly from experimental JSON logs with zero hand-typed cells:
+
+```bash
+# Generate the 4 Pillar C2 evidence tables directly into manuscript tables directory:
+python experiments/make_tables_c2.py
+```
+
+| Generated Table | Math / Empirical Claim | Key Result |
+|---|---|---|
+| [`metadata_immunity.tex`](../manuscript_neurocomputing/tables/metadata_immunity.tex) | Theorem 2 (Metadata Immunity) | Under client falsification ($\widehat{\dpd}_k=0.0, \mathrm{Perf}_k=0.99$), Frank–Wolfe/BFWA assigns $86.2\%$ weight share to the liar; FU-Shapley is bit-identical ($\lVert\Delta\bm{w}\rVert_\infty = 0.0000$). |
+| [`two_tier_defense.tex`](../manuscript_neurocomputing/tables/two_tier_defense.tex) | Robustness under 20% Byzantine minority | Reports $w_{\text{adv}}$ and AUC across 4 attack scenarios; reports NaN divergence rates transparently (superscripts) demonstrating that removing EMA (M7) causes training divergence. |
+| [`weight_stability.tex`](../manuscript_neurocomputing/tables/weight_stability.tex) | Total Weight Variation $\Omega_w$ | Quantifies the cost of per-round re-scoring; FU-Shapley is $27\times$ more stable than Frank–Wolfe dual-ascent re-solving. |
+| [`cost.tex`](../manuscript_neurocomputing/tables/cost.tex) | Wall-clock execution time | Measured on a single NVIDIA T4 GPU ($K=10, R=50, n=10$ seeds); overhead is $1.86\times$ vs FedAvg, dominated by server-side holdout gradient evaluation. |
+
+---
+
+## 4. Formal Verification in Lean 4 (`docs/proofs/`)
+
+Four foundational algebraic and geometric theorems are formally verified and machine-checked in Lean 4:
+- [`docs/proofs/OrthogonalProjection.lean`](proofs/OrthogonalProjection.lean): FTGD exact orthogonality ($\varepsilon = 0$).
+- [`docs/proofs/SimplexProperties.lean`](proofs/SimplexProperties.lean): Aggregation weight simplex validity ($w_k \ge 0, \sum w_k = 1$).
+- [`docs/proofs/NullPlayer.lean`](proofs/NullPlayer.lean): Null player receiving strictly zero weight across all execution paths.
+- [`docs/proofs/LinearDecomposition.lean`](proofs/LinearDecomposition.lean): Additive bilinearity decomposition of contribution scores.
+
+---
+
+## 5. Results Artifacts & LaTeX Tables
+
+All experimental logs are recorded as reproducible JSON artifacts:
+- **`results/`**: Canonical ablation suite (`canonical_suite.json`), SOTA benchmark logs (`sota_pokecz.json`, `sota_credit.json`), and convergence curves.
 - **`results/revision/`**: Specialized logs for the 14 revision runners.
-- **`manuscript/tables/`**: Primary SOTA LaTeX tables (`main_pokecz_sota.tex`, `credit_boundary_sota.tex`, `large_scale.tex`).
-- **`manuscript/tables/revision/`**: 9 dedicated revision LaTeX tables embedded directly in `manuscript/main.tex`.
+- **`manuscript_neurocomputing/tables/`**: Authoritative publication LaTeX tables compiled in `manuscript_neurocomputing/main.tex`.
+

@@ -155,7 +155,7 @@ def _edge_retention_table(records: List[dict]) -> List[str]:
 
 
 def run_dirichlet_experiment(out_json="results/revision/dirichlet_sweep.json",
-                             out_tex="manuscript/tables/revision/dirichlet_sweep.tex"):
+                             out_tex="manuscript_neurocomputing/tables/revision/dirichlet_sweep.tex"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 

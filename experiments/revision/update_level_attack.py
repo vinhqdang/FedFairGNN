@@ -249,7 +249,7 @@ def measure_utility(dataset, seeds, rounds, num_clients, dp_epsilon):
 
 
 def run_update_attack_experiment(out_json="results/revision/update_level_attack.json",
-                                 out_tex="manuscript/tables/revision/update_attack.tex",
+                                 out_tex="manuscript_neurocomputing/tables/revision/update_attack.tex",
                                  dataset="bail", seeds=(42, 43), rounds=12,
                                  num_clients=10, dp_epsilon=8.0, dp_delta=1e-5,
                                  clip_c=1.0):
@@ -413,7 +413,7 @@ def main():
     ap.add_argument("--num-clients", type=int, default=10)
     ap.add_argument("--dp-epsilon", type=float, default=8.0)
     ap.add_argument("--out-json", default="results/revision/update_level_attack.json")
-    ap.add_argument("--out-tex", default="manuscript/tables/revision/update_attack.tex")
+    ap.add_argument("--out-tex", default="manuscript_neurocomputing/tables/revision/update_attack.tex")
     a = ap.parse_args()
     run_update_attack_experiment(out_json=a.out_json, out_tex=a.out_tex,
                                  dataset=a.dataset, seeds=tuple(a.seeds),

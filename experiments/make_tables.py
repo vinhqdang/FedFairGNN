@@ -325,7 +325,7 @@ All datasets strictly satisfy the Zero-Feature Leakage criterion ($\\max_j \\tex
             f.write(datasets_tex)
 
     # Copy / sync all verified static and revision tables
-    src_manuscript_tables = "manuscript_neurocomputing/tables" if os.path.exists("manuscript_neurocomputing/tables") else "manuscript/tables"
+    src_manuscript_tables = "manuscript_neurocomputing/tables" if os.path.exists("manuscript_neurocomputing/tables") else "manuscript_neurocomputing/tables"
     if os.path.exists(src_manuscript_tables):
         other_files = ["compliance.tex", "efficiency.tex", "large_scale.tex", "privacy_attack.tex", "robustness.tex", "main_auc.tex", "main_dpd.tex", "main_eod.tex"]
         for d in valid_dirs:

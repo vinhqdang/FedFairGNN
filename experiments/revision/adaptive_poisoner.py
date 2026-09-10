@@ -277,7 +277,7 @@ def _breakdown_caption_sentence(summary: Dict[str, dict], byz_ratios: List[float
 
 
 def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results.json",
-                            out_tex="manuscript/tables/revision/adaptive_poisoner.tex",
+                            out_tex="manuscript_neurocomputing/tables/revision/adaptive_poisoner.tex",
                             aggregators=("fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa", "fu_shapley", "robust_fu_shapley", "cgsv"),
                             byz_ratios=(0.1, 0.2, 0.3, 0.4), seeds=(42,), rounds=15,
                             dataset="bail", device="cpu"):
@@ -372,7 +372,7 @@ def main():
     ap.add_argument("--rounds", type=int, default=15)
     ap.add_argument("--device", default=os.environ.get("FEDFAIR_DEVICE", "cpu"))
     ap.add_argument("--out-json", default="results/revision/adaptive_poisoner_results.json")
-    ap.add_argument("--out-tex", default="manuscript/tables/revision/adaptive_poisoner.tex")
+    ap.add_argument("--out-tex", default="manuscript_neurocomputing/tables/revision/adaptive_poisoner.tex")
     a = ap.parse_args()
     run_adaptive_experiment(out_json=a.out_json, out_tex=a.out_tex,
                             aggregators=a.aggregators, byz_ratios=a.byz_ratios,

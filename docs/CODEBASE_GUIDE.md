@@ -66,16 +66,20 @@ FedFairGNN/
   - Modifies attention logits $\tilde{e}_{vu} = e_{vu} - \beta \cdot \mathbb{I}(s_v \neq s_u) \cdot \max(0, \cos(h_v, h_u))$.
   - Clamps the learnable parameter $\beta \in [0.0, 5.0]$ to prevent numerical overflow in softmax.
 
-### C. Server Aggregators (`src/federated/aggregation.py`)
-- **`bfwa_weights(perfs, dpds, tau, ...)`**:
-  - Implements a penalised Bi-objective Frank–Wolfe iteration on the simplex $\Delta_K$, updating the Lagrange multiplier $\mu$ by dual gradient ascent.
-  - This **steers** the aggregation weights toward the operator-chosen fairness budget $\tau$ on the *reported client* disparity; it does **not** strictly enforce it. Frank–Wolfe with a dual ascent step is not a hard-constraint solver: over a bounded iteration budget and a non-convex objective, feasibility ($w \cdot \text{dpd} \le \tau$) can fail. Check it empirically per round via the `constraint_residual` / `feasible` fields returned by `aggregate()`.
-- **`robust_bfwa_weights(updates, perfs, dpds, tau, ...)`**:
-  - Combines Euclidean distance screening against the coordinate-wise median with BFWA weight optimization.
-- **`coordinate_median(updates)`**:
-  - Computes the coordinate-wise median across client parameter updates.
-  - It admits **no client-weight vector** and consumes **no self-reported metadata**, so metadata deception (a falsified $\widehat{\text{DPD}}$) cannot influence it by construction. Its robustness against parameter-space corruption is bounded by the standard $f < K/2$ breakdown point.
-  - For the same reason, `info["weights"]` is not populated for `aggregate("median", ...)` and the attacker weight share $w_{\text{adv}}$ is **not measurable** for this rule (it is reported as `NaN`, not `0.0`). Earlier "$w_{\text{adv}} = 0.000$" figures were a reporting artefact of a fallback default, not a measurement.
+### C. Server Aggregators (`src/federated/aggregation.py` & `src/trust/incentive.py`)
+- **`fu_shapley` (Canonical Proposed Aggregator)**:
+  - Evaluates bi-objective target gradient on server-side holdout split: $g_{\text{target}} = g_{\text{task}}^{\text{srv}} + \alpha g_{\text{fair}}^{\text{srv}}$ ($\alpha = 0.1$).
+  - Scores client updates via scale-invariant inner product: $\varphi_k = \langle g_k, g_{\text{target}}\rangle / (\|g_{\text{target}}\| + 10^{-8})$.
+  - Smooths scores across rounds via EMA ($\beta_{\text{ema}} = 0.9$), handles non-finite scores safely, and gates onto simplex with explicit null-player mask:
+    $$w_k = \frac{\max(0, \bar{\varphi}_k) \cdot \mathbb{I}(g_k \neq \mathbf{0})}{\sum_j \max(0, \bar{\varphi}_j) \cdot \mathbb{I}(g_j \neq \mathbf{0})}$$
+  - **Guarantees Metadata Immunity**: Never consumes self-reported fairness disparity $\widehat{\text{DPD}}_k$, proving $\lVert\Delta\bm{w}\rVert_\infty = 0.0000$ bit-exact under falsification attacks.
+- **`robust_fu_shapley` (Byzantine-Resilient Variant)**:
+  - Prepends coordinate-wise median distance screening (discarding the $f$ farthest updates) before running the FU-Shapley gating.
+  - Neutralizes scaling adversaries ($w_{\text{adv}} = 0.0000$ at $f/K \le 0.30$), closing the vulnerability where scaling updates align positively with $g_{\text{target}}$.
+- **`bfwa_weights(perfs, dpds, tau, ...)` (Baseline)**:
+  - Implements a penalised Bi-objective Frank–Wolfe iteration on simplex $\Delta_K$ steering weights toward budget $\tau$ on *reported* disparity. Vulnerable to metadata falsification (capturing $86.2\%$ aggregate share).
+- **`coordinate_median(updates)` (Baseline)**:
+  - Computes coordinate-wise median across client parameter updates, bounded by the standard $f < K/2$ breakdown point. Does not produce a client weight vector.
 
 ---
 

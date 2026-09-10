@@ -38,8 +38,8 @@ from src.trust.privacy import calibrate_noise_multiplier
 from experiments.methods import apply_method
 from src.utils.provenance import build_manifest
 
-FIG = "manuscript/figures"
-TAB = "manuscript/tables"
+FIG = "manuscript_neurocomputing/figures"
+TAB = "manuscript_neurocomputing/tables"
 os.makedirs(FIG, exist_ok=True)
 os.makedirs(TAB, exist_ok=True)
 

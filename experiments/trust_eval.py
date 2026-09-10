@@ -17,7 +17,7 @@ from src.trust.trust_score import trust_score
 from experiments.methods import apply_method
 from src.utils.provenance import build_manifest
 
-TAB = "manuscript/tables"
+TAB = "manuscript_neurocomputing/tables"
 os.makedirs(TAB, exist_ok=True)
 
 METHODS = ["fedavg-gat", "dp-fedavg", "fedfairgnn-nodp", "fedfairgnn"]
@@ -68,7 +68,7 @@ def main():
     card = model_card(flagship[3] and ExperimentConfig(dataset="bail").to_dict() or {},
                       {"final": flagship[1]}, {"sensitive_name": "Race (WHITE)",
                        "positive_meaning": "recidivism within follow-up"})
-    with open("manuscript/model_card.md", "w") as f:
+    with open("manuscript_neurocomputing/model_card.md", "w") as f:
         f.write(card)
     print("[doc] model_card.md written")
     import json

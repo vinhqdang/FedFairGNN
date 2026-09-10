@@ -140,7 +140,7 @@ def evaluate_single_byz_run(aggregator: str, attack: str, byz_ratio: float, seed
     }
 
 
-def generate_robustness_v2_table(results_store: dict, target_ratio: float = 0.2, out_tex: str = "manuscript/tables/revision/robustness_v2.tex"):
+def generate_robustness_v2_table(results_store: dict, target_ratio: float = 0.2, out_tex: str = "manuscript_neurocomputing/tables/revision/robustness_v2.tex"):
     """Generate publication-ready LaTeX table for robustness at target_ratio (default 2/10)."""
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
     raw = [r for r in results_store["raw_runs"] if abs(r["byz_ratio"] - target_ratio) < 1e-4]
@@ -238,7 +238,7 @@ def main():
     parser.add_argument("--dp-enabled", action="store_true", default=False,
                         help="Enable DP during robustness evaluation (default False to isolate robustness from DP noise)")
     parser.add_argument("--output", type=str, default="results/revision/robustness_multiseed.json")
-    parser.add_argument("--out-tex", type=str, default="manuscript/tables/revision/robustness_v2.tex")
+    parser.add_argument("--out-tex", type=str, default="manuscript_neurocomputing/tables/revision/robustness_v2.tex")
     args = parser.parse_args()
 
     aggregators = [a.strip() for a in args.aggregators.split(",") if a.strip()]

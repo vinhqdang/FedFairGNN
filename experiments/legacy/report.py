@@ -20,8 +20,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 RESULTS = "results"
-TAB = "manuscript/tables"
-FIG = "manuscript/figures"
+TAB = "manuscript_neurocomputing/tables"
+FIG = "manuscript_neurocomputing/figures"
 os.makedirs(TAB, exist_ok=True)
 os.makedirs(FIG, exist_ok=True)
 

@@ -31,7 +31,7 @@ from src.utils.provenance import build_manifest
 
 def run_beta_stability_analysis(datasets=("bail", "credit"), seeds=range(42, 52),
                                 out_json="results/revision/fser_beta_analysis.json",
-                                out_pdf="manuscript/figures/revision/fser_beta_stability.pdf"):
+                                out_pdf="manuscript_neurocomputing/figures/revision/fser_beta_stability.pdf"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_pdf), exist_ok=True)
 

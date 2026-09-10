@@ -158,7 +158,7 @@ def _slack_caption_sentence(results: dict, tau: float) -> str:
 
 
 def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
-                              out_tex="manuscript/tables/revision/bfwa_slack.tex",
+                              out_tex="manuscript_neurocomputing/tables/revision/bfwa_slack.tex",
                               dataset="bail", seeds=(42, 43),
                               epsilons=(2.0, 4.0, 8.0), rounds=20,
                               num_clients=10, tau=0.05):
@@ -231,7 +231,7 @@ def main():
     ap.add_argument("--num-clients", type=int, default=10)
     ap.add_argument("--tau", type=float, default=0.05)
     ap.add_argument("--out-json", default="results/revision/bfwa_slack.json")
-    ap.add_argument("--out-tex", default="manuscript/tables/revision/bfwa_slack.tex")
+    ap.add_argument("--out-tex", default="manuscript_neurocomputing/tables/revision/bfwa_slack.tex")
     a = ap.parse_args()
     run_bfwa_slack_experiment(out_json=a.out_json, out_tex=a.out_tex,
                               dataset=a.dataset, seeds=tuple(a.seeds),

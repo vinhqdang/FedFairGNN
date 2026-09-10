@@ -118,7 +118,7 @@ def collect_attention_results(datasets=("bail", "credit"), seed=42, rounds=20,
     return results
 
 
-def generate_attention_figure(out_pdf="manuscript/figures/revision/fser_attention_audit.pdf",
+def generate_attention_figure(out_pdf="manuscript_neurocomputing/figures/revision/fser_attention_audit.pdf",
                               out_json="results/revision/fser_attention_audit.json",
                               datasets=("bail", "credit"), seed=42, rounds=20,
                               num_clients=5):
@@ -178,7 +178,7 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--rounds", type=int, default=20)
     ap.add_argument("--num-clients", type=int, default=5)
-    ap.add_argument("--out-pdf", default="manuscript/figures/revision/fser_attention_audit.pdf")
+    ap.add_argument("--out-pdf", default="manuscript_neurocomputing/figures/revision/fser_attention_audit.pdf")
     ap.add_argument("--out-json", default="results/revision/fser_attention_audit.json")
     a = ap.parse_args()
     generate_attention_figure(out_pdf=a.out_pdf, out_json=a.out_json,

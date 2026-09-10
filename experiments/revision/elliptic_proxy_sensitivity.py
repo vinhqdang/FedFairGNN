@@ -106,7 +106,7 @@ def run_proxy_evaluation(dataset: str, seed: int = 42, rounds: int = 15) -> dict
 
 
 def run_all_proxy_sensitivity(out_json="results/revision/proxy_sensitivity.json",
-                              out_tex="manuscript/tables/revision/proxy_sensitivity.tex"):
+                              out_tex="manuscript_neurocomputing/tables/revision/proxy_sensitivity.tex"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 

@@ -110,7 +110,7 @@ def train_federated(dataset: str, model_type: str, seed: int = 42, rounds: int =
 
 
 def run_sanity_anchors(out_json="results/revision/centralized_sanity.json",
-                       out_tex="manuscript/tables/revision/centralized_sanity.tex"):
+                       out_tex="manuscript_neurocomputing/tables/revision/centralized_sanity.tex"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 

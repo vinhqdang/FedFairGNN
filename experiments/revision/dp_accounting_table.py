@@ -96,7 +96,7 @@ DATASET_SPECS = [
 
 
 def generate_dp_accounting(out_json="results/revision/dp_accounting.json",
-                           out_tex="manuscript/tables/revision/dp_accounting.tex"):
+                           out_tex="manuscript_neurocomputing/tables/revision/dp_accounting.tex"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     os.makedirs(os.path.dirname(out_tex), exist_ok=True)
 
