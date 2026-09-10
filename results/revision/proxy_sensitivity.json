@@ -1,150 +1,166 @@
-[
-  {
-    "dataset": "bail",
-    "seed": 42,
-    "models": {
-      "trustfedgnn": {
-        "auc": 0.6732524764825989,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.001997589456837451,
-          "eod": 0.01933235059271543
-        },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.13076070437681048,
-          "eod": 0.07385075242218103
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.03199577307331722,
-          "eod": 0.032973933548061884
-        }
-      },
-      "fedavg": {
-        "auc": 0.6797455903916148,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.013311335480429176,
-          "eod": 0.04076838032061908
-        },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.08295148250401146,
-          "eod": 0.020150484436198712
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.11094877106617138,
-          "eod": 0.140417951762967
-        }
-      }
-    },
-    "wall_clock_s": 15.619542707994697
+{
+  "manifest": {
+    "git_commit": "51fb2a9a83ec0b1151fb78ff58b35084d3c509fb",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-10T06:42:53.186718+00:00",
+    "torch_version": "unknown",
+    "python_version": "3.9.6",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "experiment": "proxy_sensitivity",
+    "datasets": [
+      "bail",
+      "credit"
+    ]
   },
-  {
-    "dataset": "bail",
-    "seed": 43,
-    "models": {
-      "trustfedgnn": {
-        "auc": 0.6732060806984355,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.01549972786696198,
-          "eod": 0.015602100282730375
+  "records": [
+    {
+      "dataset": "bail",
+      "seed": 42,
+      "models": {
+        "trustfedgnn": {
+          "auc": 0.6732524764825989,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.001997589456837451,
+            "eod": 0.01933235059271543
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.13076070437681048,
+            "eod": 0.07385075242218103
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.03199577307331722,
+            "eod": 0.032973933548061884
+          }
         },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.08516786568588511,
-          "eod": 0.06613703270556923
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.022233567018266016,
-          "eod": 0.029021967003919416
+        "fedavg": {
+          "auc": 0.6797455903916148,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.013311335480429176,
+            "eod": 0.04076838032061908
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.08295148250401146,
+            "eod": 0.020150484436198712
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.11094877106617138,
+            "eod": 0.140417951762967
+          }
         }
       },
-      "fedavg": {
-        "auc": 0.695436357611434,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.00872119027218693,
-          "eod": 0.04240955513242167
-        },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.08882566805708564,
-          "eod": 0.015974154579631028
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.11539667481348082,
-          "eod": 0.13138273630480363
-        }
-      }
+      "wall_clock_s": 15.619542707994697
     },
-    "wall_clock_s": 15.757331333006732
-  },
-  {
-    "dataset": "credit",
-    "seed": 42,
-    "models": {
-      "trustfedgnn": {
-        "auc": 0.7525164807936745,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.11936230579720608,
-          "eod": 0.07858766228488001
+    {
+      "dataset": "bail",
+      "seed": 43,
+      "models": {
+        "trustfedgnn": {
+          "auc": 0.6732060806984355,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.01549972786696198,
+            "eod": 0.015602100282730375
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.08516786568588511,
+            "eod": 0.06613703270556923
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.022233567018266016,
+            "eod": 0.029021967003919416
+          }
         },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.1700288832020539,
-          "eod": 0.10956768484570156
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.007083496924486288,
-          "eod": 0.0033127889060091675
+        "fedavg": {
+          "auc": 0.695436357611434,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.00872119027218693,
+            "eod": 0.04240955513242167
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.08882566805708564,
+            "eod": 0.015974154579631028
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.11539667481348082,
+            "eod": 0.13138273630480363
+          }
         }
       },
-      "fedavg": {
-        "auc": 0.7358468884965345,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.10116189416617427,
-          "eod": 0.06193527462844772
-        },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.1815075684627605,
-          "eod": 0.12103713853358122
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.010030720696519446,
-          "eod": 0.001848998459167972
-        }
-      }
+      "wall_clock_s": 15.757331333006732
     },
-    "wall_clock_s": 57.49684179198812
-  },
-  {
-    "dataset": "credit",
-    "seed": 43,
-    "models": {
-      "trustfedgnn": {
-        "auc": 0.7499900673039486,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.07601010101010097,
-          "eod": 0.04871128823731752
+    {
+      "dataset": "credit",
+      "seed": 42,
+      "models": {
+        "trustfedgnn": {
+          "auc": 0.7525164807936745,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.11936230579720608,
+            "eod": 0.07858766228488001
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.1700288832020539,
+            "eod": 0.10956768484570156
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.007083496924486288,
+            "eod": 0.0033127889060091675
+          }
         },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.18658283993477975,
-          "eod": 0.12799390380247389
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.01767817659578863,
-          "eod": 0.012557781201849028
+        "fedavg": {
+          "auc": 0.7358468884965345,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.10116189416617427,
+            "eod": 0.06193527462844772
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.1815075684627605,
+            "eod": 0.12103713853358122
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.010030720696519446,
+            "eod": 0.001848998459167972
+          }
         }
       },
-      "fedavg": {
-        "auc": 0.7408045163891549,
-        "Demographic (Primary)": {
-          "dpd_hard": 0.07962519936204149,
-          "eod": 0.045578763833042824
-        },
-        "Topological (Degree Hubs)": {
-          "dpd_hard": 0.1716315855382461,
-          "eod": 0.1080852290781561
-        },
-        "Behavioral (Feature Quantile)": {
-          "dpd_hard": 0.034955124363716505,
-          "eod": 0.027966101694915313
-        }
-      }
+      "wall_clock_s": 57.49684179198812
     },
-    "wall_clock_s": 56.7205710420094
-  }
-]
+    {
+      "dataset": "credit",
+      "seed": 43,
+      "models": {
+        "trustfedgnn": {
+          "auc": 0.7499900673039486,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.07601010101010097,
+            "eod": 0.04871128823731752
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.18658283993477975,
+            "eod": 0.12799390380247389
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.01767817659578863,
+            "eod": 0.012557781201849028
+          }
+        },
+        "fedavg": {
+          "auc": 0.7408045163891549,
+          "Demographic (Primary)": {
+            "dpd_hard": 0.07962519936204149,
+            "eod": 0.045578763833042824
+          },
+          "Topological (Degree Hubs)": {
+            "dpd_hard": 0.1716315855382461,
+            "eod": 0.1080852290781561
+          },
+          "Behavioral (Feature Quantile)": {
+            "dpd_hard": 0.034955124363716505,
+            "eod": 0.027966101694915313
+          }
+        }
+      },
+      "wall_clock_s": 56.7205710420094
+    }
+  ]
+}

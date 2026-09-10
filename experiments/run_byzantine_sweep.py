@@ -34,19 +34,7 @@ from src.utils.metrics import weight_oscillation
 from experiments.methods import METHODS, apply_method
 
 
-def _get_git_info() -> Tuple[str, bool]:
-    env_commit = os.environ.get("FEDFAIR_GIT_COMMIT") or os.environ.get("GIT_COMMIT")
-    env_dirty = os.environ.get("FEDFAIR_GIT_DIRTY")
-    if env_commit:
-        dirty = (env_dirty == "1" or env_dirty == "true" or env_dirty == "True")
-        return env_commit.strip(), dirty
-    try:
-        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-        status = subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.DEVNULL).decode().strip()
-        dirty = bool(status)
-        return commit, dirty
-    except Exception:
-        return "unknown", False
+from src.utils.provenance import get_git_info
 
 
 SEEDS = [42, 43, 44, 45, 46]
@@ -123,7 +111,7 @@ def evaluate_byzantine_run(model_name: str, attack: str, byz_ratio: float, seed:
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    commit, dirty = _get_git_info()
+    commit, dirty = get_git_info()
     
     print("=" * 80, flush=True)
     print("  STAGE 4.3 PART 4: BYZANTINE RATIO SWEEP & HYPOTHESIS H2 (5 SEEDS)", flush=True)

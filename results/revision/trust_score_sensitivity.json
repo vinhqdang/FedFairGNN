@@ -32,10 +32,10 @@
     "ours_rank1_pct": 98.85000000000001
   },
   "manifest": {
-    "git_commit": "6cc71268cecfe84c990104afcdd3c9512ea0aa8d",
-    "git_dirty": true,
+    "git_commit": "51fb2a9a83ec0b1151fb78ff58b35084d3c509fb",
+    "git_dirty": false,
     "device": "cpu",
-    "timestamp": "2026-09-08T17:34:38.694373+00:00",
+    "timestamp": "2026-09-10T06:34:10.873476+00:00",
     "torch_version": "2.14.0",
     "python_version": "3.12.12",
     "platform": "macOS-15.7.9-arm64-arm-64bit",
