@@ -13,7 +13,7 @@ Strict Governance:
   - Missing artifacts MUST raise FileNotFoundError indicating which stage produces them.
 
 Outputs:
-  - manuscript/figures/{pareto,privacy_bail,privacy_attack,robustness_byz,convergence}.pdf
+  - manuscript_neurocomputing/figures/{pareto,privacy_bail,privacy_attack,robustness_byz,convergence}.pdf
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-FIG_DIR = "manuscript/figures"
+FIG_DIR = "manuscript_neurocomputing/figures"
 RESULTS_DIR = "results"
 
 
