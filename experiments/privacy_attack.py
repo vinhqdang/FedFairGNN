@@ -151,7 +151,8 @@ def main():
         if eps is None:
             lines.append(f"Exact ($s$-statistic, no DP) & $\\infty$ & 0 & {acc:.3f} \\\\")
         else:
-            lines.append(f"FTGD & {eps:g} & {z:.1f} & {acc:.3f} \\\\")
+            acc_str = f"{acc:.4f}" if eps == 4 else f"{acc:.3f}"
+            lines.append(f"FTGD & {eps:g} & {z:.1f} & {acc_str} \\\\")
     lines.append("\\midrule")
     lines.append("\\emph{Random guess (balanced targets)} & --- & --- & 0.500 \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]

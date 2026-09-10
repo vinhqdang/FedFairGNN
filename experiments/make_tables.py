@@ -295,7 +295,7 @@ Reported with two-sided Wilcoxon signed-rank test $p$-values, effect size Cohen'
  & FedGraph-Fair (2026) & AUC & $+0.0703$ & $+4.01$ & $p = 0.0020^\star$ \\
  & CGSV (2021) & AUC & $+0.0472$ & $+4.30$ & $p = 0.0020^\star$ \\
  & CGSV (2021) & $\text{DPD}_{\text{hard}}$ & $-0.0286$ & $-3.42$ & $p = 0.0020^\star$ \\
- & Ours w/o FSER (M2) & AUC & $+0.0201$ & $+1.28$ & $p = 0.0059^\star$ \\
+ & Ours w/o FSER (Clean) & AUC & $-0.0017$ & $-0.18$ & $p = 0.2324$ \\
 \midrule
 \multirow{4}{*}{\textbf{Credit (30k)}} 
  & FedAvg-GCN & $\text{DPD}_{\text{hard}}$ & $-0.0331$ & $-0.98$ & $p = 0.0098$ \\
