@@ -5,17 +5,20 @@
 A single client reports $\widehat{\dpd}_k = 0.0$ and $\mathrm{Perf}_k = 0.99$ while transmitting an
 unchanged parameter update. Columns give that client's own aggregation weight when it reports
 honestly and when it lies, and the resulting $\ell_\infty$ change over the full weight vector.
-FU-Shapley never reads the reported fields, so the two weight vectors are identical to the last bit;
-BFWA reads them, and the falsifying client captures $86.2\%$ of the aggregate.
-German, $K=5$; uniform share is $1/K = 0.20$.}
+Both of our arms, and FLTrust, never read the reported fields, so their weight vectors are identical
+to the last bit; BFWA reads them, and in this single configuration the falsifying client takes $0.8617$ of the aggregate against a uniform share of $0.20$. That figure is one seed of one setting and is shown to make the mechanism visible, not to size the effect: the campaign of Table~\ref{tab:metadata_capture} measures BFWA at $0.5703$ over thirty seeds, and is what the paper's claims rest on. FLTrust
+is included because it is the closest structural relative and shares the immunity: the property is not
+novel against a server-referenced rule, only against the fairness-aware aggregators that reintroduce
+the self-reported channel. German, $K=5$; uniform share is $1/K = 0.20$.}
 \label{tab:metadata_immunity}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Aggregation rule} & \textbf{$w_k$ (honest)} & \textbf{$w_k$ (falsified)} & \textbf{$\lVert \Delta \bm{w}\rVert_\infty$} \\
 \midrule
-\textbf{FU-Shapley (ours)} & 0.2339 & 0.2339 & 0.0000 \\
-\textbf{robust FU-Shapley (ours)} & \multicolumn{2}{c}{identical, bit-exact} & 0.0000 \\
-BFWA (baseline) & 0.0371 & 0.8617 & 0.8246 \\
+\textbf{FU-Alignment (ours)} & 0.2339 & 0.2339 & 0.0000 \\
+\textbf{robust FU-Alignment (ours)} & \multicolumn{2}{c}{identical, bit-exact} & 0.0000 \\
+FLTrust (baseline) & 0.2284 & 0.2284 & 0.0000 \\
+BFWA~\cite{dang2026fedfairgnn} & 0.0371 & 0.8617 & 0.8246 \\
 \bottomrule
 \end{tabular}
 \end{table}

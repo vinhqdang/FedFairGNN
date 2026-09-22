@@ -1,0 +1,26 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Capturing the aggregate through the self-reported channel.} German, $K=5$, $R=20$, $n=30$ seeds, GCN backbone held fixed across every rule, statistic-level DP disabled so the metadata channel is measured in isolation. Each row contrasts two arms that both transmit the \emph{same} poisoned update and differ only in the accompanying report, so the difference is attributable to the declared fields alone. $w_{\mathrm{adv}}$ is the adversary's mean aggregation weight across rounds; uniform weight is $1/K=0.20$. The rightmost columns report downstream task and fairness harm: $\Delta\mathrm{DPD}$, $\Delta\mathrm{EOD}$, and $\Delta\mathrm{AUC}$ (paired lie minus honest; $^\star$ indicates $p < 0.05$). Results validate a three-tier taxonomy: (i)~\emph{steerable-harmless} (PoPETs-FairFed shifts weights significantly but downstream metrics remain indistinguishable from zero); (ii)~\emph{operational capture} with tangible group harm (FairFed, q-FedAvg, FedGraph-Fair, BFWA); and (iii)~\emph{downstream collapse} (F\textsuperscript{2}GNN suffers a $7.4\times$ increase in DPD and $-0.14$ AUC drop). Metadata-blind rules (CGSV, FLTrust) remain bit-exact invariant ($\|\Delta\|=0.0000$). Note that q-FedAvg converged on $n=18$ paired seeds ($12$ seeds diverged under extreme weight skew). $^\star$ in $p(w)$ indicates significance after Holm--Bonferroni across the metadata-reading family. $^\dagger$ our own earlier published rule~\cite{dang2026fedfairgnn}, attacked here on the same footing as the others.}
+\label{tab:metadata_capture}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{4pt}%
+\begin{tabular}{lllcccccccc}
+\toprule
+\textbf{Aggregation rule} & \textbf{Venue} & \textbf{Reads} & \textbf{$n$} & \textbf{$w_{\mathrm{adv}}$ honest} & \textbf{$w_{\mathrm{adv}}$ lying} & \textbf{vs.\ uniform} & \textbf{$p(w)$} & \textbf{$\Delta$DPD} & \textbf{$\Delta$EOD} & \textbf{$\Delta$AUC} \\
+\midrule
+F\textsuperscript{2}GNN & WWW'23 & \texttt{dpd, group1\_rate} & 30 & $0.1159$ & $\mathbf{0.9737}$ & $4.87\times$ & $1.9\times10^{-9}$$^\star$ & $+0.4638$$^\star$ & $+0.4594$$^\star$ & $-0.1435$$^\star$ \\
+FairFed & AAAI'23 & \texttt{dpd} & 30 & $0.0811$ & $0.2198$ & $1.10\times$ & $3.8\times10^{-6}$$^\star$ & $+0.0875$$^\star$ & $+0.0938$$^\star$ & $-0.0249$$^\star$ \\
+PoPETs-FairFed & PoPETs'25 & \texttt{dpd} & 30 & $0.1617$ & $0.1655$ & $0.83\times$ & $6.3\times10^{-5}$$^\star$ & $+0.0078$ & $+0.0036$ & $-0.0003$ \\
+FedGraph-Fair & InfoSci'26 & \texttt{loss (persistent dual)} & 30 & $0.2318$ & $0.4719$ & $2.36\times$ & $8.9\times10^{-5}$$^\star$ & $+0.1824$$^\star$ & $+0.1874$$^\star$ & $-0.0616$$^\star$ \\
+BFWA$^\dagger$ & IndabaX'26 & \texttt{dpd, perf} & 30 & $0.1439$ & $0.5703$ & $2.85\times$ & $1.5\times10^{-4}$$^\star$ & $+0.2661$$^\star$ & $+0.2623$$^\star$ & $-0.0714$$^\star$ \\
+q-FedAvg & ICLR'20 & \texttt{loss} & 18 & $0.2845$ & $0.5698$ & $2.85\times$ & $2.9\times10^{-4}$$^\star$ & $+0.1520$$^\star$ & $+0.1595$$^\star$ & $-0.0600$$^\star$ \\
+\midrule
+CGSV & NeurIPS'21 & \texttt{-- gradients only} & 30 & $0.1948$ & $0.1948$ & $0.97\times$ & --- & $0.0000$ & $0.0000$ & $0.0000$ \\
+FLTrust & NDSS'21 & \texttt{-- gradients only} & 30 & $0.2545$ & $0.2545$ & $1.27\times$ & --- & $0.0000$ & $0.0000$ & $0.0000$ \\
+FU-Alignment (ours) & -- & \texttt{-- gradients only} & 30 & $0.0573$ & $0.0573$ & $0.29\times$ & --- & $0.0000$ & $0.0000$ & $0.0000$ \\
+FU-Alignment ($\alpha=0$) & -- & \texttt{-- gradients only} & 30 & $0.0592$ & $0.0592$ & $0.30\times$ & --- & $0.0000$ & $0.0000$ & $0.0000$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

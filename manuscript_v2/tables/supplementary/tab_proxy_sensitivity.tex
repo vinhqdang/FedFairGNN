@@ -1,0 +1,27 @@
+%% tables/supplementary/tab_proxy_sensitivity.tex — Subgroup Proxy Definitions Sensitivity
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Sensitivity to Alternative Subgroup Proxy Definitions (Bail and Credit Default).}
+Evaluates disparity across: (1) Primary demographic attribute; (2) Topological degree hubs ($S_{\text{hub}} = \mathbb{I}(\text{deg} > \text{median})$); and (3) Behavioral feature quantiles ($S_{\text{feat}} = \mathbb{I}(x_0 > \text{median})$).
+While TrustFedGNN reduces disparate impact across demographic and behavioral definitions on Bail, plain FedAvg outperforms on topological degree-based proxies on both Bail and Credit, establishing that feature-space fairness optimization does not inherently resolve structural graph-topological partitions.}
+\label{tab:proxy_sensitivity}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{4pt}%
+\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{2}{c}{\textbf{TrustFedGNN (Ours)}} & \multicolumn{2}{c}{\textbf{FedAvg (Baseline)}} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+\textbf{Dataset} & \textbf{Subgroup Proxy Definition} & \textbf{DPD $\downarrow$} & \textbf{EOD $\downarrow$} & \textbf{DPD $\downarrow$} & \textbf{EOD $\downarrow$} \\
+\midrule
+Bail & Demographic (Primary Ground-Truth) & \textbf{0.009} & \textbf{0.017} & 0.011 & 0.042 \\
+Bail & Topological (High-Degree Hubs) & 0.108 & 0.070 & \textbf{0.086} & \textbf{0.018} \\
+Bail & Behavioral (Feature Quantile Split) & \textbf{0.027} & \textbf{0.031} & 0.113 & 0.136 \\
+\midrule
+Credit & Demographic (Primary Ground-Truth) & 0.098 & 0.064 & \textbf{0.090} & \textbf{0.054} \\
+Credit & Topological (High-Degree Hubs) & 0.178 & 0.119 & \textbf{0.177} & \textbf{0.115} \\
+Credit & Behavioral (Feature Quantile Split) & \textbf{0.012} & \textbf{0.008} & 0.022 & 0.015 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

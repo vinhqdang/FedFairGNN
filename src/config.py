@@ -205,7 +205,10 @@ class ExperimentConfig:
     attack: str = "none"             # none | label_flip | gaussian | scaling | fairness_poison
                                      #   | ipm | alie
     num_byzantine: int = 0
-    attack_intensity: float = 10.0   # scale for gaussian / scaling / sign_flip / fairness_poison.
+    attack_intensity: float = 10.0
+    # Which aggregator the adversary tailors its false report to. None =
+    # the legacy three-field lie. See attacks.BEST_RESPONSE_LIE.
+    meta_lie: Optional[str] = None   # scale for gaussian / scaling / sign_flip / fairness_poison.
                                      #   NOT used by ipm or alie -- those have their own calibrated
                                      #   parameters below, because a large intensity destroys the
                                      #   stealth that defines both attacks.

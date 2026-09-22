@@ -213,8 +213,11 @@ __marimo__/
 # Downloaded / cached datasets (regenerated on demand by src/data)
 data/raw/
 data/processed/
-# Experiment outputs (regenerated from code; figures/tables checked in selectively)
-results/
+# Experiment outputs: results/ IS TRACKED as of 11-09-2026, so a reviewer can
+# recompute every number in the manuscript from the artifacts in this repo.
+# Note that src/utils/provenance.py::get_git_info still excludes results/ from
+# the dirty check -- a run writes there by design, and a manifest must not call
+# its own output a dirty tree.
 logs/
 # Secrets (never commit credentials)
 kaggle.json
@@ -223,11 +226,12 @@ kaggle.json
 secrets.*
 
 # LaTeX build artifacts
-manuscript/*.aux
-manuscript/*.bbl
-manuscript/*.blg
-manuscript/*.out
-manuscript/*.log
+manuscript*/*.aux
+manuscript*/*.bbl
+manuscript*/*.blg
+manuscript*/*.out
+manuscript*/*.log
+manuscript*/*.spl
 results_matrix.log
 # Fetch artifacts pulled back from the Colab VM (contain results/, regenerated)
 out.tgz
@@ -242,3 +246,6 @@ out.tgz
 # CodeGraph local database
 .codegraph
 .codegraph/
+
+# Scratch directories
+scratch/

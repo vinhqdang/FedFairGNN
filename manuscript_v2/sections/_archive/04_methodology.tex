@@ -1,0 +1,27 @@
+%% sections/04_methodology.tex
+\section{The \MethodName{} Framework}
+\label{sec:methodology}
+
+\subsection{Overview of the System Architecture}
+\MethodName{} resolves the fundamental interface crisis by closing the client metadata channel entirely. The server maintains an independent, minimal clean holdout dataset $\Droot$ ($\le 125$ nodes in practice) to compute a dual-objective reference gradient:
+\begin{equation}
+\gtarg^{(t)} = \gtask^{\mathrm{srv}}(\theta^{(t)}) + \alpha \gfair^{\mathrm{srv}}(\theta^{(t)}),
+\end{equation}
+where $\alpha \ge 0$ is a pre-registered fairness guidance coefficient.
+
+\subsection{Client-Side Targeted Optimization (FTGD)}
+At each local silo $k$, clients train their local GNN model using Fair Targeted Gradient Descent (FTGD), executing orthogonal gradient surgery:
+\begin{equation}
+g_k^{\perp} = g_{k,\mathrm{task}} - \frac{\ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}}}{\norm{g_{k,\mathrm{fair}}}^2} g_{k,\mathrm{fair}},
+\end{equation}
+preventing client updates from leaking private sensitive attributes through task gradients.
+
+\subsection{Server-Side Coordinate Gating and Aggregation}
+Upon receiving client model parameter updates $\Delta_k^{(t)}$, the server computes alignment scores via positive cosine alignment, applies exponential moving average (EMA) smoothing to eliminate round-to-round turbulence, and rescales update norms:
+\begin{equation}
+s_k^{(t)} = \ReLU\left(\Cosine\left(\Delta_k^{(t)}, \gtarg^{(t)}\right)\right), \quad \tilde{s}_k^{(t)} = \beta \tilde{s}_k^{(t-1)} + (1-\beta) s_k^{(t)},
+\end{equation}
+\begin{equation}
+w_k^{(t)} = \frac{\tilde{s}_k^{(t)}}{\sum_{j=1}^K \tilde{s}_j^{(t)}}, \quad \theta^{(t+1)} = \theta^{(t)} + \sum_{k=1}^K w_k^{(t)} \cdot \frac{\norm{\gtarg^{(t)}}}{\norm{\Delta_k^{(t)}}} \Delta_k^{(t)}.
+\end{equation}
+By design, the aggregation weights $w_k^{(t)}$ are computed strictly as a function of the parameter updates and server holdout, guaranteeing $\Delta w = 0.0000$ with respect to any client metadata.

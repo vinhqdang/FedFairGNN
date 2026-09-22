@@ -245,7 +245,8 @@ class Client:
         # objective l(w) - lambda * M_fair to *amplify* the demographic-parity
         # gap while preserving accuracy, then lie about its fairness metric
         # (handled in attacks.poison_updates) to capture a fairness-aware server.
-        if self.byzantine and cfg.attack == "fairness_poison":
+        if self.byzantine and cfg.attack in ("fairness_poison",
+                                            "fairness_poison_honest_report"):
             for _ in range(cfg.local_epochs):
                 opt.zero_grad()
                 pred = self.model(x, ei, s)[m]

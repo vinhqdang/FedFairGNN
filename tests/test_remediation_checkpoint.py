@@ -154,7 +154,7 @@ def test_full_run_resumes_across_a_simulated_interrupt(tmp_path):
     couple of genuinely small sub-results and asserts resume skips them.
     Marked slow; not part of the default fast suite.
     """
-    from experiments.run_canonical_suite import run_canonical_suite
+    from experiments.run_canonical_suite import run_canonical_suite, ABLATION_ARMS
 
     p = str(tmp_path / "remediation.json")
     fake = {"auc_mean": 0.5, "auc_std": 0.0, "dpd_soft_mean": 0.0, "dpd_soft_std": 0.0,
@@ -171,9 +171,14 @@ def test_full_run_resumes_across_a_simulated_interrupt(tmp_path):
         "_manifest": {"git_commit": HERE_COMMIT, "timestamp": "2020-01-01T00:00:00+00:00"},
         "RUN-4.2-01": fake, "RUN-4.2-02": fake, "RUN-4.2-03": {"probes": []},
         "RUN-4.2-04": fake, "RUN-4.2-05": fake,
-        "component_ablation_matrix": {name: fake for name in
-                                     ["M1_Full", "M2_wo_FSER", "M3_wo_FTGD", "M4_Full_DPSGD",
-                                      "M5_wo_FairScore", "M6_wo_TwoTier"]},  # M7 missing
+        # Seed EVERY arm the suite currently declares except M7, so exactly one
+        # section has real work to do. Hard-coding the names let this drift: the
+        # list still said "M3_wo_FTGD", an arm renamed to M3_wo_DP, and knew
+        # nothing of M2_wo_FSER_true or M3b..M3e, so seven arms ran for real and
+        # the test silently stopped testing resume at all. Deriving the seed from
+        # ABLATION_ARMS makes a future rename impossible to miss here.
+        "component_ablation_matrix": {name: fake for name in ABLATION_ARMS
+                                      if name != "M7_wo_EMA"},
         "fser_sign_hypothesis": {f"fser_{m}_beta_{b}": fake
                                  for m in ["sub", "add", "same_penalize"] for b in [0.5, 2.0]},
         "two_tier_defense_robustness": {f"{arm}_{sc}": fake

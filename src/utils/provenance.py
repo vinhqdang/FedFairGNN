@@ -37,17 +37,37 @@ def get_git_info() -> Tuple[str, bool]:
         return "unknown", False
 
 
+def resolve_actual_device(requested: str | None = None) -> str:
+    """Determine actual compute device used (F2 per ReviewAgent FF-5 / ADR-14).
+
+    Verifies torch.cuda.is_available() so manifests record actual hardware
+    used rather than an unfulfilled requested device (e.g. cuda on CPU-only torch).
+    """
+    cuda_avail = TORCH_VERSION != "unknown" and torch.cuda.is_available()
+    req = requested or os.environ.get("FEDFAIR_DEVICE")
+    if req and req.startswith("cuda"):
+        return req if cuda_avail else "cpu"
+    if req:
+        return req
+    return "cuda" if cuda_avail else "cpu"
+
+
+
 def build_manifest(**extra: Any) -> Dict[str, Any]:
     """Build standardized provenance manifest dictionary for experimental artifacts."""
     commit, dirty = get_git_info()
+    requested_dev = extra.pop("device", None)
+    actual_dev = resolve_actual_device(requested_dev)
     manifest = {
         "git_commit": commit,
         "git_dirty": dirty,
-        "device": os.environ.get("FEDFAIR_DEVICE", "cpu"),
+        "device": actual_dev,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "torch_version": TORCH_VERSION,
+        "torch_num_threads": torch.get_num_threads() if TORCH_VERSION != "unknown" else 1,
         "python_version": platform.python_version(),
         "platform": platform.platform(),
     }
     manifest.update(extra)
     return manifest
+

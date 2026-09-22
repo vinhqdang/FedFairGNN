@@ -1,0 +1,21 @@
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Empirical Breakdown under White-Box Holdout Alignment Adversary ($H_{\text{T1}}$ Stress Test, $n=10$ Seeds).}
+Stress-tests the foundational security boundary where an omniscient adversary possesses full gradient knowledge of the server holdout target $g_{\text{target}}$ and optimizes alignment via projected gradient descent.
+Pre-registered rejection thresholds require $w_{\mathrm{adv}} \le 0.20$ and $\text{DPD}_{\text{hard}} \le 0.10$ ($\alpha=0.05$).
+In both benchmarks, the adversary breaches the defense ($w_{\mathrm{adv}} = 0.8514$ and $0.7461$), demonstrating that server holdout confidentiality is a necessary precondition for reference-anchored defense.}
+\label{tab:alignment_adversary}
+\setlength{\tabcolsep}{5.0pt}
+\makebox[\textwidth][c]{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Dataset} & \textbf{\makecell{Threshold \\ $w_{\mathrm{adv}}^{\max}$}} & \textbf{\makecell{Measured \\ $w_{\mathrm{adv}}$}} & \textbf{\makecell{Measured \\ $\text{DPD}_{\text{hard}}$}} & \textbf{\makecell{Measured \\ AUC}} & \textbf{\makecell{Verdict \\ ($H_{\text{T1}}$)}} \\
+\midrule
+German Credit & $\le 0.2000$ & $0.8514 \pm 0.0652$ & $0.1934 \pm 0.1398$ & $0.5651 \pm 0.0704$ & \textbf{REJECTED} (Breached) \\
+\addlinespace[2pt]
+Bail Recidivism & $\le 0.2000$ & $0.7461 \pm 0.0688$ & $0.0119 \pm 0.0236$ & $0.5241 \pm 0.0454$ & \textbf{REJECTED} (Breached) \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

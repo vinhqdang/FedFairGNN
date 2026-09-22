@@ -120,7 +120,17 @@ ABLATION_ARMS = {
     "M1_Full": lambda s: ExperimentConfig.canonical(seed=s),
     "M2_wo_FSER": lambda s: ExperimentConfig.canonical(seed=s, model="gat"),
     "M2_wo_FSER_true": lambda s: ExperimentConfig.canonical(seed=s, beta_init=0.0, freeze_beta=True),
-    "M3_wo_FTGD": lambda s: ExperimentConfig.canonical(seed=s, dp_enabled=False),
+    # Renamed from M3_wo_FTGD. canonical() pins dp_mode="ftgd", so dp_enabled=False
+    # leaves _ftgd_step and _gradient_surgery running: this arm removes the DP
+    # mechanism (noise, s-blind release pass, privatised report), never the
+    # projection. The old name asserted the opposite and the manuscript drew a
+    # projection conclusion from it.
+    "M3_wo_DP": lambda s: ExperimentConfig.canonical(seed=s, dp_enabled=False),
+    # The arms that actually isolate the three factors M3 used to conflate.
+    "M3b_wo_Projection": lambda s: ExperimentConfig.canonical(seed=s, ftgd_min_fair_norm=1e9),
+    "M3c_wo_FairObjective": lambda s: ExperimentConfig.canonical(seed=s, fairness_weight=0.0),
+    "M3d_PCGrad": lambda s: ExperimentConfig.canonical(seed=s, ftgd_projection="conflict"),
+    "M3e_wo_SBlind": lambda s: ExperimentConfig.canonical(seed=s, dp_statistic_s_blind=False),
     "M4_Full_DPSGD": lambda s: ExperimentConfig.canonical(seed=s, dp_mode="gradient"),
     "M5_wo_FairScore": lambda s: ExperimentConfig.canonical(seed=s, fu_alpha=0.0),
     "M6_wo_TwoTier": lambda s: ExperimentConfig.canonical(seed=s, fu_val_source="pooled", fu_score="cosine"),

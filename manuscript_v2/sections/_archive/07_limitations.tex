@@ -1,0 +1,12 @@
+%% sections/07_limitations.tex
+\section{Operational Boundaries and Scope of Validity}
+\label{sec:limitations}
+
+A rigorous scientific contribution must delineate its operational boundaries and scope of validity. In accordance with honest academic reporting, we establish four boundaries:
+
+\begin{enumerate}
+    \item \textbf{Physical Security of Server Holdout (Kerckhoffs Boundary):} The security guarantees of \MethodName{} rely strictly on the physical integrity and access control of the server holdout set $\Droot$. If an omniscient adversary compromises the server memory to read $\gtarg$ directly (Tier 3), cosine gating collapses ($w_{\mathrm{adv}} = 0.8514$ on German Credit, $0.7461$ on Bail Recidivism), identifying physical holdout isolation as an essential operational prerequisite.
+    \item \textbf{Topological Heterogeneity and Community Partitioning:} While \MethodName{} excels on connected graphs, severe community fragmentation (Metis partitioning with $89.7\%$ internal edges) reduces cosine alignment by $27\%$ ($0.3482 \to 0.2543$). Under extreme Dirichlet non-IID distributions ($\alpha_{\mathrm{Dir}} \le 0.1$), client gradient drift from the static anchor slows convergence relative to unconstrained FedAvg, though demographic disparity remains strictly bounded ($\dpd \le 0.049$).
+    \item \textbf{Role of the Guidance Coefficient $\alpha$ and Signal Floor:} The parameter $\alpha = 0.1$ operates as a safe demographic guardrail rather than an aggressive utility booster. On clean data with near-zero baseline inequality (Bail $\dpd_0 = 0.012$), the gradient norm $\|\gfair\| \to 0$, rendering $\alpha$ statistically neutral ($p = 0.885$).
+    \item \textbf{First-Order Auditable Logging vs.\ Combinatorial Shapley:} The contribution scoring in \MethodName{} provides an auditable linear decomposition $O(KP)$ for enterprise compliance, satisfying Axioms 1--4 asymptotically, but does not claim exponential combinatorial Shapley game-theoretic equivalence.
+\end{enumerate}

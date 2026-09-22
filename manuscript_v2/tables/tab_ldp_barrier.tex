@@ -1,0 +1,34 @@
+%% tables/tab_ldp_barrier.tex — T2: LDP Barrier (Folded-Normal Drift + Le Cam Minimax Bound)
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Differential Privacy Accounting, Disparity Constraint Slack, and Minimax Observability Barrier across Local DP Budgets $\epsilon$ (German Credit, $K=10$ Clients, $R=20$ Rounds, 10 Seeds).}
+Reports the empirical slack $|\Delta_{\tau}| = |\sum_k w_k \widehat{\text{DPD}}_k - \sum_k w_k \text{DPD}_k|$ under tolerance budget $\tau = 0.05$.
+Noise scale $\tilde{\sigma} = z \Delta_{\bm{\mu}}$ is calibrated via RDP binary search.
+The theoretical ratio compares empirical noise against the folded-normal analytical expectation (Lemma~\ref{lem:folded_normal} / Theorem~\ref{thm:minimax_lecam}).
+$\mathcal{R}^* \ge \frac{1}{2}(1 - \frac{\tau\sqrt{K}}{2\tilde{\sigma}})$ denotes the information-theoretic minimax testing error lower bound under Le Cam's two-point lemma and Pinsker's inequality (Theorem~\ref{thm:minimax_lecam}).
+Even at the weakest privacy budget ($\epsilon = 32.0$), DP noise induces a substantial slack of $0.1150 \pm 0.1396$ ($229.9\%$ of $\tau$), while the minimax testing error approaches the coin-flip limit of $50\%$ as the budget tightens ($\ge 49.5\%$ at $\epsilon = 0.5$), demonstrating that client-wise privatised fairness reporting removes constraint observability rather than merely degrading it.}
+\label{tab:ldp_barrier}
+\setlength{\tabcolsep}{4.0pt}
+\makebox[\textwidth][c]{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{\makecell{Budget \\ $\epsilon$}} & \textbf{\makecell{Noise \\ $\tilde{\sigma}$}} & \textbf{\makecell{Reported / True \\ $\sum w_k \widehat{\text{DPD}} \;/\; \text{DPD}$}} & \textbf{\makecell{Disparity Slack $|\Delta_\tau|$ \\ (Abs $\pm$ Std \;/\; Rel \%)}} & \textbf{\makecell{Folded Ratio \\ (Obs / Pred)}} & \textbf{\makecell{Minimax Error \\ $\mathcal{R}^*$ (Le Cam)}} \\
+\midrule
+$\epsilon = 0.5$ & 7.3886 & \makecell{5.6922 \\ 0.2467} & \makecell{5.4455 $\pm$ 4.7608 \\ \scriptsize 10,891.1\%} & 0.978 & $\ge 49.5\%$ \\
+\addlinespace[2pt]
+$\epsilon = 1.0$ & 3.8913 & \makecell{2.8834 \\ 0.2329} & \makecell{2.6505 $\pm$ 2.1609 \\ \scriptsize 5,301.1\%} & 0.962 & $\ge 49.0\%$ \\
+\addlinespace[2pt]
+$\epsilon = 2.0$ & 2.0376 & \makecell{1.5427 \\ 0.2050} & \makecell{1.3425 $\pm$ 1.2077 \\ \scriptsize 2,685.0\%} & 0.958 & $\ge 48.1\%$ \\
+\addlinespace[2pt]
+$\epsilon = 4.0$ & 1.0838 & \makecell{0.8369 \\ 0.1730} & \makecell{0.6723 $\pm$ 0.7035 \\ \scriptsize 1,344.6\%} & 0.968 & $\ge 46.4\%$ \\
+\addlinespace[2pt]
+$\epsilon = 8.0$ & 0.6117 & \makecell{0.5043 \\ 0.1616} & \makecell{0.3647 $\pm$ 0.3781 \\ \scriptsize 729.5\%} & 1.044 & $\ge 43.5\%$ \\
+\addlinespace[2pt]
+$\epsilon = 16.0$ & 0.3502 & \makecell{0.2953 \\ 0.1176} & \makecell{0.1984 $\pm$ 0.2085 \\ \scriptsize 396.7\%} & 1.075 & $\ge 38.7\%$ \\
+\addlinespace[2pt]
+$\epsilon = 32.0$ & 0.2127 & \makecell{0.1954 \\ 0.1028} & \makecell{0.1150 $\pm$ 0.1396 \\ \scriptsize 229.9\%} & 1.157 & $\ge 31.4\%$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

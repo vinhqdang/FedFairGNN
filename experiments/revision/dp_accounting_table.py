@@ -154,22 +154,25 @@ def generate_dp_accounting(out_json="results/revision/dp_accounting.json",
         "\\begin{table*}[t]",
         "\\centering",
         "\\small",
-        "\\caption{\\textbf{End-to-End Differential Privacy Accounting across Benchmark Datasets.}",
+        "\\caption{\\textbf{Differential Privacy Accounting for the FTGD Statistic Channel across Benchmark Datasets.}",
         "R\\'{e}nyi Differential Privacy (RDP) composition for FTGD statistic releases across $R$ rounds and $E$ local epochs.",
-        "Noise multiplier $z = \\sigma / C$ is calibrated via binary search over RDP orders $\\alpha > 1$ to guarantee total spend $\\le \\epsilon_{\\text{target}} = 8.0$ at failure probability $\\delta$.}",
+        "Noise multiplier $z = \\sigma / C$ is calibrated via binary search over RDP orders $\\alpha > 1$ to guarantee total spend $\\le \\epsilon_{\\text{target}} = 8.0$ at failure probability $\\delta$.",
+        "The \\textbf{Status} column is load-bearing: only the German row corresponds to a training campaign actually executed under this configuration. The remaining rows are budget calibrations for configurations we specify but did not run under DP, and must not be read as measured spends. Two of them differ from the campaigns reported elsewhere in this paper and we prefer to flag it than to silently reconcile it: the Pokec-z accounting is computed at $R{=}100$ whereas Table~\\ref{tab:main_pokecz_sota} ran $R{=}50$, which over-accounts and is therefore conservative; and the ogbn-products row counts releases per sampled mini-batch rather than $R \\times E$, which is why its $T$ is $4{,}800$ rather than $20$.}",
         "\\label{tab:dp_accounting}",
-        "\\begin{tabular}{lcccccccc}",
+        "\\begin{tabular}{lccccccccl}",
         "\\toprule",
-        "\\textbf{Dataset} & \\textbf{Nodes ($N$)} & \\textbf{Clients ($K$)} & \\textbf{Rounds ($R$)} & \\textbf{Epochs ($E$)} & \\textbf{Releases ($T$)} & \\textbf{Target $\\delta$} & \\textbf{Multiplier $z$} & \\textbf{Composed $\\epsilon$} \\\\",
+        "\\textbf{Dataset} & \\textbf{Nodes ($N$)} & \\textbf{Clients ($K$)} & \\textbf{Rounds ($R$)} & \\textbf{Epochs ($E$)} & \\textbf{Releases ($T$)} & \\textbf{Target $\\delta$} & \\textbf{Multiplier $z$} & \\textbf{Composed $\\epsilon$} & \\textbf{Status} \\\\",
         "\\midrule",
     ]
 
     for r in records:
         node_str = f"{r['nodes']:,}"
         delta_str = f"$10^{{{int(math.log10(r['delta']))}}}$"
+        status_str = r"\textbf{measured}" if str(r.get('status','')).startswith('measured') else "calibration only"
         line = (
             f"{r['dataset']} & {node_str} & {r['clients']} & {r['rounds']} & {r['local_epochs']} & "
-            f"{r['total_releases']} & {delta_str} & {r['calibrated_z']:.2f} & {r['composed_epsilon']:.2f} \\\\"
+            f"{r['total_releases']} & {delta_str} & {r['calibrated_z']:.2f} & {r['composed_epsilon']:.2f} & "
+            f"{status_str} \\\\"
         )
         lines.append(line)
 

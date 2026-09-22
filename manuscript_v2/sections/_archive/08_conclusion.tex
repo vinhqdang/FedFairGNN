@@ -1,0 +1,5 @@
+%% sections/08_conclusion.tex
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we uncovered a systemic vulnerability across contemporary fairness-aware federated learning protocols: reliance on client-reported metadata permits malicious actors to hijack model aggregation. Through theoretical derivation of the folded-normal bias and a Minimax Le Cam observability bound, we proved that local differential privacy cannot mend this self-reporting interface. We presented \MethodName{}, establishing syntactic metadata immunity ($\Delta w = 0.0000$) via server-side dual-objective bootstrapping and non-linear coordinate gating. Comprehensive evaluations across four benchmark topologies under three attack tiers demonstrate that \MethodName{} consistently suppresses adversaries below equal share without imposing a robustness tax on group fairness. Finally, the framework provides an auditable, linear-complexity contribution log compatible with emerging AI risk management standards.

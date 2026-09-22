@@ -1,0 +1,3799 @@
+{
+  "summary": {
+    "clean::A1_fltrust": {
+      "count": 30,
+      "auc_mean": 0.6876366666666667,
+      "auc_std": 0.04795434958038907,
+      "dpd_mean": 0.09006,
+      "dpd_std": 0.048358621525660436,
+      "w_adv_mean": 0.0,
+      "w_adv_std": 0.0,
+      "wall_mean": 27.823333333333334
+    },
+    "clean::A2_fltrust_fair": {
+      "count": 30,
+      "auc_mean": 0.6876133333333333,
+      "auc_std": 0.047258144587838585,
+      "dpd_mean": 0.08593333333333333,
+      "dpd_std": 0.04900865042104255,
+      "w_adv_mean": 0.0,
+      "w_adv_std": 0.0,
+      "wall_mean": 25.723333333333333
+    },
+    "clean::A3_fu_alpha0": {
+      "count": 30,
+      "auc_mean": 0.6453233333333334,
+      "auc_std": 0.05077974537381893,
+      "dpd_mean": 0.05506333333333333,
+      "dpd_std": 0.0399609419941206,
+      "w_adv_mean": 0.0,
+      "w_adv_std": 0.0,
+      "wall_mean": 26.006666666666668
+    },
+    "clean::A4_fu_shapley": {
+      "count": 30,
+      "auc_mean": 0.6496466666666667,
+      "auc_std": 0.04686674236844167,
+      "dpd_mean": 0.05229333333333333,
+      "dpd_std": 0.04057201288924494,
+      "w_adv_mean": 0.0,
+      "w_adv_std": 0.0,
+      "wall_mean": 26.97
+    },
+    "fairness_poison::A1_fltrust": {
+      "count": 30,
+      "auc_mean": 0.6752833333333333,
+      "auc_std": 0.04627915359501797,
+      "dpd_mean": 0.19306666666666666,
+      "dpd_std": 0.13939119433260935,
+      "w_adv_mean": 0.25653,
+      "w_adv_std": 0.12465813153830235,
+      "wall_mean": 24.423333333333332
+    },
+    "fairness_poison::A2_fltrust_fair": {
+      "count": 30,
+      "auc_mean": 0.6766366666666667,
+      "auc_std": 0.04663293555161329,
+      "dpd_mean": 0.18424666666666667,
+      "dpd_std": 0.13553987511845522,
+      "w_adv_mean": 0.2516233333333333,
+      "w_adv_std": 0.12292361991632582,
+      "wall_mean": 23.906666666666666
+    },
+    "fairness_poison::A3_fu_alpha0": {
+      "count": 30,
+      "auc_mean": 0.6366533333333333,
+      "auc_std": 0.057810819494059355,
+      "dpd_mean": 0.07295333333333333,
+      "dpd_std": 0.05069518601462541,
+      "w_adv_mean": 0.06565666666666667,
+      "w_adv_std": 0.06774624907969308,
+      "wall_mean": 22.4
+    },
+    "fairness_poison::A4_fu_shapley": {
+      "count": 30,
+      "auc_mean": 0.6414066666666667,
+      "auc_std": 0.051936386376846215,
+      "dpd_mean": 0.07199,
+      "dpd_std": 0.05107287794973929,
+      "w_adv_mean": 0.06299333333333333,
+      "w_adv_std": 0.06709959110484043,
+      "wall_mean": 27.256666666666668
+    },
+    "poison_honest::A1_fltrust": {
+      "count": 30,
+      "auc_mean": 0.6752833333333333,
+      "auc_std": 0.04627915359501797,
+      "dpd_mean": 0.19306666666666666,
+      "dpd_std": 0.13939119433260935,
+      "w_adv_mean": 0.25653,
+      "w_adv_std": 0.12465813153830235,
+      "wall_mean": 24.843333333333334
+    },
+    "poison_honest::A2_fltrust_fair": {
+      "count": 30,
+      "auc_mean": 0.6766366666666667,
+      "auc_std": 0.04663293555161329,
+      "dpd_mean": 0.18424666666666667,
+      "dpd_std": 0.13553987511845522,
+      "w_adv_mean": 0.2516233333333333,
+      "w_adv_std": 0.12292361991632582,
+      "wall_mean": 26.81
+    },
+    "poison_honest::A3_fu_alpha0": {
+      "count": 30,
+      "auc_mean": 0.6366533333333333,
+      "auc_std": 0.057810819494059355,
+      "dpd_mean": 0.07295333333333333,
+      "dpd_std": 0.05069518601462541,
+      "w_adv_mean": 0.06565666666666667,
+      "w_adv_std": 0.06774624907969308,
+      "wall_mean": 25.91
+    },
+    "poison_honest::A4_fu_shapley": {
+      "count": 30,
+      "auc_mean": 0.6414066666666667,
+      "auc_std": 0.051936386376846215,
+      "dpd_mean": 0.07199,
+      "dpd_std": 0.05107287794973929,
+      "w_adv_mean": 0.06299333333333333,
+      "w_adv_std": 0.06709959110484043,
+      "wall_mean": 24.306666666666665
+    }
+  },
+  "raw": [
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 47,
+      "auc": 0.688,
+      "dpd_hard": 0.0714,
+      "w_adv": 0.0,
+      "wall_s": 19.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 46,
+      "auc": 0.7829,
+      "dpd_hard": 0.0313,
+      "w_adv": 0.0,
+      "wall_s": 20.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 42,
+      "auc": 0.651,
+      "dpd_hard": 0.0556,
+      "w_adv": 0.0,
+      "wall_s": 20.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 44,
+      "auc": 0.7578,
+      "dpd_hard": 0.089,
+      "w_adv": 0.0,
+      "wall_s": 24.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 45,
+      "auc": 0.6827,
+      "dpd_hard": 0.0592,
+      "w_adv": 0.0,
+      "wall_s": 27.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 43,
+      "auc": 0.7426,
+      "dpd_hard": 0.0816,
+      "w_adv": 0.0,
+      "wall_s": 31.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 50,
+      "auc": 0.6709,
+      "dpd_hard": 0.1061,
+      "w_adv": 0.0,
+      "wall_s": 26.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 51,
+      "auc": 0.6418,
+      "dpd_hard": 0.0756,
+      "w_adv": 0.0,
+      "wall_s": 23.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 48,
+      "auc": 0.6465,
+      "dpd_hard": 0.0417,
+      "w_adv": 0.0,
+      "wall_s": 32.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 49,
+      "auc": 0.6997,
+      "dpd_hard": 0.0493,
+      "w_adv": 0.0,
+      "wall_s": 33.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 52,
+      "auc": 0.6671,
+      "dpd_hard": 0.1887,
+      "w_adv": 0.0,
+      "wall_s": 26.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 53,
+      "auc": 0.6321,
+      "dpd_hard": 0.0688,
+      "w_adv": 0.0,
+      "wall_s": 40.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 54,
+      "auc": 0.7138,
+      "dpd_hard": 0.1806,
+      "w_adv": 0.0,
+      "wall_s": 30.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 56,
+      "auc": 0.7422,
+      "dpd_hard": 0.056,
+      "w_adv": 0.0,
+      "wall_s": 25.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 55,
+      "auc": 0.6549,
+      "dpd_hard": 0.09,
+      "w_adv": 0.0,
+      "wall_s": 33.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 58,
+      "auc": 0.6614,
+      "dpd_hard": 0.0524,
+      "w_adv": 0.0,
+      "wall_s": 29.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 57,
+      "auc": 0.7791,
+      "dpd_hard": 0.0998,
+      "w_adv": 0.0,
+      "wall_s": 31.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 59,
+      "auc": 0.6253,
+      "dpd_hard": 0.1797,
+      "w_adv": 0.0,
+      "wall_s": 23.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 60,
+      "auc": 0.6823,
+      "dpd_hard": 0.0714,
+      "w_adv": 0.0,
+      "wall_s": 20.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 61,
+      "auc": 0.6793,
+      "dpd_hard": 0.1619,
+      "w_adv": 0.0,
+      "wall_s": 21.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 63,
+      "auc": 0.6978,
+      "dpd_hard": 0.084,
+      "w_adv": 0.0,
+      "wall_s": 22.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 64,
+      "auc": 0.6278,
+      "dpd_hard": 0.1566,
+      "w_adv": 0.0,
+      "wall_s": 21.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 62,
+      "auc": 0.6836,
+      "dpd_hard": 0.0543,
+      "w_adv": 0.0,
+      "wall_s": 27.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 65,
+      "auc": 0.7254,
+      "dpd_hard": 0.0702,
+      "w_adv": 0.0,
+      "wall_s": 27.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 66,
+      "auc": 0.6203,
+      "dpd_hard": 0.0452,
+      "w_adv": 0.0,
+      "wall_s": 32.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 68,
+      "auc": 0.7467,
+      "dpd_hard": 0.0789,
+      "w_adv": 0.0,
+      "wall_s": 25.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 67,
+      "auc": 0.7534,
+      "dpd_hard": 0.0149,
+      "w_adv": 0.0,
+      "wall_s": 36.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 70,
+      "auc": 0.6975,
+      "dpd_hard": 0.1803,
+      "w_adv": 0.0,
+      "wall_s": 35.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 69,
+      "auc": 0.6269,
+      "dpd_hard": 0.116,
+      "w_adv": 0.0,
+      "wall_s": 37.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A1_fltrust",
+      "seed": 71,
+      "auc": 0.6483,
+      "dpd_hard": 0.0913,
+      "w_adv": 0.0,
+      "wall_s": 27.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 42,
+      "auc": 0.6519,
+      "dpd_hard": 0.0276,
+      "w_adv": 0.0,
+      "wall_s": 24.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 44,
+      "auc": 0.7536,
+      "dpd_hard": 0.089,
+      "w_adv": 0.0,
+      "wall_s": 30.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 43,
+      "auc": 0.7374,
+      "dpd_hard": 0.084,
+      "w_adv": 0.0,
+      "wall_s": 35.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 46,
+      "auc": 0.7834,
+      "dpd_hard": 0.0057,
+      "w_adv": 0.0,
+      "wall_s": 26.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 47,
+      "auc": 0.688,
+      "dpd_hard": 0.0714,
+      "w_adv": 0.0,
+      "wall_s": 24.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 45,
+      "auc": 0.6824,
+      "dpd_hard": 0.0652,
+      "w_adv": 0.0,
+      "wall_s": 32.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 48,
+      "auc": 0.6497,
+      "dpd_hard": 0.0783,
+      "w_adv": 0.0,
+      "wall_s": 31.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 50,
+      "auc": 0.671,
+      "dpd_hard": 0.1061,
+      "w_adv": 0.0,
+      "wall_s": 25.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 51,
+      "auc": 0.649,
+      "dpd_hard": 0.0884,
+      "w_adv": 0.0,
+      "wall_s": 23.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 49,
+      "auc": 0.6949,
+      "dpd_hard": 0.0447,
+      "w_adv": 0.0,
+      "wall_s": 30.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 52,
+      "auc": 0.6674,
+      "dpd_hard": 0.1887,
+      "w_adv": 0.0,
+      "wall_s": 23.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 53,
+      "auc": 0.6318,
+      "dpd_hard": 0.0565,
+      "w_adv": 0.0,
+      "wall_s": 33.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 54,
+      "auc": 0.7144,
+      "dpd_hard": 0.1806,
+      "w_adv": 0.0,
+      "wall_s": 25.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 56,
+      "auc": 0.7423,
+      "dpd_hard": 0.0506,
+      "w_adv": 0.0,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 55,
+      "auc": 0.655,
+      "dpd_hard": 0.0645,
+      "w_adv": 0.0,
+      "wall_s": 26.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 57,
+      "auc": 0.7789,
+      "dpd_hard": 0.0939,
+      "w_adv": 0.0,
+      "wall_s": 27.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 58,
+      "auc": 0.6613,
+      "dpd_hard": 0.0524,
+      "w_adv": 0.0,
+      "wall_s": 25.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 60,
+      "auc": 0.6837,
+      "dpd_hard": 0.0586,
+      "w_adv": 0.0,
+      "wall_s": 18.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 59,
+      "auc": 0.6253,
+      "dpd_hard": 0.1797,
+      "w_adv": 0.0,
+      "wall_s": 20.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 61,
+      "auc": 0.6758,
+      "dpd_hard": 0.1152,
+      "w_adv": 0.0,
+      "wall_s": 20.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 62,
+      "auc": 0.6837,
+      "dpd_hard": 0.0485,
+      "w_adv": 0.0,
+      "wall_s": 24.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 63,
+      "auc": 0.6978,
+      "dpd_hard": 0.0701,
+      "w_adv": 0.0,
+      "wall_s": 21.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 64,
+      "auc": 0.629,
+      "dpd_hard": 0.1441,
+      "w_adv": 0.0,
+      "wall_s": 19.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 65,
+      "auc": 0.7252,
+      "dpd_hard": 0.0645,
+      "w_adv": 0.0,
+      "wall_s": 20.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 66,
+      "auc": 0.621,
+      "dpd_hard": 0.0452,
+      "w_adv": 0.0,
+      "wall_s": 26.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 67,
+      "auc": 0.7534,
+      "dpd_hard": 0.0149,
+      "w_adv": 0.0,
+      "wall_s": 29.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 68,
+      "auc": 0.7489,
+      "dpd_hard": 0.096,
+      "w_adv": 0.0,
+      "wall_s": 20.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 71,
+      "auc": 0.6477,
+      "dpd_hard": 0.0913,
+      "w_adv": 0.0,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 70,
+      "auc": 0.6974,
+      "dpd_hard": 0.1863,
+      "w_adv": 0.0,
+      "wall_s": 30.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A2_fltrust_fair",
+      "seed": 69,
+      "auc": 0.6271,
+      "dpd_hard": 0.116,
+      "w_adv": 0.0,
+      "wall_s": 30.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 42,
+      "auc": 0.6156,
+      "dpd_hard": 0.0014,
+      "w_adv": 0.0,
+      "wall_s": 21.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 44,
+      "auc": 0.651,
+      "dpd_hard": 0.1092,
+      "w_adv": 0.0,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 43,
+      "auc": 0.5867,
+      "dpd_hard": 0.0679,
+      "w_adv": 0.0,
+      "wall_s": 29.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 46,
+      "auc": 0.739,
+      "dpd_hard": 0.0109,
+      "w_adv": 0.0,
+      "wall_s": 20.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 47,
+      "auc": 0.6788,
+      "dpd_hard": 0.069,
+      "w_adv": 0.0,
+      "wall_s": 20.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 45,
+      "auc": 0.6976,
+      "dpd_hard": 0.0244,
+      "w_adv": 0.0,
+      "wall_s": 26.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 48,
+      "auc": 0.5839,
+      "dpd_hard": 0.0704,
+      "w_adv": 0.0,
+      "wall_s": 27.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 49,
+      "auc": 0.6386,
+      "dpd_hard": 0.048,
+      "w_adv": 0.0,
+      "wall_s": 29.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 51,
+      "auc": 0.6741,
+      "dpd_hard": 0.093,
+      "w_adv": 0.0,
+      "wall_s": 22.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 52,
+      "auc": 0.6553,
+      "dpd_hard": 0.0999,
+      "w_adv": 0.0,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 50,
+      "auc": 0.6302,
+      "dpd_hard": 0.0947,
+      "w_adv": 0.0,
+      "wall_s": 26.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 53,
+      "auc": 0.6198,
+      "dpd_hard": 0.0562,
+      "w_adv": 0.0,
+      "wall_s": 32.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 54,
+      "auc": 0.709,
+      "dpd_hard": 0.0162,
+      "w_adv": 0.0,
+      "wall_s": 26.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 56,
+      "auc": 0.6724,
+      "dpd_hard": 0.0226,
+      "w_adv": 0.0,
+      "wall_s": 19.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 55,
+      "auc": 0.6651,
+      "dpd_hard": 0.1439,
+      "w_adv": 0.0,
+      "wall_s": 26.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 57,
+      "auc": 0.6901,
+      "dpd_hard": 0.0121,
+      "w_adv": 0.0,
+      "wall_s": 26.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 58,
+      "auc": 0.4978,
+      "dpd_hard": 0.0341,
+      "w_adv": 0.0,
+      "wall_s": 26.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 59,
+      "auc": 0.5646,
+      "dpd_hard": 0.0273,
+      "w_adv": 0.0,
+      "wall_s": 22.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 60,
+      "auc": 0.6264,
+      "dpd_hard": 0.1471,
+      "w_adv": 0.0,
+      "wall_s": 21.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 61,
+      "auc": 0.6252,
+      "dpd_hard": 0.092,
+      "w_adv": 0.0,
+      "wall_s": 22.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 64,
+      "auc": 0.6773,
+      "dpd_hard": 0.0301,
+      "w_adv": 0.0,
+      "wall_s": 23.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 63,
+      "auc": 0.6322,
+      "dpd_hard": 0.0126,
+      "w_adv": 0.0,
+      "wall_s": 24.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 62,
+      "auc": 0.5973,
+      "dpd_hard": 0.0542,
+      "w_adv": 0.0,
+      "wall_s": 29.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 65,
+      "auc": 0.6656,
+      "dpd_hard": 0.0822,
+      "w_adv": 0.0,
+      "wall_s": 26.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 66,
+      "auc": 0.6616,
+      "dpd_hard": 0.0563,
+      "w_adv": 0.0,
+      "wall_s": 30.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 68,
+      "auc": 0.6703,
+      "dpd_hard": 0.0023,
+      "w_adv": 0.0,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 67,
+      "auc": 0.7317,
+      "dpd_hard": 0.0466,
+      "w_adv": 0.0,
+      "wall_s": 34.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 71,
+      "auc": 0.5872,
+      "dpd_hard": 0.0595,
+      "w_adv": 0.0,
+      "wall_s": 22.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 69,
+      "auc": 0.6568,
+      "dpd_hard": 0.0051,
+      "w_adv": 0.0,
+      "wall_s": 34.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A3_fu_alpha0",
+      "seed": 70,
+      "auc": 0.6585,
+      "dpd_hard": 0.0627,
+      "w_adv": 0.0,
+      "wall_s": 32.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 42,
+      "auc": 0.6155,
+      "dpd_hard": 0.0231,
+      "w_adv": 0.0,
+      "wall_s": 23.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 44,
+      "auc": 0.64,
+      "dpd_hard": 0.0658,
+      "w_adv": 0.0,
+      "wall_s": 25.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 43,
+      "auc": 0.6156,
+      "dpd_hard": 0.0622,
+      "w_adv": 0.0,
+      "wall_s": 31.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 46,
+      "auc": 0.7294,
+      "dpd_hard": 0.059,
+      "w_adv": 0.0,
+      "wall_s": 21.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 47,
+      "auc": 0.6866,
+      "dpd_hard": 0.0874,
+      "w_adv": 0.0,
+      "wall_s": 21.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 45,
+      "auc": 0.6917,
+      "dpd_hard": 0.0012,
+      "w_adv": 0.0,
+      "wall_s": 29.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 48,
+      "auc": 0.5923,
+      "dpd_hard": 0.0755,
+      "w_adv": 0.0,
+      "wall_s": 31.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 51,
+      "auc": 0.677,
+      "dpd_hard": 0.079,
+      "w_adv": 0.0,
+      "wall_s": 24.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 52,
+      "auc": 0.6469,
+      "dpd_hard": 0.0476,
+      "w_adv": 0.0,
+      "wall_s": 25.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 49,
+      "auc": 0.6528,
+      "dpd_hard": 0.0599,
+      "w_adv": 0.0,
+      "wall_s": 32.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 50,
+      "auc": 0.6406,
+      "dpd_hard": 0.1351,
+      "w_adv": 0.0,
+      "wall_s": 28.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 54,
+      "auc": 0.7233,
+      "dpd_hard": 0.1379,
+      "w_adv": 0.0,
+      "wall_s": 27.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 53,
+      "auc": 0.6315,
+      "dpd_hard": 0.0384,
+      "w_adv": 0.0,
+      "wall_s": 35.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 56,
+      "auc": 0.6725,
+      "dpd_hard": 0.0316,
+      "w_adv": 0.0,
+      "wall_s": 21.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 55,
+      "auc": 0.6625,
+      "dpd_hard": 0.0983,
+      "w_adv": 0.0,
+      "wall_s": 28.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 58,
+      "auc": 0.5156,
+      "dpd_hard": 0.0005,
+      "w_adv": 0.0,
+      "wall_s": 27.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 57,
+      "auc": 0.6572,
+      "dpd_hard": 0.0395,
+      "w_adv": 0.0,
+      "wall_s": 28.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 59,
+      "auc": 0.5725,
+      "dpd_hard": 0.0646,
+      "w_adv": 0.0,
+      "wall_s": 22.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 60,
+      "auc": 0.6309,
+      "dpd_hard": 0.1471,
+      "w_adv": 0.0,
+      "wall_s": 23.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 61,
+      "auc": 0.6325,
+      "dpd_hard": 0.0361,
+      "w_adv": 0.0,
+      "wall_s": 24.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 64,
+      "auc": 0.6873,
+      "dpd_hard": 0.0007,
+      "w_adv": 0.0,
+      "wall_s": 25.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 63,
+      "auc": 0.6356,
+      "dpd_hard": 0.0012,
+      "w_adv": 0.0,
+      "wall_s": 26.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 62,
+      "auc": 0.6165,
+      "dpd_hard": 0.0008,
+      "w_adv": 0.0,
+      "wall_s": 31.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 65,
+      "auc": 0.6632,
+      "dpd_hard": 0.0722,
+      "w_adv": 0.0,
+      "wall_s": 26.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 66,
+      "auc": 0.6906,
+      "dpd_hard": 0.0338,
+      "w_adv": 0.0,
+      "wall_s": 31.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 68,
+      "auc": 0.6732,
+      "dpd_hard": 0.0464,
+      "w_adv": 0.0,
+      "wall_s": 20.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 67,
+      "auc": 0.7317,
+      "dpd_hard": 0.0061,
+      "w_adv": 0.0,
+      "wall_s": 30.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 71,
+      "auc": 0.5833,
+      "dpd_hard": 0.0325,
+      "w_adv": 0.0,
+      "wall_s": 22.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 69,
+      "auc": 0.667,
+      "dpd_hard": 0.0226,
+      "w_adv": 0.0,
+      "wall_s": 30.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 42,
+      "auc": 0.6586,
+      "dpd_hard": 0.0341,
+      "w_adv": 0.2078,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "clean",
+      "arm": "A4_fu_shapley",
+      "seed": 70,
+      "auc": 0.6541,
+      "dpd_hard": 0.0627,
+      "w_adv": 0.0,
+      "wall_s": 29.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 43,
+      "auc": 0.6776,
+      "dpd_hard": 0.3103,
+      "w_adv": 0.2557,
+      "wall_s": 22.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 44,
+      "auc": 0.6158,
+      "dpd_hard": 0.4743,
+      "w_adv": 0.478,
+      "wall_s": 23.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 46,
+      "auc": 0.7317,
+      "dpd_hard": 0.1699,
+      "w_adv": 0.3392,
+      "wall_s": 19.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 47,
+      "auc": 0.7032,
+      "dpd_hard": 0.0967,
+      "w_adv": 0.1846,
+      "wall_s": 19.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 45,
+      "auc": 0.6772,
+      "dpd_hard": 0.0488,
+      "w_adv": 0.2713,
+      "wall_s": 25.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 48,
+      "auc": 0.6999,
+      "dpd_hard": 0.2859,
+      "w_adv": 0.5975,
+      "wall_s": 28.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 50,
+      "auc": 0.6748,
+      "dpd_hard": 0.0513,
+      "w_adv": 0.1877,
+      "wall_s": 24.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 49,
+      "auc": 0.6988,
+      "dpd_hard": 0.0655,
+      "w_adv": 0.106,
+      "wall_s": 29.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 51,
+      "auc": 0.6648,
+      "dpd_hard": 0.0453,
+      "w_adv": 0.1642,
+      "wall_s": 21.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 52,
+      "auc": 0.623,
+      "dpd_hard": 0.3564,
+      "w_adv": 0.3141,
+      "wall_s": 22.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 54,
+      "auc": 0.729,
+      "dpd_hard": 0.1273,
+      "w_adv": 0.0608,
+      "wall_s": 24.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 53,
+      "auc": 0.6299,
+      "dpd_hard": 0.0554,
+      "w_adv": 0.1312,
+      "wall_s": 32.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 56,
+      "auc": 0.7482,
+      "dpd_hard": 0.2206,
+      "w_adv": 0.3248,
+      "wall_s": 20.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 55,
+      "auc": 0.6331,
+      "dpd_hard": 0.081,
+      "w_adv": 0.1225,
+      "wall_s": 26.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 57,
+      "auc": 0.7891,
+      "dpd_hard": 0.0318,
+      "w_adv": 0.2298,
+      "wall_s": 21.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 58,
+      "auc": 0.6348,
+      "dpd_hard": 0.3689,
+      "w_adv": 0.4731,
+      "wall_s": 25.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 60,
+      "auc": 0.6478,
+      "dpd_hard": 0.1814,
+      "w_adv": 0.2515,
+      "wall_s": 19.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 59,
+      "auc": 0.5909,
+      "dpd_hard": 0.4826,
+      "w_adv": 0.3307,
+      "wall_s": 21.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 61,
+      "auc": 0.6576,
+      "dpd_hard": 0.0722,
+      "w_adv": 0.05,
+      "wall_s": 21.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 63,
+      "auc": 0.685,
+      "dpd_hard": 0.1514,
+      "w_adv": 0.1893,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 62,
+      "auc": 0.7131,
+      "dpd_hard": 0.1986,
+      "w_adv": 0.2555,
+      "wall_s": 28.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 64,
+      "auc": 0.6559,
+      "dpd_hard": 0.4206,
+      "w_adv": 0.3936,
+      "wall_s": 22.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 65,
+      "auc": 0.7242,
+      "dpd_hard": 0.1442,
+      "w_adv": 0.2657,
+      "wall_s": 26.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 66,
+      "auc": 0.5961,
+      "dpd_hard": 0.1355,
+      "w_adv": 0.165,
+      "wall_s": 31.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 68,
+      "auc": 0.7003,
+      "dpd_hard": 0.4272,
+      "w_adv": 0.3782,
+      "wall_s": 24.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 67,
+      "auc": 0.7181,
+      "dpd_hard": 0.1132,
+      "w_adv": 0.2251,
+      "wall_s": 33.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 70,
+      "auc": 0.694,
+      "dpd_hard": 0.2169,
+      "w_adv": 0.3134,
+      "wall_s": 31.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 71,
+      "auc": 0.6475,
+      "dpd_hard": 0.1516,
+      "w_adv": 0.1659,
+      "wall_s": 21.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A1_fltrust",
+      "seed": 69,
+      "auc": 0.6385,
+      "dpd_hard": 0.2731,
+      "w_adv": 0.2637,
+      "wall_s": 32.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 42,
+      "auc": 0.6571,
+      "dpd_hard": 0.001,
+      "w_adv": 0.1998,
+      "wall_s": 21.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 43,
+      "auc": 0.6798,
+      "dpd_hard": 0.2853,
+      "w_adv": 0.2459,
+      "wall_s": 24.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 44,
+      "auc": 0.6208,
+      "dpd_hard": 0.4252,
+      "w_adv": 0.4659,
+      "wall_s": 24.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 46,
+      "auc": 0.7333,
+      "dpd_hard": 0.1571,
+      "w_adv": 0.3267,
+      "wall_s": 19.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 47,
+      "auc": 0.7081,
+      "dpd_hard": 0.1214,
+      "w_adv": 0.1709,
+      "wall_s": 20.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 45,
+      "auc": 0.6815,
+      "dpd_hard": 0.0128,
+      "w_adv": 0.2543,
+      "wall_s": 27.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 48,
+      "auc": 0.7029,
+      "dpd_hard": 0.2859,
+      "w_adv": 0.5893,
+      "wall_s": 29.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 49,
+      "auc": 0.7015,
+      "dpd_hard": 0.0592,
+      "w_adv": 0.0872,
+      "wall_s": 31.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 51,
+      "auc": 0.6653,
+      "dpd_hard": 0.0511,
+      "w_adv": 0.1635,
+      "wall_s": 22.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 52,
+      "auc": 0.6248,
+      "dpd_hard": 0.3564,
+      "w_adv": 0.3072,
+      "wall_s": 23.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 50,
+      "auc": 0.6809,
+      "dpd_hard": 0.0455,
+      "w_adv": 0.2074,
+      "wall_s": 26.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 54,
+      "auc": 0.7289,
+      "dpd_hard": 0.133,
+      "w_adv": 0.0603,
+      "wall_s": 26.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 53,
+      "auc": 0.6269,
+      "dpd_hard": 0.0495,
+      "w_adv": 0.1185,
+      "wall_s": 34.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 56,
+      "auc": 0.7479,
+      "dpd_hard": 0.2206,
+      "w_adv": 0.3159,
+      "wall_s": 22.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 57,
+      "auc": 0.789,
+      "dpd_hard": 0.0318,
+      "w_adv": 0.2221,
+      "wall_s": 23.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 55,
+      "auc": 0.6346,
+      "dpd_hard": 0.099,
+      "w_adv": 0.1234,
+      "wall_s": 29.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 58,
+      "auc": 0.6367,
+      "dpd_hard": 0.3429,
+      "w_adv": 0.4573,
+      "wall_s": 29.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 60,
+      "auc": 0.6453,
+      "dpd_hard": 0.1756,
+      "w_adv": 0.2505,
+      "wall_s": 25.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 59,
+      "auc": 0.5998,
+      "dpd_hard": 0.4826,
+      "w_adv": 0.3235,
+      "wall_s": 27.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 61,
+      "auc": 0.6571,
+      "dpd_hard": 0.0722,
+      "w_adv": 0.0507,
+      "wall_s": 28.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 63,
+      "auc": 0.6819,
+      "dpd_hard": 0.1428,
+      "w_adv": 0.178,
+      "wall_s": 25.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 64,
+      "auc": 0.6565,
+      "dpd_hard": 0.4147,
+      "w_adv": 0.3977,
+      "wall_s": 26.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 62,
+      "auc": 0.7137,
+      "dpd_hard": 0.1986,
+      "w_adv": 0.2561,
+      "wall_s": 33.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 65,
+      "auc": 0.7242,
+      "dpd_hard": 0.1442,
+      "w_adv": 0.2654,
+      "wall_s": 24.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 68,
+      "auc": 0.7061,
+      "dpd_hard": 0.3945,
+      "w_adv": 0.3599,
+      "wall_s": 23.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 66,
+      "auc": 0.5813,
+      "dpd_hard": 0.1054,
+      "w_adv": 0.1177,
+      "wall_s": 30.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 67,
+      "auc": 0.7137,
+      "dpd_hard": 0.0749,
+      "w_adv": 0.2378,
+      "wall_s": 34.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 70,
+      "auc": 0.7016,
+      "dpd_hard": 0.2112,
+      "w_adv": 0.3015,
+      "wall_s": 31.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 69,
+      "auc": 0.6421,
+      "dpd_hard": 0.2552,
+      "w_adv": 0.2641,
+      "wall_s": 33.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A2_fltrust_fair",
+      "seed": 71,
+      "auc": 0.6558,
+      "dpd_hard": 0.1778,
+      "w_adv": 0.2302,
+      "wall_s": 23.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 42,
+      "auc": 0.6306,
+      "dpd_hard": 0.0307,
+      "w_adv": 0.0,
+      "wall_s": 20.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 43,
+      "auc": 0.5956,
+      "dpd_hard": 0.0234,
+      "w_adv": 0.0,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 44,
+      "auc": 0.6438,
+      "dpd_hard": 0.148,
+      "w_adv": 0.2269,
+      "wall_s": 25.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 46,
+      "auc": 0.7086,
+      "dpd_hard": 0.0429,
+      "w_adv": 0.1776,
+      "wall_s": 22.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 47,
+      "auc": 0.5829,
+      "dpd_hard": 0.0459,
+      "w_adv": 0.0541,
+      "wall_s": 21.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 45,
+      "auc": 0.6517,
+      "dpd_hard": 0.0179,
+      "w_adv": 0.0883,
+      "wall_s": 27.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 48,
+      "auc": 0.5951,
+      "dpd_hard": 0.0478,
+      "w_adv": 0.0,
+      "wall_s": 30.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 49,
+      "auc": 0.6308,
+      "dpd_hard": 0.0318,
+      "w_adv": 0.0251,
+      "wall_s": 31.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 51,
+      "auc": 0.6555,
+      "dpd_hard": 0.0684,
+      "w_adv": 0.0412,
+      "wall_s": 20.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 50,
+      "auc": 0.6427,
+      "dpd_hard": 0.1308,
+      "w_adv": 0.0031,
+      "wall_s": 24.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 52,
+      "auc": 0.6395,
+      "dpd_hard": 0.0487,
+      "w_adv": 0.0,
+      "wall_s": 21.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 53,
+      "auc": 0.6239,
+      "dpd_hard": 0.1159,
+      "w_adv": 0.0111,
+      "wall_s": 32.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 54,
+      "auc": 0.7112,
+      "dpd_hard": 0.0742,
+      "w_adv": 0.0,
+      "wall_s": 25.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 56,
+      "auc": 0.7021,
+      "dpd_hard": 0.1184,
+      "w_adv": 0.0659,
+      "wall_s": 23.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 57,
+      "auc": 0.6926,
+      "dpd_hard": 0.2255,
+      "w_adv": 0.0487,
+      "wall_s": 25.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 55,
+      "auc": 0.5713,
+      "dpd_hard": 0.0493,
+      "w_adv": 0.1008,
+      "wall_s": 29.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 58,
+      "auc": 0.4677,
+      "dpd_hard": 0.1252,
+      "w_adv": 0.1911,
+      "wall_s": 30.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 60,
+      "auc": 0.6221,
+      "dpd_hard": 0.0335,
+      "w_adv": 0.1256,
+      "wall_s": 25.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 59,
+      "auc": 0.5427,
+      "dpd_hard": 0.0321,
+      "w_adv": 0.1385,
+      "wall_s": 28.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 61,
+      "auc": 0.6258,
+      "dpd_hard": 0.1093,
+      "w_adv": 0.0,
+      "wall_s": 26.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 63,
+      "auc": 0.5419,
+      "dpd_hard": 0.1453,
+      "w_adv": 0.0,
+      "wall_s": 24.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 64,
+      "auc": 0.6722,
+      "dpd_hard": 0.0162,
+      "w_adv": 0.0,
+      "wall_s": 23.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 62,
+      "auc": 0.6398,
+      "dpd_hard": 0.0946,
+      "w_adv": 0.0,
+      "wall_s": 31.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 65,
+      "auc": 0.6677,
+      "dpd_hard": 0.0994,
+      "w_adv": 0.1028,
+      "wall_s": 22.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 68,
+      "auc": 0.6729,
+      "dpd_hard": 0.0183,
+      "w_adv": 0.0236,
+      "wall_s": 20.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 66,
+      "auc": 0.6432,
+      "dpd_hard": 0.0454,
+      "w_adv": 0.1489,
+      "wall_s": 27.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 67,
+      "auc": 0.7274,
+      "dpd_hard": 0.0487,
+      "w_adv": 0.1139,
+      "wall_s": 31.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 69,
+      "auc": 0.675,
+      "dpd_hard": 0.0229,
+      "w_adv": 0.1118,
+      "wall_s": 30.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 71,
+      "auc": 0.6066,
+      "dpd_hard": 0.1183,
+      "w_adv": 0.0378,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A3_fu_alpha0",
+      "seed": 70,
+      "auc": 0.7167,
+      "dpd_hard": 0.0598,
+      "w_adv": 0.1329,
+      "wall_s": 30.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 42,
+      "auc": 0.6229,
+      "dpd_hard": 0.0307,
+      "w_adv": 0.0,
+      "wall_s": 19.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 43,
+      "auc": 0.5906,
+      "dpd_hard": 0.0218,
+      "w_adv": 0.0,
+      "wall_s": 23.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 44,
+      "auc": 0.6356,
+      "dpd_hard": 0.1841,
+      "w_adv": 0.2249,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 46,
+      "auc": 0.6923,
+      "dpd_hard": 0.0487,
+      "w_adv": 0.1754,
+      "wall_s": 17.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 47,
+      "auc": 0.6143,
+      "dpd_hard": 0.1003,
+      "w_adv": 0.0524,
+      "wall_s": 19.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 45,
+      "auc": 0.6632,
+      "dpd_hard": 0.0515,
+      "w_adv": 0.0709,
+      "wall_s": 25.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 48,
+      "auc": 0.6067,
+      "dpd_hard": 0.1008,
+      "w_adv": 0.0,
+      "wall_s": 28.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 49,
+      "auc": 0.6418,
+      "dpd_hard": 0.087,
+      "w_adv": 0.0222,
+      "wall_s": 30.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 51,
+      "auc": 0.6664,
+      "dpd_hard": 0.0638,
+      "w_adv": 0.037,
+      "wall_s": 21.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 50,
+      "auc": 0.6753,
+      "dpd_hard": 0.1063,
+      "w_adv": 0.005,
+      "wall_s": 25.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 52,
+      "auc": 0.6535,
+      "dpd_hard": 0.0334,
+      "w_adv": 0.0,
+      "wall_s": 23.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 54,
+      "auc": 0.7065,
+      "dpd_hard": 0.0057,
+      "w_adv": 0.0,
+      "wall_s": 26.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 53,
+      "auc": 0.6088,
+      "dpd_hard": 0.0793,
+      "w_adv": 0.0051,
+      "wall_s": 33.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 56,
+      "auc": 0.6588,
+      "dpd_hard": 0.0886,
+      "w_adv": 0.0646,
+      "wall_s": 21.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 57,
+      "auc": 0.6844,
+      "dpd_hard": 0.2002,
+      "w_adv": 0.0469,
+      "wall_s": 23.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 55,
+      "auc": 0.5955,
+      "dpd_hard": 0.0404,
+      "w_adv": 0.1093,
+      "wall_s": 29.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 58,
+      "auc": 0.4747,
+      "dpd_hard": 0.1566,
+      "w_adv": 0.1824,
+      "wall_s": 27.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 59,
+      "auc": 0.5646,
+      "dpd_hard": 0.0139,
+      "w_adv": 0.1363,
+      "wall_s": 21.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 60,
+      "auc": 0.6299,
+      "dpd_hard": 0.1069,
+      "w_adv": 0.1265,
+      "wall_s": 20.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 61,
+      "auc": 0.626,
+      "dpd_hard": 0.0965,
+      "w_adv": 0.0,
+      "wall_s": 20.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 63,
+      "auc": 0.5963,
+      "dpd_hard": 0.0652,
+      "w_adv": 0.0,
+      "wall_s": 19.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 64,
+      "auc": 0.6749,
+      "dpd_hard": 0.0132,
+      "w_adv": 0.0,
+      "wall_s": 20.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 62,
+      "auc": 0.6536,
+      "dpd_hard": 0.0974,
+      "w_adv": 0.0,
+      "wall_s": 26.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 65,
+      "auc": 0.675,
+      "dpd_hard": 0.1448,
+      "w_adv": 0.1019,
+      "wall_s": 22.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 68,
+      "auc": 0.6831,
+      "dpd_hard": 0.0187,
+      "w_adv": 0.0236,
+      "wall_s": 20.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 66,
+      "auc": 0.6636,
+      "dpd_hard": 0.0093,
+      "w_adv": 0.1439,
+      "wall_s": 27.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 67,
+      "auc": 0.7205,
+      "dpd_hard": 0.0423,
+      "w_adv": 0.1071,
+      "wall_s": 29.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 70,
+      "auc": 0.707,
+      "dpd_hard": 0.0399,
+      "w_adv": 0.132,
+      "wall_s": 29.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 69,
+      "auc": 0.688,
+      "dpd_hard": 0.0473,
+      "w_adv": 0.108,
+      "wall_s": 30.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "poison_honest",
+      "arm": "A4_fu_shapley",
+      "seed": 71,
+      "auc": 0.5684,
+      "dpd_hard": 0.0651,
+      "w_adv": 0.0144,
+      "wall_s": 20.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 42,
+      "auc": 0.6586,
+      "dpd_hard": 0.0341,
+      "w_adv": 0.2078,
+      "wall_s": 19.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 43,
+      "auc": 0.6776,
+      "dpd_hard": 0.3103,
+      "w_adv": 0.2557,
+      "wall_s": 23.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 44,
+      "auc": 0.6158,
+      "dpd_hard": 0.4743,
+      "w_adv": 0.478,
+      "wall_s": 24.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 47,
+      "auc": 0.7032,
+      "dpd_hard": 0.0967,
+      "w_adv": 0.1846,
+      "wall_s": 18.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 46,
+      "auc": 0.7317,
+      "dpd_hard": 0.1699,
+      "w_adv": 0.3392,
+      "wall_s": 20.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 45,
+      "auc": 0.6772,
+      "dpd_hard": 0.0488,
+      "w_adv": 0.2713,
+      "wall_s": 25.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 48,
+      "auc": 0.6999,
+      "dpd_hard": 0.2859,
+      "w_adv": 0.5975,
+      "wall_s": 27.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 49,
+      "auc": 0.6988,
+      "dpd_hard": 0.0655,
+      "w_adv": 0.106,
+      "wall_s": 29.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 50,
+      "auc": 0.6748,
+      "dpd_hard": 0.0513,
+      "w_adv": 0.1877,
+      "wall_s": 24.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 51,
+      "auc": 0.6648,
+      "dpd_hard": 0.0453,
+      "w_adv": 0.1642,
+      "wall_s": 21.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 52,
+      "auc": 0.623,
+      "dpd_hard": 0.3564,
+      "w_adv": 0.3141,
+      "wall_s": 24.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 53,
+      "auc": 0.6299,
+      "dpd_hard": 0.0554,
+      "w_adv": 0.1312,
+      "wall_s": 35.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 54,
+      "auc": 0.729,
+      "dpd_hard": 0.1273,
+      "w_adv": 0.0608,
+      "wall_s": 27.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 56,
+      "auc": 0.7482,
+      "dpd_hard": 0.2206,
+      "w_adv": 0.3248,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 57,
+      "auc": 0.7891,
+      "dpd_hard": 0.0318,
+      "w_adv": 0.2298,
+      "wall_s": 24.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 55,
+      "auc": 0.6331,
+      "dpd_hard": 0.081,
+      "w_adv": 0.1225,
+      "wall_s": 30.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 58,
+      "auc": 0.6348,
+      "dpd_hard": 0.3689,
+      "w_adv": 0.4731,
+      "wall_s": 28.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 60,
+      "auc": 0.6478,
+      "dpd_hard": 0.1814,
+      "w_adv": 0.2515,
+      "wall_s": 18.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 59,
+      "auc": 0.5909,
+      "dpd_hard": 0.4826,
+      "w_adv": 0.3307,
+      "wall_s": 21.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 61,
+      "auc": 0.6576,
+      "dpd_hard": 0.0722,
+      "w_adv": 0.05,
+      "wall_s": 19.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 63,
+      "auc": 0.685,
+      "dpd_hard": 0.1514,
+      "w_adv": 0.1893,
+      "wall_s": 18.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 62,
+      "auc": 0.7131,
+      "dpd_hard": 0.1986,
+      "w_adv": 0.2555,
+      "wall_s": 25.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 64,
+      "auc": 0.6559,
+      "dpd_hard": 0.4206,
+      "w_adv": 0.3936,
+      "wall_s": 20.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 65,
+      "auc": 0.7242,
+      "dpd_hard": 0.1442,
+      "w_adv": 0.2657,
+      "wall_s": 21.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 68,
+      "auc": 0.7003,
+      "dpd_hard": 0.4272,
+      "w_adv": 0.3782,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 66,
+      "auc": 0.5961,
+      "dpd_hard": 0.1355,
+      "w_adv": 0.165,
+      "wall_s": 27.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 67,
+      "auc": 0.7181,
+      "dpd_hard": 0.1132,
+      "w_adv": 0.2251,
+      "wall_s": 30.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 71,
+      "auc": 0.6475,
+      "dpd_hard": 0.1516,
+      "w_adv": 0.1659,
+      "wall_s": 20.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 69,
+      "auc": 0.6385,
+      "dpd_hard": 0.2731,
+      "w_adv": 0.2637,
+      "wall_s": 30.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A1_fltrust",
+      "seed": 70,
+      "auc": 0.694,
+      "dpd_hard": 0.2169,
+      "w_adv": 0.3134,
+      "wall_s": 30.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 42,
+      "auc": 0.6571,
+      "dpd_hard": 0.001,
+      "w_adv": 0.1998,
+      "wall_s": 19.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 43,
+      "auc": 0.6798,
+      "dpd_hard": 0.2853,
+      "w_adv": 0.2459,
+      "wall_s": 23.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 44,
+      "auc": 0.6208,
+      "dpd_hard": 0.4252,
+      "w_adv": 0.4659,
+      "wall_s": 23.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 46,
+      "auc": 0.7333,
+      "dpd_hard": 0.1571,
+      "w_adv": 0.3267,
+      "wall_s": 19.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 47,
+      "auc": 0.7081,
+      "dpd_hard": 0.1214,
+      "w_adv": 0.1709,
+      "wall_s": 20.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 45,
+      "auc": 0.6815,
+      "dpd_hard": 0.0128,
+      "w_adv": 0.2543,
+      "wall_s": 24.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 48,
+      "auc": 0.7029,
+      "dpd_hard": 0.2859,
+      "w_adv": 0.5893,
+      "wall_s": 28.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 50,
+      "auc": 0.6809,
+      "dpd_hard": 0.0455,
+      "w_adv": 0.2074,
+      "wall_s": 25.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 49,
+      "auc": 0.7015,
+      "dpd_hard": 0.0592,
+      "w_adv": 0.0872,
+      "wall_s": 30.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 51,
+      "auc": 0.6653,
+      "dpd_hard": 0.0511,
+      "w_adv": 0.1635,
+      "wall_s": 23.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 52,
+      "auc": 0.6248,
+      "dpd_hard": 0.3564,
+      "w_adv": 0.3072,
+      "wall_s": 23.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 53,
+      "auc": 0.6269,
+      "dpd_hard": 0.0495,
+      "w_adv": 0.1185,
+      "wall_s": 34.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 54,
+      "auc": 0.7289,
+      "dpd_hard": 0.133,
+      "w_adv": 0.0603,
+      "wall_s": 27.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 56,
+      "auc": 0.7479,
+      "dpd_hard": 0.2206,
+      "w_adv": 0.3159,
+      "wall_s": 23.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 57,
+      "auc": 0.789,
+      "dpd_hard": 0.0318,
+      "w_adv": 0.2221,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 55,
+      "auc": 0.6346,
+      "dpd_hard": 0.099,
+      "w_adv": 0.1234,
+      "wall_s": 28.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 58,
+      "auc": 0.6367,
+      "dpd_hard": 0.3429,
+      "w_adv": 0.4573,
+      "wall_s": 26.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 60,
+      "auc": 0.6453,
+      "dpd_hard": 0.1756,
+      "w_adv": 0.2505,
+      "wall_s": 18.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 59,
+      "auc": 0.5998,
+      "dpd_hard": 0.4826,
+      "w_adv": 0.3235,
+      "wall_s": 22.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 61,
+      "auc": 0.6571,
+      "dpd_hard": 0.0722,
+      "w_adv": 0.0507,
+      "wall_s": 20.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 63,
+      "auc": 0.6819,
+      "dpd_hard": 0.1428,
+      "w_adv": 0.178,
+      "wall_s": 19.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 64,
+      "auc": 0.6565,
+      "dpd_hard": 0.4147,
+      "w_adv": 0.3977,
+      "wall_s": 18.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 62,
+      "auc": 0.7137,
+      "dpd_hard": 0.1986,
+      "w_adv": 0.2561,
+      "wall_s": 25.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 65,
+      "auc": 0.7242,
+      "dpd_hard": 0.1442,
+      "w_adv": 0.2654,
+      "wall_s": 21.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 68,
+      "auc": 0.7061,
+      "dpd_hard": 0.3945,
+      "w_adv": 0.3599,
+      "wall_s": 18.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 66,
+      "auc": 0.5813,
+      "dpd_hard": 0.1054,
+      "w_adv": 0.1177,
+      "wall_s": 25.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 67,
+      "auc": 0.7137,
+      "dpd_hard": 0.0749,
+      "w_adv": 0.2378,
+      "wall_s": 28.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 70,
+      "auc": 0.7016,
+      "dpd_hard": 0.2112,
+      "w_adv": 0.3015,
+      "wall_s": 27.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 69,
+      "auc": 0.6421,
+      "dpd_hard": 0.2552,
+      "w_adv": 0.2641,
+      "wall_s": 28.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A2_fltrust_fair",
+      "seed": 71,
+      "auc": 0.6558,
+      "dpd_hard": 0.1778,
+      "w_adv": 0.2302,
+      "wall_s": 19.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 42,
+      "auc": 0.6306,
+      "dpd_hard": 0.0307,
+      "w_adv": 0.0,
+      "wall_s": 18.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 43,
+      "auc": 0.5956,
+      "dpd_hard": 0.0234,
+      "w_adv": 0.0,
+      "wall_s": 22.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 44,
+      "auc": 0.6438,
+      "dpd_hard": 0.148,
+      "w_adv": 0.2269,
+      "wall_s": 23.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 46,
+      "auc": 0.7086,
+      "dpd_hard": 0.0429,
+      "w_adv": 0.1776,
+      "wall_s": 19.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 47,
+      "auc": 0.5829,
+      "dpd_hard": 0.0459,
+      "w_adv": 0.0541,
+      "wall_s": 18.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 45,
+      "auc": 0.6517,
+      "dpd_hard": 0.0179,
+      "w_adv": 0.0883,
+      "wall_s": 24.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 48,
+      "auc": 0.5951,
+      "dpd_hard": 0.0478,
+      "w_adv": 0.0,
+      "wall_s": 27.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 49,
+      "auc": 0.6308,
+      "dpd_hard": 0.0318,
+      "w_adv": 0.0251,
+      "wall_s": 28.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 51,
+      "auc": 0.6555,
+      "dpd_hard": 0.0684,
+      "w_adv": 0.0412,
+      "wall_s": 20.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 50,
+      "auc": 0.6427,
+      "dpd_hard": 0.1308,
+      "w_adv": 0.0031,
+      "wall_s": 23.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 52,
+      "auc": 0.6395,
+      "dpd_hard": 0.0487,
+      "w_adv": 0.0,
+      "wall_s": 21.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 53,
+      "auc": 0.6239,
+      "dpd_hard": 0.1159,
+      "w_adv": 0.0111,
+      "wall_s": 30.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 54,
+      "auc": 0.7112,
+      "dpd_hard": 0.0742,
+      "w_adv": 0.0,
+      "wall_s": 23.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 56,
+      "auc": 0.7021,
+      "dpd_hard": 0.1184,
+      "w_adv": 0.0659,
+      "wall_s": 19.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 57,
+      "auc": 0.6926,
+      "dpd_hard": 0.2255,
+      "w_adv": 0.0487,
+      "wall_s": 21.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 55,
+      "auc": 0.5713,
+      "dpd_hard": 0.0493,
+      "w_adv": 0.1008,
+      "wall_s": 26.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 58,
+      "auc": 0.4677,
+      "dpd_hard": 0.1252,
+      "w_adv": 0.1911,
+      "wall_s": 25.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 60,
+      "auc": 0.6221,
+      "dpd_hard": 0.0335,
+      "w_adv": 0.1256,
+      "wall_s": 17.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 59,
+      "auc": 0.5427,
+      "dpd_hard": 0.0321,
+      "w_adv": 0.1385,
+      "wall_s": 20.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 61,
+      "auc": 0.6258,
+      "dpd_hard": 0.1093,
+      "w_adv": 0.0,
+      "wall_s": 18.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 63,
+      "auc": 0.5419,
+      "dpd_hard": 0.1453,
+      "w_adv": 0.0,
+      "wall_s": 17.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 64,
+      "auc": 0.6722,
+      "dpd_hard": 0.0162,
+      "w_adv": 0.0,
+      "wall_s": 18.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 62,
+      "auc": 0.6398,
+      "dpd_hard": 0.0946,
+      "w_adv": 0.0,
+      "wall_s": 23.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 65,
+      "auc": 0.6677,
+      "dpd_hard": 0.0994,
+      "w_adv": 0.1028,
+      "wall_s": 19.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 68,
+      "auc": 0.6729,
+      "dpd_hard": 0.0183,
+      "w_adv": 0.0236,
+      "wall_s": 18.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 66,
+      "auc": 0.6432,
+      "dpd_hard": 0.0454,
+      "w_adv": 0.1489,
+      "wall_s": 24.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 67,
+      "auc": 0.7274,
+      "dpd_hard": 0.0487,
+      "w_adv": 0.1139,
+      "wall_s": 27.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 69,
+      "auc": 0.675,
+      "dpd_hard": 0.0229,
+      "w_adv": 0.1118,
+      "wall_s": 26.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 71,
+      "auc": 0.6066,
+      "dpd_hard": 0.1183,
+      "w_adv": 0.0378,
+      "wall_s": 18.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A3_fu_alpha0",
+      "seed": 70,
+      "auc": 0.7167,
+      "dpd_hard": 0.0598,
+      "w_adv": 0.1329,
+      "wall_s": 26.7
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 42,
+      "auc": 0.6229,
+      "dpd_hard": 0.0307,
+      "w_adv": 0.0,
+      "wall_s": 17.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 43,
+      "auc": 0.5906,
+      "dpd_hard": 0.0218,
+      "w_adv": 0.0,
+      "wall_s": 21.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 44,
+      "auc": 0.6356,
+      "dpd_hard": 0.1841,
+      "w_adv": 0.2249,
+      "wall_s": 22.4
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 46,
+      "auc": 0.6923,
+      "dpd_hard": 0.0487,
+      "w_adv": 0.1754,
+      "wall_s": 17.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 47,
+      "auc": 0.6143,
+      "dpd_hard": 0.1003,
+      "w_adv": 0.0524,
+      "wall_s": 19.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 45,
+      "auc": 0.6632,
+      "dpd_hard": 0.0515,
+      "w_adv": 0.0709,
+      "wall_s": 24.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 48,
+      "auc": 0.6067,
+      "dpd_hard": 0.1008,
+      "w_adv": 0.0,
+      "wall_s": 26.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 51,
+      "auc": 0.6664,
+      "dpd_hard": 0.0638,
+      "w_adv": 0.037,
+      "wall_s": 20.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 49,
+      "auc": 0.6418,
+      "dpd_hard": 0.087,
+      "w_adv": 0.0222,
+      "wall_s": 28.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 50,
+      "auc": 0.6753,
+      "dpd_hard": 0.1063,
+      "w_adv": 0.005,
+      "wall_s": 24.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 52,
+      "auc": 0.6535,
+      "dpd_hard": 0.0334,
+      "w_adv": 0.0,
+      "wall_s": 23.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 53,
+      "auc": 0.6088,
+      "dpd_hard": 0.0793,
+      "w_adv": 0.0051,
+      "wall_s": 41.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 54,
+      "auc": 0.7065,
+      "dpd_hard": 0.0057,
+      "w_adv": 0.0,
+      "wall_s": 33.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 56,
+      "auc": 0.6588,
+      "dpd_hard": 0.0886,
+      "w_adv": 0.0646,
+      "wall_s": 35.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 57,
+      "auc": 0.6844,
+      "dpd_hard": 0.2002,
+      "w_adv": 0.0469,
+      "wall_s": 36.9
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 55,
+      "auc": 0.5955,
+      "dpd_hard": 0.0404,
+      "w_adv": 0.1093,
+      "wall_s": 42.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 58,
+      "auc": 0.4747,
+      "dpd_hard": 0.1566,
+      "w_adv": 0.1824,
+      "wall_s": 41.0
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 60,
+      "auc": 0.6299,
+      "dpd_hard": 0.1069,
+      "w_adv": 0.1265,
+      "wall_s": 25.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 59,
+      "auc": 0.5646,
+      "dpd_hard": 0.0139,
+      "w_adv": 0.1363,
+      "wall_s": 27.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 61,
+      "auc": 0.626,
+      "dpd_hard": 0.0965,
+      "w_adv": 0.0,
+      "wall_s": 22.3
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 63,
+      "auc": 0.5963,
+      "dpd_hard": 0.0652,
+      "w_adv": 0.0,
+      "wall_s": 18.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 62,
+      "auc": 0.6536,
+      "dpd_hard": 0.0974,
+      "w_adv": 0.0,
+      "wall_s": 26.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 64,
+      "auc": 0.6749,
+      "dpd_hard": 0.0132,
+      "w_adv": 0.0,
+      "wall_s": 19.5
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 65,
+      "auc": 0.675,
+      "dpd_hard": 0.1448,
+      "w_adv": 0.1019,
+      "wall_s": 20.8
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 68,
+      "auc": 0.6831,
+      "dpd_hard": 0.0187,
+      "w_adv": 0.0236,
+      "wall_s": 18.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 66,
+      "auc": 0.6636,
+      "dpd_hard": 0.0093,
+      "w_adv": 0.1439,
+      "wall_s": 25.2
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 67,
+      "auc": 0.7205,
+      "dpd_hard": 0.0423,
+      "w_adv": 0.1071,
+      "wall_s": 30.6
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 71,
+      "auc": 0.5684,
+      "dpd_hard": 0.0651,
+      "w_adv": 0.0144,
+      "wall_s": 26.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 69,
+      "auc": 0.688,
+      "dpd_hard": 0.0473,
+      "w_adv": 0.108,
+      "wall_s": 40.1
+    },
+    {
+      "dataset": "german",
+      "scenario": "fairness_poison",
+      "arm": "A4_fu_shapley",
+      "seed": 70,
+      "auc": 0.707,
+      "dpd_hard": 0.0399,
+      "w_adv": 0.132,
+      "wall_s": 40.4
+    }
+  ],
+  "manifest": {
+    "git_commit": "de79f771f94b7ae95fefb05908155b6c9b7b314a",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-17T10:20:45.662005+00:00",
+    "torch_version": "unknown",
+    "torch_num_threads": 1,
+    "python_version": "3.9.6",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "benchmark": "fltrust_delta_grid_german_s4",
+    "hardware": {
+      "device": "cpu",
+      "workers": 6,
+      "threads": 1
+    },
+    "metrics": {
+      "total_runs": 360,
+      "mean_wall_per_run_s": 25.531666666666666,
+      "total_wall_s": 9191.400000000003
+    },
+    "reconstructed": true,
+    "reconstructed_date": "2026-09-17"
+  },
+  "config": {
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ],
+    "datasets": [
+      "german"
+    ],
+    "scenarios": [
+      "clean",
+      "poison_honest",
+      "fairness_poison"
+    ],
+    "arms": [
+      "A1_fltrust",
+      "A2_fltrust_fair",
+      "A3_fu_alpha0",
+      "A4_fu_shapley"
+    ],
+    "alpha": 0.1,
+    "K": 5
+  }
+}

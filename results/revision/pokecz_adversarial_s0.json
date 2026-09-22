@@ -1,0 +1,20 @@
+{
+  "gate": "s0",
+  "results": {
+    "clean": {
+      "seed": 42,
+      "auc": 0.7924635400554502,
+      "dpd_hard": 0.008970627271146281,
+      "w_adv": 0.0,
+      "wall_clock_s": 224.20215608307626
+    },
+    "scaling_c100": {
+      "seed": 42,
+      "auc": 0.7938111775864586,
+      "dpd_hard": 0.006637925510979303,
+      "w_adv": 0.282949412628077,
+      "wall_clock_s": 227.88167133298703
+    }
+  },
+  "verdict": "PASS (Smoke completed without errors)"
+}

@@ -28,6 +28,7 @@ Rules
 from __future__ import annotations
 
 from typing import Dict, List, Tuple
+import numpy as np
 
 import torch
 
@@ -378,6 +379,119 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
         agg = (w[:, None] * stack).sum(0)
         info["weights"] = w.tolist()
 
+    elif method in ("fltrust", "fltrust_ema"):
+        # FLTrust (Cao et al., NDSS 2021): the server trains a root update g0 on
+        # its own clean dataset, scores each client by ReLU(cosine) against it,
+        # and rescales every client update to ||g0|| before the weighted mean.
+        #
+        # This is the closest structural relative of fu_shapley -- both derive
+        # weights from alignment with a server-owned reference and both are
+        # therefore metadata-independent -- so it is the baseline that isolates
+        # what our bi-objective target actually buys. The one substantive
+        # difference is the reference itself: FLTrust's g0 is the TASK gradient
+        # only, so a client whose update improves fairness at some task cost
+        # gets a *lower* trust score, whereas g_target = g_task + alpha*g_fair
+        # In baseline FLTrust, fu_alpha=0.0 so ref is g_task (task gradient only).
+        # In the 2x2 ablation grid (P5-X1 / 04_1 §4.6), arm A2 uses FLTrust with
+        # fu_alpha > 0, which incorporates g_target = g_task + alpha * g_fair.
+        if fu_alpha > 0 and g_target is not None:
+            ref = g_target
+        else:
+            ref = g_task if g_task is not None else g_target
+
+        if ref is None:
+            w = _zero_null_players(n / n.sum(), stack)
+            agg = (w[:, None] * stack).sum(0)
+            info["weights"] = w.tolist(); info["fltrust_fallback"] = "no_root_gradient"
+        else:
+            ref = ref.to(stack.device).flatten()
+            ref_norm = ref.norm() + 1e-12
+            cos = torch.stack([torch.dot(u, ref) / (u.norm() * ref_norm + 1e-12) for u in stack])
+            ts = torch.relu(cos)
+            # FLTrust normalises each client update onto the root's magnitude,
+            # which is what bounds a scaling adversary: inflating ||g_k|| cannot
+            # buy influence because the norm is divided straight back out.
+            scaled = torch.stack([u * (ref_norm / (u.norm() + 1e-12)) for u in stack])
+            if method == "fltrust_ema" or (fu_beta_ema > 0 and state is not None and state.get("use_fltrust_ema", False)):
+                ts_ema = state.get("fltrust_ts_ema") if state is not None else None
+                if ts_ema is None:
+                    ts_ema = ts.clone()
+                else:
+                    ts_ema = fu_beta_ema * ts_ema + (1.0 - fu_beta_ema) * ts
+                if state is not None:
+                    state["fltrust_ts_ema"] = ts_ema
+                ts_eff = ts_ema
+            else:
+                ts_eff = ts
+
+            tot = float(ts_eff.sum())
+            if tot > 0:
+                w = ts_eff / ts_eff.sum()
+                agg = (w[:, None] * scaled).sum(0)
+            else:
+                w = torch.zeros_like(ts)
+                agg = torch.zeros_like(stack[0])
+            info["weights"] = w.tolist()
+            info["fltrust_cos"] = cos.tolist()
+
+    elif method == "flame":
+        # FLAME (Nguyen et al., USENIX Security 2022):
+        # 1. Pairwise Cosine Distance matrix between all client updates.
+        # 2. Agglomerative Clustering (average linkage) to identify the majority benign cluster.
+        # 3. Dynamic Norm Clipping using the median L2 norm of the benign cluster.
+        # 4. Uniform averaging over the clipped survivors in the majority cluster.
+        if K <= 2:
+            w = torch.full((K,), 1.0 / K, device=dev)
+            agg = (w[:, None] * stack).sum(0)
+            info["weights"] = w.tolist()
+            info["selected"] = list(range(K))
+        else:
+            # Pairwise cosine distance
+            norms = stack.norm(dim=1, keepdim=True) + 1e-12
+            normed_stack = stack / norms
+            cos_sim = torch.mm(normed_stack, normed_stack.t()).clamp(-1.0, 1.0)
+            cos_dist = (1.0 - cos_sim).cpu().numpy()
+            np.fill_diagonal(cos_dist, 0.0)
+
+            # Hierarchical clustering with average linkage
+            from scipy.cluster.hierarchy import linkage, fcluster
+            Z = linkage(cos_dist[np.triu_indices(K, k=1)], method="average")
+            # Cluster thresholding: dynamically pick threshold or start at 0.5
+            cluster_labels = fcluster(Z, t=0.5, criterion="distance")
+
+            # Identify majority cluster
+            unique_labels, counts = np.unique(cluster_labels, return_counts=True)
+            max_cluster_label = unique_labels[np.argmax(counts)]
+            selected = [i for i, lbl in enumerate(cluster_labels) if lbl == max_cluster_label]
+
+            # Security fallback: if largest cluster is smaller than majority floor, keep all
+            if len(selected) < max(1, K // 2 + 1):
+                selected = list(range(K))
+
+            # Dynamic median norm clipping over selected benign cluster
+            selected_t = torch.tensor(selected, dtype=torch.long, device=dev)
+            selected_norms = stack[selected_t].norm(dim=1)
+            med_norm = float(selected_norms.median())
+
+            # Clip updates
+            clipped_updates = []
+            for i in range(K):
+                if i in selected:
+                    u_norm = float(stack[i].norm() + 1e-12)
+                    scale = min(1.0, med_norm / u_norm)
+                    clipped_updates.append(stack[i] * scale)
+                else:
+                    clipped_updates.append(torch.zeros_like(stack[i]))
+
+            clipped_stack = torch.stack(clipped_updates)
+            w = torch.zeros(K, device=dev)
+            w[selected_t] = 1.0 / len(selected)
+            agg = (w[:, None] * clipped_stack).sum(0)
+
+            info["weights"] = w.tolist()
+            info["selected"] = selected
+            info["flame_med_norm"] = med_norm
+
     elif method in ("fu_shapley", "robust_fu_shapley"):
         # FairShare-GNN FU-Shapley: score each client against the server target
         # gradient, EMA-smooth, ReLU-gate onto the simplex. See
@@ -463,6 +577,17 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                     info.pop("fu_fallback", None)
                 info["fu_warmup"] = True
                 info["fu_warmup_agg"] = fu_warmup_agg
+
+            # ROUND 4 / Gói 4.1 -- bound the PAYLOAD, not just the weight.
+            # compute_fu_weights clips ||g_k|| to fu_grad_clip for SCORING, but the
+            # aggregate used the unclipped `stack`, so a scaling adversary that keeps
+            # its direction (cos > 0, gate open) multiplied the payload freely.
+            # FLTrust prevents this by rescaling every update to ||g_0|| before summing.
+            grads_scored = fu_info.get("grads_scored", None)
+            payload = stack if grads_scored is None else torch.stack(
+                [p.reshape(-1) for p in grads_scored]).to(stack.dtype).to(dev)
+            assert payload.shape == stack.shape, (payload.shape, stack.shape)
+
             if warmup_median:
                 # Coordinate-wise median is not expressible as client weights,
                 # so aggregate directly and report no weight vector.
@@ -474,8 +599,9 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                 info["weights"] = None
             else:
                 w = _zero_null_players(w, stack)
-                agg = (w[:, None] * stack).sum(0)
+                agg = (w[:, None] * payload).sum(0)
                 info["weights"] = w.tolist()
+                info["payload_clipped"] = bool(payload is not stack)
             info["phi_raw"] = phi_raw.tolist()
             info["phi_ema"] = phi_ema_new.tolist()
             if g_task is not None and g_fair is not None:
@@ -483,7 +609,7 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                 # 4.0(b)); decomposing the raw stack instead broke the
                 # explainability identity phi_util + phi_fair == phi_raw in
                 # every round where the clip bound.
-                scored = fu_info.get("grads_scored", grads)
+                scored = grads_scored if grads_scored is not None else grads
                 phi_util, phi_fair = decompose(scored, g_task, g_fair, fu_alpha,
                                                score=fu_score)
                 info["phi_util"] = phi_util.tolist()
@@ -496,7 +622,7 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
 
 
 ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
-                  "robust_fu_shapley"}
+                  "robust_fu_shapley", "flame", "fltrust", "fltrust_ema"}
 FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn", "fairgfl", "fedgraphfair",
                 "popets_fairfed", "fu_shapley", "robust_fu_shapley"}
 ALL_METHODS = {"fedavg", "cgsv"} | FAIR_METHODS | ROBUST_METHODS

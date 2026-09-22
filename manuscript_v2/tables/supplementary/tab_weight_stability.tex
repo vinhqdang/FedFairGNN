@@ -1,0 +1,30 @@
+%% tables/supplementary/tab_weight_stability.tex — Reconciled Weight Stability Across Regimes
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Multi-Regime Reconciliation of Per-Round Weight Dispersion $\Omega_w = \frac{1}{R-1}\sum_{t=1}^{R-1} \|\bm{w}^{(t)} - \bm{w}^{(t-1)}\|_1$.}
+Reconciles the empirical stability evaluations across experimental campaigns.
+\textbf{Primary Attribution Benchmark (Pokec-z, $K=10, R=50, n=10$ seeds):} Isolates the mechanistic contribution of temporal EMA history smoothing versus reference-guided gating.
+\textit{Note on provenance:} This attribution campaign was executed under an isolated evaluation protocol to measure weight trajectory dynamics; canonical utility and fairness figures remain anchored to Table~\ref{tab:sota_main}.
+\textbf{Ablation Benchmark (German Credit, $K=5, R=20, n=10$ seeds):} Contrasts canonical TrustFedGNN (M1) against the un-smoothed arm (M7 w/o EMA), confirming a $24.1\times$ volatility surge ($0.0586 \to 1.4134$) when temporal momentum is removed.
+\textbf{Historical Reference (German Credit, $K=5, R=25$, single seed):} Contrasts first-order projection against iterative dual-ascent optimization (BFWA~\cite{dang2026fedfairgnn}), where per-round dual re-solving induces extreme path volatility ($16.5407$).}
+\label{tab:weight_stability_reconciled}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Evaluation Track} & \textbf{Dataset Topology} & \textbf{Clients ($K$)} & \textbf{Rounds ($R$)} & \textbf{Method / Arm} & \textbf{Dispersion $\Omega_w$ ($\downarrow$)} & \textbf{Stability Factor ($\times$)} \\
+\midrule
+\multirow{4}{*}{Primary Attribution Benchmark} & \multirow{4}{*}{Pokec-z (Social)} & \multirow{4}{*}{10} & \multirow{4}{*}{50} & FedAvg (Static) & 0.0000 & Invariant \\
+ & & & & FLTrust~\citep{cao2021fltrust} (Raw) & 0.6845 $\pm$ 0.1037 & Baseline ($1.00\times$) \\
+ & & & & FLTrust + EMA ($\beta=0.9$) & 0.0227 $\pm$ 0.0053 & Smoothed ($30.1\times$ vs.\ Raw) \\
+ & & & & \textbf{TrustFedGNN (ours)} & \textbf{0.1111 $\pm$ 0.0584} & \textbf{Pareto ($6.16\times$ vs.\ Raw)} \\
+\midrule
+\multirow{2}{*}{Architectural Ablation} & \multirow{2}{*}{German Credit (Tabular)} & \multirow{2}{*}{5} & \multirow{2}{*}{20} & M7: w/o EMA ($\beta_{\text{EMA}}=0$) & 1.4134 $\pm$ 0.1205 & Unsmoothed ($1.00\times$) \\
+ & & & & \textbf{M1: Canonical TrustFedGNN} & \textbf{0.0586 $\pm$ 0.0041} & \textbf{24.1$\times$ more stable} \\
+\midrule
+\multirow{2}{*}{Optimization Paradigm} & \multirow{2}{*}{German Credit (Tabular)} & \multirow{2}{*}{5} & \multirow{2}{*}{25} & BFWA (Dual Ascent)~\citep{dang2026fedfairgnn} & 16.5407 & Dual-ascent \\
+ & & & & \textbf{FU-Alignment (ours)} & \textbf{0.6036} & \textbf{27.4$\times$ more stable} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

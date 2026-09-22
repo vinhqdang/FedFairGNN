@@ -220,83 +220,137 @@ def plot_privacy_attack(out_path: str = os.path.join(FIG_DIR, "privacy_attack.pd
 
 
 def plot_robustness_byz(out_path: str = os.path.join(FIG_DIR, "robustness_byz.pdf")):
-    """Figure 4: Robustness breakdown under Byzantine corruption ratios."""
-    artifact_path = os.path.join(RESULTS_DIR, "revision", "robustness_multiseed.json")
+    """Figure 4: adversary weight w_adv vs Byzantine fraction f/K, one panel per attack.
+
+    Source of truth is ``results/byzantine_sweep.json`` (German, K=10, 5 seeds,
+    f/K in {0.1,0.2,0.3}, three attack models) -- the artifact the manuscript
+    caption actually describes.
+
+    HISTORY (14-09-2026): this function used to read
+    ``revision/robustness_multiseed.json`` and, when that file was absent,
+    SILENTLY fall back to ``revision/adaptive_poisoner_results.json`` -- a
+    different dataset (Bail), a different client count and 3 seeds instead of 5.
+    The figure shipped in the PDF was therefore drawn from Bail/3-seed data under
+    a caption claiming German/5-seed, and nothing in the pipeline flagged it
+    because the fallback was silent. Two rules follow, and both are load-bearing:
+    a figure reads the artifact its caption names, and a missing artifact raises
+    instead of being substituted (see this module's docstring: "Missing artifacts
+    MUST raise FileNotFoundError").
+    """
+    artifact_path = os.path.join(RESULTS_DIR, "byzantine_sweep.json")
     if not os.path.exists(artifact_path):
-        alt_path = os.path.join(RESULTS_DIR, "revision", "adaptive_poisoner_results.json")
-        if os.path.exists(alt_path):
-            artifact_path = alt_path
-        else:
-            raise FileNotFoundError(
-                f"Artifact for robustness_byz plot missing at '{artifact_path}'. "
-                "Run Stage S7 (experiments/revision/adaptive_poisoner.py) first."
-            )
+        raise FileNotFoundError(
+            f"Artifact for robustness_byz plot missing at '{artifact_path}'. "
+            "Run experiments/run_byzantine_sweep.py (RUN-BYZ) first. "
+            "Do NOT substitute another robustness artifact: the caption names this one."
+        )
 
     with open(artifact_path) as f:
         data = json.load(f)
 
-    runs = data.get("raw_runs", []) or data.get("records", [])
-    if not runs:
+    results = data.get("results")
+    if not results:
         raise FileNotFoundError(
-            f"Artifact at '{artifact_path}' does not contain raw_runs or records. Run Stage S7 first."
+            f"Artifact at '{artifact_path}' has no 'results' block. Re-run RUN-BYZ."
         )
 
-    # Group runs by aggregator and byz_ratio
-    agg_ratios = {}
-    for r in runs:
-        agg = r.get("aggregator")
-        ratio = r.get("byz_ratio")
-        auc = r.get("auc")
-        if agg is not None and ratio is not None and auc is not None:
-            agg_ratios.setdefault(agg, {}).setdefault(ratio, []).append(auc)
+    # Fixed identity order -- never cycled, never reassigned when a series drops
+    # out. Palette validated for CVD separation (worst adjacent pair dE 21.1
+    # protan / 29.8 tritan / 28.7 normal vision); markers carry the same identity
+    # so the series are never distinguished by colour alone.
+    SERIES = [
+        ("m1_robust",     "#b2182b", "o-",  "TrustFedGNN (robust)"),
+        ("fedfairgnn",    "#2166ac", "s--", "FU-Alignment (rectifier only)"),
+        ("m6_no_defense", "#e08214", "^:",  "No server holdout"),
+    ]
+    ATTACKS = [
+        ("sign_flip",       "Sign-flip"),
+        ("fairness_poison", "Fairness poisoning"),
+        ("scaling",         "Gradient scaling"),
+    ]
+    INK, MUTED = "#1f2328", "#6e7781"
 
-    if not agg_ratios:
+    panels = [(k, lbl) for k, lbl in ATTACKS if k in results]
+    if not panels:
         raise FileNotFoundError(
-            "No valid aggregator curves could be extracted from robustness artifact. Run Stage S7 first."
+            f"None of {[k for k, _ in ATTACKS]} present in '{artifact_path}'. Re-run RUN-BYZ."
         )
-
-    styles = {
-        "fedavg": ("#757575", "x--", "FedAvg"),
-        "bfwa": ("#fb8c00", "^--", "BFWA"),
-        "krum": ("#8e24aa", "s-", "Krum"),
-        "multikrum": ("#00acc1", "d-", "Multi-Krum"),
-        "median": ("#6baed6", "+--", "Coordinate Median"),
-        "trimmed_mean": ("#9ecae1", "*--", "Trimmed Mean"),
-        "robust_bfwa": ("#3949ab", "v-", "Robust BFWA"),
-        "fu_shapley": ("#e53935", "o-", "FU-Shapley"),
-        "robust_fu_shapley": ("#b2182b", "o-", "TrustFedGNN (Ours)"),
-    }
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    fig, ax = plt.subplots(figsize=(6.5, 4.2), dpi=300)
+    fig, axes = plt.subplots(1, len(panels), figsize=(9.6, 3.3), dpi=300, sharey=True)
+    if len(panels) == 1:
+        axes = [axes]
 
-    for agg, (col, fmt, name) in styles.items():
-        if agg in agg_ratios:
-            ratios = sorted(agg_ratios[agg].keys())
-            mean_aucs = [float(np.mean(agg_ratios[agg][r])) for r in ratios]
-            ax.plot(ratios, mean_aucs, fmt, color=col, linewidth=2, label=name, markersize=6)
+    n_seeds = set()
+    for ax, (attack, title) in zip(axes, panels):
+        by_ratio = results[attack]
+        ratios = sorted(by_ratio, key=float)
+        xs = [float(r) for r in ratios]
 
-    ax.set_xlabel("Byzantine Corruption Ratio $f / K$", fontsize=10)
-    ax.set_ylabel("AUC-ROC under Attack ($\\uparrow$)", fontsize=10)
-    ax.set_title("Adversarial Robustness: Adaptive Stealth Poisoning", fontsize=11, fontweight="bold")
-    ax.legend(fontsize=8, loc="lower left")
-    ax.grid(True, alpha=0.3)
+        # Reference: the share a colluding adversary holds under plain averaging.
+        ax.plot(xs, xs, "-", color=MUTED, linewidth=1, alpha=0.55, zorder=1)
+
+        for key, colour, fmt, _label in SERIES:
+            mu, sd = [], []
+            for r in ratios:
+                entry = by_ratio[r].get(key)
+                if entry is None:
+                    mu.append(np.nan); sd.append(0.0); continue
+                w = entry["summary"]["w_adv"]
+                mu.append(float(w["mean"])); sd.append(float(w.get("std") or 0.0))
+                n_seeds.add(len(entry.get("per_seed", [])))
+            mu, sd = np.asarray(mu, float), np.asarray(sd, float)
+            ax.fill_between(xs, mu - sd, mu + sd, color=colour, alpha=0.13, linewidth=0, zorder=2)
+            ax.plot(xs, mu, fmt, color=colour, linewidth=2, markersize=8,
+                    markeredgecolor="white", markeredgewidth=1.2, zorder=3)
+
+        ax.set_title(title, fontsize=10, color=INK)
+        ax.set_xlabel("Byzantine fraction $f/K$", fontsize=9, color=INK)
+        ax.set_xticks(xs)
+        ax.grid(True, alpha=0.22, linewidth=0.6)
+        ax.set_axisbelow(True)
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+        ax.tick_params(colors=MUTED, labelsize=8)
+
+    axes[0].set_ylabel(r"Adversary weight $w_{\mathrm{adv}}$  ($\downarrow$)",
+                       fontsize=9, color=INK)
+    axes[0].set_ylim(bottom=-0.02)
+    # Direct label on the reference line, in ink rather than in its own colour.
+    # The first panel is empty of data (the rectifier fully stops sign-flip), so
+    # the reference line is labelled there rather than on top of a crowded panel.
+    axes[0].annotate("uniform share $f/K$", xy=(0.26, 0.26), xytext=(0.135, 0.30),
+                     fontsize=7.5, color=MUTED,
+                     arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.7,
+                                     shrinkA=2, shrinkB=2))
+
+    handles = [plt.Line2D([], [], color=c, marker=f[0], linestyle=f[1:],
+                          linewidth=2, markersize=8, markeredgecolor="white",
+                          markeredgewidth=1.2, label=lbl)
+               for _k, c, f, lbl in SERIES]
+    fig.legend(handles=handles, loc="lower center", ncol=3, fontsize=8.5,
+               frameon=False, bbox_to_anchor=(0.5, -0.06), labelcolor=INK)
 
     plt.tight_layout()
     plt.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
-    print(f"[+] Saved robustness_byz figure to {out_path}")
+    seeds = sorted(n_seeds)
+    print(f"[+] Saved robustness_byz figure to {out_path} "
+          f"(source: {artifact_path}, seeds/cell: {seeds})")
 
 
 def plot_convergence(out_path: str = os.path.join(FIG_DIR, "convergence.pdf")):
     """Figure 5: Training convergence across communication rounds on Bail."""
+    # No fallback. The caption names Bail; canonical_suite.json is German, so
+    # substituting it would reproduce the defect fixed in plot_robustness_byz
+    # on 14-09-2026 -- a figure silently drawn from a different dataset than its
+    # caption claims. A missing artifact is an error, not an invitation.
     artifact_path = os.path.join(RESULTS_DIR, "convergence_bail.json")
-    if not os.path.exists(artifact_path):
-        artifact_path = os.path.join(RESULTS_DIR, "canonical_suite.json")
     if not os.path.exists(artifact_path):
         raise FileNotFoundError(
             f"Artifact for convergence plot missing at '{artifact_path}'. "
-            "Run Stage S3 (experiments/run_canonical_suite.py) first."
+            "Run experiments/run_convergence_bail.py first. "
+            "Do NOT substitute canonical_suite.json: that is German, the caption says Bail."
         )
 
     with open(artifact_path) as f:

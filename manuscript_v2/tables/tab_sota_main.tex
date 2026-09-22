@@ -1,0 +1,48 @@
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Comprehensive Main SOTA Benchmark Comparison across Social and Tabular Graph Topologies ($K=10, R=50, n=10$ Seeds).}
+Panel~A evaluates the authentic social relational topology of Pokec-z ($N=67,796$); Panel~B evaluates the tabular $k$-NN graph of Credit Default ($N=30,000$).}
+\label{tab:sota_main}
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{0.96}
+\makebox[\textwidth][c]{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Method / Venue} & \textbf{DP$^\dagger$} & \textbf{AUC-ROC ($\uparrow$)} & \textbf{$\text{DPD}_{\text{hard}}$ ($\downarrow$)} & \textbf{EOD ($\downarrow$)} & \textbf{$\Omega_w$ ($\downarrow$)} \\
+\midrule
+\multicolumn{6}{l}{\textbf{Panel A: Pokec-z Social Network ($N=67,796$)}} \\
+\midrule
+\makecell[l]{FedAvg-GCN \textit{\scriptsize(AISTATS'17)}} & $\times$ & 0.7305 $\pm$ 0.0134$^\star$ & 0.0086 $\pm$ 0.0059 & 0.0265 $\pm$ 0.0237 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{\textit{FedAvg (GAT scaffold control)}$^{\P}$ \\ \scriptsize matched-backbone ablation} & $\times$ & \textit{0.7887 $\pm$ 0.0031} & \textit{0.0104 $\pm$ 0.0106} & \textit{0.0161 $\pm$ 0.0101} & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FairGNN \textit{\scriptsize(WSDM'21)}} & $\times$ & 0.5660 $\pm$ 0.0860$^\star$ & 0.0162 $\pm$ 0.0212 & \textbf{0.0068 $\pm$ 0.0097} & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FairSIN \textit{\scriptsize(AAAI'24)}} & $\times$ & 0.7207 $\pm$ 0.0232$^\star$ & 0.0074 $\pm$ 0.0049 & 0.0191 $\pm$ 0.0171 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FairFed \textit{\scriptsize(AAAI'23)}} & $\times$ & 0.7231 $\pm$ 0.0146$^\star$ & 0.0087 $\pm$ 0.0066 & 0.0326 $\pm$ 0.0272 & 0.0682 \\
+\makecell[l]{FairGFL \textit{\scriptsize(IEEE TPDS'26)}} & $\times$ & 0.7310 $\pm$ 0.0105$^\star$ & 0.0063 $\pm$ 0.0064 & 0.0292 $\pm$ 0.0254 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FedGraph-Fair \textit{\scriptsize(InfoSci'26)}} & $\times$ & 0.7151 $\pm$ 0.0111$^\star$ & \textbf{0.0050 $\pm$ 0.0033} & 0.0327 $\pm$ 0.0140 & 0.0195 \\
+\makecell[l]{CGSV \textit{\scriptsize(NeurIPS'21)}} & $\times$ & 0.7338 $\pm$ 0.0161$^\star$ & 0.0057 $\pm$ 0.0049 & 0.0287 $\pm$ 0.0140 & 0.1265 \\
+\makecell[l]{FLTrust \textit{\scriptsize(NDSS'21)}} & $\times$ & \textbf{0.8057 $\pm$ 0.0108}$^\star$ & 0.0216 $\pm$ 0.0083 & 0.0135 $\pm$ 0.0057 & 0.7193 \\
+\addlinespace[1pt]
+\makecell[l]{Ours w/o FSER \textit{\scriptsize(Clean Arm)}} & \checkmark & 0.7917 $\pm$ 0.0097 & 0.0151 $\pm$ 0.0118 & 0.0253 $\pm$ 0.0265 & 0.0998 \\
+\makecell[l]{\textbf{\MethodName{} (Ours)} \\ \scriptsize (Proposed Framework)} & \checkmark & 0.7899 $\pm$ 0.0095 & 0.0155 $\pm$ 0.0108 & 0.0329 $\pm$ 0.0310 & 0.0976 \\
+\midrule
+\multicolumn{6}{l}{\textbf{Panel B: Credit Default $k$-NN Graph ($N=30,000$)}} \\
+\midrule
+\makecell[l]{FedAvg-GCN \textit{\scriptsize(AISTATS'17)}} & $\times$ & 0.7529 $\pm$ 0.0047 & 0.0605 $\pm$ 0.0230 & 0.0384 $\pm$ 0.0200 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FairGNN \textit{\scriptsize(WSDM'21)}} & $\times$ & 0.6792 $\pm$ 0.0967$^\star$ & \textbf{0.0561 $\pm$ 0.0641} & 0.0423 $\pm$ 0.0465 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FairSIN \textit{\scriptsize(AAAI'24)}} & $\times$ & 0.7527 $\pm$ 0.0050 & 0.0672 $\pm$ 0.0183 & 0.0440 $\pm$ 0.0166 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FairFed \textit{\scriptsize(AAAI'23)}} & $\times$ & 0.7522 $\pm$ 0.0048 & 0.0611 $\pm$ 0.0204 & 0.0389 $\pm$ 0.0174 & 0.0712 \\
+\makecell[l]{FairGFL \textit{\scriptsize(IEEE TPDS'26)}} & $\times$ & \textbf{0.7536 $\pm$ 0.0038} & 0.0665 $\pm$ 0.0150 & 0.0442 $\pm$ 0.0132 & 0.0000$^{\ddagger}$ \\
+\makecell[l]{FedGraph-Fair \textit{\scriptsize(InfoSci'26)}} & $\times$ & 0.7513 $\pm$ 0.0051 & 0.0655 $\pm$ 0.0246 & 0.0465 $\pm$ 0.0195 & 0.0154 \\
+\makecell[l]{CGSV \textit{\scriptsize(NeurIPS'21)}} & $\times$ & 0.7518 $\pm$ 0.0044 & 0.0566 $\pm$ 0.0281 & \textbf{0.0341 $\pm$ 0.0260} & 0.5912 \\
+\makecell[l]{FLTrust \textit{\scriptsize(NDSS'21)}} & $\times$ & 0.7496 $\pm$ 0.0063 & 0.0895 $\pm$ 0.0146 & 0.0651 $\pm$ 0.0210 & 0.7014 \\
+\addlinespace[1pt]
+\makecell[l]{Ours w/o FSER \textit{\scriptsize(Clean Arm)}} & \checkmark & 0.7521 $\pm$ 0.0063 & 0.0647 $\pm$ 0.0408 & 0.0545 $\pm$ 0.0343 & 0.0904 \\
+\makecell[l]{\textbf{\MethodName{} (Ours)} \\ \scriptsize (Proposed Framework)} & \checkmark & 0.7522 $\pm$ 0.0065 & 0.0615 $\pm$ 0.0371 & 0.0502 $\pm$ 0.0341 & 0.0872 \\
+\bottomrule
+\end{tabular}%
+}
+\smallskip
+\parbox{\textwidth}{\scriptsize%
+\textit{Notes:} Metrics reported as $\text{Mean} \pm \text{Std}$. \textbf{Bold} indicates best metric in column. $^\star$marks paired Wilcoxon differences against \MethodName{} that remain significant at $\alpha=0.05$ after Holm--Bonferroni multiplicity correction. $^\dagger$FTGD differential privacy strictly covers released scalar statistics, not parameter vectors $\theta_k$. $^{\ddagger}\Omega_w = 0$ by construction: uniform averaging keeps aggregation weights constant across rounds. $^{\P}$Matched-backbone control: identical GAT scaffold, FTGD, and privacy configuration with uniform averaging ($n=10$ paired seeds, CPU: $\Delta\mathrm{AUC} = +0.0015, p = 0.625$). FLTrust represents an unconstrained utility competitor on Pokec-z ($\alpha=0$, high volatility $\Omega_w = 0.7193$; see Table~\ref{tab:weight_stability_reconciled} for multi-regime stability reconciliation and factorial attribution against EMA-smoothed FLTrust). \MethodName{} is positioned as a balanced multi-objective operating point on the empirical Pareto frontier (Figure~\ref{fig:pareto}) rather than maximizing an isolated single-metric extremum.}
+\end{table}

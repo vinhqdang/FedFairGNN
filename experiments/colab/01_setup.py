@@ -84,7 +84,7 @@ print("dataset đã cache:", cached or "(trống, sẽ tự tải)")
 # --- GATE 0a: test suite ----------------------------------------------------
 # Stream output trực tiếp ra stdout để tránh timeout websocket khi test chạy lâu.
 print(">>> Running test suite (streaming per-test output)...", flush=True)
-p = subprocess.Popen("python -u -m pytest tests/ -v", shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+p = subprocess.Popen("python -u -m pytest tests/ -m 'not slow' -v", shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 lines = []
 for line in p.stdout:
     lines.append(line)

@@ -1,0 +1,64 @@
+{
+  "manifest": {
+    "git_commit": "47572ac7f2e0e8281c68a333db78dbefb0c9fd6d",
+    "git_dirty": true,
+    "device": "cpu",
+    "timestamp": "2026-09-17T10:47:05.776070+00:00",
+    "torch_version": "2.14.0",
+    "torch_num_threads": 1,
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "benchmark": "t1_alignment_adversary_s1",
+    "hardware": {
+      "device": "cpu",
+      "workers": 1,
+      "threads": 1
+    }
+  },
+  "results": {
+    "german": {
+      "run1": {
+        "seed": 42,
+        "auc": 0.5162285714285715,
+        "dpd_hard": 0.3564814814814815,
+        "w_adv": 0.8440781325101853,
+        "wall_s": 4.197210125043057
+      },
+      "run2": {
+        "seed": 42,
+        "auc": 0.5162285714285715,
+        "dpd_hard": 0.3564814814814815,
+        "w_adv": 0.8440781325101853,
+        "wall_s": 4.134509166935459
+      },
+      "delta_w_adv": 0.0,
+      "delta_auc": 0.0,
+      "delta_dpd": 0.0,
+      "sigma": 0.0
+    },
+    "bail": {
+      "run1": {
+        "seed": 42,
+        "auc": 0.5214823960045674,
+        "dpd_hard": 0.0003457746339728951,
+        "w_adv": 0.7701949387788772,
+        "wall_s": 65.09758941701148
+      },
+      "run2": {
+        "seed": 42,
+        "auc": 0.5214823960045674,
+        "dpd_hard": 0.0003457746339728951,
+        "w_adv": 0.7701949387788772,
+        "wall_s": 62.78091524995398
+      },
+      "delta_w_adv": 0.0,
+      "delta_auc": 0.0,
+      "delta_dpd": 0.0,
+      "sigma": 0.0
+    }
+  },
+  "max_sigma": 0.0,
+  "pricing_n": 34,
+  "verdict": "PASS (sigma <= 0.010)",
+  "pass_threshold": true
+}

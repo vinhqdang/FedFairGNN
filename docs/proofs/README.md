@@ -1,6 +1,6 @@
 # Machine-Checked Formal Proofs in Lean 4
 
-This directory contains interactive theorem proofs in **Lean 4**, formally verifying four core algebraic and geometric properties of TrustFedGNN without mathematical hallucinations.
+This directory contains interactive theorem proofs in **Lean 4**, formally certifying four core algebraic and geometric properties of TrustFedGNN's aggregation mechanism and orthogonal projection.
 
 ## Files & Verified Theorems
 

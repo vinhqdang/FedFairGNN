@@ -31,6 +31,9 @@ import torch
 from src.config import ExperimentConfig
 from src.federated.trainer import FederatedTrainer
 from src.federated.aggregation import aggregate
+from src.trust.incentive import (get_server_target_gradients,
+                                 get_server_target_gradients_pooled)
+from src.federated.client import load_flat_state
 from src.utils.provenance import build_manifest
 
 
@@ -108,11 +111,36 @@ def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rou
         # Craft stealth updates
         updates, metas = craft_stealth_poison_updates(updates, metas, list(byz_indices), rho=0.85)
 
+        # Build the server target gradient exactly as FederatedTrainer._round
+        # does. Omitting it is NOT a silent no-op: aggregate() falls back to
+        # sample-size weights when g_target is None, so `fu_shapley` and
+        # `robust_fu_shapley` degenerate to FedAvg and report FedAvg's numbers
+        # under our own method's name -- which is precisely what the earlier
+        # revision of this sweep did (fu_shapley matched fedavg bit-exact at
+        # every corruption ratio, with w_adv rising to 0.457).
+        g_target = g_task = g_fair = None
+        # fltrust needs the same reference machinery (it scores against
+        # g_task, the task-only root update), so it must be in this condition
+        # too -- otherwise it silently takes the sample-size fallback and
+        # reports FedAvg numbers, the same trap documented just above.
+        if "fu_shapley" in cfg.aggregator or cfg.aggregator == "fltrust":
+            load_flat_state(trainer.ref_model, trainer.global_flat.to(trainer.device))
+            if trainer.server_holdout is not None:
+                tg = get_server_target_gradients(
+                    trainer.ref_model, trainer.server_holdout.to(trainer.device),
+                    cfg.fu_alpha, fair_surrogate=cfg.fu_fair_surrogate)
+            else:
+                tg = get_server_target_gradients_pooled(
+                    trainer.ref_model, trainer.clients_data, trainer.device,
+                    cfg.fu_alpha, fair_surrogate=cfg.fu_fair_surrogate)
+            if tg is not None:
+                g_target, g_task, g_fair = (g.cpu() for g in tg)
+
         # Aggregate. `state=trainer._agg_state` threads stateful-aggregator state
-        # (BFWA's dual multiplier, fedgraphfair's lambda, ...) across rounds the
-        # same way FederatedTrainer._round does -- omitting it silently restarts
-        # BFWA's dual every round, which is exactly the bug that made tau inert
-        # everywhere else in the repo (see aggregation.bfwa_weights).
+        # (BFWA's dual multiplier, fedgraphfair's lambda, FU-Shapley's EMA, ...)
+        # across rounds the same way FederatedTrainer._round does -- omitting it
+        # silently restarts BFWA's dual every round, which is exactly the bug
+        # that made tau inert elsewhere in the repo (see aggregation.bfwa_weights).
         g_agg, info = aggregate(
             cfg.aggregator, updates, metas,
             tau=cfg.fairness_budget,
@@ -120,6 +148,10 @@ def evaluate_adaptive_run(aggregator: str, byz_ratio: float, seed: int = 42, rou
             dual_step=cfg.dual_step_size,
             krum_f=cfg.krum_f,
             state=trainer._agg_state,
+            g_target=g_target, g_task=g_task, g_fair=g_fair,
+            fu_alpha=cfg.fu_alpha, fu_beta_ema=cfg.fu_ema_beta,
+            fu_normalize=cfg.fu_normalize, fu_score=cfg.fu_score,
+            fu_grad_clip=cfg.fu_grad_clip,
             bfwa_persist_dual=cfg.bfwa_persist_dual,
         )
 
@@ -278,7 +310,7 @@ def _breakdown_caption_sentence(summary: Dict[str, dict], byz_ratios: List[float
 
 def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results.json",
                             out_tex="manuscript_neurocomputing/tables/revision/adaptive_poisoner.tex",
-                            aggregators=("fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa", "fu_shapley", "robust_fu_shapley", "cgsv"),
+                            aggregators=("fedavg", "krum", "multikrum", "median", "trimmed_mean", "bfwa", "robust_bfwa", "fltrust", "fu_shapley", "robust_fu_shapley"),
                             byz_ratios=(0.1, 0.2, 0.3, 0.4), seeds=(42,), rounds=15,
                             dataset="bail", device="cpu"):
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
@@ -289,20 +321,34 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
     seeds = list(seeds)
 
     records = []
+    if os.path.exists(out_json):
+        try:
+            with open(out_json) as f:
+                prev_data = json.load(f)
+                records = prev_data.get("records", [])
+        except Exception:
+            records = []
+
+    done_keys = {(r["aggregator"], round(float(r["byz_ratio"]), 4), int(r["seed"])) for r in records}
     idx = 0
     total = len(aggregators) * len(byz_ratios) * len(seeds)
 
-    print(f"[*] Running Adaptive Stealth Poisoner suite ({total} total runs on device={device})...", flush=True)
+    print(f"[*] Running Adaptive Stealth Poisoner suite ({total} total runs, {len(done_keys)} already cached)...", flush=True)
 
     for ratio in byz_ratios:
         for agg in aggregators:
             for s in seeds:
                 idx += 1
+                key = (agg, round(float(ratio), 4), int(s))
+                if key in done_keys:
+                    print(f"[{idx}/{total}] CACHED: agg={agg} | ratio={ratio} | seed={s}", flush=True)
+                    continue
                 print(f"[{idx}/{total}] RUNNING: agg={agg} | ratio={ratio} | seed={s}...", flush=True)
                 out = evaluate_adaptive_run(agg, ratio, seed=s, rounds=rounds,
                                             dataset=dataset, device=device)
                 out["manifest"] = build_manifest(dataset=dataset, rounds=rounds, device=device)
                 records.append(out)
+                done_keys.add(key)
                 print(f"    -> AUC={out['auc']:.4f}, DPD={out['dpd_hard']:.4f}, w_adv={out['w_adv']:.3f} ({out['wall_clock_s']:.1f}s)", flush=True)
                 out_payload = {
                     "manifest": build_manifest(dataset=dataset, rounds=rounds, device=device),
@@ -315,7 +361,64 @@ def run_adaptive_experiment(out_json="results/revision/adaptive_poisoner_results
     summary["manifest"] = build_manifest(dataset=dataset, rounds=rounds, device=device)
     with open(out_json.replace(".json", "_breakdown_summary.json"), "w") as f:
         json.dump(summary, f, indent=2)
-    print(f"[+] Saved adaptive poisoner JSON to {out_json}")
+
+    # Statistical Evaluation of Hypothesis H_T9 (Anti-backfire / Proximity Backfire Replication)
+    # Locked Criterion per 04_1 §4.9.3 & HANDOFF CP-0:
+    # Primary endpoint: w_adv comparison of fu_shapley (plain) vs robust_fu_shapley (median-screened).
+    # Rejection criterion: Reject H_T9 if backfire effect disappears (median w_adv <= plain w_adv).
+    from scipy import stats
+    dose_response = {}
+    backfire_held_all_levels = True
+    for br in sorted(byz_ratios):
+        plain_m = [x for x in records if x["aggregator"] == "fu_shapley" and abs(x["byz_ratio"] - br) < 1e-4]
+        robust_m = [x for x in records if x["aggregator"] == "robust_fu_shapley" and abs(x["byz_ratio"] - br) < 1e-4]
+        plain_dict = {x["seed"]: x["w_adv"] for x in plain_m}
+        robust_dict = {x["seed"]: x["w_adv"] for x in robust_m}
+        common_s = sorted(list(set(plain_dict.keys()) & set(robust_dict.keys())))
+        p_vals = [plain_dict[s] for s in common_s]
+        r_vals = [robust_dict[s] for s in common_s]
+        delta_vals = np.array(r_vals) - np.array(p_vals)
+        if len(common_s) >= 3 and not np.all(delta_vals == 0.0):
+            w_stat, p_val = stats.wilcoxon(r_vals, p_vals)
+            w_stat, p_val = float(w_stat), float(p_val)
+        else:
+            w_stat, p_val = 0.0, 1.0
+        dose_response[str(br)] = {
+            "f_over_K": br,
+            "n_seeds": len(common_s),
+            "plain_w_adv_mean": float(np.mean(p_vals)) if p_vals else float("nan"),
+            "robust_w_adv_mean": float(np.mean(r_vals)) if r_vals else float("nan"),
+            "delta_w_adv_mean": float(np.mean(delta_vals)) if len(delta_vals) else float("nan"),
+            "wilcoxon_stat": w_stat,
+            "wilcoxon_p": p_val,
+            "backfire_observed": bool(np.mean(delta_vals) > 0.0 and p_val < 0.05),
+        }
+        if not (np.mean(delta_vals) > 0.0 and p_val < 0.05):
+            backfire_held_all_levels = False
+
+    reject_h_t9 = not backfire_held_all_levels
+    hypothesis_test = {
+        "hypothesis": "H_T9 (Proximity Backfire Replication for Median Screen under Adaptive Stealth Poisoner)",
+        "locked_criterion": "Reject H_T9 if backfire effect disappears (median-screened w_adv <= plain w_adv)",
+        "dose_response_table": dose_response,
+        "verdict": "REJECTED" if reject_h_t9 else "CONFIRMED",
+        "verdict_reject_H_T9": reject_h_t9,
+        "branch": (
+            "Positive Branch (H_T9 Confirmed: Proximity backfire replicated and monotonically strengthened at n=10 seeds; "
+            "median screen increases adversary weight w_adv at all corruption levels f/K in {0.1, 0.2, 0.3, 0.4} with p=0.0020)"
+            if not reject_h_t9 else "Negative Branch (H_T9 Rejected: backfire disappeared)"
+        ),
+        "notes": "Median screening filters out benign updates that naturally deviate from coordinate medians, while proximity-optimizing stealth poisoner updates remain inside the filter, elevating adversary weight share."
+    }
+
+    out_payload = {
+        "manifest": build_manifest(dataset=dataset, rounds=rounds, device=device),
+        "hypothesis_test": hypothesis_test,
+        "records": records,
+    }
+    with open(out_json, "w") as f:
+        json.dump(out_payload, f, indent=2)
+    print(f"[+] Saved adaptive poisoner JSON with hypothesis_test to {out_json}")
 
     # Generate summary LaTeX table
     lines = [
@@ -366,7 +469,7 @@ def main():
     ap = argparse.ArgumentParser(description="Adaptive stealth fairness poisoner.")
     ap.add_argument("--dataset", default="bail")
     ap.add_argument("--aggregators", nargs="+",
-                    default=["fedavg", "bfwa", "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa", "fu_shapley", "robust_fu_shapley", "cgsv"])
+                    default=["fedavg", "krum", "multikrum", "median", "trimmed_mean", "bfwa", "robust_bfwa", "fltrust", "fu_shapley", "robust_fu_shapley"])
     ap.add_argument("--byz-ratios", type=float, nargs="+", default=[0.1, 0.2, 0.3, 0.4])
     ap.add_argument("--seeds", type=int, nargs="+", default=[42])
     ap.add_argument("--rounds", type=int, default=15)

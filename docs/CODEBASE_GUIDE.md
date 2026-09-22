@@ -1,102 +1,109 @@
 # TrustFedGNN Codebase Architecture & Engineering Guide
 
-This document provides an engineering-level overview of the `FedFairGNN` codebase. It details the module responsibilities, key functions, data structures, and instructions for running the test suite.
+> **Phiên bản:** Revision Q1 (Chuẩn hóa cấu trúc 5 phần `manuscript_v2`)  
+> **Tài liệu tham chiếu:** [`../../docs/03_ast_and_codebase_mapping.md`](../../docs/03_ast_and_codebase_mapping.md) · [`../../docs/02_mathematical_formulation_and_formal_proofs.md`](../../docs/02_mathematical_formulation_and_formal_proofs.md)
+
+Tài liệu này cung cấp cái nhìn tổng quan ở cấp độ kỹ thuật về codebase `FedFairGNN`, trách nhiệm của các module, các cấu trúc dữ liệu chính, giao thức kết nối và hướng dẫn kiểm thử tự động.
 
 ---
 
-## 1. Directory Structure
+## 1. Cấu Trúc Thư Mục (Directory Layout)
 
 ```
 FedFairGNN/
-├── src/                          # Core source code
-│   ├── config.py                 # ExperimentConfig dataclass & deterministic seed setting
-│   ├── models/                   # Neural network architectures
-│   │   ├── trustfedgnn.py        # STALE, UNUSED duplicate - not on the training path (see note below)
-│   │   ├── gnn.py                # Actual FSERLayer / TrustFedGNN implementation + GCN, GAT, FairGNN, FairSIN, FaVGNN baselines
-│   │   └── baselines.py          # FairGNN and FairSIN baseline models
-│   ├── federated/                # Federated training & aggregation protocols
-│   │   ├── client.py             # Client lifecycle, FTGD step, local soft-DPD, weighted BCE
-│   │   ├── trainer.py            # FederatedTrainer cross-silo orchestration
-│   │   ├── aggregation.py        # BFWA, robust_bfwa, coordinate_median, krum, trimmed_mean
-│   │   ├── attacks.py            # Poisoning attacks (Gaussian, sign-flip, scaling, fairness-poison)
-│   │   └── server.py             # Central orchestrator APIs
-│   ├── trust/                    # Trustworthiness & governance modules
-│   │   ├── privacy.py            # RDP PrivacyAccountant & Gaussian noise calculations
-│   │   ├── trust_score.py        # Composite Trust Index computation
-│   │   ├── uncertainty.py        # MC-Dropout epistemic uncertainty & calibration (ECE)
-│   │   ├── compliance.py         # EU AI Act & NIST RMF compliance checks
-│   │   ├── explain.py            # GNN attention attribution explainability
-│   │   └── incentive.py          # [Archived] Target gradient alignment scoring
-│   ├── data/                     # Data loading & partitioning
-│   │   ├── datasets.py           # Benchmarks (German, Credit, Bail, Pokec-z, Elliptic)
-│   │   ├── partition.py          # Dirichlet non-IID & Louvain community graph partitioning
-│   │   └── sampler.py            # SimpleNeighborLoader for mini-batch graph inference
-│   └── utils/                    # Common utilities
-│       ├── metrics.py            # AUC-ROC, AP, F1-macro, DPD, EOD, weight oscillation Ω_w
-│       └── logging_utils.py      # JSONL logging and artifact serialization
-├── experiments/                  # Experiment runners & presetting
-│   ├── run_experiment.py         # Single experiment entry point
-│   ├── run_matrix.py             # Benchmark matrix orchestration
-│   ├── methods.py                # Registry of baseline and proposed method configurations
-│   ├── report.py                 # Automated report generator
-│   └── revision/                 # 14 dedicated revision experiment runners
-├── colab/                        # Remote Google Colab GPU execution pipeline
-├── tests/                        # Pytest suite locking all invariants (53 tests)
-├── results/                      # Raw experimental outputs and logs
-└── manuscript/                   # LaTeX publication sources & tables
+├── src/                          # Mã nguồn cốt lõi
+│   ├── config.py                 # Dataclass ExperimentConfig & Thiết lập hạt giống tất định
+│   ├── models/                   # Kiến trúc mạng nơ-ron đồ thị (GNN)
+│   │   ├── gnn.py                # Lớp FSERLayer / TrustFedGNN (GAT 2 lớp + BN + Skip) & baselines
+│   │   └── baselines.py          # Kiến trúc chuyên biệt của FairGNN và FairSIN
+│   ├── federated/                # Giao thức huấn luyện & thuật toán tổng hợp liên đoàn
+│   │   ├── client.py             # Vòng đời Client, bước chiếu trực giao FTGD, soft-DPD, weighted BCE
+│   │   ├── trainer.py            # FederatedTrainer điều phối vòng lặp cross-silo
+│   │   ├── aggregation.py        # FU-Shapley, FLAME, FLTrust, BFWA, Krum, Median, Trimmed Mean
+│   │   ├── attacks.py            # Đòn tấn công (Gaussian, Sign-flip, Scaling, Stealth, Fairness-poison)
+│   │   └── server.py             # API máy chủ điều phối trung tâm
+│   ├── trust/                    # Các module quản trị và độ tin cậy
+│   │   ├── privacy.py            # Kế toán RDP PrivacyAccountant & Tính toán nhiễu Gauss
+│   │   ├── trust_score.py        # Tính toán Composite Trust Index (Độ tin cậy 5 chiều)
+│   │   ├── uncertainty.py        # MC-Dropout epistemic uncertainty & Hiệu chuẩn ECE
+│   │   ├── compliance.py         # Kiểm tra tuân thủ kỹ thuật EU AI Act & NIST AI RMF
+│   │   └── explain.py            # Giải thích trọng số chú ý GNN
+│   ├── data/                     # Tải & phân vùng dữ liệu đồ thị
+│   │   ├── datasets.py           # 5 benchmarks (German, Credit, Bail, Pokec-z, Elliptic)
+│   │   ├── partition.py          # Phân vùng Non-IID Dirichlet & Cụm cộng đồng Louvain/Metis
+│   │   └── sampler.py            # SimpleNeighborLoader cho suy luận đồ thị mini-batch
+│   └── utils/                    # Tiện ích dùng chung
+│       ├── metrics.py            # AUC-ROC, AP, F1-macro, DPD_hard, EOD, độ rung lắc trọng số Ω_w
+│       └── logging_utils.py      # Ghi log JSONL và serialize artifacts chuẩn
+├── experiments/                  # Kịch bản thực thi & điều phối thực nghiệm
+│   ├── run_experiment.py         # Điểm vào thực thi một thực nghiệm đơn lẻ
+│   ├── methods.py                # Đăng ký 16 baselines SOTA & biến thể Ours
+│   ├── make_manuscript_v2_figures.py # Sinh biểu đồ tự động cho bản thảo manuscript_v2
+│   ├── make_tables_c2.py         # Sinh bảng biểu tự động từ kết quả JSON
+│   └── revision/                 # Các kịch bản chuyên biệt phục vụ chiến dịch phản biện
+├── results/                      # Hồ sơ dữ liệu gốc JSON có chữ ký manifest
+│   └── revision/                 # 40+ artifacts kiểm định phản biện (RUN-CTRL, RUN-DELTA-GRID...)
+├── manuscript_v2/                # Mã nguồn LaTeX bài báo bản thảo v2 (68 trang, 0 warnings)
+│   ├── sections/                 # 00_preamble, 01_intro, 02_related, 03_method, 04_results, 05_conclusion
+│   ├── tables/                   # 14 bảng biểu (10 bảng chính + 4 bảng phụ lục/kiểm định)
+│   └── figures/                  # 5 biểu đồ vector chính thức (PDF/PNG)
+├── scripts/                      # Công cụ kiểm toán (lint_manuscript_blacklist.py)
+├── tests/                        # Bộ kiểm thử pytest khóa các bất biến toán học và thuật toán
+└── docs/                         # Tài liệu kỹ thuật nội bộ codebase
 ```
 
 ---
 
-## 2. Core Implementation Modules
+## 2. Các Module Cốt Lõi (Core Implementation)
 
-### A. Client-Side Training & FTGD (`src/federated/client.py`)
+### A. Phía Client: Huấn luyện Cục bộ & Phép Chiếu Trực Giao FTGD (`src/federated/client.py`)
 - **`Client._ftgd_step(model, optimizer, batch, config)`**:
-  1. Computes total gradient $g_{\text{total}} = \nabla_\theta (\mathcal{L}_{\text{task}} + \lambda \mathcal{L}_{\text{fair}})$ and fairness gradient $g_{\text{fair}} = \nabla_\theta (\lambda \mathcal{L}_{\text{fair}})$.
-  2. Projects task gradient orthogonal to fairness gradient:
+  1. Tính toán gradient nhiệm vụ $g_{\text{task}}$ và gradient công bằng $g_{\text{fair}} = \nabla_\theta (\lambda \mathcal{L}_{\text{fair}})$.
+  2. Thực hiện phép chiếu trực giao loại bỏ xung đột mục tiêu (Định lý 1):
      $$g_{\text{task}}^\perp = g_{\text{total}} - \frac{\langle g_{\text{total}}, g_{\text{fair}}\rangle}{\|g_{\text{fair}}\|^2 + \varepsilon} g_{\text{fair}}$$
-  3. Evaluates 2D scalar group means $(\mu_0, \mu_1)$. When DP is enabled, injects calibrated Gaussian noise $\mathcal{N}(0, \sigma_{\text{DP}}^2)$ with sensitivity $\Delta \le \sqrt{2}/n_{\min}$.
-  4. Releases privatised disparity $\widetilde{\text{DPD}}_k = |\tilde{\mu}_0 - \tilde{\mu}_1|$ to the server.
+  3. Đo lường thống kê chênh lệch nhóm 2 chiều $(\mu_0, \mu_1)$. Khi bật chế độ DP, tiêm nhiễu Gauss $\mathcal{N}(0, \sigma_{\text{DP}}^2)$ với độ nhạy giới hạn $\Delta \le \sqrt{2}/n_{\min}$.
+  4. Phát hành thống kê đã bảo vệ $\widetilde{\text{DPD}}_k = |\tilde{\mu}_0 - \tilde{\mu}_1|$ lên máy chủ.
 
-### B. Graph Debiasing & FSER Layer (`src/models/gnn.py`)
+### B. Phía Server: Cơ Chế Tổng Hợp Ba Tầng & Phòng Thủ Đa Lớp (`src/federated/aggregation.py`)
+Thuật toán `fu_shapley` / `robust_fu_shapley` được thiết kế theo kiến trúc module phân rã:
 
-> **Pointer note.** The classes that actually run are `FSERLayer` and `TrustFedGNN` in **`src/models/gnn.py`** — `src/models/__init__.py` builds its `_REGISTRY` (`"trustfedgnn" -> TrustFedGNN`) from imports out of `gnn.py`. The file `src/models/trustfedgnn.py` is a **stale, divergent duplicate that is never instantiated** (its `TrustFedGNN.__init__` accepts neither the `beta_init` nor the `fser_mode` kwargs that `build_model` passes, and hardcodes `beta = 0.5`, so instantiating it would raise `TypeError`); it should be deleted or clearly marked archived. Do not read it as the reference implementation.
+1. **Tầng 1 — Cổng Phi Tuyến FU-Gating (Tier-1 Directional Filter):**
+   - Đo lường góc cosine giữa gradient client $\theta_k$ và gradient mỏ neo $\gtarg = g_{\mathrm{task}} + \alpha g_{\mathrm{fair}}$ tính trên tập kiểm chuẩn sạch $\Droot$:
+     $$\text{sim}_k = \cos(\theta_k, \gtarg) = \frac{\langle \theta_k, \gtarg \rangle}{\|\theta_k\| \cdot \|\gtarg\| + \varepsilon}$$
+   - Lọc bỏ các cập nhật đi ngược hướng mục tiêu bằng hàm chỉnh lưu $\text{ReLU}(\text{sim}_k)$.
+2. **Tầng 2 — Khống Chế Biên Độ (Tier-2 Norm Rescaling):**
+   - Chuẩn hóa chặn biên độ gradient của client theo chuẩn vector mỏ neo sạch:
+     $$\theta_k \leftarrow \theta_k \cdot \min\left(1, \frac{\|\gtarg\|}{\|\theta_k\| + \varepsilon}\right)$$
+   - Ngăn chặn hoàn toàn các đòn tấn công phóng đại trọng số (Scaling $c=100$).
+3. **Tầng 3 — Làm Mượt Động Lực Học (Tier-3 Reference EMA):**
+   - Cập nhật vector mỏ neo qua Exponential Moving Average $\gtarg^{(t)} = \beta \gtarg^{(t-1)} + (1-\beta) g_{\Droot}^{(t)}$ giúp giảm rung lắc trọng số $\Omega_w$ từ $24.1\times$ (German Credit) tới $30\times$ (Pokec-z, Bảng 9).
+4. **Cơ Chế Dự Phòng Thích Ứng (Static Defense-in-Depth Variant):**
+   - Biến thể `robust_fu_shapley` cung cấp thêm bộ lọc trung vị tọa độ (Coordinate Median screening) được cấu hình tĩnh cho môi trường đe dọa cao (High-threat deployments), trong khi cấu hình sản xuất mặc định là **Canonical FU-Alignment (Gating + Norm Rescaling + EMA)**.
 
-- **`FSERLayer.message(edge_index, x_j, x_i, s_j, s_i)`**:
-  - Modifies attention logits $\tilde{e}_{vu} = e_{vu} - \beta \cdot \mathbb{I}(s_v \neq s_u) \cdot \max(0, \cos(h_v, h_u))$.
-  - Clamps the learnable parameter $\beta \in [0.0, 5.0]$ to prevent numerical overflow in softmax.
-
-### C. Server Aggregators (`src/federated/aggregation.py` & `src/trust/incentive.py`)
-- **`fu_shapley` (Canonical Proposed Aggregator)**:
-  - Evaluates bi-objective target gradient on server-side holdout split: $g_{\text{target}} = g_{\text{task}}^{\text{srv}} + \alpha g_{\text{fair}}^{\text{srv}}$ ($\alpha = 0.1$).
-  - Scores client updates via scale-invariant inner product: $\varphi_k = \langle g_k, g_{\text{target}}\rangle / (\|g_{\text{target}}\| + 10^{-8})$.
-  - Smooths scores across rounds via EMA ($\beta_{\text{ema}} = 0.9$), handles non-finite scores safely, and gates onto simplex with explicit null-player mask:
-    $$w_k = \frac{\max(0, \bar{\varphi}_k) \cdot \mathbb{I}(g_k \neq \mathbf{0})}{\sum_j \max(0, \bar{\varphi}_j) \cdot \mathbb{I}(g_j \neq \mathbf{0})}$$
-  - **Guarantees Metadata Immunity**: Never consumes self-reported fairness disparity $\widehat{\text{DPD}}_k$, proving $\lVert\Delta\bm{w}\rVert_\infty = 0.0000$ bit-exact under falsification attacks.
-- **`robust_fu_shapley` (Byzantine-Resilient Variant)**:
-  - Prepends coordinate-wise median distance screening (discarding the $f$ farthest updates) before running the FU-Shapley gating.
-  - Neutralizes scaling adversaries ($w_{\text{adv}} = 0.0000$ at $f/K \le 0.30$), closing the vulnerability where scaling updates align positively with $g_{\text{target}}$.
-- **`bfwa_weights(perfs, dpds, tau, ...)` (Baseline)**:
-  - Implements a penalised Bi-objective Frank–Wolfe iteration on simplex $\Delta_K$ steering weights toward budget $\tau$ on *reported* disparity. Vulnerable to metadata falsification (capturing $86.2\%$ aggregate share).
-- **`coordinate_median(updates)` (Baseline)**:
-  - Computes coordinate-wise median across client parameter updates, bounded by the standard $f < K/2$ breakdown point. Does not produce a client weight vector.
+### C. Bộ Thuật Toán Tổng Hợp Đối Chuẩn (Benchmark Aggregators)
+Trong `src/federated/aggregation.py`, codebase hỗ trợ đầy đủ các bộ gom tụ:
+- **`fedavg`**: Trung bình có trọng số cổ điển (McMahan et al., 2017).
+- **`fltrust`**: Gom tụ mỏ neo tin cậy đơn mục tiêu (Cao et al., NDSS 2021).
+- **`flame`**: Gom tụ phân cụm khoảng cách cosine kết hợp dynamic norm clipping (Nguyen et al., USENIX Security 2022).
+- **`krum` / `multikrum`**: Lọc khoảng cách Euclid loại bỏ ngoại lai.
+- **`trimmed_mean` / `median`**: Lọc thống kê tọa độ không mỏ neo.
+- **`fairfed` / `f2gnn` / `fedgraphfair` / `popets_fairfed`**: Các thuật toán công bằng phụ thuộc siêu dữ liệu tự khai của client.
 
 ---
 
-## 3. Testing & CI Invariants
+## 3. Quy Trình Kiểm Thử & Đảm Bảo Chất Lượng (QA & Testing)
 
-The codebase enforces strict unit tests and regression guards. To execute the entire test suite:
+Codebase duy trì bộ kiểm thử tự động gồm 53 bài test khóa cứng toàn bộ các bất biến thuật toán:
 
 ```bash
-# Run all tests offline
-pytest tests/ -q
+# 1. Kiểm tra từ khóa cấm trong bản thảo (Zero Overclaim Guard)
+python3 scripts/lint_manuscript_blacklist.py
 
-# Run revision invariants specifically (53 tests)
-pytest tests/test_revision_invariants.py -v
+# 2. Chạy toàn bộ kiểm thử đơn vị & kiểm tra bất biến
+pytest tests/ -v
+
+# 3. Kiểm tra riêng biệt thuật toán FLAME mới bổ sung
+pytest tests/test_flame_aggregator.py -v
 ```
 
-### Key Invariants Locked:
-- **Simplex Invariant**: All aggregators must return a valid 1D vector of length $K$ satisfying $\sum w_k = 1.0 \pm 10^{-6}$ and $w_k \ge 0$.
-- **Ablation Isolation**: Disabling DP (`dp_enabled=False`) allows FTGD orthogonalization with $\sigma=0.0$, cleanly isolating gradient geometry from noise injection.
-- **Attention Clamping**: Parameter $\beta$ must never exceed $[0.0, 5.0]$.
-- **Zero Leakage**: Forward pass must not serialize sensitive attributes $s$ across the network.
+Mọi kết quả kiểm thử và số liệu đối chiếu chi tiết xem tại [`EXPERIMENTS_AND_RESULTS.md`](EXPERIMENTS_AND_RESULTS.md) và [`../../docs/05_data_and_results.md`](../../docs/05_data_and_results.md).

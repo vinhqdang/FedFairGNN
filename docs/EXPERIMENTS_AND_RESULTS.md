@@ -1,82 +1,69 @@
-# Experiments & Results Reproduction Guide
+# Hướng Dẫn Tái Lập Thực Nghiệm & Sổ Tra Cứu Kết Quả (Reproduction Guide)
 
-This guide details how to execute experiments, reproduce the published numbers, and locate all logged results in the `FedFairGNN` repository.
+> **Tài liệu điều phối hạt nhân:** [`../../docs/04_experiment_execution.md`](../../docs/04_experiment_execution.md)  
+> **Sổ dữ liệu độc quyền:** [`../../docs/05_data_and_results.md`](../../docs/05_data_and_results.md)  
+> **Mục tiêu:** Cung cấp hướng dẫn từng bước để tái lập 100% các kết quả thực nghiệm trong bản thảo `manuscript_v2/` với độ chính xác bit-exact trên CPU và kiểm định phân phối trên GPU.
 
 ---
 
-## 1. Quick Reproduction Commands
+## 1. Lệnh Tái Lập Nhanh (Quick Reproduction Commands)
 
-### A. Run a Single Benchmark Experiment
+### A. Chạy Một Thực Nghiệm Đơn Lẻ (Single Experiment)
 ```bash
-# Run TrustFedGNN on Bail Recidivism with Seed 42
-python -m experiments.run_experiment --method fedfairgnn --dataset bail --seed 42
+# Chạy TrustFedGNN (Canonical) trên German Credit với seed 42
+python3 -m experiments.run_experiment --method fedfairgnn --dataset german --seed 42
 
-# Run baseline FedAvg-GCN on Credit Default
-python -m experiments.run_experiment --method fedavg-gcn --dataset credit --seed 42
+# Chạy Baseline FLAME (USENIX Security 2022) trên Bail Recidivism
+python3 -m experiments.run_experiment --method flame --dataset bail --seed 42
+
+# Chạy Đối chứng Cùng Backbone GAT (A0 FedAvg Scaffold Control)
+python3 -m experiments.run_experiment --method fedavg-gat --dataset pokec_z --seed 42
 ```
 
-### B. Run the Benchmark Matrix
+### B. Chạy Bộ Kiểm Chuẩn Chính Tắc (Canonical Suite)
 ```bash
-# Executes main, ablation, and robustness studies across datasets
-python -m experiments.run_matrix --study main,ablation,robustness
+# Chạy bộ kiểm chuẩn CPU: Canonical + Ablation M1–M7 + Two-Tier Defense
+python3 experiments/run_canonical_suite.py
 ```
 
 ---
 
-## 2. Dedicated Revision Experiment Runners (`experiments/revision/`)
+## 2. Danh Mục Các Chiến Dịch Thực Nghiệm Phản Biện (`experiments/revision/`)
 
-The `experiments/revision/` directory contains 14 specialized, self-contained scripts addressing each experimental requirement from the revision audit:
+Toàn bộ các yêu cầu kiểm định chuyên sâu từ quá trình phản biện AC-reviewers được tổ chức thành các chiến dịch thực nghiệm độc lập:
 
-| Script Name | Purpose | Output Location |
-|---|---|---|
-| [`ablation_grid_runner.py`](../experiments/revision/ablation_grid_runner.py) | 7-arm full-factorial ablation ($C_0 \dots C_6$) on Bail, Credit, Pokec-z $\times$ 10 seeds | `results/revision/ablation_grid_*.json` |
-| [`fser_beta_analysis.py`](../experiments/revision/fser_beta_analysis.py) | Convergence and layer-wise distribution analysis of $\beta$ parameters | Console & paper text |
-| [`fser_fairness_extract.py`](../experiments/revision/fser_fairness_extract.py) | Direct $\Delta\text{DPD}$ and $\Delta\text{EOD}$ extraction with Wilcoxon tests | `results/revision/fser_fairness_extract.json` |
-| [`robustness_multiseed.py`](../experiments/revision/robustness_multiseed.py) | Multi-seed Byzantine robustness across 7 aggregators and 3 attacks | `results/revision/robustness_multiseed.json` |
-| [`dp_accounting_table.py`](../experiments/revision/dp_accounting_table.py) | Analytical RDP-to-$(\epsilon, \delta)$ accounting table across 6 datasets | `manuscript/tables/revision/dp_accounting.tex` |
-| [`update_level_attack.py`](../experiments/revision/update_level_attack.py) | Linear & MLP attribute inference probe on parameter updates vs statistics | `results/revision/update_level_attack.json` & `tab:update_attack` |
-| [`bfwa_slack_analysis.py`](../experiments/revision/bfwa_slack_analysis.py) | 1,000-sample Monte Carlo analysis of BFWA disparity constraint slack | `results/revision/bfwa_slack.json` & `tab:bfwa_slack` |
-| [`adaptive_poisoner.py`](../experiments/revision/adaptive_poisoner.py) | Omniscient stealth adversary breakdown sweep ($f \in [0.1, 0.4]$) | `results/revision/adaptive_poisoner.json` & `tab:adaptive_poisoner` |
-| [`dirichlet_sweep.py`](../experiments/revision/dirichlet_sweep.py) | 48-run sweep across $\alpha \in [0.1, 1.0]$ and $K \in [5, 20]$ | `results/revision/dirichlet_sweep.json` & `tab:dirichlet_sweep` |
-| [`metis_partition_experiment.py`](../experiments/revision/metis_partition_experiment.py) | Graph topology partition comparison (Uniform vs Dirichlet vs Louvain) | `results/revision/metis_partition_experiment.json` & `tab:partition_comparison` |
-| [`trust_score_sensitivity.py`](../experiments/revision/trust_score_sensitivity.py) | 2,000-sample Monte Carlo rank perturbation testing of Composite Trust Score | `results/revision/trust_score_sensitivity.json` & `tab:trust_score_sensitivity` |
-| [`centralized_sanity_anchors.py`](../experiments/revision/centralized_sanity_anchors.py) | Centralized vs Federated GCN/GAT bounds ($\Delta_{\text{FL}}$ validation) | `results/revision/centralized_sanity_anchors.json` & `tab:centralized_sanity` |
-| [`elliptic_proxy_sensitivity.py`](../experiments/revision/elliptic_proxy_sensitivity.py) | Subgroup proxy sensitivity (Demographic vs Hubs vs Behavioral Quantiles) | `results/revision/elliptic_proxy_sensitivity.json` & `tab:proxy_sensitivity` |
+| Mã Chiến Dịch | Mục Tiêu Khoa Học | Script Thực Thi | Artifact Đầu Ra (`results/revision/`) | Bảng trong `manuscript_v2` |
+|---|---|---|---|---|
+| **PREFLIGHT** | Tiền kiểm toán 5 tập dữ liệu benchmark, tỷ lệ đồng chất nhạy cảm $h_s$ | `experiments/revision/preflight_handoff.py` | `results/preflight_datasets.json` | Table 1 (`tab_datasets.tex`) |
+| **RUN-META** | Khảo sát lỗ hổng kênh metadata tự khai trên 6 quy tắc SOTA ($n=30$ seeds) | `experiments/incentive_audit.py` | `metadata_capture_stats.json` | Table 2 (`tab_metadata_capture.tex`) |
+| **RUN-SLACK** | Kiểm chứng thực nghiệm rào cản LDP (Folded Normal bias & Le Cam minimax) | `experiments/revision/bfwa_slack_analysis.py` | `bfwa_slack.json`, `dp_accounting.json` | Table 3 (`tab_ldp_barrier.tex`) |
+| **RUN-RESCALE** | Bóc tách cơ chế phòng thủ 2 tầng: Norm Rescaling vs Coordinate Median | `experiments/run_canonical_suite.py` | `rescale_median_ablation.json` | Table 4 (`tab_two_tier.tex`) |
+| **RUN-STEALTH** | Tấn công ngụy trang cự ly thích ứng & Phản tác dụng của Median ($f/K \in [0.1, 0.4]$) | `experiments/revision/adaptive_poisoner.py` | `adaptive_poisoner_results.json`, `flame_adaptive_results.json` | Table 5 (`tab_adaptive_poisoner.tex`) |
+| **RUN-ALIGN** | Tấn công hộp trắng toàn tri Kerckhoffs T1 tối ưu Adam ($n=10$ seeds) | `experiments/revision/alignment_adversary.py` | `alignment_adversary.json` | Table 6 (`tab_alignment_adversary.tex`) |
+| **RUN-CTRL** | Bóc tách Scaffold: Đối chứng FedAvg vs TrustFedGNN trên cùng backbone GAT ($n=10$) | `experiments/run_sota_pokecz.py` | `sota_pokecz.json`, `aggregator_control_pokecz.json` | Table 7 (`tab_sota_main.tex`) |
+| **RUN-COST** | Đo lường thời gian huấn luyện wall-clock, GFLOPs và phụ trội tính toán tại server | `experiments/revision/convergence_empirical.py` | `convergence_empirical.json` | Table 8 (`tab_cost.tex`) |
+| **RUN-STABILITY** | Hòa giải đa chế độ biến thiên trọng số $\Omega_w$ (EMA dập rung lắc tới $30\times$) | `experiments/run_canonical_suite.py` | `canonical_suite.json`, `aggregator_control_pokecz.json` | Table 9 (`tab_weight_stability.tex`) |
+| **RUN-DELTA-GRID** | Khảo sát lưới nhân tử $2 \times 2$ ($\alpha \in \{0, 0.1\}$), chứng minh Mechanical Separability | `experiments/revision/ablation_grid_runner.py` | `fltrust_delta_grid_results.json` | Table 10 (`tab_factorial_2x2.tex`) |
+| **RUN-ABLATION** | Bộ bóc tách thành phần M1–M7 trên German Credit ($n=10$ seeds) | `experiments/run_canonical_suite.py` | `canonical_suite.json` | Table 11 (`tab_ablation_suite.tex`) |
+| **RUN-DIR/PART** | Quét 12 ô Dirichlet Skew ($\alpha \in [0.1, 1.0]$) & Phân vùng cộng đồng Metis trên Bail | `experiments/revision/dirichlet_sweep.py` | `dirichlet_sweep.json`, `metis_partition.json` | Table 12 (`tab_topology_stress.tex`) |
+| **RUN-SENS** | 2,000 mẫu Monte Carlo kiểm tra độ vững thứ hạng điểm tin cậy tổng hợp ($\rho_s = 0.965$) | `experiments/revision/trust_score_sensitivity.py` | `trust_score_sensitivity.json` | Table 13 (`tab_trust_score_sensitivity.tex`) |
+| **RUN-FIDELITY** | Kiểm định độ phân kỳ tiên đề và giới hạn xấp xỉ Shapley tổ hợp (125 điểm thăm dò) | `experiments/run_shapley_fidelity.py` | `results/fairshare/` artifacts | Table 14 (`tab_trust_fidelity.tex`) |
 
 ---
 
-## 3. Pillar C2 Evidence Tables Generation (`experiments/make_tables_c2.py`)
+## 3. Quy Trình Tự Động Sinh Bảng Biểu & Hình Vẽ Bản Thảo
 
-The central defensive and systemic claims of TrustFedGNN (Metadata Immunity, Byzantine Defense, Weight Stability, and Computational Cost) are generated directly from experimental JSON logs with zero hand-typed cells:
+Dự án áp dụng nguyên tắc **Zero Manual Typing**: toàn bộ bảng biểu và biểu đồ được sinh tự động từ các tệp JSON chính thức:
 
 ```bash
-# Generate the 4 Pillar C2 evidence tables directly into manuscript tables directory:
-python experiments/make_tables_c2.py
+# 1. Sinh các bảng biểu chứng cứ toán học & phòng thủ vào manuscript_v2/tables/
+python3 experiments/make_tables_c2.py
+
+# 2. Sinh các biểu đồ vector (PDF/PNG) vào manuscript_v2/figures/
+python3 experiments/make_manuscript_v2_figures.py
+
+# 3. Biên dịch kiểm thử toàn bộ bản thảo LaTeX
+cd manuscript_v2 && pdflatex -interaction=nonstopmode main.tex
 ```
 
-| Generated Table | Math / Empirical Claim | Key Result |
-|---|---|---|
-| [`metadata_immunity.tex`](../manuscript_neurocomputing/tables/metadata_immunity.tex) | Theorem 2 (Metadata Immunity) | Under client falsification ($\widehat{\dpd}_k=0.0, \mathrm{Perf}_k=0.99$), Frank–Wolfe/BFWA assigns $86.2\%$ weight share to the liar; FU-Shapley is bit-identical ($\lVert\Delta\bm{w}\rVert_\infty = 0.0000$). |
-| [`two_tier_defense.tex`](../manuscript_neurocomputing/tables/two_tier_defense.tex) | Robustness under 20% Byzantine minority | Reports $w_{\text{adv}}$ and AUC across 4 attack scenarios; reports NaN divergence rates transparently (superscripts) demonstrating that removing EMA (M7) causes training divergence. |
-| [`weight_stability.tex`](../manuscript_neurocomputing/tables/weight_stability.tex) | Total Weight Variation $\Omega_w$ | Quantifies the cost of per-round re-scoring; FU-Shapley is $27\times$ more stable than Frank–Wolfe dual-ascent re-solving. |
-| [`cost.tex`](../manuscript_neurocomputing/tables/cost.tex) | Wall-clock execution time | Measured on a single NVIDIA T4 GPU ($K=10, R=50, n=10$ seeds); overhead is $1.86\times$ vs FedAvg, dominated by server-side holdout gradient evaluation. |
-
----
-
-## 4. Formal Verification in Lean 4 (`docs/proofs/`)
-
-Four foundational algebraic and geometric theorems are formally verified and machine-checked in Lean 4:
-- [`docs/proofs/OrthogonalProjection.lean`](proofs/OrthogonalProjection.lean): FTGD exact orthogonality ($\varepsilon = 0$).
-- [`docs/proofs/SimplexProperties.lean`](proofs/SimplexProperties.lean): Aggregation weight simplex validity ($w_k \ge 0, \sum w_k = 1$).
-- [`docs/proofs/NullPlayer.lean`](proofs/NullPlayer.lean): Null player receiving strictly zero weight across all execution paths.
-- [`docs/proofs/LinearDecomposition.lean`](proofs/LinearDecomposition.lean): Additive bilinearity decomposition of contribution scores.
-
----
-
-## 5. Results Artifacts & LaTeX Tables
-
-All experimental logs are recorded as reproducible JSON artifacts:
-- **`results/`**: Canonical ablation suite (`canonical_suite.json`), SOTA benchmark logs (`sota_pokecz.json`, `sota_credit.json`), and convergence curves.
-- **`results/revision/`**: Specialized logs for the 14 revision runners.
-- **`manuscript_neurocomputing/tables/`**: Authoritative publication LaTeX tables compiled in `manuscript_neurocomputing/main.tex`.
-
+Mọi dữ liệu chi tiết, các giá trị p-value và khoảng tin cậy 95% được ghi nhận đầy đủ tại [`../../docs/05_data_and_results.md`](../../docs/05_data_and_results.md).

@@ -17,7 +17,7 @@ cd "$REPO"
 COMMIT="$(git rev-parse HEAD)"
 COMMIT_SHORT="$(git rev-parse --short HEAD)"
 BRANCH="$(git branch --show-current)"
-if [ -n "$(git status --porcelain)" ]; then DIRTY=true; else DIRTY=false; fi
+if [ -n "$(git status --porcelain -- . ':!results')" ]; then DIRTY=true; else DIRTY=false; fi
 
 # Cây làm việc bẩn ⇒ commit hash KHÔNG định danh được thứ sắp chạy.
 # Dừng lại thay vì ghi một manifest nói dối.
@@ -35,7 +35,7 @@ fi
 # COPYFILE_DISABLE=1: chặn AppleDouble ._* của macOS.
 COPYFILE_DISABLE=1 tar \
   --exclude='./.git' --exclude='./data/raw' --exclude='./data/processed' \
-  --exclude='./results/*' --exclude='./manuscript' \
+  --exclude='./results/*' --exclude='./manuscript*' \
   --exclude='__pycache__' --exclude='.pytest_cache' --exclude='*.pyc' --exclude='.DS_Store' \
   -czf "$SP/fedfairgnn.tgz" .
 

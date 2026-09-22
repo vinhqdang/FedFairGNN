@@ -53,7 +53,18 @@ def run_metadata_immunity_audit(out_dir: str = "results/fairshare"):
     max_diff_rfu = max(abs(a - b) for a, b in zip(w_rfu_h, w_rfu_l))
     assert max_diff_rfu == 0.0, f"Robust FU-Shapley weights differed by {max_diff_rfu}"
 
-    # 3. BFWA Negative Control
+    # 3. FLTrust: the closest structural relative. Also server-referenced, so it
+    # is expected to be metadata-immune too -- we run it precisely to show that
+    # our immunity claim is not novel against FLTrust, only against the
+    # fairness-aware aggregators that reintroduce the self-reported channel.
+    # It scores against g_task (task-only root), not the bi-objective g_target.
+    _, info_flt_h = aggregate("fltrust", updates, meta_honest, g_task=g_target)
+    _, info_flt_l = aggregate("fltrust", updates, meta_lying, g_task=g_target)
+    w_flt_h = [float(x) for x in info_flt_h["weights"]]
+    w_flt_l = [float(x) for x in info_flt_l["weights"]]
+    max_diff_flt = max(abs(a - b) for a, b in zip(w_flt_h, w_flt_l))
+
+    # 4. BFWA Negative Control
     _, info_bfwa_h = aggregate("bfwa", updates, meta_honest)
     _, info_bfwa_l = aggregate("bfwa", updates, meta_lying)
     w_bfwa_h = [float(x) for x in info_bfwa_h["weights"]]
@@ -69,6 +80,10 @@ def run_metadata_immunity_audit(out_dir: str = "results/fairshare"):
         "max_diff_fu": max_diff_fu,
         "max_diff_robust_fu": max_diff_rfu,
         "max_diff_bfwa": max_diff_bfwa,
+        "fltrust_bit_exact": bool(max_diff_flt == 0.0),
+        "max_diff_fltrust": max_diff_flt,
+        "weights_fltrust_honest": w_flt_h,
+        "weights_fltrust_lying": w_flt_l,
         "weights_fu_honest": w_fu_h,
         "weights_fu_lying": w_fu_l,
         "weights_bfwa_honest": w_bfwa_h,

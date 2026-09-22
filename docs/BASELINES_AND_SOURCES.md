@@ -1,48 +1,53 @@
-# Baseline reimplementation fidelity & sources to verify
+# Baseline Reimplementation Fidelity & Academic Sources
 
-We compare TrustFedGNN against SOTA fairness / federated / robust methods. To be
-transparent about reproduction fidelity (and to flag sources we could not
-retrieve automatically), this document records each baseline's status.
+> **Tài liệu tham chiếu hạt nhân:** [`../../docs/01_sota_taxonomy_and_gap_analysis.md`](../../docs/01_sota_taxonomy_and_gap_analysis.md)
 
-## Faithfully reimplemented (from published algorithm descriptions)
+Tài liệu này ghi nhận đầy đủ nguồn gốc, mức độ trung thực khi tái lập (reimplementation fidelity) và các giả định xấp xỉ của 16 baselines SOTA được tích hợp trong codebase `FedFairGNN`.
 
-| Baseline | Venue | What we implement | Fidelity |
-|----------|-------|-------------------|----------|
-| FedAvg-GCN / GAT | AISTATS'17 | standard backbones + FedAvg | exact |
-| FairGNN | WSDM'21 | adversarial debiasing (encoder + sensitive adversary, min-max) | faithful core; sensitive-estimator for missing S omitted (all S observed here) |
-| FairSIN | AAAI'24 | FairSIN-F: heterogeneous-neighbour feature augmentation + MLP estimator | faithful to the -F variant; per-layer discriminator variant not used |
-| FairFed | AAAI'23 | fairness-gap aggregation-weight update rule (exact formula) | exact aggregation rule |
-| q-FedAvg | ICLR'20 | q-reweighted aggregation by client loss | exact |
-| FedFB | — | FairBatch-style local group reweighting under FedAvg | faithful approximation |
-| F$^2$GNN | arXiv'23 | softmax fairness-weighted + group-balance aggregation | faithful to the aggregation design |
-| DP-FedAvg | ICLR'18 | full-gradient clipping + Gaussian noise (RDP-accounted) | exact; serves as the FTGD contrast |
-| FaVGNN | Information Fusion'26 | horizontal adaptation of hetero-feature fusion + adversary | faithful adaptation (paper is vertical-FL; we adapt to our horizontal setting) |
-| FDP-Fair | arXiv 2603.24392 (2026) | DP-SGD + demographic-parity group-offset post-processing | exact |
+---
 
-Robust aggregators (Krum, Multi-Krum, coordinate median, trimmed mean) and
-attacks (label-flip, Gaussian, sign-flip, scaling, IPM, ALIE, fairness-poison)
-follow their original papers; formulas cross-checked against the literature.
+## 1. Các Thuật Toán Tái Lập Trung Thực Tuyệt Đối (Exact / Faithful Core)
 
-## Reimplemented from uploaded PDFs (partial/approximate fidelity, honestly noted)
+| Phương Pháp | Hội Nghị / Tạp Chí | Cơ Chế Tái Lập Trong Codebase | Mức Độ Trung Thực |
+|---|---|---|---|
+| **FedAvg-GCN / GAT** | AISTATS 2017 | Khung kiến trúc GCN/GAT tiêu chuẩn kết hợp trung bình có trọng số theo kích thước mẫu | **Exact** |
+| **FLTrust** | NDSS 2021 | Gom tụ định hướng mỏ neo sạch $g_{\text{target}}$ từ server holdout $\Droot$ + Norm Rescaling | **Exact** |
+| **FLAME** | USENIX Security 2022 | Ma trận khoảng cách cosine pairwise + Phân cụm liên kết trung bình + Cắt tỉa chuẩn động vị | **Exact** |
+| **FairGNN** | WSDM 2021 | Khử thiên vị đối kháng (Minimax giữa GNN encoder và bộ phân biệt nhạy cảm) | **Faithful core** (Không dùng sensitive-estimator do thuộc tính $S$ được quan sát đầy đủ) |
+| **FairSIN** | AAAI 2024 | FairSIN-F: Tăng cường đặc trưng láng giềng dị thể kết hợp bộ ước lượng MLP | **Faithful** (Phiên bản FairSIN-F tiêu chuẩn) |
+| **FairFed** | AAAI 2023 | Cập nhật trọng số tổng hợp dựa trên độ lệch công bằng cục bộ của client | **Exact** (Công thức trọng số hàm mũ nguyên bản) |
+| **q-FedAvg** | ICLR 2020 | Tái cân bằng trọng số theo tổn thất client nâng lũy thừa $q$ | **Exact** |
+| **F$^2$GNN** | IEEE ICDM 2023 | Trọng số công bằng hàm softmax kết hợp cân bằng nhóm (pp. 980--985) | **Faithful** |
+| **BFWA** | IndabaX 2026 | Tối ưu đối ngẫu Frank-Wolfe Lagrange dựa trên scalar telemetry tự khai (PMLR v319) | **Exact** (Công trình hội nghị tiền nhiệm của nhóm tác giả, đưa vào kiểm toán đối kháng trên cùng hệ quy chiếu) |
+| **DP-FedAvg** | ICLR 2018 | Cắt tỉa gradient toàn phần + Nhiễu Gauss (Kế toán RDP) | **Exact** (Đóng vai trò đối chứng bảo mật cho FTGD) |
+| **FaVGNN** | Info. Fusion 2026 | Biến thể ngang hóa (horizontal adaptation) của hợp nhất đặc trưng dị thể và đối kháng | **Faithful adaptation** |
+| **FDP-Fair** | arXiv 2026 | DP-SGD + Dịch chuyển phân vị nhóm Demographic Parity ở bước hậu xử lý | **Exact** |
+| **Krum / Multi-Krum** | NeurIPS 2017 | Lựa chọn gradient có tổng khoảng cách Euclid nhỏ nhất tới láng giềng | **Exact** |
+| **Coordinate Median** | ICML 2018 | Lấy trung vị độc lập trên từng tọa độ tham số | **Exact** |
+| **Trimmed Mean** | ICML 2018 | Cắt bỏ $\beta$-phân vị cao nhất và thấp nhất trước khi lấy trung bình | **Exact** |
 
-The five methods below occupy an overlapping niche and were only cited in
-related work in an earlier draft despite PDFs being uploaded. Each is now a
-runnable baseline (`experiments/methods.py`, `competitors2025b` study), but
-each paper's mechanism only partially transfers to this codebase's single
-global-model, star-topology, Dirichlet-partitioned-single-graph setting —
-the table below states exactly what was kept and what was dropped so no
-number is over-claimed.
+---
 
-| Baseline | Venue | Paper's actual mechanism | What we reimplement | What's dropped / approximated |
-|----------|-------|--------------------------|----------------------|--------------------------------|
-| FairGFL | IEEE TPDS 2026 (arXiv 2512.23235) | aggregation weight $\propto 1/(1+O_i)$, $O_i$ = a privacy-sanitised **node/edge overlap ratio** across clients' *separate* graphs | same weight rule, but $O_i$ is proxied by each client's normalised sample-count deviation from the mean (aggregator `fairgfl` in `src/federated/aggregation.py`) | the paper assumes multiple distinct client graphs with measurable inter-client node/edge overlap; our setting is one graph Dirichlet-partitioned into disjoint node sets, so the literal overlap ratio doesn't exist — we substitute a data-imbalance proxy that captures the same "atypical client gets down-weighted" intent, not the literal graph-overlap statistic |
-| FedGraph-Fair | Info. Sciences 728:122710 (2026) | **personalised** per-client models mixed via a learned peer-similarity graph, *plus* a minimax/DRO dual $\lambda$ reweighting high-loss clients | only the DRO core: simplex-projected $\lambda$ dual-ascended toward clients whose loss exceeds an adaptive cap, persisted across rounds (aggregator `fedgraphfair`) | the personalised-model + dynamic top-$k$ similarity-graph mixing layer (the paper's other headline contribution, decentralised communication) is not reproduced — we keep one shared global model aggregated by a central server, as the rest of this codebase does |
-| PUFFLE | ECAI'24 | DP-SGD + a **momentum feedback controller** auto-tuning $\lambda\in[0,1]$ toward a target disparity $T$, plus a third DP channel sharing noised group-count statistics for group-imbalanced clients | the controller: `_puffle_step` in `src/federated/client.py` replaces the static `fairness_weight` with a per-round auto-tuned $\lambda$ driven by (DP-noised) local demographic-parity gap vs. `puffle_target_dpd`, combined with clip+noise DP-SGD | the third privacy channel (cross-client group-count sharing for clients missing a demographic group) is not implemented — every client here observes both sensitive-attribute groups, so it isn't needed; only one Gaussian noise channel (on the training gradient) is accounted, not three |
-| FedFACT | NeurIPS'25 | joint global+local group-fairness-constrained Bayes risk, solved via a Lagrangian saddle point over global $\lambda$ (server-aggregated) and per-client local $\mu_k$ (never aggregated), with a general multiclass cost-matrix calibration | the exact closed-form special case for a **binary** demographic-parity target: a shared global offset (identical to FDP-Fair's) plus a per-client local offset computed only from that client's own validation split, summed at inference (`_fedfact_offsets` in `src/federated/trainer.py`) | the general multiclass confusion-matrix cost matrix and the iterative dual-ascent solver are not reproduced — for the linear/DP special case the paper's own optimum reduces to closed-form mean-matching, so this is an exact reduction for that case, not a heuristic, but it does not generalise to EOP/multiclass as the paper's method does |
-| PoPETs'25 | PoPETs 2025(1), paper 20250044 | **FairFed** aggregation made homomorphically computable: replaces $\exp(-\beta|F_i-F_g|)$ with a degree-2 polynomial (FHE-friendly), aggregated under threshold multi-key CKKS, with the CKKS approximation noise analysed as an incidental $(\varepsilon,\delta)$-DP mechanism | the statistical weighting core only: the degree-2-polynomial FairFed weight (aggregator `popets_fairfed`) | the actual contribution — threshold-CKKS secure aggregation and its noise-as-DP analysis — is cryptographic/systems infrastructure with no effect on the cleartext numeric result once "computed in the clear," so it is not reimplemented; we do not add the CKKS-approximation Gaussian noise, so our numbers reflect the fairness-weighting idea without its privacy side-effect |
+## 2. Các Phương Pháp Tái Lập Có Điều Chỉnh Phạm Vi (Scoped / Partial Adaptation)
 
-## Sources we could NOT retrieve automatically
+Các phương pháp dưới đây được thiết kế cho các bối cảnh đặc thù (như đồ thị nhiều thành phần tách rời hoặc mật mã FHE); khi chuyển vào bối cảnh đồ thị phân tán non-IID của bài báo, phần lõi thuật toán được giữ nguyên với các điều chỉnh minh bạch sau:
 
-- **Fairness-constrained optimisation attack**, arXiv **2510.12143** (Oct 2025)
-  — strongest single-client fairness-poisoning threat; exact objective in PDF
-  only (uploaded and read). Our `fairness_poison` attack is a faithful stand-in.
+| Phương Pháp | Xuất Bản | Cơ Chế Gốc | Phần Được Giữ Lại Trong Codebase | Phần Được Điều Chỉnh / Bỏ Qua |
+|---|---|---|---|---|
+| **FairGFL** | IEEE TPDS 2026 | Trọng số $w_i \propto 1/(1+O_i)$ với $O_i$ là tỷ lệ chồng lấn cạnh đồ thị giữa các client | Trọng số nghịch đảo độ lệch mẫu chuẩn hóa (aggregator `fairgfl`) | Bài báo gốc giả định nhiều đồ thị tách rời có chồng lấn cạnh; trong bối cảnh đồ thị đơn Dirichlet phân vùng của bài báo, tỷ lệ này được xấp xỉ bằng độ lệch mất cân bằng dữ liệu |
+| **FedGraph-Fair** | Info. Sci. 2026 | Mô hình cá nhân hóa qua đồ thị tương đồng client + Nhân tử Lagrange DRO $\lambda$ | Phần lõi DRO: Chiếu simplex nhân tử $\lambda$ cho các client có loss vượt trần (aggregator `fedgraphfair`) | Lớp cá nhân hóa và trộn đồ thị tương đồng phi tập trung được bỏ qua để giữ một mô hình toàn cục chung |
+| **PUFFLE** | ECAI 2024 | DP-SGD + Bộ điều khiển phản hồi xung lượng tự điều chỉnh $\lambda \in [0, 1]$ | Bộ điều khiển tự động điều chỉnh $\lambda$ cục bộ dựa trên khoảng cách disparity (hàm `_puffle_step`) | Bỏ qua kênh chia sẻ số lượng nhóm nhạy cảm thứ ba vì mọi client trong thực nghiệm đều quan sát đủ cả hai nhóm |
+| **FedFACT** | NeurIPS 2025 | Tối ưu hóa ràng buộc công bằng Bayes toàn cục + cục bộ | Công thức nghiệm giải tích dạng đóng cho bài toán Demographic Parity nhị phân | Không triển khai thuật toán dual-ascent đa lớp tổng quát do bài toán thực nghiệm là nhị phân |
+| **PoPETs** | PoPETs 2025 | FairFed đa thức bậc 2 chạy trên giao thức mật mã ngưỡng CKKS kết hợp LDP | Phần lõi thống kê: Trọng số FairFed đa thức bậc 2 (aggregator `popets_fairfed`) | Bỏ qua hạ tầng mật mã đồng cấu CKKS (vốn chỉ đóng vai trò bảo mật truyền thông, không làm thay đổi giá trị số học sau giải mã) |
+
+---
+
+## 3. Phân Loại 5 Trường Phái SOTA Đối Chuẩn (Theo Section 2 `manuscript_v2`)
+
+Toàn bộ 16 baselines trên được phân bổ chuẩn xác theo 5 trường phái nghiên cứu:
+
+1. **Paradigm I — Huấn luyện Cục bộ Khử Thiên Vị In-Processing (Client-Side Debiasing):** FairGNN, FairSIN, FairGB, FairInv. *(Tử huyệt: Hoàn toàn mù tại biên gom tụ máy chủ; gradient đối kháng vô hiệu hóa nỗ lực cục bộ).*
+2. **Paradigm II — Điều phối Trọng số Dựa vào Siêu Dữ Liệu Tự Khai (Client-Reported Metric Coordination):** FairFed, FairGFL, FedGraph-Fair, $q$-FedAvg, BFWA, PUFFLE, FedFACT. *(Tử huyệt: Thất bại trước đòn tấn công khai man metadata; kẻ địch chiếm tới 97.4% quyền kiểm soát mô hình — Theorem 2 & Table 2).*
+3. **Paradigm III — Vi Phân Riêng Tư & Rào Cản Lý Thuyết Thông Tin (DP & Information Barriers):** DP-FedAvg, FDP-Fair, FedFDP. *(Tử huyệt: Bổ đề Folded Normal gây thiên lệch dương vĩnh viễn; Cận dưới Le Cam Minimax chứng minh DP triệt tiêu tính quan sát được của ràng buộc).*
+4. **Paradigm IV — Bộ Lọc Hình Học Không Mỏ Neo (Geometric Byzantine Filtering):** Coordinate Median, Trimmed Mean, Krum, Multi-Krum, FLAME. *(Tử huyệt: Mù không gian con công bằng — Theorem 5; gây nghịch lý Median Backfire làm tăng tới +82.9% trọng số kẻ địch trên đồ thị non-IID).*
+5. **Paradigm V — Gom Tụ Mỏ Neo Tham Chiếu & Sổ Cái Đóng Góp (Server-Anchored Alignment & Governance):** FLTrust (đơn mục tiêu), CGSV (mỏ neo nội sinh dễ tổn thương), GuardFed (sàng lọc ngưỡng), và **TrustFedGNN (Đề xuất)**. *(Đột phá: Mỏ neo ngoại sinh $\Droot$, miễn nhiễm cú pháp đại số $\Delta w \equiv 0$, chuẩn hóa norm, và sổ cái đóng góp tuyến tính $O(KP)$).*

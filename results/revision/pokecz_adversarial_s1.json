@@ -1,0 +1,24 @@
+{
+  "gate": "s1",
+  "device": "cpu",
+  "run1": {
+    "seed": 42,
+    "auc": 0.7938111775864586,
+    "dpd_hard": 0.006637925510979303,
+    "w_adv": 0.282949412628077,
+    "wall_clock_s": 223.50671012490056
+  },
+  "run2": {
+    "seed": 42,
+    "auc": 0.7938111775864586,
+    "dpd_hard": 0.006637925510979303,
+    "w_adv": 0.282949412628077,
+    "wall_clock_s": 225.58394212508574
+  },
+  "delta_w_adv": 0.0,
+  "delta_auc": 0.0,
+  "sigma": 0.0,
+  "pricing_n": 34,
+  "verdict": "PASS (sigma <= 0.010)",
+  "pass_threshold": true
+}

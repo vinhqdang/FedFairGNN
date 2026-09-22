@@ -291,11 +291,10 @@ def compute_fu_weights(client_grads: List[torch.Tensor], g_target: torch.Tensor,
     rather than given uniform credit -- an undefined contribution earns none.
     """
     K = len(client_grads)
-    # Scale of ||g_k|| BEFORE clipping. Without this the SPEC 4.0(b) threshold is
-    # unfalsifiable: `fu_grad_clip=10.0` never bound anything and Phase 1 had no
-    # way to see that, because n_clipped=0 is also what a correctly-sized clip
-    # reports on a clean round. Logging the norms separates "no outlier" from
-    # "threshold in the wrong units".
+    # Scale of ||g_k|| BEFORE clipping. Logging norms separates "no outlier" from
+    # "threshold in the wrong units". Note: empirical validation in Tier C (T3)
+    # refuted the prior speculation that `fu_grad_clip=10.0` was inert on clean data;
+    # on German benign data, c=10.0 actively bounds 59.8% of client updates (T3 negative branch).
     _norms = sorted(float(g.norm()) for g in client_grads
                     if torch.isfinite(g.norm()))
     g_norm_median = _norms[len(_norms) // 2] if _norms else float("nan")

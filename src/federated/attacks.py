@@ -102,9 +102,64 @@ def _erfinv(x: float) -> float:                          # pragma: no cover
     return math.copysign(math.sqrt(max(math.sqrt(t * t - ln / a) - t, 0.0)), x)
 
 
+# --------------------------------------------------------------------------- #
+# Best-response reports, per aggregation rule
+# --------------------------------------------------------------------------- #
+# A single fixed lie cannot capture every fairness-aware rule, because the rules
+# read different fields and, in one case, are not monotone in the field they
+# read. Each entry below is the report that MAXIMISES the adversary's weight
+# under that rule, given the other clients' reports -- the omniscient attacker
+# the threat model already assumes.
+#
+# SCOPE, deliberately narrow: the adversary lies only about its FAIRNESS and
+# UTILITY statistics. It never misreports ``n``. Sample count is not the channel
+# this paper is about, and letting the adversary inflate it would also capture
+# plain FedAvg -- which would collapse the very distinction (metadata-reading
+# rules vs metadata-blind ones) the experiment exists to draw.
+
+def _benign_weighted_mean_dpd(metas, byz_ids):
+    """The dpd report that maximises weight under popets_fairfed.
+
+    Its weight is ``-beta*(dpd - F_g)^2 + 1`` with ``F_g`` the n-weighted mean
+    report, so the rule is peaked AT the mean, not decreasing in dpd: claiming
+    zero disparity *lowers* the adversary's weight. Solving the fixed point
+    ``x = F_g(x)`` gives the n-weighted mean over the benign clients alone.
+    Reporting a null here and calling it robustness would be wrong.
+    """
+    num = sum(float(m.get("n", 1)) * float(m.get("dpd", 0.0))
+              for i, m in enumerate(metas) if i not in byz_ids)
+    den = sum(float(m.get("n", 1)) for i, m in enumerate(metas) if i not in byz_ids)
+    return num / den if den > 0 else 0.0
+
+
+BEST_RESPONSE_LIE = {
+    # reads dpd (and perf); weight decreases in reported disparity
+    "bfwa":            lambda ms, b: {"dpd": 0.0, "eod": 0.0, "perf": 0.99},
+    "robust_bfwa":     lambda ms, b: {"dpd": 0.0, "eod": 0.0, "perf": 0.99},
+    "fairfed":         lambda ms, b: {"dpd": 0.0, "eod": 0.0, "perf": 0.99},
+    # reads dpd and the group marginal; gbal = 1-|2r-1| is maximised at r = 0.5
+    "f2gnn":           lambda ms, b: {"dpd": 0.0, "eod": 0.0, "group1_rate": 0.5},
+    # w proportional to loss**q: claim maximal loss. perf is set consistently,
+    # since loss and perf are the same quantity reported twice and a contradictory
+    # pair would be detectable without any fairness machinery at all.
+    "qffl":            lambda ms, b: {"loss": 1.0, "perf": 0.0},
+    # dual ascends on (loss - mean_loss) and PERSISTS across rounds, so the lie
+    # compounds; invisible to a single-round weight diff.
+    "fedgraphfair":    lambda ms, b: {"loss": 1.0, "perf": 0.0},
+    # peaked at the mean -- see _benign_weighted_mean_dpd
+    "popets_fairfed":  lambda ms, b: {"dpd": _benign_weighted_mean_dpd(ms, b),
+                                      "eod": 0.0, "perf": 0.99},
+}
+
+# What the shipped attack has always done. Kept as the default so previously
+# published BFWA numbers stay reproducible.
+LEGACY_LIE = lambda ms, b: {"dpd": 0.0, "eod": 0.0, "perf": 0.99}
+
+
 def poison_updates(attack: str, updates: List[torch.Tensor], metas: List[dict],
                    byzantine_ids: List[int], intensity: float = 10.0,
                    ipm_epsilon: float = 0.5, alie_z: Optional[float] = None,
+                   meta_lie: Optional[str] = None,
                    ) -> Tuple[List[torch.Tensor], List[dict]]:
     """Craft the Byzantine clients' transmitted updates (omniscient attacker).
 
@@ -166,9 +221,14 @@ def poison_updates(attack: str, updates: List[torch.Tensor], metas: List[dict],
             # attacker's local training that maximised the fairness gap (see
             # Client.train). Here the attacker only *lies* about its reported
             # fairness/utility so a fairness-aware server up-weights it.
-            metas[i]["dpd"] = 0.0
-            metas[i]["eod"] = 0.0
-            metas[i]["perf"] = 0.99
+            lie_fn = BEST_RESPONSE_LIE.get(meta_lie, LEGACY_LIE) if meta_lie else LEGACY_LIE
+            metas[i].update(lie_fn(metas, set(byzantine_ids)))
+        elif attack == "fairness_poison_honest_report":
+            # CONTROL: identical poisoned update, truthful report. Isolates the
+            # damage done through the metadata channel from the damage done by
+            # the update itself -- without this arm the capture cannot be
+            # attributed to the channel.
+            pass
         updates[i] = g.view_as(updates[i])
     return updates, metas
 

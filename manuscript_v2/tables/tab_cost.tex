@@ -1,0 +1,31 @@
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Hardware Resource Profiling and Per-Run Wall-Clock Time on Pokec-z.}
+Measured on a single NVIDIA T4 GPU, $K=10$ clients, $R=50$ rounds, averaged over $n=10$ random seeds from the same execution campaign as Table~\ref{tab:sota_main}.
+Communication volume reports the total upload$+$download float32 tensor payload per round ($2 \times K \times |\theta|$).
+FTGD scalar release adds an imperceptible 8 bytes per client-round ($+0.0026\%$).
+Forward evaluation across the graph requires $5.60\text{ GFLOPs}$.
+The $2.06\times$ server wall-clock overhead reflects server holdout evaluation and orthogonal gradient projection, while edge client execution remains dominated by standard local GNN passes.}
+\label{tab:cost}
+\setlength{\tabcolsep}{6.0pt}
+\makebox[\textwidth][c]{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{\#Params} & \textbf{Comm (MB/rnd)} & \textbf{Time / run (s)} & \textbf{vs.\ FedAvg} \\
+\midrule
+FedGraph-Fair & 21,953 & 1.67 & 34.3 & 0.96$\times$ \\
+FairFed & 21,953 & 1.67 & 34.5 & 0.97$\times$ \\
+FairGFL & 21,953 & 1.67 & 34.5 & 0.97$\times$ \\
+FedAvg-GCN & 21,953 & 1.67 & 35.5 & 1.00$\times$ \\
+CGSV & 21,953 & 1.67 & 36.5 & 1.03$\times$ \\
+FairGNN & 26,178 & 2.00 & 38.0 & 1.07$\times$ \\
+FairSIN & 57,621 & 4.40 & 39.1 & 1.10$\times$ \\
+\addlinespace[2pt]
+Ours w/o FSER (confounded) & 22,209 & 1.69 & 43.4 & 1.22$\times$ \\
+Ours w/o FSER (clean arm) & 38,977 & 2.97 & 72.0 & 2.03$\times$ \\
+\textbf{TrustFedGNN (ours)} & \textbf{38,979} & \textbf{2.97} & \textbf{73.2} & \textbf{2.06}$\times$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

@@ -2,8 +2,7 @@
 
 > **Elsevier Constraint:** 3 to 5 bullet points. Each bullet must be **85 characters or fewer** (including spaces).
 
-- Unifies group fairness, DP, and Byzantine robustness in federated GNNs. [74 chars]
-- FSER serves as structural regularizer with zero distortion on homophilic graphs. [82 chars]
-- Statistic-level DP prevents attribute inference without accuracy drop. [73 chars]
-- Coordinate median resists adaptive stealth fairness attacks up to 40%. [73 chars]
-- Validated on 6 benchmarks including 203k Elliptic and 2.4M-node graphs. [74 chars]
+- Client-declared fairness metadata captures six published FL aggregation rules.
+- Falsified reports raise disparity up to 7x and cut AUC by 0.14 over 30 seeds.
+- Multi-round client-wise DP drives constraint testing toward chance.
+- Server-referenced aggregation is immune to the channel by construction.

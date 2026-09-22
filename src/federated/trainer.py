@@ -220,14 +220,18 @@ class FederatedTrainer:
             updates, metas = poison_updates(
                 self.cfg.attack, updates, metas, self.byzantine_ids,
                 self.cfg.attack_intensity,
-                ipm_epsilon=self.cfg.ipm_epsilon, alie_z=self.cfg.alie_z)
+                ipm_epsilon=self.cfg.ipm_epsilon, alie_z=self.cfg.alie_z,
+                                           meta_lie=getattr(self.cfg, 'meta_lie', None))
 
         # FairShare-GNN: build the server target gradient on the pooled client
         # validation nodes (current global model), then let the FU-Shapley rule
         # score clients against it. Only computed when the aggregator needs it.
         g_target = g_task = g_fair = None
         fu_warmup = False
-        if "fu_shapley" in self.cfg.aggregator:
+        # fltrust needs the same server-side reference machinery: it scores
+        # against g_task (the root update) rather than the bi-objective g_target,
+        # but both are produced by the same holdout pass.
+        if "fu_shapley" in self.cfg.aggregator or "fltrust" in self.cfg.aggregator:
             load_flat_state(self.ref_model, self.global_flat.to(self.device))
             from ..trust.incentive import (get_server_target_gradients,
                                            get_server_target_gradients_pooled)

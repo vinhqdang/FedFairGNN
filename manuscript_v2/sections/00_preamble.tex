@@ -1,0 +1,73 @@
+%% sections/00_preamble.tex — Packages, Notation, and Math Macros
+
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{amsthm}
+\usepackage{float}
+\providecommand{\FloatBarrier}{\relax}
+\usepackage{url}
+\usepackage{hyperref}
+
+%% Relaxed Float Placement Parameters (Prevents Float Drift / Queue Congestion)
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.80}
+\setcounter{topnumber}{5}
+\setcounter{bottomnumber}{4}
+\setcounter{totalnumber}{8}
+
+%% Map table* and figure* to standard float in single-column preprint mode
+\makeatletter
+\if@twocolumn\else
+  \renewenvironment{table*}[1][!t]{\begin{table}[#1]}{\end{table}}
+  \renewenvironment{figure*}[1][!t]{\begin{figure}[#1]}{\end{figure}}
+\fi
+%% Silent font substitution for small-caps in italic/slanted contexts
+\DeclareFontShape{T1}{cmr}{m}{scit}{<->ssub * cmr/m/scsl}{}
+\makeatother
+
+%% Theorem Environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+
+%% Math Operators and Notations
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\Simplex}{Simplex}
+\DeclareMathOperator{\EMA}{EMA}
+\DeclareMathOperator{\ReLU}{ReLU}
+\DeclareMathOperator{\Cosine}{Cos}
+\DeclareMathOperator{\clip}{clip}
+
+%% Metric and Symbol Macros
+\newcommand{\MethodName}{\textsc{TrustFedGNN}}
+\newcommand{\MethodVariantFull}{\textsc{TrustFedGNN-Full}}
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\dpdhard}{\mathrm{DPD}_{\mathrm{hard}}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\wadv}{w_{\mathrm{adv}}}
+\newcommand{\OmegaW}{\Omega_w}
+\newcommand{\Rstar}{\mathcal{R}^*}
+\newcommand{\Droot}{D_{\mathrm{root}}}
+\newcommand{\gtarg}{g_{\mathrm{target}}}
+\newcommand{\gtask}{g_{\mathrm{task}}}
+\newcommand{\gfair}{g_{\mathrm{fair}}}
+\newcommand{\ip}[2]{\langle #1, #2 \rangle}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\EE}{\mathbb{E}}
+\newcommand{\RR}{\mathbb{R}}

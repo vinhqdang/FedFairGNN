@@ -107,6 +107,14 @@ METHODS = {
     "gtg-shapley":      dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, fu_alpha=0.0),
     # CGSV (Xu et al., NeurIPS 2021): cosine-gradient SV on standard GCN backbone, no server D_val.
     "cgsv":             dict(model="gcn", aggregator="cgsv", local_fairness=False, dp_enabled=False),
+    # FLTrust (Cao et al., NDSS 2021): server root-dataset update + ReLU(cosine)
+    # trust scores + norm rescaling. The closest structural relative of our
+    # aggregator -- also server-referenced, also metadata-independent -- so it
+    # isolates what the bi-objective target adds over a task-only reference.
+    # Same TrustFedGNN backbone as the "ours" arms so the aggregation rule is
+    # the only difference; fu_val_source stays server_holdout because FLTrust
+    # requires exactly that root split.
+    "fltrust":          dict(model="trustfedgnn", aggregator="fltrust", dp_enabled=False, fu_alpha=0.0),
 }
 
 # Aggregators to sweep in the Byzantine study (backbone = ours).

@@ -1,0 +1,18 @@
+%% sections/03_problem_formulation.tex
+\section{Problem Formulation and Threat Model}
+\label{sec:problem_formulation}
+
+\subsection{Federated Graph Learning Framework}
+Let $\mathcal{G} = (\mathcal{V}, \mathcal{E}, X, A)$ denote a global graph partitioned across $K$ decentralized silos $\mathcal{S}_1, \dots, \mathcal{S}_K$. Each client $k \in [K]$ possesses a local subgraph $\mathcal{G}_k = (\mathcal{V}_k, \mathcal{E}_k, X_k, A_k)$ with node feature matrix $X_k \in \RR^{|\mathcal{V}_k| \times d}$, binary ground-truth labels $Y_k \in \{0, 1\}^{|\mathcal{V}_k|}$, and sensitive attribute indicators $S_k \in \{0, 1\}^{|\mathcal{V}_k|}$. The collective objective is to train a parameterized GNN backbone $\theta$ minimizing task classification loss $\mathcal{L}_{\mathrm{task}}$ while bounding demographic parity disparity:
+\begin{equation}
+\dpd(\theta) = \left| P(\hat{Y}=1 \mid S=0) - P(\hat{Y}=1 \mid S=1) \right|.
+\end{equation}
+
+\subsection{Threat Model and Kerckhoffs Principle}
+We formulate our threat model under the classic Kerckhoffs security principle. We consider up to $f$ Byzantine clients ($f < K/2$) executing adversarial attacks:
+\begin{enumerate}
+    \item \textbf{Tier 1 (Crude Arithmetic Poisoning):} Gaussian noise injection, sign-flipping ($\Delta_k \gets -c \Delta_k$), and gradient norm amplification ($c = 100$).
+    \item \textbf{Tier 2 (Adaptive Proximity Stealth):} Adversaries observe the coordinate-wise median of benign updates and constrain malicious gradients within a proximity ball ($\rho = 0.85$) while falsifying self-reported fairness metadata ($\dpd_k \approx 0$).
+    \item \textbf{Tier 3 (White-Box Alignment Adversary T1):} A worst-case omniscient adversary with direct read access to the server reference gradient $\gtarg$, optimizing tracking alignment via gradient ascent.
+\end{enumerate}
+The root dataset $\Droot$ hosted at the server is assumed to be physically isolated and tamper-proof.

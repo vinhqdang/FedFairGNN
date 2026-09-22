@@ -34,7 +34,11 @@ def test_ablation_arms_differ_from_M1_by_exactly_one_field():
     m1 = ABLATION_ARMS["M1_Full"](42).to_dict()
     expected = {
         "M2_wo_FSER": {"model"},
-        "M3_wo_FTGD": {"dp_enabled"},
+        "M3_wo_DP": {"dp_enabled"},
+        "M3b_wo_Projection": {"ftgd_min_fair_norm"},
+        "M3c_wo_FairObjective": {"fairness_weight"},
+        "M3d_PCGrad": {"ftgd_projection"},
+        "M3e_wo_SBlind": {"dp_statistic_s_blind"},
         "M4_Full_DPSGD": {"dp_mode"},
         "M5_wo_FairScore": {"fu_alpha"},
         "M6_wo_TwoTier": {"fu_val_source", "fu_score"},

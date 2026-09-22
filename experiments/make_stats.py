@@ -12,6 +12,7 @@ Computes:
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 from typing import Dict, List, Tuple
@@ -59,6 +60,25 @@ def compute_bootstrap_ci(diffs: np.ndarray, n_boot: int = 10000) -> Tuple[float,
 
 
 def holm_bonferroni(pvals: Dict[str, float], alpha: float = 0.05) -> Dict[str, Tuple[float, float, bool]]:
+    """Holm-Bonferroni over a family of comparisons.
+
+    This is a SECOND implementation; experiments/stats.py has another. Both
+    carry the same guard, and tests/test_revision_invariants.py exercises both,
+    because patching one and not the other is exactly the failure this guard
+    exists to prevent -- and it nearly happened: stats.py was fixed first while
+    this copy, which drives the main SOTA tables, was left vulnerable.
+
+    A non-finite p-value corrupts the WHOLE family rather than its own entry:
+    comparisons against NaN are all False, so sorted() yields an arbitrary
+    order, and `reject` is cumulative, so one misplaced item flips the verdict
+    of everything after it. Observed on real data in RUN-E2 (docs/04 11.3.6).
+    """
+    bad = {k: v for k, v in pvals.items() if not math.isfinite(v)}
+    if bad:
+        raise ValueError(
+            f"holm_bonferroni nhận p-value không hữu hạn: {bad}. "
+            "Hãy loại bỏ (và khai báo) các contrast không tính được TRƯỚC khi hiệu chỉnh."
+        )
     items = sorted(pvals.items(), key=lambda kv: kv[1])
     m = len(items)
     out = {}

@@ -1,0 +1,38 @@
+%% tables/tab_metadata_capture.tex — T1: Metadata Capture Vulnerability & Syntactic Immunity
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Empirical Collapse of Aggregation Rules via the Client Interface Channel vs.\ Syntactic Invariance.} 
+Evaluated on German Credit ($K=5, R=20, n=30$ paired seeds, $n=18^{\S}$ for $q$-FedAvg; GCN backbone fixed across all rules; LDP disabled to isolate the interface channel). Each row contrasts identical poisoned model updates with honest vs.\ falsified reports ($\dpd \approx 0$). $w_{\mathrm{adv}}$ denotes the adversary's aggregation weight (fair uniform share is $1/K=0.20$). Downstream harm metrics $\Delta\dpd$, $\Delta\eod$, and $\Delta\mathrm{AUC}$ measure paired lie minus honest ($^\star$ denotes $p < 0.05$ after Holm--Bonferroni multiplicity correction). $^{\dagger}$Our earlier conference rule~\citep{dang2026fedfairgnn} is audited on identical footing. $^{\ddagger}$For Class~(c), $\Delta w = 0.0000$ represents a \emph{syntactic algebraic guarantee} (Theorem~\ref{thm:syntactic_immunity}) valid against any future scalar report manipulation. $^{\S}$Under falsification $q$-FedAvg diverges numerically in $12$ of $30$ seeds; divergence is a consequence of the attack, so we record it as an attack outcome rather than as missing data, and compute the paired statistics on the $18$ non-divergent seeds. Per-rule exact sign tests: $F^2\text{GNN}$ $30/30$, FairFed $28/28$, PoPETs-FairFed $28/30$, FedGraph-Fair $20/20$, BFWA $18/19$, $q$-FedAvg $17/17$ (non-tied pairs; ties $= 0, 2, 0, 10, 11, 1$ respectively).}
+\label{tab:metadata_capture}
+\setlength{\tabcolsep}{4.0pt}
+\renewcommand{\arraystretch}{1.20}
+\makebox[\textwidth][c]{%
+\begin{tabular}{ll c ccc}
+\toprule
+\makecell[l]{\textbf{Aggregation} \\ \textbf{Rule}} & 
+\makecell[l]{\textbf{Telemetry} \\ \textbf{Interface}} & 
+\makecell{\textbf{Adversary Share} \\ \textbf{$w_{\mathrm{adv}}$ (H $\to$ L)}} & 
+\textbf{$\Delta\dpd$} & 
+\textbf{$\Delta\eod$} & 
+\textbf{$\Delta\mathrm{AUC}$} \\
+\midrule
+\multicolumn{6}{l}{\textit{\textbf{Class (a): Self-Reported Scalar Metadata} (Subject to Direct Interface Capture)}} \\
+\makecell[l]{$F^2\text{GNN}$ \\ \scriptsize (ICDM'23)} & \makecell[l]{\texttt{dpd,} \\ \scriptsize \texttt{group1\_rate}} & \makecell{$0.1159 \to \mathbf{0.9737}$ \\ \scriptsize $4.87\times$ ($p < 10^{-8}$)} & $+0.4638^\star$ & $+0.4594^\star$ & $-0.1435^\star$ \\
+\makecell[l]{FairFed \\ \scriptsize (AAAI'23)} & \texttt{dpd} & \makecell{$0.0811 \to 0.2198$ \\ \scriptsize $1.10\times$ ($p < 10^{-5}$)} & $+0.0875^\star$ & $+0.0938^\star$ & $-0.0249^\star$ \\
+\makecell[l]{PoPETs-FairFed \\ \scriptsize (PoPETs'25)} & \texttt{dpd} & \makecell{$0.1617 \to 0.1655$ \\ \scriptsize $0.83\times$ ($p < 10^{-4}$)} & $+0.0078$ & $+0.0036$ & $-0.0003$ \\
+\makecell[l]{FedGraph-Fair \\ \scriptsize (InfoSci'26)} & \makecell[l]{\texttt{loss} \\ \scriptsize (dual variable)} & \makecell{$0.2318 \to 0.4719$ \\ \scriptsize $2.36\times$ ($p < 10^{-4}$)} & $+0.1824^\star$ & $+0.1874^\star$ & $-0.0616^\star$ \\
+\makecell[l]{BFWA$^\dagger$ \\ \scriptsize (IndabaX'26)} & \makecell[l]{\texttt{dpd,} \\ \scriptsize \texttt{performance}} & \makecell{$0.1439 \to 0.5703$ \\ \scriptsize $2.85\times$ ($p < 10^{-3}$)} & $+0.2661^\star$ & $+0.2623^\star$ & $-0.0714^\star$ \\
+\makecell[l]{$q$-FedAvg$^{\S}$ \\ \scriptsize (ICLR'20)} & \texttt{loss} & \makecell{$0.2845 \to 0.5698$ \\ \scriptsize $2.85\times$ ($p < 10^{-3}$)} & $+0.1520^\star$ & $+0.1595^\star$ & $-0.0600^\star$ \\
+\midrule
+\multicolumn{6}{l}{\textit{\textbf{Class (b): Endogenous Client-Derived Reference} (Anchor Displaceable by a Coordinated Majority)}} \\
+\makecell[l]{CGSV \\ \scriptsize (NeurIPS'21)} & \makecell[l]{\texttt{mean client} \\ \scriptsize \texttt{gradient}} & \makecell{$0.1948 \to 0.1948$ \\ \scriptsize $0.97\times$ (invariant)} & $0.0000$ & $0.0000$ & $0.0000$ \\
+\midrule
+\multicolumn{6}{l}{\textit{\textbf{Class (c): Server-Anchored Parameter Gradients} (Syntactic Metadata Immunity$^\ddagger$)}} \\
+\makecell[l]{FLTrust \\ \scriptsize (NDSS'21)} & \makecell[l]{\texttt{server holdout} \\ \scriptsize ($g_{\mathrm{task}}$)} & \makecell{$0.2545 \to 0.2545$ \\ \scriptsize $1.27\times$ (invariant)} & $0.0000$ & $0.0000$ & $0.0000$ \\
+\makecell[l]{\MethodName{} \\ \scriptsize (This work)} & \makecell[l]{\texttt{server holdout} \\ \scriptsize ($g_{\mathrm{task}} {+} \alpha g_{\mathrm{fair}}$)} & \makecell{$\mathbf{0.0573} \to \mathbf{0.0573}$ \\ \scriptsize $\mathbf{0.29\times}$ (invariant)} & $0.0000$ & $0.0000$ & $0.0000$ \\
+\makecell[l]{\MethodName{} ($\alpha{=}0$) \\ \scriptsize (This work)} & \makecell[l]{\texttt{server holdout} \\ \scriptsize ($g_{\mathrm{task}}$ only)} & \makecell{$0.0592 \to 0.0592$ \\ \scriptsize $0.30\times$ (invariant)} & $0.0000$ & $0.0000$ & $0.0000$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

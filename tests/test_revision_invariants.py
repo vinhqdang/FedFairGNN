@@ -8,6 +8,7 @@ Ensures that:
 from __future__ import annotations
 
 import os
+import re
 import sys
 import pytest
 
@@ -262,3 +263,397 @@ def test_bfwa_and_robust_bfwa_keep_separate_duals():
     aggregate("robust_bfwa", updates, meta, tau=0.02, krum_f=1, state=state)
     assert {"bfwa_mu", "robust_bfwa_mu"} <= set(state)
     assert state["bfwa_mu"] != state["robust_bfwa_mu"]
+
+
+def test_slack_cli_defaults_match_function_defaults():
+    """A no-flag run must measure what the function signature says it measures.
+
+    bfwa_slack_analysis exposes the same knobs twice: once as defaults on
+    analyze_bfwa_slack, once as argparse defaults in main(). A revision that
+    corrected the first and left the second stale produced a run that reported
+    Bail on two seeds while the caller believed it was German on ten -- a
+    complete, plausible-looking table of the wrong experiment, with nothing in
+    the artifact to reveal it. This locks the two together.
+    """
+    import argparse
+    import inspect
+    from unittest import mock
+
+    import experiments.revision.bfwa_slack_analysis as mod
+
+    sig = inspect.signature(mod.analyze_bfwa_slack)
+    fn_defaults = {k: v.default for k, v in sig.parameters.items()
+                   if v.default is not inspect.Parameter.empty}
+
+    captured = {}
+    real_parse = argparse.ArgumentParser.parse_args
+
+    def capture(self, *a, **kw):
+        ns = real_parse(self, [])                      # defaults only
+        captured.update(vars(ns))
+        raise SystemExit(0)                            # stop before running
+
+    with mock.patch.object(argparse.ArgumentParser, "parse_args", capture), \
+            mock.patch.object(mod, "run_bfwa_slack_experiment", lambda **kw: None):
+        try:
+            mod.main()
+        except SystemExit:
+            pass
+
+    assert captured, "main() did not reach parse_args"
+    for name in ("dataset", "rounds", "tau"):
+        assert captured[name] == fn_defaults[name], (
+            f"CLI default for --{name} is {captured[name]!r} but "
+            f"analyze_bfwa_slack defaults to {fn_defaults[name]!r}")
+    assert tuple(captured["seeds"]) == tuple(fn_defaults["seeds"])
+    assert tuple(captured["epsilons"]) == tuple(fn_defaults["epsilons"])
+    assert captured["num_clients"] == fn_defaults["num_clients"]
+
+
+def _capture_weights(rule, lie):
+    """Weights under an honest report and under ``lie``, same updates and seed."""
+    import copy
+    from src.federated.aggregation import aggregate
+    torch.manual_seed(0)
+    ups = [torch.randn(32) for _ in range(5)]
+    gt = torch.randn(32)
+    honest = [{"n": 100, "perf": 0.70 + 0.02 * i, "dpd": 0.10 + 0.03 * i, "eod": 0.08,
+               "loss": 0.30 - 0.02 * i, "group1_rate": 0.3 + 0.1 * i} for i in range(5)]
+    lying = copy.deepcopy(honest)
+    lying[0].update(lie(lying, {0}))
+    kw = dict(g_target=gt, tau=0.05)
+    wh = aggregate(rule, ups, copy.deepcopy(honest), state={}, **kw)[1].get("weights")
+    wl = aggregate(rule, ups, lying, state={}, **kw)[1].get("weights")
+    return wh, wl
+
+
+def test_metadata_reading_rules_move_under_a_false_report():
+    """Reading a self-reported field means the weights are a function of it.
+
+    A null result here would otherwise be unfalsifiable: before this was added,
+    ``loss`` was overwritten with the honest value on every call, so qffl and
+    fedgraphfair could not be attacked at all and would have been reported as
+    immune -- an artefact of the harness, not a property of the rules.
+    """
+    from src.federated.attacks import BEST_RESPONSE_LIE
+    for rule in ("fairfed", "qffl", "f2gnn", "fedgraphfair", "popets_fairfed", "bfwa"):
+        wh, wl = _capture_weights(rule, BEST_RESPONSE_LIE[rule])
+        assert wh is not None and wl is not None, f"{rule} exposed no weights"
+        moved = max(abs(a - b) for a, b in zip(wh, wl))
+        assert moved > 0.0, (
+            f"{rule} reads a client-reported field but its weights did not move "
+            f"under the best-response lie -- the attack is not reaching the channel")
+
+
+def test_metadata_blind_rules_are_bit_exact_under_a_false_report():
+    """cgsv and fltrust score gradients only; a false report must be inert."""
+    from src.federated.attacks import BEST_RESPONSE_LIE, LEGACY_LIE
+    for rule in ("cgsv", "fltrust"):
+        wh, wl = _capture_weights(rule, BEST_RESPONSE_LIE.get(rule, LEGACY_LIE))
+        assert wh == wl, f"{rule} is supposed to read no metadata but its weights moved"
+
+
+def test_popets_polynomial_is_nearly_inert_at_realistic_disparities():
+    """Records a finding, so that changing it is a deliberate act.
+
+    PoPETs' FHE-friendly surrogate replaces FairFed's exp(-beta|F_i-F_g|) with
+    -beta(F_i-F_g)^2 + 1. At a 0.15 gap and beta=1 the polynomial spans 0.0225
+    against the exponential's 0.1393 -- about a sixth of the steering range. The
+    rule therefore barely moves under a false report, but for the same reason it
+    barely steers on fairness at all. Read it as inertness, not robustness.
+    """
+    from src.federated.attacks import BEST_RESPONSE_LIE
+    wh, wl = _capture_weights("popets_fairfed", BEST_RESPONSE_LIE["popets_fairfed"])
+    moved = max(abs(a - b) for a, b in zip(wh, wl))
+    assert 0.0 < moved < 0.01, (
+        f"popets_fairfed moved by {moved}; it was ~5e-4 when this was characterised. "
+        f"If the weighting changed, re-derive the claim in docs/04 rather than "
+        f"widening this bound.")
+
+
+def test_poison_updates_actually_applies_the_best_response_lie():
+    """Locks the integration, not just the table.
+
+    The table can be correct while nothing calls it. The original defect was of
+    exactly this shape: poison_updates wrote dpd/eod/perf and never loss, so the
+    two rules that read loss were unattackable and would have been written up as
+    immune.
+    """
+    from src.federated.attacks import poison_updates
+    base = [{"n": 100, "perf": 0.7, "dpd": 0.12, "eod": 0.08, "loss": 0.3,
+             "group1_rate": 0.4} for _ in range(4)]
+    for rule, field in (("qffl", "loss"), ("fedgraphfair", "loss"),
+                        ("fairfed", "dpd"), ("f2gnn", "group1_rate")):
+        metas = [dict(m) for m in base]
+        ups = [torch.randn(8) for _ in range(4)]
+        _, out = poison_updates("fairness_poison", ups, metas, [0], meta_lie=rule)
+        assert out[0][field] != base[0][field], (
+            f"poison_updates did not change {field!r} for meta_lie={rule!r}; "
+            f"the lie table is not reaching the transmitted report")
+        assert out[1][field] == base[1][field], "a benign client's report was altered"
+
+
+def test_honest_report_control_leaves_every_field_untouched():
+    """The control arm must poison the update and nothing else."""
+    from src.federated.attacks import poison_updates
+    metas = [{"n": 100, "perf": 0.7, "dpd": 0.12, "eod": 0.08, "loss": 0.3} for _ in range(3)]
+    before = [dict(m) for m in metas]
+    ups = [torch.randn(8) for _ in range(3)]
+    _, out = poison_updates("fairness_poison_honest_report", ups, metas, [0], meta_lie="fairfed")
+    assert out == before, "the honest-report control altered the metadata channel"
+
+
+def test_holm_bonferroni_refuses_non_finite_pvalues():
+    """A single NaN corrupts the WHOLE family, not just its own entry.
+
+    Holm sorts by p and carries a cumulative reject flag. Comparisons against
+    NaN are all False, so sorted() produces an arbitrary order and one bad
+    entry flips the verdict of every entry after it. Observed on real data in
+    RUN-E2 (docs/04 section 11.3.6): a NaN from q-FedAvg turned F2GNN's
+    p = 0.0020 into "not significant" while FairFed's p = 0.0039 became
+    "significant". Refuse at the gate instead.
+    """
+    import math
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "experiments"))
+    from stats import holm_bonferroni
+
+    ok = holm_bonferroni({"a": 0.0020, "b": 0.0039, "c": 0.20})
+    assert ok == {"a": True, "b": True, "c": False}, "the normal path regressed"
+
+    # There are TWO implementations. stats.py drives the ablation statistics;
+    # make_stats.py drives the main SOTA tables. Patching one and leaving the
+    # other is precisely the mistake this test exists to make impossible -- and
+    # it nearly happened, since make_stats.py was found unguarded afterwards.
+    from make_stats import holm_bonferroni as holm_sota
+
+    rich = holm_sota({"a": 0.0020, "b": 0.0039, "c": 0.20})
+    assert {k: v[2] for k, v in rich.items()} == {"a": True, "b": True, "c": False}
+
+    for impl in (holm_bonferroni, holm_sota):
+        for bad in (float("nan"), float("inf"), float("-inf")):
+            with pytest.raises(ValueError, match="không hữu hạn"):
+                impl({"a": 0.0020, "b": bad, "c": 0.20})
+
+
+def test_metadata_contrast_pairs_on_the_intersection_of_finite_seeds():
+    """A diverged run must drop the PAIR, never leak NaN into the statistics.
+
+    q-FedAvg diverges on German for different seeds in different arms, so the
+    two arms' means were being taken over different seed sets while the
+    artifact looked complete. The contrast must pair on seeds finite in both
+    arms and say which ones it dropped.
+    """
+    import math
+    from experiments.revision.metadata_capture_endtoend import paired_contrasts
+
+    lie = [{"seed": 42, "w_adv": 0.60}, {"seed": 43, "w_adv": float("nan")},
+           {"seed": 44, "w_adv": 0.50}, {"seed": 45, "w_adv": 0.80}]
+    hon = [{"seed": 42, "w_adv": 0.30}, {"seed": 43, "w_adv": 0.20},
+           {"seed": 44, "w_adv": 0.50}, {"seed": 45, "w_adv": float("nan")}]
+
+    r = paired_contrasts(lie, hon, metrics=("w_adv",))["w_adv"]
+    assert r["seeds_used"] == [42, 44], r["seeds_used"]
+    assert r["seeds_dropped"] == [43, 45], r["seeds_dropped"]
+    assert math.isfinite(r["wilcoxon_p"]), "a NaN seed leaked into the p-value"
+    assert math.isfinite(r["mean_delta"]), "a NaN seed leaked into the mean"
+    # seed 44 is an exact tie; the signed-rank test drops it, so the attainable
+    # p-floor is set by n_nonzero_pairs, not n_pairs. The write-up depends on
+    # this distinction, so lock it.
+    assert r["n_pairs"] == 2 and r["n_nonzero_pairs"] == 1, r
+    assert r["n_positive"] == 1 and r["n_negative"] == 0, r
+
+
+def test_number_audit_does_not_lose_numbers_to_a_ref_on_the_same_line():
+    """The audit must mask LaTeX commands, never skip the line that holds them.
+
+    main.tex writes one paragraph per line, so skipping any line containing
+    \\ref threw away every number in that paragraph. That is how the first
+    version of the auditor failed to flag 705% and 2212% -- the two figures
+    already known to be stale -- and a silent auditor is worse than none.
+    """
+    import tempfile
+    from experiments.revision.audit_manuscript_numbers import scan, artifact_index
+
+    # 729.5123 rounds to 729.5 at the precision the manuscript prints;
+    # 2212 appears in no artifact, which is the real situation being locked.
+    with tempfile.TemporaryDirectory() as d:
+        os.makedirs(os.path.join(d, "results"))
+        with open(os.path.join(d, "results", "a.json"), "w") as f:
+            f.write('{"slack_pct": 729.5123, "auc": 0.80258551875}')
+        idx, _ = artifact_index(os.path.join(d, "results"))
+
+        tex = os.path.join(d, "t.tex")
+        with open(tex, "w") as f:
+            # a real number and a stale one, both sharing a line with \ref
+            f.write("slack is 729.5\\% per Theorem~\\ref{thm:x}, "
+                    "rising to 2212\\% per Table~\\ref{tab:y}\n")
+
+        rows = scan(tex, idx, min_digits=3, loose=False)
+        got = {r["value"]: r["found_in_results"] for r in rows}
+
+    assert "729.5" in got, f"a number sharing a line with \\ref was dropped: {got}"
+    assert "2212" in got, f"a number sharing a line with \\ref was dropped: {got}"
+    assert got["729.5"] is True, "a value present in the artifacts was reported missing"
+    assert got["2212"] is False, "a value in no artifact was reported found"
+
+
+def test_folded_normal_mean_matches_its_two_limits_and_is_even():
+    """Lemma 4.1's exact expectation, pinned at both ends.
+
+    Theorem 4 uses the sigma >> |delta| limit, sigma*sqrt(2/pi). Comparing a
+    measurement against that LIMIT can only agree inside the regime whose
+    assumption it encodes, which is close to circular and a referee may say so.
+    The exact expression carries no regime condition, so RUN-E3c compares
+    against it -- and it is only trustworthy if it reduces to the right thing at
+    both ends.
+    """
+    import math
+    from experiments.revision.bfwa_slack_analysis import folded_normal_mean
+
+    # noise-dominant end: delta = 0 recovers Theorem 4's constant exactly
+    assert folded_normal_mean(0.0, 1.0) == pytest.approx(math.sqrt(2 / math.pi), rel=1e-12)
+    assert folded_normal_mean(0.0, 0.3) == pytest.approx(0.3 * math.sqrt(2 / math.pi), rel=1e-12)
+
+    # signal-dominant end: delta >> sigma recovers |delta|
+    assert folded_normal_mean(5.0, 1e-4) == pytest.approx(5.0, rel=1e-9)
+
+    # even in delta, so an unsigned per-client disparity is sufficient input
+    for d, s_ in ((0.3, 0.2), (1.0, 2.0), (0.05, 0.05)):
+        assert folded_normal_mean(d, s_) == folded_normal_mean(-d, s_)
+
+    # and it must never fall below the noise-only value for a fixed sigma:
+    # adding a real disparity can only increase the expected released magnitude
+    base = folded_normal_mean(0.0, 0.5)
+    for d in (0.1, 0.5, 2.0):
+        assert folded_normal_mean(d, 0.5) >= base
+
+
+def test_build_manifest_reports_the_device_it_was_told_to_use():
+    """R13. build_manifest has 85 callers and had no test at all.
+
+    It reads the device from FEDFAIR_DEVICE and silently defaults to "cpu", so
+    run_revision_gpu.py -- which never set the variable -- wrote device="cpu"
+    into the manifest of a real T4 run while stdout printed "Device: CUDA". The
+    hand-reconstructed artifact recorded "cuda" correctly and the measured one
+    recorded it wrongly (docs/04 section 11.3.7).
+    """
+    from unittest.mock import patch
+    from src.utils.provenance import build_manifest
+
+    prev = os.environ.get("FEDFAIR_DEVICE")
+    try:
+        # F2: If CUDA is available, "cuda" is reported; if not, falls back to "cpu"
+        with patch("torch.cuda.is_available", return_value=True):
+            os.environ["FEDFAIR_DEVICE"] = "cuda"
+            assert build_manifest()["device"] == "cuda"
+
+        with patch("torch.cuda.is_available", return_value=False):
+            os.environ["FEDFAIR_DEVICE"] = "cuda"
+            assert build_manifest()["device"] == "cpu", "CUDA requested on non-CUDA torch must record cpu"
+
+            os.environ["FEDFAIR_DEVICE"] = "cpu"
+            assert build_manifest()["device"] == "cpu"
+
+            os.environ["FEDFAIR_DEVICE"] = "mps"
+            assert build_manifest()["device"] == "mps"
+
+        os.environ.pop("FEDFAIR_DEVICE", None)
+        with patch("torch.cuda.is_available", return_value=False):
+            m = build_manifest()
+            assert m["device"] == "cpu", "the documented default changed"
+
+
+        # the fields G-prov reads must exist and be machine-generated
+        for k in ("git_commit", "git_dirty", "timestamp", "torch_version",
+                  "python_version", "platform"):
+            assert k in m, f"manifest lost field {k!r}, which G-prov checks"
+        # timestamp must carry microseconds and a +00:00 offset -- a Z-suffixed,
+        # whole-second value is what a hand-written manifest looks like
+        assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}\+00:00$",
+                        m["timestamp"]), m["timestamp"]
+        # platform.platform() is a long descriptive string, not "Linux-x86_64"
+        assert m["platform"].count("-") >= 2, m["platform"]
+
+        # extras win over the computed fields, which is how experiment/args ride along
+        assert build_manifest(experiment="x")["experiment"] == "x"
+    finally:
+        if prev is None:
+            os.environ.pop("FEDFAIR_DEVICE", None)
+        else:
+            os.environ["FEDFAIR_DEVICE"] = prev
+
+
+def test_figures_never_silently_substitute_an_artifact():
+    """A figure reads the artifact its caption names, or it raises. No fallback.
+
+    Regression guard for the defect found 14-09-2026 (docs/CHANGELOG.md
+    [14-09-2026c]): ``plot_robustness_byz`` read ``revision/robustness_multiseed.json``
+    and, when that file was absent, SILENTLY fell back to
+    ``revision/adaptive_poisoner_results.json`` -- Bail with 3 seeds -- while the
+    manuscript caption claimed German with 5 seeds. The figure shipped in the PDF
+    was drawn from a different dataset than it advertised, and nothing flagged it
+    because the substitution was silent.
+
+    The invariant: inside make_figures.py, an ``os.path.exists`` guard on an
+    artifact may only lead to ``raise``. Reassigning the path is what made the
+    defect invisible, so reassignment is what this test forbids.
+    """
+    import ast
+    import os
+
+    src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "experiments", "make_figures.py")
+    tree = ast.parse(open(src_path, encoding="utf-8").read())
+
+    offenders = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If):
+            continue
+        guard = ast.dump(node.test)
+        if "path" not in guard or "exists" not in guard:
+            continue
+        # Every statement reachable from an artifact-existence guard must be a
+        # raise (or another guard that ends in one). An assignment to the path
+        # being tested is a substitution.
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Assign):
+                for tgt in stmt.targets:
+                    if isinstance(tgt, ast.Name) and "path" in tgt.id:
+                        offenders.append((node.lineno, tgt.id))
+
+    assert not offenders, (
+        "make_figures.py reassigns an artifact path inside an existence guard, i.e. "
+        "it substitutes one artifact for another when the expected one is missing: "
+        f"{offenders}. A missing artifact must raise FileNotFoundError naming the "
+        "runner that produces it -- see the module docstring and "
+        "docs/CHANGELOG.md [14-09-2026c]."
+    )
+
+
+def test_robustness_figure_reads_the_artifact_its_caption_names():
+    """Figure 4's caption says German / 5 seeds; that is byzantine_sweep.json."""
+    import os
+
+    src_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "experiments", "make_figures.py")
+    import ast
+
+    tree = ast.parse(open(src_path, encoding="utf-8").read())
+    node = next(n for n in tree.body
+                if isinstance(n, ast.FunctionDef) and n.name == "plot_robustness_byz")
+    # Strip the docstring: it deliberately names the superseded artifacts when
+    # explaining the defect, and prose about a mistake is not the mistake.
+    body = node.body[1:] if (node.body and isinstance(node.body[0], ast.Expr)
+                             and isinstance(node.body[0].value, ast.Constant)
+                             and isinstance(node.body[0].value.value, str)) else node.body
+    fn = "\n".join(ast.dump(b) for b in body)
+
+    assert "byzantine_sweep.json" in fn, (
+        "plot_robustness_byz must read results/byzantine_sweep.json -- the German, "
+        "K=10, 5-seed sweep that Figure 4's caption describes."
+    )
+    for wrong in ("robustness_multiseed.json", "adaptive_poisoner_results.json"):
+        assert wrong not in fn, (
+            f"plot_robustness_byz must not read {wrong}: it is a different dataset "
+            "(Bail) with a different seed budget than the caption claims."
+        )

@@ -1,17 +1,16 @@
-# `experiments/` — Bộ điều khiển thực nghiệm TrustFedGNN
+# `experiments/` — Bộ Điều Khiển Thực Nghiệm TrustFedGNN
 
-> **File điều khiển DUY NHẤT** của toàn bộ chuỗi `colab → runner → results → tables`.
-> Trạng thái từng stage, cổng kiểm toán, và phán quyết khoa học nằm ở
-> [`docs/04_experiment_execution.md`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/docs/04_experiment_execution.md).
-> Nhật ký thay đổi và thời gian chạy nằm ở
-> [`docs/CHANGELOG.md`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/docs/CHANGELOG.md).
+> **File điều khiển DUY NHẤT** của toàn bộ chuỗi `colab → runner → results → manuscript_v2`.  
+> **Kế hoạch thực thi & Trạng thái stage:** [`../../docs/04_experiment_execution.md`](../../docs/04_experiment_execution.md).  
+> **Sổ dữ liệu độc quyền & Kết quả bit-exact:** [`../../docs/05_data_and_results.md`](../../docs/05_data_and_results.md).  
+> **Nhật ký thay đổi & Lịch sử mã commit:** [`../../docs/CHANGELOG.md`](../../docs/CHANGELOG.md).  
+> **Bản thảo đầu ra trực tiếp:** [`../manuscript_v2/`](../manuscript_v2/).
 
 ---
 
-## 1. Cấu hình chuẩn — chỉ còn **một** họ
+## 1. Cấu Hình Chuẩn Tắc (Canonical Configuration) — Nguồn Chân Lý Duy Nhất
 
-Từ 07-09-2026, dự án dùng **duy nhất giao thức chuẩn tắc**. giao thức tiền chuẩn hoá đã bị loại bỏ hoàn toàn
-(xem [`legacy/README.md`](file:///Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN/experiments/legacy/README.md)).
+Từ ngày 07-09-2026, toàn bộ dự án thống nhất dùng **duy nhất giao thức chuẩn tắc**:
 
 ```python
 # src/config.py :: ExperimentConfig.canonical()   ◄── NGUỒN CHÂN LÝ DUY NHẤT
@@ -20,236 +19,123 @@ model="trustfedgnn", aggregator="fu_shapley",
 fu_alpha=0.1, fu_ema_beta=0.9, fu_val_source="server_holdout",
 fairness_weight=1.0, beta_init=0.5, fser_mode="sub",
 dp_enabled=True, dp_mode="ftgd"
-# mặc định khác: local_epochs=3, dp_epsilon=8.0, dp_delta=1e-5, sampling=False
+# Mặc định khác: local_epochs=3, dp_epsilon=8.0, dp_delta=1e-5, sampling=False
 ```
 
-Các runner SOTA override thành `num_clients=10, rounds=50`, seeds `{42…51}`.
-**Mọi ablation phải khởi tạo từ `canonical()` rồi override tường minh** — không dựng config thủ công.
+Các runner SOTA override cấu hình thành: `num_clients=10, rounds=50`, tập hạt giống `{42…51}`.  
+**Mọi ablation bắt buộc phải khởi tạo từ `canonical()` rồi override tường minh** — tuyệt đối không dựng config thủ công.
 
 ---
 
-## 2. Bố cục thư mục
+## 2. Bố Cục Thư Mục `experiments/`
 
 ```
 experiments/
-├── README.md                      ◄── file này
-├── colab/                         điều phối VM từ xa  (§3)
-│   ├── 00_pack.sh                 [LOCAL]  đóng gói repo + manifest
-│   ├── 01_setup.py                [VM]     giải nén, symlink, pytest — GATE 0
-│   ├── 11_smoke_test.py           [VM]     smoke test
-│   ├── 15_canonical_suite.py      [VM]     canonical suite
-│   ├── run_local.sh               [LOCAL]  chạy CPU không cần Colab
-│   └── archived/                  script các pha cũ + legacy_results/
+├── README.md                          # Tài liệu này (Quy trình thực nghiệm & điều khiển)
+├── colab/                             # Kịch bản điều phối máy ảo Google Colab GPU từ xa
+│   ├── 00_pack.sh                     # [LOCAL] Đóng gói codebase + manifest
+│   ├── 01_setup.py                    # [VM] Giải nén, symlink, pytest — GATE 0
+│   ├── 11_smoke_test.py               # [VM] Kiểm thử luồng khép kín
+│   ├── 15_canonical_suite.py          # [VM] Thực thi canonical suite
+│   └── run_local.sh                   # [LOCAL] Chạy CPU cục bộ
 │
-├── run_smoke_test.py              toàn vẹn đường ống · CPU
-├── run_canonical_suite.py         canonical + ablation M1–M7 + FSER sign + two-tier · CPU
-├── run_sota_pokecz.py             ma trận SOTA Pokec-z · GPU
-├── run_sota_credit.py             ma trận SOTA Credit · GPU
-├── run_byzantine_sweep.py         quét tỷ lệ Byzantine · GPU
-├── run_shapley_fidelity.py        FU-Shapley vs Exact Shapley · CPU
-├── run_scalability_ogbn.py        ogbn-products 2,4M · CPU (NeighborLoader)
+├── run_smoke_test.py                  # Kiểm thử tính toàn vẹn đường ống huấn luyện (CPU)
+├── run_canonical_suite.py             # Bộ kiểm chuẩn Canonical + Ablation M1–M7 + Two-Tier (CPU)
+├── run_sota_pokecz.py                 # Ma trận SOTA Pokec-z & Đối chứng A0 Scaffold Control (GPU)
+├── run_sota_credit.py                 # Ma trận SOTA Credit Default (GPU)
+├── run_byzantine_sweep.py             # Quét tỷ lệ tấn công Byzantine đa mức f/K (GPU)
+├── run_shapley_fidelity.py            # Kiểm định tương quan FU-Shapley vs Exact Shapley (CPU)
+├── run_scalability_ogbn.py            # Thử nghiệm khả năng mở rộng ogbn-products 2.4M nút (CPU)
+├── run_pareto_sweep.py                # Quét lưới biên Pareto đa mục tiêu (CPU)
 │
-├── run_pareto_sweep.py            quét lưới Pareto cục bộ · CPU
+├── incentive_audit.py                 # Kiểm toán lỗ hổng kênh metadata tự khai 6/6 SOTA
+├── exact_shapley_correlation.py       # Tính toán đóng góp Shapley chính xác (K=4, 16 liên minh)
 │
-│   ── Họ kiểm chứng cơ chế FU-Shapley (FS-WI) ──
-├── run_fushapley_vs_bfwa.py       FU-Shapley ↔ BFWA head-to-head + α-sweep (cùng backbone)
-├── incentive_audit.py             kháng tấn công: FU-Shapley vs các aggregator khác
-├── exact_shapley_correlation.py   FU-Shapley vs Exact Shapley (K=4, 16 liên minh)
-├── topology_shapley_analysis.py   cấu trúc đồ thị ↔ tín dụng công bằng φ_fair
-├── ablation_holdout_size.py       độ nhạy φ_k theo kích thước/phân phối server holdout
-├── ablation_warmup.py             warm-up window là attack surface
-├── privacy_attack.py              DP mức thống kê thực sự mua được gì
-├── trust_eval.py                  trust 5 trục + model card EU AI Act/NIST
+├── revision/                          # Các runner chuyên biệt cho chiến dịch phản biện AC
+│   ├── adaptive_poisoner.py           # Tấn công ngụy trang cự ly thích ứng & FLAME baseline
+│   ├── ablation_grid_runner.py        # Lưới nhân tử 2x2 (600 runs, n=30) khảo sát alpha
+│   ├── bfwa_slack_analysis.py         # Monte Carlo kiểm định độ chùng ràng buộc LDP
+│   ├── dirichlet_sweep.py             # Quét 12 ô Dirichlet non-IID khảo sát holdout skew
+│   ├── metis_partition_experiment.py  # Phân vùng cộng đồng Metis đo ứng suất tô-pô
+│   ├── dp_accounting_table.py         # Bảng kế toán Rényi DP giải tích
+│   ├── update_level_attack.py         # Đòn tấn công suy diễn thuộc tính trên kênh update
+│   └── trust_score_sensitivity.py     # Kiểm định độ vững của Composite Trust Score
 │
-├── revision/                      bộ thực nghiệm phản biện
-├── methods.py                     đăng ký 16 baseline + CGSV + biến thể Ours
-├── fairshare_common.py            tiện ích dùng chung (make_trainer, homophily)
-├── run_experiment.py              `run_one()` — vòng huấn luyện đơn
-│
-├── make_stats.py                  results → consolidated_statistics.json
-├── make_tables.py                 results → 6 bảng .tex
-├── make_figure_pareto.py          results → pareto_frontier PNG
-├── make_figure_shapley.py         results → hình điểm đóng góp Shapley
-├── render_run_matrix.py           artifact → bảng Markdown cho docs/04
-├── stats.py                       Wilcoxon · Cohen d_z · bootstrap CI · Holm–Bonferroni
-│
-└── legacy/                        ⛔ ĐÃ NGỪNG — không chạy, không trích dẫn
+├── methods.py                         # Đăng ký 16 baselines SOTA + FLAME + CGSV + biến thể Ours
+├── make_manuscript_v2_figures.py      # Sinh toàn bộ 5 biểu đồ vector vào manuscript_v2/figures/
+├── make_tables_c2.py                  # Sinh các bảng chứng cứ toán học vào manuscript_v2/tables/
+├── make_stats.py                      # Tổng hợp thống kê Wilcoxon, Cohen d, Holm-Bonferroni
+└── legacy/                            # ⛔ ĐÃ LƯU TRỮ — Không chạy, không trích dẫn
 ```
 
 ---
 
-## 3. Chạy ở CPU hay GPU? — quy tắc dứt khoát
+## 3. Ma Trận Chiến Dịch Thực Nghiệm & Ánh Xạ 14 Bảng `manuscript_v2`
 
-**Nguyên tắc nền:** trên CUDA, `scatter`/`index_add` dùng atomics ⇒ hai lần chạy **cùng seed**
-lệch tới **0,103 AUC**. Trên CPU, `sha256(global_flat)` trùng khít.
+Toàn bộ 14 bảng số liệu trong bản thảo `manuscript_v2/` được liên kết 1-1 với các kịch bản thực thi và hồ sơ dữ liệu nguồn:
 
-| Loại công việc | Thiết bị | Vì sao |
-|---|:--:|---|
-| Kiểm tra tái lập bit-exact, đối chứng hash | **CPU bắt buộc** | GPU không tất định — hash vô nghĩa |
-| Smoke test, unit test, script tất định (DP accounting, trust score) | **CPU** | rẻ, vài giây–vài phút |
-| Ablation $n{=}3$ seed trên German/Bail ($\le 19$k nút) | **CPU đủ** | GPU không rút ngắn đáng kể ở quy mô này |
-| SOTA matrix Pokec-z / Credit / Elliptic (30k–204k nút, 10 seed) | **GPU T4** | CPU mất hàng chục giờ |
-| Byzantine sweep, robustness đa seed | **GPU T4** | nhiều run ngắn ⇒ tổng lớn |
-| ogbn-products 2,4M nút (NeighborLoader) | **CPU chấp nhận được** | nghẽn ở lấy mẫu láng giềng, không ở GEMM |
-
-> **Thiết bị là một phần của manifest.** `FEDFAIR_DEVICE` mặc định `cpu`
-> (`src/config.py`). Mỗi artifact ghi `device` vào `manifest` — kết quả CPU và GPU
-> **không được trộn trong cùng một bảng**.
->
-> **Trên CPU**, $|\Delta| \ne 0$ giữa hai lần cùng cấu hình là **khác biệt CODE, phải truy**.
-> **Trên GPU**, đừng dùng hash làm cổng kiểm tra.
+| Mã Chiến Dịch | Mục Tiêu & Cơ Chế Kiểm Định | Script Thực Thi | Thiết Bị Bắt Buộc | Tệp Kết Quả Đầu Ra (`results/`) | Bảng trong `manuscript_v2` |
+|---|---|---|:--:|---|---|
+| **PREFLIGHT** | Tiền kiểm toán 5 tập benchmark, kiểm tra homophily nhạy cảm $h_s$ và rò rỉ nhãn | `experiments/revision/preflight_handoff.py` | **CPU** | `results/preflight_datasets.json` | Table 1 (`tab_datasets.tex`) |
+| **RUN-META** | Khảo sát lỗ hổng siêu dữ liệu tự khai trên 6 quy tắc SOTA ($n=30$ seeds) | `experiments/incentive_audit.py` | **CPU / GPU** | `results/revision/metadata_capture_stats.json` | Table 2 (`tab_metadata_capture.tex`) |
+| **RUN-SLACK** | 1,000 mẫu Monte Carlo kiểm định rào cản Folded Normal và Le Cam Minimax của LDP | `experiments/revision/bfwa_slack_analysis.py` | **CPU** | `results/revision/bfwa_slack.json`<br>`results/revision/dp_accounting.json` | Table 3 (`tab_ldp_barrier.tex`) |
+| **RUN-RESCALE** | Bóc tách cơ chế phòng thủ 2 tầng: Norm Rescaling vs Coordinate Median | `experiments/run_canonical_suite.py` | **CPU** | `results/canonical_suite.json`<br>`results/revision/rescale_median_ablation.json` | Table 4 (`tab_two_tier.tex`) |
+| **RUN-STEALTH / FLAME** | Tấn công ngụy trang cự ly thích ứng ($f/K \in [0.1, 0.4]$) & Đối chuẩn FLAME (USENIX'22) | `experiments/revision/adaptive_poisoner.py` | **GPU T4** | `results/revision/adaptive_poisoner_results.json`<br>`results/revision/flame_adaptive_results.json` | Table 5 (`tab_adaptive_poisoner.tex`) |
+| **RUN-ALIGN** | Tấn công hộp trắng toàn tri Kerckhoffs T1 tối ưu Adam ($n=10$ seeds) | `experiments/revision/alignment_adversary.py` | **GPU T4** | `results/revision/alignment_adversary.json` | Table 6 (`tab_alignment_adversary.tex`) |
+| **RUN-CTRL / SOTA** | Bóc tách Scaffold: Đối chứng `fedavg-gat` vs TrustFedGNN trên cùng backbone ($n=10$) | `experiments/run_sota_pokecz.py`<br>`experiments/run_sota_credit.py` | **GPU T4** | `results/sota_pokecz.json`<br>`results/sota_credit.json`<br>`results/revision/aggregator_control_pokecz.json` | Table 7 (`tab_sota_main.tex`) |
+| **RUN-COST** | Đo lường thời gian huấn luyện wall-clock, GFLOPs và phụ trội tính toán tại server | `experiments/revision/convergence_audit.py` | **GPU T4** | `results/fairshare/convergence_empirical.json` | Table 8 (`tab_cost.tex`) |
+| **RUN-STABILITY** | Hòa giải đa chế độ biến thiên trọng số $\Omega_w$ (EMA dập rung lắc tới $30\times$) | `experiments/run_canonical_suite.py` | **CPU** | `results/canonical_suite.json`<br>`results/revision/aggregator_control_pokecz.json` | Table 9 (`tab_weight_stability.tex`) |
+| **RUN-DELTA-GRID** | Khảo sát lưới nhân tử $2 \times 2$ ($n=30$ seeds, 600 runs), chứng minh Mechanical Separability | `experiments/revision/ablation_grid_runner.py` | **GPU T4 / CPU** | `results/revision/fltrust_delta_grid_results.json` | Table 10 (`tab_factorial_2x2.tex`) |
+| **RUN-ABLATION** | Bộ bóc tách thành phần M1–M7 trên German Credit ($n=10$ seeds) | `experiments/run_canonical_suite.py` | **CPU** | `results/canonical_suite.json` | Table 11 (`tab_ablation_suite.tex`) |
+| **RUN-PART / DIR** | Quét 12 ô Dirichlet Skew & Phân vùng cộng đồng Metis trên Bail | `experiments/revision/dirichlet_sweep.py`<br>`experiments/revision/metis_partition_experiment.py` | **GPU T4 / CPU** | `results/revision/dirichlet_sweep.json`<br>`results/revision/metis_partition.json` | Table 12 (`tab_topology_stress.tex`) |
+| **RUN-SENS** | 2,000 mẫu Monte Carlo kiểm định độ vững thứ hạng điểm tin cậy tổng hợp ($\rho_s = 0.965$) | `experiments/revision/trust_score_sensitivity.py` | **CPU** | `results/revision/trust_score_sensitivity.json` | Table 13 (`tab_trust_score_sensitivity.tex`) |
+| **RUN-FIDELITY** | Kiểm định độ phân kỳ tiên đề và giới hạn xấp xỉ Shapley tổ hợp (125 điểm thăm dò) | `experiments/run_shapley_fidelity.py` | **CPU** | `results/fairshare/` artifacts | Table 14 (`tab_trust_fidelity.tex`) |
 
 ---
 
-## 4. Quy trình A→Z
+## 4. Quy Trình Xuất Bản Bảng Biểu & Biên Dịch Bản Thảo `manuscript_v2/`
 
-### Bước 0 — Cổng mã nguồn (LOCAL, CPU, ~1 phút)
+Mọi con số đưa vào bản thảo `manuscript_v2` phải tuân thủ nghiêm ngặt pipeline tự động (**Zero Manual Typing**):
 
 ```bash
 cd /Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN
-git status -sb                                    # phải sạch
-git log -1 --oneline
-/Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/.venv-local/bin/python -m pytest -q
-#   CỔNG: 120 passed. FAIL bất kỳ ⇒ DỪNG.
-```
 
-### Bước 1 — Đóng gói & dựng VM
-
-```bash
-P=/Users/anson/.colab-profiles/gnn          # profile đã kiểm chứng
-S=rerun
-REPO=/Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN
-C=$REPO/experiments/colab
-SP=<thư mục scratchpad>
-
-SP=$SP bash $C/00_pack.sh                   # → fedfairgnn.tgz + manifest_local.json
-HOME=$P colab new     -s $S --gpu T4
-HOME=$P colab install -s $S torch_geometric # VM MỚI KHÔNG CÓ SẴN
-HOME=$P colab upload  -s $S $SP/fedfairgnn.tgz      /content/fedfairgnn.tgz
-HOME=$P colab upload  -s $S $SP/manifest_local.json /content/manifest_local.json
-HOME=$P colab exec    -s $S -f $C/01_setup.py --timeout 900     # GATE 0 trên VM
-```
-
-**Bốn cạm bẫy đã trả giá:**
-1. VM mới **không có** `torch_geometric` — phải `colab install` trước.
-2. VM nhàn rỗi bị thu hồi sau **~90 phút** (không phải 24h) ⇒ job dài chạy nền + polling.
-3. `colab log -s <name>` chỉ khôi phục **cell đã hoàn tất** — không theo dõi được job đang chạy.
-   Mọi runner phải ghi xuống `results/` rồi `download`, không dựa vào stdout.
-4. `jupyter-kernel-client` phải ghim **`==0.9.0`**; 1.0.0 làm hỏng mọi `colab exec`.
-
-### Bước 2 — Chạy theo thứ tự stage
-
-| # | Lệnh trên VM | Stage | Thiết bị | Artifact | Phút |
-|:--:|---|:--:|:--:|---|:--:|
-| 1 | `python experiments/preflight_dataset_audit.py` ¹ | 1 | CPU | `preflight_dataset_audit.json` | 2 |
-| 2 | `python experiments/run_sota_pokecz.py` | 4 | GPU | `sota_pokecz.json` | 50 |
-| 3 | `python experiments/run_sota_credit.py` | 4 | GPU | `sota_credit.json` | 60 |
-| 4 | `python experiments/run_sota_elliptic.py` ¹ | 4 | GPU | `sota_elliptic.json` | 30 |
-| 5 | `python experiments/run_byzantine_sweep.py` | 5 | GPU | `byzantine_sweep.json` | 13 |
-| 6 | `python experiments/revision/robustness_multiseed.py` ² | 5 | GPU | `revision/robustness_multiseed.json` | 25 |
-| 7 | `python experiments/revision/adaptive_poisoner.py` ² | 5 | GPU | `revision/adaptive_poisoner_results.json` | 15 |
-| 8 | `python experiments/run_shapley_fidelity.py` | 6 | CPU | `shapley_fidelity.json` | 2 |
-| 9 | `python experiments/revision/ablation_grid_runner.py` | 7 | GPU | `revision/ablation_grid_results.json` | 30 |
-| 10 | `python experiments/revision/fser_beta_analysis.py` | 7 | GPU | `revision/fser_beta_analysis.json` | 10 |
-
-¹ chưa tồn tại — phải viết trước (xem §6) · ² phải sửa danh sách aggregator trước (xem §6)
-
-**STAGE 3 không chạy lại** — `canonical_suite.json` đã ở commit hậu-fix `73a251e`.
-Tổng ≈ **4 giờ**; ngân sách **6 giờ** tính dự phòng session death.
-
-### Bước 3 — Tải về & nghiệm thu
-
-```bash
-for f in preflight_dataset_audit sota_pokecz sota_credit \
-         sota_elliptic byzantine_sweep shapley_fidelity; do
-  HOME=$P colab download -s $S /content/FedFairGNN/results/$f.json $REPO/results/$f.json
-done
-HOME=$P colab download -s $S /content/FedFairGNN/results/revision $REPO/results/revision
-HOME=$P colab stop -s $S        # BẮT BUỘC — không gì tự thu hồi VM ngoài giới hạn 24h
-
-bash experiments/verify_artifacts.sh      # §5
-```
-
-### Bước 4 — Sinh bảng & hình (LOCAL, CPU)
-
-```bash
-python experiments/make_stats.py        # → consolidated_statistics.json
-python experiments/make_tables.py # → 6 bảng .tex
-python experiments/revision/dp_accounting_table.py      # → dp_accounting.{json,tex}
-python experiments/make_figure_pareto.py              # → pareto PNG
-git add -f results/ manuscript/tables/
-git commit -m "data: post-fix re-run (giao thức chuẩn tắc)"
-```
-
----
-
-## 5. Cổng nghiệm thu artifact
-
-Chạy sau **mỗi** runner. Đây là **cổng**, không phải gợi ý.
-
-```bash
-cd /Users/anson/DS/Research/1_Paper/01.GNN/TrustFedGNN/FedFairGNN
-HEAD=$(git rev-parse HEAD)
-for f in results/*.json results/revision/*.json; do
-  python3 - "$f" "$HEAD" <<'PY'
-import json, sys
-f, head = sys.argv[1], sys.argv[2]
-try: d = json.load(open(f))
-except Exception as e: print("  ?? %s: %s" % (f, e)); raise SystemExit
-if isinstance(d, list): print("  -- %s: list, không manifest" % f); raise SystemExit
-m = d.get('manifest') or d.get('_manifest') or {}
-c = (m.get('git_commit') or '')[:7]
-stale = '_STALENESS_NOTICE' in d
-dirty = m.get('git_dirty', None)
-ok = (c == head[:7]) and (not stale) and (dirty is False)
-print("  %s%-52s commit=%-8s stale=%-5s dirty=%s" % ('OK ' if ok else 'XX ', f, c or '-', stale, dirty))
+# 1. Kiểm tra tính hợp lệ của toàn bộ artifacts JSON
+python3 - <<'PY'
+import json, glob
+for f in sorted(glob.glob("results/*.json") + glob.glob("results/revision/*.json")):
+    try:
+        d = json.load(open(f))
+        m = d.get('manifest') or d.get('_manifest') or {}
+        print("OK: %-50s | commit=%s" % (f, (m.get('git_commit') or 'none')[:7]))
+    except Exception as e:
+        print("FAIL: %s (%s)" % (f, e))
 PY
-done
+
+# 2. Sinh các bảng biểu vào manuscript_v2/tables/ (14 bảng biểu)
+python3 experiments/make_tables_c2.py
+
+# 3. Sinh các biểu đồ vector vào manuscript_v2/figures/ (5 biểu đồ vector)
+python3 experiments/make_manuscript_v2_figures.py
+
+# 4. Quét từ khóa cấm & kiểm toán tuyên bố học thuật (Zero Overclaim Guard)
+python3 scripts/lint_manuscript_blacklist.py
+
+# 5. Biên dịch PDF bản thảo hoàn chỉnh với chu trình chuẩn tắc (68 trang, 0 warnings)
+cd manuscript_v2
+pdflatex -interaction=nonstopmode main.tex
+bibtex main
+pdflatex -interaction=nonstopmode main.tex
+pdflatex -interaction=nonstopmode main.tex
 ```
 
-Vì sao cần: commit `73a251e` vá sự cố **"false completion"** — `_load_checkpoint` từng coi mọi
-`results/*.json` có sẵn là tiến độ của chính nó, khiến một lần deploy "hoàn tất" trong ~15 giây
-và suýt phát hành lại 100% số liệu tiền-fix dưới nhãn "vừa chạy xong".
-
 ---
 
-## 6. Việc phải làm trước khi mở VM (LOCAL, CPU, ~1 giờ)
+## 5. Nguyên Tắc Bất Di Bất Dịch Trong Thực Nghiệm
 
-| # | Việc | File |
-|:--:|---|---|
-| P1 | `ResultLogger.save()` phải ghi `git_commit`, `git_dirty`, `device`, `timestamp` | `src/utils/logging_utils.py` |
-| P2 | Viết `preflight_dataset_audit.py`: đo $h_s$ + zero-leakage cho **6** bộ dữ liệu, ghi manifest | `experiments/` |
-| P3 | `datasets.tex` phải **đọc** artifact P2 thay vì chuỗi cứng | `make_tables.py:315-333` |
-| P4 | `DATASET_SPECS` đặt theo **giao thức chuẩn tắc** ($K{=}10$, $E{=}3$, $R{=}50$) | `revision/dp_accounting_table.py` |
-| P5 | Thêm `fu_shapley`, `robust_fu_shapley`, `cgsv` vào danh sách aggregator quét | `revision/robustness_multiseed.py`, `revision/adaptive_poisoner.py` |
-| P6 | Viết `run_sota_elliptic.py` theo khuôn `run_sota_pokecz.py` | `experiments/` |
-| P7 | Viết `make_figures.py` sinh 5 hình từ artifact giao thức chuẩn tắc (thay `report.py` đã loại) | `experiments/` |
+1. **Một Nguồn Chân Lý Duy Nhất (Single Source of Truth):** Số liệu chỉ được ghi vào artifact JSON; tài liệu và bản thảo chỉ đọc trực tiếp, tuyệt đối không gõ tay.
+2. **Khai Báo Thiết Bị Minh Bạch Trong Manifest:** Kết quả CPU (tất định bit-exact) và GPU (CUDA non-deterministic) không bao giờ được trộn lẫn trong cùng một bảng đối chuẩn.
+3. **Phân Định Minh Bạch Công Trình Tiền Nhiệm:** Mọi tài liệu và script phải làm rõ các thành phần kế thừa từ bài báo hội nghị trước (`dang2026fedfairgnn`, PMLR v319: FSER, FTGD, BFWA) so với các đóng góp mới độc quyền của tạp chí (FU-Alignment, Le Cam Minimax, 4 chứng chỉ Lean 4, 14 bảng thực nghiệm).
+4. **Chuẩn Mực Học Thuật & Kiểm Soát Tuyên Bố:** Các công cụ chứng minh hình thức (Lean 4) được trình bày như chứng chỉ kiểm toán tính chất đại số/hình học, không dùng làm highlight thực nghiệm hay tuyên bố phóng đại.
+5. **Tuân Thủ Bộ Quy Chuẩn Viết Lách:** Mọi phân tích kết quả thực nghiệm phải bám sát [`../../docs/review/KE_HOACH_VIET_LAI_MANUSCRIPT.md`](../../docs/review/KE_HOACH_VIET_LAI_MANUSCRIPT.md).
 
----
-
-## 7. Đăng ký phương pháp
-
-`methods.py` là nơi **duy nhất** ánh xạ tên → cấu hình:
-
-```python
-"fedfairgnn":      dict(model="trustfedgnn", aggregator="fu_shapley",        dp_enabled=True,  dp_mode="ftgd")
-"fedfairgnn-nodp": dict(model="trustfedgnn", aggregator="fu_shapley",        dp_enabled=False, dp_mode="ftgd")
-"ours-robust":     dict(model="trustfedgnn", aggregator="robust_fu_shapley", dp_enabled=True,  dp_mode="ftgd")
-"ours-nobfwa":     dict(model="trustfedgnn", aggregator="fedavg",            dp_enabled=False)   # ⚠️ tên gọi sai lịch sử
-```
-
-> ⚠️ **`ours-nobfwa` là tên gọi nhầm lẫn lịch sử** — nó tắt FU-Shapley (về FedAvg), không liên
-> quan gì tới BFWA. Đây chính là gốc của việc bản thảo mô tả BFWA trong khi mã chạy FU-Shapley.
-> Giữ khoá cũ để không mất kết quả đã cache; **đừng suy ra ý nghĩa từ tên**.
-
-`ROBUST_AGGREGATORS` đã gồm `fu_shapley`, `robust_fu_shapley`, `cgsv` (dòng 120–126).
-
----
-
-## 8. Nguyên tắc bất di bất dịch
-
-1. **Số chỉ ghi một lần.** Mỗi kết quả vào đúng một artifact; bảng và tài liệu **trỏ tới**, không chép lại.
-2. **Thay đổi đi một chiều:** `docs/02` (toán) → `docs/03` (ánh xạ AST) → code → test → artifact → bảng → `docs/04` + `docs/CHANGELOG.md`.
-3. **Không con số nào vào bản thảo** nếu artifact tương ứng không qua cổng §5.
-4. **Thiết bị phải khai báo** trong manifest; không trộn CPU/GPU trong một bảng.
-5. **`legacy/` không bao giờ được chạy lại.**

@@ -1,0 +1,365 @@
+%% sections/03_methodology.tex — Comprehensive Methodology Section
+\section{Methodology}
+\label{sec:methodology}
+
+This section presents the formal methodology of \MethodName{}. We begin by formulating the decentralized graph federated learning setting, introducing the \emph{Trustworthy FL Trilemma}, and defining our threat model under Kerckhoffs' principle (\S\ref{subsec:problem_formulation}). We then detail the \MethodName{} architecture, encompassing client-side Fair Targeted Gradient Descent (FTGD), directional server anchoring, and our decoupled two-tier aggregation rule (\S\ref{subsec:framework}). Next, we establish the theoretical foundations of the framework, including exact syntactic metadata immunity, the folded-normal bias lemma, baseline dual convergence, the information-theoretic minimax observability lower bound under Local Differential Privacy (LDP), and fairness subspace blindness (\S\ref{subsec:theory}). Finally, we formalize an auditable first-order contribution decomposition for enterprise governance with machine-checked axiomatic properties (\S\ref{subsec:governance}).
+
+% =========================================================================
+% SUBSECTION 1: PROBLEM FORMULATION AND THE TRUSTWORTHY FL TRILEMMA
+% =========================================================================
+\subsection{Problem Formulation and the Trustworthy FL Trilemma}
+\label{subsec:problem_formulation}
+
+\subsubsection{Decentralized Graph Federated Learning Formulation}
+Let $\mathcal{G} = (\mathcal{V}, \mathcal{E}, X, A)$ denote a global attributed graph partitioned across $K$ decentralized institutional client silos $\mathcal{S}_1, \dots, \mathcal{S}_K$. Each client silo $k \in [K]$ possesses a private, non-overlapping local subgraph $\mathcal{G}_k = (\mathcal{V}_k, \mathcal{E}_k, X_k, A_k)$, where $\mathcal{V}_k \subset \mathcal{V}$ represents local entity nodes, $\mathcal{E}_k \subset \mathcal{E}$ denotes intra-silo edges, $X_k \in \RR^{|\mathcal{V}_k| \times d}$ is the node feature matrix, and $A_k \in \{0, 1\}^{|\mathcal{V}_k| \times |\mathcal{V}_k|}$ represents the local adjacency matrix. Cross-silo inter-graph edges $\mathcal{E}_{\mathrm{cross}} = \mathcal{E} \setminus \bigcup_{k=1}^K \mathcal{E}_k$ remain unobserved by individual clients due to commercial secrecy and regulatory isolation.
+
+Each node $v \in \mathcal{V}_k$ is associated with a ground-truth binary task classification label $Y_k(v) \in \{0, 1\}$ (e.g., credit default risk or loan delinquency) and a protected demographic indicator $S_k(v) \in \{0, 1\}$ (e.g., gender, age category, or racial group). The federated consortium seeks to collaboratively optimize the shared parameters $\theta \in \RR^P$ of a Graph Neural Network (GNN) backbone to minimize the global classification risk while enforcing strict algorithmic fairness across demographic subgroups. Specifically, we focus on Demographic Parity Disparity ($\dpd$), defined as the absolute difference in positive prediction rates between protected groups:
+\begin{equation}
+\label{eq:dpd_def}
+\dpd(\theta) = \left| P(\hat{Y}=1 \mid S=0) - P(\hat{Y}=1 \mid S=1) \right|,
+\end{equation}
+subject to the operational demographic parity constraint:
+\begin{equation}
+\label{eq:dpd_constraint}
+\dpd(\theta) \le \tau,
+\end{equation}
+where $\hat{Y} = f_\theta(\mathcal{G})$ is the binary classification outcome and $\tau \ge 0$ denotes the fairness tolerance. In secondary analyses, we also monitor Equal Opportunity Disparity ($\eod$), which constrains disparity conditioned on positive ground-truth labels:
+\begin{equation}
+\label{eq:eod_def}
+\eod(\theta) = \left| P(\hat{Y}=1 \mid Y=1, S=0) - P(\hat{Y}=1 \mid Y=1, S=1) \right|.
+\end{equation}
+
+\subsubsection{The Trustworthy FL Trilemma}
+A fundamental challenge in decentralized graph learning is that the system must satisfy three inherently competing desiderata:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Unconstrained Task Utility ($U$):} Maximizing predictive accuracy by solving $\min_\theta \mathcal{L}_{\mathrm{task}}(\theta)$. Single-objective baselines dedicate the entire parameter space to task loss minimization, reaching high clean-data utility (e.g., FLTrust). However, because they allocate zero gradient capacity to demographic parity, they leave group disparity unconstrained and fail to defend against adversarial perturbations directed into the fairness subspace (Section~\ref{subsec:sota_comparison}).
+    \item \textbf{Group Demographic Fairness ($F$):} Enforcing demographic parity ($\dpd(\theta) \le \tau$). Existing fairness-aware federated rules (such as FairFed, $F^2\text{GNN}$, FedGraph-Fair, and BFWA) rely on client-reported scalar metadata ($\widehat{\dpd}_k$). In adversarial settings, this creates a critical vulnerability: malicious clients reporting falsified claims can capture a dominant share of global aggregation weights, driving downstream disparity to severe levels (Section~\ref{subsec:vulnerability}).
+    \item \textbf{Byzantine Robustness ($R$):} Bounding adversarial influence on parameter updates ($w_{\mathrm{adv}} \le 1/K$). Standard Byzantine-resilient filters (e.g., Coordinate Median, Trimmed Mean, Krum) rely on symmetric distributional assumptions. On heterogeneous, non-IID graph topologies, these coordinate-wise operators conflate legitimate minority graph clusters with geometric outliers. This induces the \emph{Shielding Paradox (Median Backfire)}: symmetric median screening purges benign minority gradients before suppressing proximity-stealth adversaries, paradoxically inflating adversarial weight share (Section~\ref{subsec:stress_testing}).
+\end{enumerate}
+
+\begin{remark}[Pareto Operating Point Positioning]
+Simultaneously maximizing all three objectives is impossible in the general setting. Rather than asserting unconstrained dominance across all three dimensions, \MethodName{} establishes an intentional, balanced operating point on the multi-objective Pareto frontier: trading a small task utility margin for substantial reduction in group demographic disparity, while maintaining exact syntactic metadata immunity and dynamic weight adaptability without imposing a robustness tax on fairness (quantitative trade-offs are detailed in Section~\ref{subsec:sota_comparison}).
+\end{remark}
+
+\subsubsection{Kerckhoffs Threat Model and Attack Hierarchy}
+We formulate our threat model under Kerckhoffs' security principle: the adversary possesses full knowledge of the system architecture, loss formulations, and server aggregation algorithms. Up to $f$ out of $K$ silos ($f < K/2$) are Byzantine adversaries executing coordinated attacks across three hierarchical tiers:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Tier 1 (Crude Arithmetic Poisoning):} Malicious silos execute blind parameter manipulation without access to benign gradient distributions or server data, including sign-flipping ($\Delta_k \gets -c \Delta_k$), Gaussian noise perturbation, and gradient norm amplification ($c = 100$). This tier also encompasses fairness poisoning sweeps under task-neutral budgets $\varepsilon \in [0.005, 0.10]$.
+    \item \textbf{Tier 2 (Adaptive Proximity Stealth):} Adversaries observe benign parameter distributions and craft poisoned updates confined within the benign coordinate-wise median radius ($\rho = 0.85$), while concurrently falsifying local disparity claims ($\widehat{\dpd}_k = 0.000$).
+    \item \textbf{Tier 3 (White-Box Alignment Adversary):} An omniscient adversary possessing direct read access to the server directional reference $\gtarg$, executing projected gradient ascent (PGD, 50 steps) to track the reference direction while injecting orthogonal fairness degradation.
+\end{enumerate}
+
+\paragraph{Pre-emptive Threat Boundary and Physical Isolation}
+In accordance with Kerckhoffs' principle, an omniscient adversary with internal read access to the server reference gradient $\gtarg$ (Tier 3 probe $H_{\mathrm{T1}}$) represents the physical security limit of reference-based defense (as quantified in Section~\ref{subsec:stress_testing}). In decentralized cross-silo financial and healthcare federations, zero-knowledge proofs (ZK-SNARKs) and hardware enclaves (TEEs) incur significant verification overhead, while peer-prediction schemes degrade under collusion. Consequently, physical server memory isolation of the audit anchor $\Droot$ constitutes the essential, verifiable security perimeter of the framework.
+
+% =========================================================================
+% SUBSECTION 2: THE TRUSTFEDGNN FRAMEWORK
+% =========================================================================
+\subsection{The \MethodName{} Framework and Two-Tier Architecture}
+\label{subsec:framework}
+
+\subsubsection{Structural Decoupling: GNN Representation vs. Aggregation Rule}
+To prevent confounding architectural inductive bias with aggregation mechanics, we decouple the system into two distinct components:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Representation Backbone:} A 2-layer GAT~\citep{velickovic2017graph} with multi-head attention, batch normalization, and skip-connections on local subgraphs $\mathcal{G}_k$.
+    \item \textbf{Aggregation Rule:} Canonical FU-Alignment, operating on client parameter deltas $\Delta_k^{(t)} = \theta_k^{(t)} - \theta^{(t)}$ at the server.
+\end{enumerate}
+As established in our structural control experiments (Section~\ref{subsec:sota_comparison}), the empirical utility gain observed over standard FedAvg-GCN represents a system-level integration gain driven predominantly by the representation backbone (a deep GAT scaffold with batch normalization, skip connections, and FTGD). Crucially, when evaluating the aggregation rule in isolation on an identical GAT backbone (\texttt{RUN-CTRL}), canonical FU-Alignment achieves statistical parity with standard FedAvg on benign data (two one-sided test equivalence within margin $\delta = 0.0100$, detailed in Section~\ref{subsec:sota_comparison}), confirming that its clean-data utility matches standard averaging while its primary advantage is Byzantine resilience under adversarial attack.
+
+\subsubsection{Server Holdout as an Isolated Directional Anchor (\texorpdfstring{$\Droot$}{D\_root})}
+Rather than relying on client-reported metadata, the server maintains a small, physically isolated audit anchor dataset $\Droot$ consisting of exactly 125 labeled nodes ($\approx 0.18\%$ of Pokec-z to $12.5\%$ of German Credit), stratified to preserve demographic subgroup proportions. 
+
+Because cross-silo graph partitions preserve no inter-silo edges, the mean node degree on the isolated server subgraph drops from $43.48$ to $4.12$. This guarantees zero edge leakage between client silos and the server, with the trade-off that the server reference gradient is evaluated on a sparser graph topology. In Section~\ref{subsec:attribution}, our 12-configuration Dirichlet stress test demonstrates that this anchor provides a reliable directional compass across non-IID distributional shifts.
+
+\subsubsection{Client-Side Targeted Optimization (FTGD) and Scalar-Channel DP}
+At each local silo $k$, local training is conducted via Fair Targeted Gradient Descent (FTGD). Given local task loss $\mathcal{L}_{\mathrm{task}}$ and group fairness loss $\mathcal{L}_{\mathrm{fair}} = |\mu_{k,0} - \mu_{k,1}|$, the client computes local gradients:
+\begin{equation}
+\label{eq:local_grads}
+g_{k,\mathrm{task}} = \nabla_\theta \mathcal{L}_{\mathrm{task}}(\theta; \mathcal{G}_k), \quad g_{k,\mathrm{fair}} = \nabla_\theta \mathcal{L}_{\mathrm{fair}}(\theta; \mathcal{G}_k).
+\end{equation}
+To prevent parameter updates from leaking sensitive demographic correlations, the client performs orthogonal gradient surgery via Gram--Schmidt projection:
+\begin{equation}
+\label{eq:ftgd_proj}
+g_k^{\perp} = g_{k,\mathrm{task}} - \frac{\ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}}}{\norm{g_{k,\mathrm{fair}}}^2 + \epsilon_{\mathrm{div}}} g_{k,\mathrm{fair}}.
+\end{equation}
+
+\begin{theorem}[First-Order Orthogonality of FTGD]
+\label{thm:ftgd_orthogonality}
+Let $g_k^{\perp}$ be defined as in Eq.~\eqref{eq:ftgd_proj} with division tolerance $\epsilon_{\mathrm{div}} \to 0$. Then $g_k^{\perp}$ is strictly orthogonal to the local fairness gradient:
+\begin{equation}
+\label{eq:ortho_identity}
+\ip{g_k^{\perp}}{g_{k,\mathrm{fair}}} = 0.
+\end{equation}
+\end{theorem}
+\begin{proof}
+By direct algebraic expansion:
+\begin{align*}
+\ip{g_k^{\perp}}{g_{k,\mathrm{fair}}} &= \ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}} - \frac{\ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}}}{\norm{g_{k,\mathrm{fair}}}^2} \ip{g_{k,\mathrm{fair}}}{g_{k,\mathrm{fair}}} \\
+&= \ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}} - \ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}} = 0.
+\end{align*}
+This algebraic property is formally verified in Lean~4~\citep{demoura2021lean} (see \texttt{Orthogonal}\allowbreak\texttt{Projection.lean}).
+\end{proof}
+
+\paragraph{Scalar-Channel Differential Privacy (Instrumented for Baseline Analysis)}
+When clients release group disparity telemetry for baseline metric coordination or privacy auditing, Local Differential Privacy (LDP)~\citep{mironov2017renyi, dwork2014algorithmic} is applied exclusively to the two scalar prediction statistics $(\mu_{k,0}, \mu_{k,1})$ via an $s$-blind forward pass:
+\begin{equation}
+\label{eq:scalar_dp}
+\tilde{\mu}_{k,a} = \mu_{k,a} + \xi_{k,a}, \quad \xi_{k,a} \sim \mathcal{N}\left(0, \sigma_{\mathrm{DP}}^2\right), \quad \sigma_{\mathrm{DP}} = \frac{\Delta_{\bm{\mu}}\sqrt{2\ln(1.25/\delta)}}{\epsilon},
+\end{equation}
+where $\Delta_{\bm{\mu}} = \sqrt{1/n_{k,0}^2 + 1/n_{k,1}^2}$. This restricts noise injection to a two-dimensional scalar manifold, avoiding the $115\times$ parameter-noise penalty of applying DP-SGD across the full $P$-dimensional model tensor. In canonical \MethodName{}, the server aggregation rule bypasses this channel entirely, maintaining syntactic metadata immunity.
+
+\subsubsection{Two-Tier Server Aggregation: Directional Gating vs. Longitudinal Guardrail}
+At round $t$, the server evaluates task and fairness gradients on its isolated holdout anchor $\Droot$:
+\begin{equation}
+\label{eq:srv_grads}
+\gtask^{\mathrm{srv}} = \nabla_\theta \mathcal{L}_{\mathrm{task}}(\theta^{(t)}; \Droot), \quad \gfair^{\mathrm{srv}} = \nabla_\theta \mathcal{L}_{\mathrm{fair}}(\theta^{(t)}; \Droot).
+\end{equation}
+The server constructs a dual-objective reference direction:
+\begin{equation}
+\label{eq:gtarg_def}
+\gtarg^{(t)} = \gtask^{\mathrm{srv}} + \alpha \gfair^{\mathrm{srv}},
+\end{equation}
+where $\alpha \ge 0$ is a fixed guidance coefficient.
+
+\paragraph{Two-Tier Functional Separation}
+The aggregation rule decouples the roles of directional gating and fairness guidance:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Tier 1 (Directional Cosine Gating):} Serves as the primary geometric shield. Client deltas are scored via rectified cosine similarity:
+    \begin{equation}
+    \label{eq:score_raw}
+    s_k^{(t)} = \ReLU\left( \Cosine\left(\Delta_k^{(t)}, \gtarg^{(t)}\right) \right) = \ReLU\left( \frac{\ip{\Delta_k^{(t)}}{\gtarg^{(t)}}}{\norm{\Delta_k^{(t)}} \norm{\gtarg^{(t)}}} \right).
+    \end{equation}
+    Updates opposing the server reference ($\ip{\Delta_k}{\gtarg} \le 0$) are assigned zero weight.
+    \item \textbf{Tier 2 (Longitudinal Drift Guardrail):} The component $\alpha \gfair^{\mathrm{srv}}$ does not serve as an anti-Byzantine filter; rather, it acts as a longitudinal drift guardrail, steering the global trajectory toward demographic parity and penalizing task-neutral evasion ($\varepsilon = 0.10$).
+\end{enumerate}
+
+\begin{remark}[Mechanical Separability / No Robustness Tax]
+As demonstrated in our $2 \times 2$ factorial evaluation (Section~\ref{subsec:attribution}), varying fairness guidance $\alpha \in \{0.0, 0.1\}$ produces an adversarial weight variation strictly bounded within the pre-registered equivalence margin $\delta = 0.0050$. Incorporating fairness guidance incurs zero degradation in Byzantine filtering capability.
+\end{remark}
+
+To eliminate round-to-round weight turbulence, alignment scores are stabilized via Exponential Moving Average (EMA) smoothing ($\beta = 0.9$):
+\begin{equation}
+\label{eq:ema_smooth}
+\tilde{s}_k^{(t)} = \beta \tilde{s}_k^{(t-1)} + (1-\beta) s_k^{(t)}, \quad w_k^{(t)} = \frac{\tilde{s}_k^{(t)}}{\sum_{j=1}^K \tilde{s}_j^{(t)}}.
+\end{equation}
+Global parameters are updated with dynamic norm rescaling:
+\begin{equation}
+\label{eq:model_update}
+\theta^{(t+1)} = \theta^{(t)} + \sum_{k=1}^K w_k^{(t)} \cdot \min\left(1, \frac{\norm{\gtarg^{(t)}}}{\norm{\Delta_k^{(t)}}}\right) \Delta_k^{(t)}.
+\end{equation}
+
+\subsubsection{Algorithm 1: Canonical Pipeline and Robust Outlier Screening}
+Algorithm~\ref{alg:trustfedgnn} formalizes the complete execution pipeline. The canonical rule (\texttt{fu\_shapley}) executes directional cosine gating, EMA smoothing, and dynamic norm rescaling without outlier screening. In defense-in-depth deployments subject to crude scaling attacks, an optional distance-to-median outlier screening variant (\texttt{robust\_fu\_shapley}) filters the $f$ farthest client updates in Euclidean space and renormalizes survivor weights.
+
+\begin{algorithm}[t]
+\footnotesize
+\caption{\MethodName{}: Server-Anchored Byzantine-Resilient Federated Graph Learning}
+\label{alg:trustfedgnn}
+\begin{algorithmic}[1]
+\REQUIRE Subgraphs $\{\mathcal{G}_k\}_{k=1}^K$, holdout anchor $\Droot$, guidance $\alpha = 0.1$, EMA decay $\beta = 0.9$, optional outlier budget $f \ge 0$.
+\ENSURE Globally converged fair and resilient parameters $\theta^{(R)}$.
+\STATE Initialize global parameters $\theta^{(0)}$, historical alignment $\tilde{s}_k^{(-1)} \gets 1/K$.
+\FOR{round $t = 0, 1, \dots, R-1$}
+    \STATE \textit{// Server Directional Anchor:} $\gtask^{\mathrm{srv}} \gets \nabla_\theta \mathcal{L}_{\mathrm{task}}(\theta^{(t)}; \Droot), \ \gfair^{\mathrm{srv}} \gets \nabla_\theta \mathcal{L}_{\mathrm{fair}}(\theta^{(t)}; \Droot)$, $\gtarg^{(t)} \gets \gtask^{\mathrm{srv}} + \alpha \gfair^{\mathrm{srv}}$.
+    \STATE Broadcast global parameters $\theta^{(t)}$ to all client silos $k \in [K]$.
+    \FOR{each client $k \in [K]$ \textbf{in parallel}}
+        \STATE Compute local gradients $g_{k,\mathrm{task}}$ and $g_{k,\mathrm{fair}}$ on private subgraph $\mathcal{G}_k$.
+        \STATE Project update: $g_k^{\perp} \gets g_{k,\mathrm{task}} - \frac{\ip{g_{k,\mathrm{task}}}{g_{k,\mathrm{fair}}}}{\norm{g_{k,\mathrm{fair}}}^2 + \epsilon_{\mathrm{div}}} g_{k,\mathrm{fair}}$ \COMMENT{\textit{Theorem~\ref{thm:ftgd_orthogonality}}}
+        \STATE Train local GNN using $g_k^{\perp}$ and compute $\Delta_k^{(t)} \gets \theta_k^{(t)} - \theta^{(t)}$ (omit client scalar telemetry).
+    \ENDFOR
+    \FOR{each client $k \in [K]$}
+        \STATE $s_k^{(t)} \gets \ReLU\left( \frac{\ip{\Delta_k^{(t)}}{\gtarg^{(t)}}}{\norm{\Delta_k^{(t)}} \norm{\gtarg^{(t)}}} \right), \quad \tilde{s}_k^{(t)} \gets \beta \tilde{s}_k^{(t-1)} + (1-\beta) s_k^{(t)}$ \COMMENT{\textit{Directional Gating \& EMA}}
+    \ENDFOR
+    \STATE Raw simplex normalization: $w_k^{(t)} \gets \tilde{s}_k^{(t)} / \sum_{j=1}^K \tilde{s}_j^{(t)}$ \COMMENT{\textit{Theorem~\ref{thm:syntactic_immunity}}}
+    \IF{$f > 0$ \textbf{and} robust screening enabled (\texttt{robust\_fu\_shapley})}
+        \STATE Compute coordinate-wise median $[\Delta_{\mathrm{med}}^{(t)}]_j \gets \mathrm{median}(\{[\Delta_k^{(t)}]_j\}_{k=1}^K)$ for all $j \in [P]$.
+        \STATE Rank Euclidean distances $d_k \gets \norm{\Delta_k^{(t)} - \Delta_{\mathrm{med}}^{(t)}}_2^2$; let $\mathcal{K}_{\mathrm{keep}}$ denote the $\max(1, K-f)$ closest clients.
+        \STATE Mask weights: $w_k^{(t)} \gets w_k^{(t)} \cdot \mathbb{I}(k \in \mathcal{K}_{\mathrm{keep}})$.
+        \STATE \textbf{if} $\sum_{k=1}^K w_k^{(t)} > 0$ \textbf{then} $w_k^{(t)} \gets w_k^{(t)} / \sum_{j=1}^K w_j^{(t)}$ \textbf{else} fall back to coordinate median of survivors.
+    \ENDIF
+    \STATE Update parameters: $\theta^{(t+1)} \gets \theta^{(t)} + \sum_{k=1}^K w_k^{(t)} \cdot \min\left(1, \frac{\norm{\gtarg^{(t)}}}{\norm{\Delta_k^{(t)}}}\right) \Delta_k^{(t)}$.
+    \STATE \textit{// Audit Log:} Record $\langle t, k, w_k^{(t)}, \Cosine(\Delta_k^{(t)}, \gtask^{\mathrm{srv}}), \Cosine(\Delta_k^{(t)}, \gfair^{\mathrm{srv}}), \norm{\Delta_k^{(t)}} \rangle$ into ledger \COMMENT{\textit{Proposition~\ref{prop:linear_shapley}}}
+\ENDFOR
+\RETURN $\theta^{(R)}$
+\end{algorithmic}
+\end{algorithm}
+
+% =========================================================================
+% SUBSECTION 3: THEORETICAL FOUNDATIONS AND IMPOSSIBILITY BOUNDARIES
+% =========================================================================
+\subsection{Theoretical Foundations and Impossibility Boundaries}
+\label{subsec:theory}
+
+\subsubsection{Exact Syntactic Metadata Immunity and Anchor Taxonomy}
+\label{subsubsec:theory_immunity}
+\begin{theorem}[Exact Syntactic Metadata Immunity as an Architectural Invariant]
+\label{thm:syntactic_immunity}
+Let $\mathcal{F}$ denote the server aggregation mapping producing client weights $\bm{w} = \mathcal{F}(\{\Delta_k\}_{k=1}^K, \gtarg)$. Because the functional domain of $\mathcal{F}$ consumes solely parameter update tensors $\{\Delta_k\}$ and the server reference $\gtarg$, the partial derivative with respect to any client-declared scalar telemetry $\widehat{\dpd}_j$ is identically zero:
+\begin{equation}
+\label{eq:zero_deriv}
+\frac{\partial w_k}{\partial \widehat{\dpd}_j} \equiv 0 \quad \forall k, j \in [K].
+\end{equation}
+Rather than an asymptotic statistical property, syntactic immunity is a verifiable structural domain invariant: client metadata falsification yields $\Delta w = 0.0000$ bit-exact across all evaluated seeds (Section~\ref{subsec:vulnerability}).
+\end{theorem}
+\begin{proof}
+By inspection of Eqs.~\eqref{eq:score_raw}--\eqref{eq:ema_smooth}, aggregation weights $w_k^{(t)}$ depend exclusively on the geometric inner products $\ip{\Delta_k^{(t)}}{\gtarg^{(t)}}$ and norms $\norm{\Delta_k^{(t)}}$, $\norm{\gtarg^{(t)}}$. Since no client-declared scalar enters the computational graph of $\mathcal{F}$, the partial derivative vanishes identically, establishing exact structural immunity.
+\end{proof}
+
+\begin{remark}[Taxonomy of Reference Anchors: Endogenous vs. Exogenous]
+\label{rem:anchor_taxonomy}
+While syntactic immunity closes the client-reported metadata attack surface, it does not govern the vulnerability of the directional reference itself. We classify federated aggregation rules into three distinct structural paradigms:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Class (a) (Naive Scalar Consumers):} Rules such as FairFed and BFWA optimize aggregation weights over client-reported scalars $\widehat{\dpd}_k$. Under adversarial metadata falsification, malicious clients capture dominant model authority (Section~\ref{subsec:vulnerability}).
+    \item \textbf{Class (b) (Endogenous Reference Anchors):} Rules such as CGSV evaluate gradient projections without scalar telemetry, achieving bit-exact syntactic immunity ($\Delta w = 0.0000$). However, their reference direction is computed endogenously from the submitted client updates (e.g., pooled validation sets or client consensus). Under adaptive attacks, malicious clients compromise the endogenous reference, maintaining full fair-share authority ($w_{\mathrm{adv}} \approx 1/K$, Section~\ref{subsec:vulnerability}).
+    \item \textbf{Class (c) (Exogenous Reference Anchors):} Rules such as FLTrust and \MethodName{} anchor directional gating to an exogenous holdout dataset $\Droot$. Because $\gtarg$ is evaluated outside the client consortium, the reference is physically decoupled from client poisoning. While single-objective FLTrust concedes above-uniform share under fairness poisoning, \MethodName{} leverages dual-objective guidance and directional rectification to suppress attacker weight below parity (Section~\ref{subsec:vulnerability}).
+\end{enumerate}
+\end{remark}
+
+\subsubsection{Perpetual Bias of Folded-Normal Perturbations}
+\label{subsubsec:theory_folded}
+\begin{lemma}[Perpetual Expectation Bias of Folded-Normal Perturbations]
+\label{lem:folded_normal}
+Let client-level disparity be estimated by taking the absolute difference of noisy group rate statistics: $\widetilde{\dpd}_k = |\tilde{\mu}_{k,0} - \tilde{\mu}_{k,1}|$, where $\tilde{\mu}_{k,a} \sim \mathcal{N}(\mu_{k,a}, \sigma_k^2)$. Under the null hypothesis of demographic parity ($\mu_{k,0} = \mu_{k,1} = \mu$), $\widetilde{\dpd}_k$ follows a folded-normal distribution~\citep{leone1961folded} with expectation:
+\begin{equation}
+\label{eq:folded_exp}
+\EE[\widetilde{\dpd}_k] = \tilde{\sigma}_k \sqrt{\frac{2}{\pi}} > 0, \quad \text{where } \tilde{\sigma}_k = \sqrt{2}\sigma_k.
+\end{equation}
+For any aggregation weights $\bm{w} \in \Delta_K$ that are predetermined or measurable with respect to the filtration $\mathcal{F}_{t-1}$ of prior rounds (independent of the round-$t$ privacy perturbations), the conditional expectation satisfies:
+\begin{equation}
+\label{eq:accum_bias}
+\EE\left[ \sum_{k=1}^K w_k \widetilde{\dpd}_k \;\middle|\; \mathcal{F}_{t-1} \right] = \sqrt{\frac{2}{\pi}} \sum_{k=1}^K w_k \tilde{\sigma}_k > 0.
+\end{equation}
+Furthermore, even when weights $\bm{w} \in \Delta_K$ are dynamically optimized over the current round's privatised reports, the almost-sure non-negativity $\widetilde{\dpd}_k \ge 0$ guarantees that $\sum_{k=1}^K w_k \widetilde{\dpd}_k \ge \min_{k} \widetilde{\dpd}_k$, whose expectation remains strictly positive. Consequently, the non-negative folded transformation induces an irreducible positive expectation bias that cannot cancel across clients.
+\end{lemma}
+\begin{proof}
+Let $Z = \tilde{\mu}_{k,0} - \tilde{\mu}_{k,1}$. Since $\tilde{\mu}_{k,0}$ and $\tilde{\mu}_{k,1}$ are independent Gaussian variables with variance $\sigma_k^2$, $Z \sim \mathcal{N}(0, 2\sigma_k^2)$. The variable $Y = |Z|$ follows a central folded-normal distribution. The standard expectation of a half-normal variable with scale $\tilde{\sigma}_k = \sqrt{2}\sigma_k$ is $\EE[Y] = \tilde{\sigma}_k \sqrt{2/\pi}$. When weights $w_k$ are measurable with respect to $\mathcal{F}_{t-1}$, taking conditional expectation yields Eq.~\eqref{eq:accum_bias}. For arbitrary $\bm{w} \in \Delta_K$, because each $\widetilde{\dpd}_k \ge 0$ almost surely, $\sum_{k=1}^K w_k \widetilde{\dpd}_k$ is bounded below by a convex combination of non-negative variables with strictly positive individual means, precluding unbiased zero-mean convergence.
+\end{proof}
+
+\subsubsection{Dual Subgradient Convergence of Baseline Metric Coordination}
+\label{subsubsec:theory_bfwa}
+\begin{theorem}[Dual Subgradient Convergence of Baseline Metric Coordination]
+\label{thm:bfwa_dual_convergence}
+Consider the constrained optimization problem of baseline metric coordination (BFWA):
+\begin{equation}
+\label{eq:bfwa_opt}
+\max_{\bm{w} \in \Delta_K} \sum_{k=1}^K w_k \mathrm{Perf}_k \quad \text{s.t.} \quad \sum_{k=1}^K w_k \widetilde{\dpd}_k \le \tau,
+\end{equation}
+where $\mathrm{Perf}_k$ is bounded and $\widetilde{\dpd}_k \in [0, \dpd_{\max}]$. The Lagrange dual function $D(\mu) = \max_{\bm{w} \in \Delta_K} \left( \sum_{k=1}^K w_k \mathrm{Perf}_k - \mu \left(\sum_{k=1}^K w_k \widetilde{\dpd}_k - \tau\right) \right)$ is convex in $\mu \ge 0$. Under projected dual subgradient descent~\citep{boyd2004convex} with step size $\eta_\mu^{(t)} = O(1/\sqrt{t})$, the running average dual multiplier $\bar{\mu}^{(T)} = \frac{1}{T}\sum_{t=1}^T \mu^{(t)}$ achieves ergodic convergence:
+\begin{equation}
+\label{eq:dual_conv}
+D(\bar{\mu}^{(T)}) - D(\mu^\star) = O\left(\frac{1}{\sqrt{T}}\right), \quad \frac{1}{T}\sum_{t=1}^T \left( \sum_{k=1}^K w_k^{(t)} \widetilde{\dpd}_k - \tau \right)^{\!+} = O\left(\frac{1}{\sqrt{T}}\right).
+\end{equation}
+\end{theorem}
+\begin{proof}
+For any fixed $\mu \ge 0$, the primal subproblem is a linear program over the probability simplex $\Delta_K$. The dual objective $D(\mu)$ is the pointwise supremum of affine functions, hence convex. The subgradient of $D(\mu)$ at $\mu^{(t)}$ is $g_\mu^{(t)} = \tau - \sum_{k=1}^K w_k^{(t)} \widetilde{\dpd}_k$. Under projected subgradient descent with step size $\eta_\mu^{(t)} = c/\sqrt{t}$, standard convex optimization guarantees establish an $O(1/\sqrt{T})$ convergence rate for the dual objective gap and primal constraint violation.
+\end{proof}
+
+\begin{remark}[Theoretical Scope of Theorem~\ref{thm:bfwa_dual_convergence}]
+This convergence result characterizes the theoretical optimization properties of baseline metric coordination rules (BFWA) under honest metadata reporting. It demonstrates that the failure of such baselines under adversarial manipulation is not due to flawed convex optimization, but rather to the inherent vulnerability of the client-reported metadata interface.
+\end{remark}
+
+\subsubsection{Minimax Observability Lower Bound under Local Differential Privacy}
+\label{subsubsec:theory_minimax}
+\begin{theorem}[Minimax Observability Lower Bound under LDP]
+\label{thm:minimax_lecam}
+Let $\mathcal{P}$ denote the family of local client distributions, and let clients transmit privatised, folded disparity reports $\widetilde{\bm{D}} = (\widetilde{\dpd}_1, \dots, \widetilde{\dpd}_K)$ satisfying $(\epsilon, \delta)$-LDP with effective noise standard deviation $\tilde{\sigma}$. For any decision rule $\psi(\widetilde{\bm{D}}) \in \{0, 1\}$ attempting to distinguish strict fairness feasibility $H_0: \dpd \le \tau/2$ from strict violation $H_1: \dpd \ge 3\tau/2$, the minimax hypothesis testing risk $\Rstar$ is bounded from below via Le Cam's two-point method and Pinsker's inequality~\citep{lecam1973convergence, tsybakov2009nonparametric}:
+\begin{equation}
+\label{eq:lecam_bound}
+\Rstar \;\ge\; \frac{1}{2} \left( 1 - \frac{\tau \sqrt{K}}{2 \tilde{\sigma}} \right).
+\end{equation}
+By the Data Processing Inequality, no server-side post-processing or adaptive weighting can reduce this error floor, precluding any unbiased decision thresholding in multi-round decentralized federations (Section~\ref{subsec:vulnerability}).
+\end{theorem}
+\begin{proof}
+Consider two hypotheses separated by margin $2\gamma = \tau$: under $H_0$, $\delta_k^{(0)} = \tau/2$; under $H_1$, $\delta_k^{(1)} = 3\tau/2$. By Le Cam's two-point lemma:
+\begin{equation*}
+\inf_\psi \max\left\{ \Pr_{H_0}[\psi=1], \Pr_{H_1}[\psi=0] \right\} \ge \frac{1}{2}\left( 1 - \mathrm{TV}(P_0, P_1) \right).
+\end{equation*}
+Because the folding mapping $x \mapsto |x|$ is a deterministic transformation, the Data Processing Inequality ensures $\mathrm{TV}(P_0, P_1) \le \mathrm{TV}(P_0^{\mathrm{Gauss}}, P_1^{\mathrm{Gauss}})$. Applying Pinsker's inequality $\mathrm{TV} \le \sqrt{\frac{1}{2}\mathrm{KL}}$ to the product of $K$ independent Gaussians with mean separation $\tau$ and variance $\tilde{\sigma}^2$ yields:
+\begin{equation*}
+\mathrm{KL}(P_0^{\mathrm{Gauss}} \parallel P_1^{\mathrm{Gauss}}) = \sum_{k=1}^K \frac{\tau^2}{2\tilde{\sigma}^2} = \frac{K\tau^2}{2\tilde{\sigma}^2} \implies \mathrm{TV} \le \frac{\tau\sqrt{K}}{2\tilde{\sigma}},
+\end{equation*}
+yielding the lower bound in Eq.~\eqref{eq:lecam_bound}.
+\end{proof}
+
+\subsubsection{Fairness Subspace Blindness of Anchor-Free Geometric Detectors}
+\label{subsubsec:theory_subspace}
+\begin{theorem}[Fairness Subspace Blindness of Anchor-Free Geometric Detectors]
+\label{thm:subspace_blindness}
+Let the parameter space $\RR^P$ decompose orthogonally into task subspace $\mathcal{S}_{\mathrm{task}}$ and fairness subspace $\mathcal{S}_{\mathrm{fair}} = \mathcal{S}_{\mathrm{task}}^\perp$. For any anchor-free geometric detector operating on pairwise cosine distance $\mathcal{D}_{\mathrm{cos}}(u_i, u_j) = 1 - \frac{\ip{u_i}{u_j}}{\norm{u_i}_2 \norm{u_j}_2}$ over the full parameter space $\RR^P$ with filtering threshold $\rho_{\mathrm{thresh}} > 0$, under the \emph{task-spectrum dominance} assumption $\norm{\Pi_{\mathcal{S}_{\mathrm{task}}} u}_2 \gg \norm{\Pi_{\mathcal{S}_{\mathrm{fair}}} u}_2$ for all benign updates $u$, so that $\mathcal{D}_{\mathrm{cos}} = \mathcal{D}_{\mathrm{cos}}^{\mathrm{task}} + O\!\left( \norm{\Pi_{\mathcal{S}_{\mathrm{fair}}} u}_2^2 / \norm{u}_2^2 \right)$, and for any benign update $u_{\mathrm{benign}} \in \mathcal{S}_{\mathrm{task}}$, there exists an adversarial perturbation $u_{\mathrm{adv}} = u_{\mathrm{benign}} + \delta_{\mathrm{fair}}$ with $\delta_{\mathrm{fair}} \in \mathcal{S}_{\mathrm{fair}}$ such that:
+\begin{equation}
+\label{eq:blindness_dist}
+\mathcal{D}_{\mathrm{cos}}(u_{\mathrm{adv}}, u_{\mathrm{benign}}) \le \frac{\norm{\delta_{\mathrm{fair}}}_2^2}{\norm{u_{\mathrm{benign}}}_2^2 + \norm{\delta_{\mathrm{fair}}}_2^2} + O\!\left( \frac{\norm{\Pi_{\mathcal{S}_{\mathrm{fair}}} u_{\mathrm{benign}}}_2^2}{\norm{u_{\mathrm{benign}}}_2^2} \right) < \rho_{\mathrm{thresh}},
+\end{equation}
+whenever $\norm{\delta_{\mathrm{fair}}}_2 < \sqrt{\frac{\rho_{\mathrm{thresh}}}{1 - \rho_{\mathrm{thresh}}}} \norm{u_{\mathrm{benign}}}_2$. Consequently, $u_{\mathrm{adv}}$ is geometrically indistinguishable from benign updates across $\RR^P$, evading outlier filtering ($w_{\mathrm{adv}} \approx 1/K$) while injecting demographic disparity $\Delta \dpd \propto \norm{\delta_{\mathrm{fair}}}_2$.
+\end{theorem}
+\begin{proof}
+Because $\delta_{\mathrm{fair}} \perp \mathcal{S}_{\mathrm{task}}$, the algebraic expansion below is exact for any $u_{\mathrm{benign}} \in \mathcal{S}_{\mathrm{task}}$; the task-spectrum dominance assumption is what makes this idealisation of benign updates valid up to the stated $O\!\left(\norm{\Pi_{\mathcal{S}_{\mathrm{fair}}} u}_2^2 / \norm{u}_2^2\right)$ term, since real benign updates carry a non-zero fairness component. With $\ip{u_{\mathrm{benign}}}{\delta_{\mathrm{fair}}} = 0$, the cosine distance evaluated over $\RR^P$ decomposes via orthogonal projection:
+\begin{align*}
+\mathcal{D}_{\mathrm{cos}}(u_{\mathrm{adv}}, u_{\mathrm{benign}}) &= 1 - \frac{\ip{u_{\mathrm{benign}} + \delta_{\mathrm{fair}}}{u_{\mathrm{benign}}}}{\norm{u_{\mathrm{benign}} + \delta_{\mathrm{fair}}}_2 \norm{u_{\mathrm{benign}}}_2} \\
+&= 1 - \frac{\norm{u_{\mathrm{benign}}}_2^2}{\sqrt{\norm{u_{\mathrm{benign}}}_2^2 + \norm{\delta_{\mathrm{fair}}}_2^2} \norm{u_{\mathrm{benign}}}_2} \\
+&= 1 - \frac{1}{\sqrt{1 + \frac{\norm{\delta_{\mathrm{fair}}}_2^2}{\norm{u_{\mathrm{benign}}}_2^2}}}.
+\end{align*}
+Using the inequality $1 - 1/\sqrt{1+x} \le x / (1+x)$ and incorporating the $O\!\left( \norm{\Pi_{\mathcal{S}_{\mathrm{fair}}} u_{\mathrm{benign}}}_2^2 / \norm{u_{\mathrm{benign}}}_2^2 \right)$ spectrum perturbation term, we obtain Eq.~\eqref{eq:blindness_dist}. Setting the distance strictly below $\rho_{\mathrm{thresh}}$ guarantees that the adversary remains inside the benign cluster across the full parameter space $\RR^P$, evading detection.
+\end{proof}
+
+\begin{remark}[Empirical Scope and Application to Distance-Based Detectors]
+\label{rem:subspace_blindness_scope}
+Theorem~\ref{thm:subspace_blindness} characterizes detectors operating on the pairwise cosine geometry of updates across the full parameter space $\RR^P$. In high-dimensional federated graph neural networks, task classification parameters dominate the gradient spectrum by orders of magnitude relative to the low-rank demographic fairness subspace; consequently, pairwise cosine distance evaluated across full parameter vectors is asymptotically dominated by task coordinates ($\mathcal{D}_{\mathrm{cos}}(\Delta_i, \Delta_j) \approx \mathcal{D}_{\mathrm{cos}}(\Delta_i^{\mathrm{task}}, \Delta_j^{\mathrm{task}})$). This task-spectrum dominance condition is empirically verifiable across architectures, and it formalizes why clustering detectors such as FLAME cleanly isolate sign-flip attacks ($\mathcal{D}_{\mathrm{cos}} \to 2.0$) yet fail to separate proximity-stealth adversaries whose manipulations reside within the orthogonal fairness subspace (Section~\ref{subsec:stress_testing}). We emphasize that this result specifically constrains angular distance detectors operating without an anchor; it does not assert blindness for detectors that directly inspect payload magnitude, temporal drift, or fairness statistics.
+\end{remark}
+
+% =========================================================================
+% SUBSECTION 4: AUDITABLE FIRST-ORDER CONTRIBUTION DECOMPOSITION
+% =========================================================================
+\subsection{Auditable First-Order Contribution Decomposition and Governance}
+\label{subsec:governance}
+
+\subsubsection{Linear First-Order Contribution Decomposition}
+\begin{proposition}[Linear First-Order Decomposition]
+\label{prop:linear_shapley}
+In \MethodName{}, client alignment scores decompose linearly into task utility and demographic fairness contributions:
+\begin{equation}
+\label{eq:linear_decomp}
+\varphi_k^{(t)} = \varphi_k^{\mathrm{util}} + \alpha \varphi_k^{\mathrm{fair}},
+\end{equation}
+where $\varphi_k^{\mathrm{util}} = \Cosine(\Delta_k^{(t)}, \gtask^{\mathrm{srv}})$ and $\varphi_k^{\mathrm{fair}} = \Cosine(\Delta_k^{(t)}, \gfair^{\mathrm{srv}})$. This decomposition computes in $O(KP)$ operations, avoiding the $O(2^K P)$ combinatorial complexity of cooperative game theory.
+\end{proposition}
+\begin{proof}
+Follows directly from the bilinearity of the inner product and linearity of $\gtarg = \gtask^{\mathrm{srv}} + \alpha \gfair^{\mathrm{srv}}$ in Eq.~\eqref{eq:gtarg_def}. Formally machine-checked in Lean~4~\citep{demoura2021lean} (\texttt{Linear}\allowbreak\texttt{Decomposition.lean}).
+\end{proof}
+
+\subsubsection{Axiomatic Properties of Contribution Allocation}
+\begin{proposition}[Simplex Validity]
+\label{prop:simplex_validity}
+For any client updates $\{\Delta_k\}_{k=1}^K$ where at least one update yields positive alignment $\tilde{s}_k > 0$, the aggregation weights satisfy the axioms of the probability simplex $\Delta_K$:
+\begin{equation}
+\label{eq:simplex_prop}
+\forall k \in [K]: w_k^{(t)} \ge 0 \quad \text{and} \quad \sum_{k=1}^K w_k^{(t)} = 1.
+\end{equation}
+\end{proposition}
+\begin{proof}
+Because $s_k^{(t)} \ge 0$ and $\beta \in [0, 1)$, smoothed scores satisfy $\tilde{s}_k^{(t)} \ge 0$. Normalizing by $\sum_j \tilde{s}_j^{(t)} > 0$ strictly enforces non-negativity and unit sum on $\Delta_K$. Formally machine-checked in Lean~4~\citep{demoura2021lean} (\texttt{Simplex}\allowbreak\texttt{Properties.lean}).
+\end{proof}
+
+\begin{proposition}[Null-Player Axiomatic Guarantee]
+\label{prop:null_player}
+Let client $k$ submit a zero update ($\Delta_k^{(t)} = \mathbf{0}$). Under the null-player axiom of cooperative game theory, the aggregation weight assigned to client $k$ vanishes identically:
+\begin{equation}
+\label{eq:null_player_prop}
+\Delta_k^{(t)} = \mathbf{0} \implies w_k^{(t)} = 0.
+\end{equation}
+\end{proposition}
+\begin{proof}
+When $\Delta_k = \mathbf{0}$, the inner product $\ip{\Delta_k}{\gtarg} = 0$, yielding raw score $s_k = 0$. When implemented with an active-client indicator $\mathbb{I}(\norm{\Delta_k} > 0)$, the numerator is clamped to zero, guaranteeing $w_k = 0$ across all execution branches. Formally machine-checked in Lean~4~\citep{demoura2021lean} (\texttt{Null}\allowbreak\texttt{Player.lean}).
+\end{proof}
+
+\subsubsection{Operational Enterprise Audit Trail and Delineation from Combinatorial Shapley}
+\paragraph{Honest Delineation from Combinatorial Shapley}
+We explicitly position the decomposition in Eq.~\eqref{eq:linear_decomp} as an operational $O(KP)$ heuristic designed for per-round audit logging. We explicitly make no claim of game-theoretic equivalence to the exponential combinatorial Shapley value~\citep{shapley1953value} ($O(2^K P)$). As evaluated against Monte Carlo cooperative Shapley probes (Section~\ref{subsec:attribution}), our first-order score achieves a rank correlation of $r = 0.7662$, falling below the $0.80$ fidelity threshold required for strict game-theoretic equivalence (Table~\ref{tab:shapley_fidelity_limitation}).
+
+\paragraph{Enterprise Governance Ledger}
+At every communication round $t$, the server records the governance audit tuple:
+\begin{equation}
+\label{eq:audit_tuple}
+\mathcal{T}_k^{(t)} = \left\langle t, k, w_k^{(t)}, \varphi_k^{\mathrm{util}}, \varphi_k^{\mathrm{fair}}, \norm{\Delta_k^{(t)}} \right\rangle
+\end{equation}
+into an append-only enterprise audit log. This provides regulatory compliance teams with a continuous, per-round attribution trail, allowing institutions to verify that aggregated models maintain balanced utility-fairness contributions across silos and detect unannounced data drift.

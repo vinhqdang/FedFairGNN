@@ -1,0 +1,26 @@
+%% tables/supplementary/tab_compliance.tex — Regulatory Framework Architectural Alignment
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Architectural Alignment with Major Trustworthy AI Governance Frameworks.}
+Maps key regulatory risk principles from the EU AI Act (Regulation 2024/1689) and NIST AI Risk Management Framework (AI RMF 1.0) to concrete algorithmic components in TrustFedGNN.
+This mapping outlines design relevance and risk mitigation mechanisms rather than certifying statutory legal compliance.}
+\label{tab:compliance}
+\begin{tabular}{p{0.32\textwidth}p{0.64\textwidth}}
+\toprule
+\textbf{Governance Principle / Article} & \textbf{Relevant Algorithmic Safeguard in \MethodName{}} \\
+\midrule
+\multicolumn{2}{l}{\textit{EU Artificial Intelligence Act (Regulation 2024/1689)}} \\
+Art.~10: Data Governance \& Bias & Cross-silo architecture preserves data locality; sensitive attributes are excluded from local training features; empirical disparity is measured via server-side holdout verification. \\
+Art.~13: Transparency \& Explainability & Edge-level fairness-aware spatial attention (FSER) and explicit gradient projection angles quantify the trade-off between task optimization and group parity. \\
+Art.~14: Human Oversight & External operational tolerance budget $\tau$ and privacy expenditure $\epsilon$ remain operator-configurable parameters; Pareto frontier mapping exposes trade-off options. \\
+Art.~15: Technical Robustness \& Cybersecurity & Byzantine-robust coordinate-wise median screening and norm-bounded rescaling limit manipulation from malicious model poisoning; FTGD bounds statistic leakage. \\
+\midrule
+\multicolumn{2}{l}{\textit{NIST AI Risk Management Framework (AI RMF 1.0)}} \\
+GOVERN & Pre-registered operational budgets ($\tau, \epsilon$) and systematic audit logging make trade-off tolerances explicit across training rounds. \\
+MAP & Formal threat modeling characterizes attacker capabilities (metadata falsification, coordinate scaling, stealth perturbations) and boundaries. \\
+MEASURE & Quantitative empirical tracking across accuracy (AUC), group fairness ($\text{DPD}_{\text{hard}}$, EOD), privacy ($\epsilon$), and weight volatility ($\Omega_w$). \\
+MANAGE & Nonlinear FU-Gating and momentum-smoothed aggregation actively mitigate adversarial weight capture while preserving downstream utility. \\
+\bottomrule
+\end{tabular}
+\end{table*}

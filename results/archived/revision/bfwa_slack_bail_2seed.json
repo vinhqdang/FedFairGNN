@@ -1,0 +1,57 @@
+{
+  "2.0": {
+    "mean_slack": 0.03443248529020708,
+    "std_slack": 0.028785373094555554,
+    "slack_ratio_of_tau": 0.6886497058041415,
+    "mean_true_dpd_agg": 0.02811947469628511,
+    "mean_noisy_dpd_agg": 0.056051970884162104,
+    "tau": 0.05,
+    "mean_sigma_tilde_weighted": 0.05886719689964344,
+    "theorem4_predicted_noisy_agg": 0.046969227543967804,
+    "slack_bucket": "substantial"
+  },
+  "4.0": {
+    "mean_slack": 0.01605743384962849,
+    "std_slack": 0.013266727144065583,
+    "slack_ratio_of_tau": 0.32114867699256977,
+    "mean_true_dpd_agg": 0.021868372781537075,
+    "mean_noisy_dpd_agg": 0.0340505506401856,
+    "tau": 0.05,
+    "mean_sigma_tilde_weighted": 0.0316016921587539,
+    "theorem4_predicted_noisy_agg": 0.02521450226871471,
+    "slack_bucket": "moderate"
+  },
+  "8.0": {
+    "mean_slack": 0.01148621254449737,
+    "std_slack": 0.010351270855173409,
+    "slack_ratio_of_tau": 0.22972425088994738,
+    "mean_true_dpd_agg": 0.018424110967679035,
+    "mean_noisy_dpd_agg": 0.02540660744025099,
+    "tau": 0.05,
+    "mean_sigma_tilde_weighted": 0.017859282957125855,
+    "theorem4_predicted_noisy_agg": 0.014249646138500462,
+    "slack_bucket": "moderate"
+  },
+  "manifest": {
+    "git_commit": "9a6df9b31bf958ed3372d67ff938b44504684c00",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-11T13:50:28.141037+00:00",
+    "torch_version": "2.14.0",
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "dataset": "bail",
+    "seeds": [
+      42,
+      43
+    ],
+    "epsilons": [
+      2.0,
+      4.0,
+      8.0
+    ],
+    "rounds": 20,
+    "num_clients": 10,
+    "tau": 0.05
+  }
+}

@@ -1,0 +1,655 @@
+{
+  "manifest": {
+    "dataset": "german",
+    "num_clients": 5,
+    "num_byzantine": 1,
+    "rounds": 20,
+    "num_seeds": 10,
+    "device": "cpu",
+    "task": "T12_I_adv_instrumentation"
+  },
+  "summary": {
+    "scaling": {
+      "raw": {
+        "w_adv_mean": 0.88407,
+        "w_adv_std": 0.2561766016290759,
+        "i_adv_mean": 101072.0485,
+        "i_adv_std": 0.0,
+        "auc_mean": 0.5
+      },
+      "rescale_only": {
+        "w_adv_mean": 0.41244999999999993,
+        "w_adv_std": 0.22243407637620036,
+        "i_adv_mean": 4.12442,
+        "i_adv_std": 2.2244345802423093,
+        "auc_mean": 0.6723399999999999
+      },
+      "median_only": {
+        "w_adv_mean": 0.0,
+        "w_adv_std": 0.0,
+        "i_adv_mean": 0.0,
+        "i_adv_std": 0.0,
+        "auc_mean": 0.66738
+      },
+      "both": {
+        "w_adv_mean": 0.0,
+        "w_adv_std": 0.0,
+        "i_adv_mean": 0.0,
+        "i_adv_std": 0.0,
+        "auc_mean": 0.6663399999999999
+      }
+    },
+    "stealth": {
+      "raw": {
+        "w_adv_mean": 0.22538,
+        "w_adv_std": 0.14548390365336716,
+        "i_adv_mean": 0.47195,
+        "i_adv_std": 0.3002966468529263,
+        "auc_mean": 0.66867
+      },
+      "rescale_only": {
+        "w_adv_mean": 0.22538,
+        "w_adv_std": 0.14548390365336716,
+        "i_adv_mean": 0.47195,
+        "i_adv_std": 0.3002966468529263,
+        "auc_mean": 0.66867
+      },
+      "median_only": {
+        "w_adv_mean": 0.25606,
+        "w_adv_std": 0.14371854593073383,
+        "i_adv_mean": 0.53745,
+        "i_adv_std": 0.29733869296365273,
+        "auc_mean": 0.6677
+      },
+      "both": {
+        "w_adv_mean": 0.25606,
+        "w_adv_std": 0.14371854593073383,
+        "i_adv_mean": 0.53745,
+        "i_adv_std": 0.29733869296365273,
+        "auc_mean": 0.6677
+      }
+    }
+  },
+  "raw_runs": {
+    "scaling": {
+      "raw": [
+        {
+          "seed": 42,
+          "w_adv": 0.9593,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.9899,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.1572,
+          "i_adv": 101072.0485,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.9744,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 1.0,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.9335,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.964,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.9406,
+          "i_adv": Infinity,
+          "auc": 0.5,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.9592,
+          "i_adv": Infinity,
+          "auc": 0.5,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.9626,
+          "i_adv": Infinity,
+          "auc": NaN,
+          "dpd_hard": NaN
+        }
+      ],
+      "rescale_only": [
+        {
+          "seed": 42,
+          "w_adv": 0.3563,
+          "i_adv": 3.5628,
+          "auc": 0.711,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.7079,
+          "i_adv": 7.0788,
+          "auc": 0.7256,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.0427,
+          "i_adv": 0.4266,
+          "auc": 0.7237,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.5158,
+          "i_adv": 5.1576,
+          "auc": 0.6424,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.7874,
+          "i_adv": 7.8742,
+          "auc": 0.699,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.306,
+          "i_adv": 3.0602,
+          "auc": 0.6807,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.4261,
+          "i_adv": 4.2614,
+          "auc": 0.5649,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.1923,
+          "i_adv": 1.9228,
+          "auc": 0.704,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.339,
+          "i_adv": 3.3897,
+          "auc": 0.6566,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.451,
+          "i_adv": 4.5101,
+          "auc": 0.6155,
+          "dpd_hard": NaN
+        }
+      ],
+      "median_only": [
+        {
+          "seed": 42,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6226,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6302,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6973,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.666,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.7506,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6694,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6095,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6741,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6925,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6616,
+          "dpd_hard": NaN
+        }
+      ],
+      "both": [
+        {
+          "seed": 42,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6264,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6319,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6979,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6664,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.7567,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6362,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6117,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.68,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6926,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.0,
+          "i_adv": 0.0,
+          "auc": 0.6636,
+          "dpd_hard": NaN
+        }
+      ]
+    },
+    "stealth": {
+      "raw": [
+        {
+          "seed": 42,
+          "w_adv": 0.1341,
+          "i_adv": 0.2758,
+          "auc": 0.6146,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.2295,
+          "i_adv": 0.4838,
+          "auc": 0.6728,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.1933,
+          "i_adv": 0.408,
+          "auc": 0.7163,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.1944,
+          "i_adv": 0.4022,
+          "auc": 0.6878,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.6224,
+          "i_adv": 1.2906,
+          "auc": 0.7116,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.2146,
+          "i_adv": 0.451,
+          "auc": 0.6581,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.1944,
+          "i_adv": 0.4172,
+          "auc": 0.5943,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.0889,
+          "i_adv": 0.1933,
+          "auc": 0.6902,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.1757,
+          "i_adv": 0.3667,
+          "auc": 0.7014,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.2065,
+          "i_adv": 0.4309,
+          "auc": 0.6396,
+          "dpd_hard": NaN
+        }
+      ],
+      "rescale_only": [
+        {
+          "seed": 42,
+          "w_adv": 0.1341,
+          "i_adv": 0.2758,
+          "auc": 0.6146,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.2295,
+          "i_adv": 0.4838,
+          "auc": 0.6728,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.1933,
+          "i_adv": 0.408,
+          "auc": 0.7163,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.1944,
+          "i_adv": 0.4022,
+          "auc": 0.6878,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.6224,
+          "i_adv": 1.2906,
+          "auc": 0.7116,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.2146,
+          "i_adv": 0.451,
+          "auc": 0.6581,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.1944,
+          "i_adv": 0.4172,
+          "auc": 0.5943,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.0889,
+          "i_adv": 0.1933,
+          "auc": 0.6902,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.1757,
+          "i_adv": 0.3667,
+          "auc": 0.7014,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.2065,
+          "i_adv": 0.4309,
+          "auc": 0.6396,
+          "dpd_hard": NaN
+        }
+      ],
+      "median_only": [
+        {
+          "seed": 42,
+          "w_adv": 0.174,
+          "i_adv": 0.366,
+          "auc": 0.6529,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.2697,
+          "i_adv": 0.5596,
+          "auc": 0.6262,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.2232,
+          "i_adv": 0.4718,
+          "auc": 0.7152,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.2252,
+          "i_adv": 0.4715,
+          "auc": 0.7013,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.6378,
+          "i_adv": 1.3277,
+          "auc": 0.7222,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.2719,
+          "i_adv": 0.571,
+          "auc": 0.6435,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.2305,
+          "i_adv": 0.496,
+          "auc": 0.6204,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.0927,
+          "i_adv": 0.2018,
+          "auc": 0.6554,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.1991,
+          "i_adv": 0.4133,
+          "auc": 0.6969,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.2365,
+          "i_adv": 0.4958,
+          "auc": 0.643,
+          "dpd_hard": NaN
+        }
+      ],
+      "both": [
+        {
+          "seed": 42,
+          "w_adv": 0.174,
+          "i_adv": 0.366,
+          "auc": 0.6529,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 43,
+          "w_adv": 0.2697,
+          "i_adv": 0.5596,
+          "auc": 0.6262,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 44,
+          "w_adv": 0.2232,
+          "i_adv": 0.4718,
+          "auc": 0.7152,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 45,
+          "w_adv": 0.2252,
+          "i_adv": 0.4715,
+          "auc": 0.7013,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 46,
+          "w_adv": 0.6378,
+          "i_adv": 1.3277,
+          "auc": 0.7222,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 47,
+          "w_adv": 0.2719,
+          "i_adv": 0.571,
+          "auc": 0.6435,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 48,
+          "w_adv": 0.2305,
+          "i_adv": 0.496,
+          "auc": 0.6204,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 49,
+          "w_adv": 0.0927,
+          "i_adv": 0.2018,
+          "auc": 0.6554,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 50,
+          "w_adv": 0.1991,
+          "i_adv": 0.4133,
+          "auc": 0.6969,
+          "dpd_hard": NaN
+        },
+        {
+          "seed": 51,
+          "w_adv": 0.2365,
+          "i_adv": 0.4958,
+          "auc": 0.643,
+          "dpd_hard": NaN
+        }
+      ]
+    }
+  }
+}

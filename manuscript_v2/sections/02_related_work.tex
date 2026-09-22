@@ -1,0 +1,107 @@
+%% sections/02_related_work.tex
+\section{Related Work and Intellectual Lineage}
+\label{sec:related_work}
+
+Decentralized machine learning on relational structures occupies the intersection of graph representation learning, algorithmic fairness, and distributed security. In this section, we organize prior literature into five distinct paradigms, characterize their foundational failure modes under adversarial stress, and delineate the operational scope of \MethodName{}.
+
+\subsection{Paradigms I \& II: Decentralized Graph Learning and In-Processing Debiasing}
+\label{subsec:rw_paradigms_1_2}
+
+\subsubsection{Graph Neural Networks in Federated Settings (Paradigm I)}
+Federated Graph Neural Networks (FedGNNs) extend decentralized optimization~\citep{mcmahan2017communication, kairouz2021advances} to non-Euclidean domains, enabling multi-institution collaboration across cross-silo topologies without centralizing sensitive edge structures~\citep{kipf2016semi, velickovic2017graph}. Early baseline protocols primarily employ unconstrained coordinate averaging, such as FedAvg-GCN, to minimize empirical task risk across isolated client subgraphs. While establishing a valuable reference ceiling for unconstrained predictive accuracy, Paradigm~I protocols neglect demographic disparity entirely. In regulated domains such as credit assessment and legal risk scoring, neighborhood aggregation propagates and amplifies historical biases embedded in graph connectivity, yielding severe group disparity.
+
+\subsubsection{Client-Side In-Processing Debiasing (Paradigm II)}
+To mitigate demographic disparity on graphs, a substantial body of research develops client-side in-processing mechanisms. Representative frameworks include adversarial feature disentanglement in FairGNN~\citep{dai2021say}, sensitive neutralization in FairSIN~\citep{yang2024fairsin}, topology re-balancing in FairGB~\citep{li2024fairgb}, invariant learning in FairInv~\citep{zhu2024fairinv}, data debiasing in EDITS~\citep{dong2022edits}, fair contrastive learning in NIFTY~\citep{agarwal2021towards}, disentangled representation learning in DAB-GNN~\citep{lee2025dabgnn}, distribution-aware fairness in FnRGNN~\citep{fnrgnn2025}, and vertical federated fairness in FAVGNN~\citep{wang2026favgnn}. 
+
+\paragraph{Aggregation Boundary Blind Spot}
+While Paradigm~II methods achieve localized bias reduction on benign graphs, their operational boundary is strictly confined to client-internal training. At the server aggregation boundary, these algorithms remain entirely unprotected. Standard parameter averaging at the server treats debiased updates from honest silos identically to poisoned updates submitted by Byzantine adversaries. When adversarial silos inject malicious gradients or manipulate node labels, localized in-processing mechanisms provide zero recourse against global model subversion.
+
+\subsection{Paradigm III: Client-Reported Metric Coordination and The Metadata Trap}
+\label{subsec:rw_paradigm_3}
+
+\subsubsection{Heuristic and Lagrangian Disparity Coordination}
+Recognizing the limits of static averaging, Paradigm~III adapts server aggregation weights using telemetry transmitted by client silos. Frameworks such as FairFed~\citep{ezzeldin2023fairfed} and FairGFL~\citep{zhou2026fairgfl} employ heuristic reweighting based on deviations between local and global fairness metrics. Lagrangian coordination protocols such as BFWA~\citep{dang2026fedfairgnn}---our earlier preliminary conference baseline---and constrained optimization schemes such as $q$-FedAvg~\citep{li2020fair} and PUFFLE~\citep{corbucci2024puffle} formulate federated fairness as dual subgradient or Frank--Wolfe optimization, dynamically adjusting client coefficients to steer global demographic disparity below a predetermined budget $\tau$. Recent extensions include controllable calibration in FedFACT~\citep{fedfact2025} and differentially private fairness coordination in FedFDP~\citep{ling2024feddp}. Similarly, structure-aware frameworks such as $F^2\text{GNN}$~\citep{f2gnn2023} and FedGraph-Fair~\citep{khan2026fedgraphfair} incorporate relational metrics and topological fairness statistics into client weighting.
+
+\subsubsection{The Structural Flaw of Self-Reporting: Interface Manipulation}
+The fatal vulnerability shared by all Paradigm~III methods lies in their reliance on unverified, client-reported scalar metadata ($\widehat{\dpd}_k$, local loss values, or subgroup demographic counts). In decentralized federations governed by Kerckhoffs' principle, malicious clients can falsify scalar telemetry while transmitting poisoned model updates. 
+As proven by our syntactic metadata analysis (Theorem~\ref{thm:syntactic_immunity}) and demonstrated across empirical vulnerability audits (Section~\ref{subsec:vulnerability}), adversaries reporting fabricated parity metrics can unilaterally capture a dominant fraction of the global aggregation weight, systematically undermining downstream fairness while destabilizing optimization. Furthermore, nominal mitigation strategies such as polynomial dampening in PoPETs-FairFed~\citep{bendoukha2025popets} merely attenuate update magnitudes rather than providing structural immunity against semantic metadata manipulation.
+
+\subsection{Differential Privacy in Graph FL and Information-Theoretic Barriers}
+\label{subsec:rw_dp_barriers}
+
+\subsubsection{Local Differential Privacy and the Privacy--Fairness Tension}
+A natural defense against metadata manipulation and membership leakage is Local Differential Privacy (LDP)~\citep{dwork2014algorithmic, mironov2017renyi}. However, extensive literature documents a fundamental tension between differential privacy and demographic fairness~\citep{bagdasaryan2019differential, cummings2019compatibility, tran2021dperm, fioretto2022survey}, wherein private perturbation disproportionately harms minority demographic groups.
+
+\subsubsection{Irreducible Folded-Normal Expectation Bias (Lemma~\ref{lem:folded_normal})}
+When LDP perturbation is applied to client-reported disparity statistics $\widetilde{\dpd}_k = |\tilde\mu_{k,0} - \tilde\mu_{k,1}|$, the absolute value operator induces an irreducible expectation bias. As established in Lemma~\ref{lem:folded_normal}, because the transformation maps zero-mean Gaussian noise onto a central folded-normal distribution~\citep{leone1961folded}, the expectation conditioned on past rounds remains strictly positive:
+\begin{equation}
+\EE\left[ \sum_{k=1}^K w_k \widetilde{\dpd}_k \;\middle|\; \mathcal{F}_{t-1} \right] = \sqrt{\frac{2}{\pi}} \sum_{k=1}^K w_k \tilde{\sigma}_k > 0.
+\end{equation}
+Because disparity is strictly non-negative ($\widetilde{\dpd}_k \ge 0$), the noise cannot cancel through cross-client averaging. In multi-round federated training, this cumulative positive bias artificially dilates the apparent constraint violation by multiple orders of magnitude, precluding accurate dual coordination.
+
+\subsubsection{The Minimax Le Cam Observability Barrier (Theorem~\ref{thm:minimax_lecam})}
+Beyond expectation bias, Theorem~\ref{thm:minimax_lecam} establishes an information-theoretic lower bound on the hypothesis testing risk of distinguishing fair from unfair states under LDP. Applying Le Cam's two-point method~\citep{lecam1973convergence} and Pinsker's inequality~\citep{tsybakov2009nonparametric}, the server minimax classification error is bounded from below:
+\begin{equation}
+\Rstar \ge \frac{1}{2}\left(1 - \frac{\tau\sqrt{K}}{2\tilde\sigma}\right).
+\end{equation}
+By the Data Processing Inequality, no algorithmic post-processing or adaptive reweighting on the server can overcome this fundamental observational barrier.
+
+\subsubsection{Two-Channel Leakage Separation}
+Crucially, our formulation resolves this privacy bottleneck through architectural channel separation. Applying DP-SGD across the entire parameter tensor incurs a catastrophic utility penalty. In contrast, restricting differential privacy exclusively to the low-dimensional scalar reporting channel allows rigorous local auditing without contaminating model gradient representations (Section~\ref{subsec:vulnerability}).
+
+\subsection{Paradigm IV: Geometric Byzantine Filtering and The Shielding Paradox}
+\label{subsec:rw_paradigm_4}
+
+\subsubsection{Coordinate-Wise and Distance-Based Aggregation}
+To defend against Byzantine workers, classical robust distributed learning relies on geometric outlier filtering without external reference data. Prominent paradigms include coordinate-wise median and trimmed mean~\citep{yin2018byzantine}, distance-based neighbor screening such as Krum and Multi-Krum~\citep{blanchard2017krum}, multi-round robust pruning in Bulyan~\citep{mhamdi2018hidden}, angular similarity clustering in FoolsGold~\citep{fung2018mitigating}, information-theoretic aggregation in BYIT-FL~\citep{byitfl2024}, and density-based spectral clustering in FLAME~\citep{nguyen2022flame}.
+
+\subsubsection{Fairness Subspace Blindness (Theorem~\ref{thm:subspace_blindness})}
+While effective against crude arithmetic poisoning (e.g., sign-flipping and isotropic Gaussian noise), anchor-free geometric detectors suffer from a structural blind spot. Targeted model poisoning aimed at algorithmic fairness has recently emerged as an acute threat, demonstrated by bias amplification in EAB-FL~\citep{eabfl2024} and fairness-constrained optimization attacks~\citep{kasyap2025attack}. As formalized in Theorem~\ref{thm:subspace_blindness}, because pairwise cosine and Euclidean statistics operate over the full parameter space, adversaries can construct perturbations orthogonal to the task gradient ($\delta_{\mathrm{fair}} \in \mathcal{S}_{\mathrm{fair}} \perp \mathcal{S}_{\mathrm{task}}$) that remain strictly within the benign clustering radius ($\mathcal{D}_{\mathrm{cos}} < \rho_{\mathrm{thresh}}$). In deep GNN architectures, task-specific parameters overwhelmingly dominate the parameter spectrum relative to the low-rank fairness subspace ($\mathcal{D}_{\mathrm{cos}} \approx \mathcal{D}_{\mathrm{cos}}^{\mathrm{task}}$). Consequently, detectors such as FLAME remain blind to targeted fairness degradation injected by proximity-stealth adversaries (Section~\ref{subsec:stress_testing}).
+
+\subsubsection{The Shielding Paradox on Heterogeneous Graph Topologies}
+On non-IID graph federations characterized by modular community structure, client parameter updates naturally exhibit high directional variance reflecting local topological homophily. Symmetrical geometric filters systematically conflate legitimate topological diversity with malicious deviation. Under proximity stealth poisoning, coordinate-wise median filtering purges benign minority gradients before eliminating camouflage adversaries. This induces the \emph{Shielding Paradox (Median Backfire)}, where robust filtering inadvertently inflates the relative influence of the adversary compared to uniform averaging (Section~\ref{subsec:stress_testing}).
+
+\subsection{Paradigm V: Server-Anchored Alignment and Contribution Accounting}
+\label{subsec:rw_paradigm_5}
+
+\subsubsection{Endogenous vs. Exogenous Reference Anchoring}
+To overcome the limitations of unanchored filtering, Paradigm~V introduces reference-based trust bootstrapping:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Endogenous Reference Anchoring (Class b):} Frameworks such as CGSV~\citep{xu2021gradient} evaluate client contributions against a reference update computed from the participating client consortium (e.g., via pooled validation subsets or consensus vectors). While achieving syntactic metadata immunity, endogenous references remain vulnerable to poison accumulation: coordinated Byzantine coalitions can skew the reference direction itself.
+    \item \textbf{Exogenous Reference Anchoring (Class c):} Frameworks such as FLTrust~\citep{cao2021fltrust}, GuardFed~\citep{li2025guardfed}, and FLTG~\citep{wen2025fltg} bootstrap trust by evaluating client updates against an independent, server-maintained holdout dataset $\Droot$. Because the reference gradient is evaluated outside the client consortium, the directional compass is physically isolated from adversarial manipulation.
+\end{itemize}
+
+\subsubsection{Single-Objective Task Tunnel Vision}
+Most exogenous protocols align client updates exclusively with the server task gradient $\gtask^{\mathrm{srv}}$ ($\alpha = 0$), dedicating zero capacity to group fairness and leaving the model unprotected against adversarial fairness drift; FLTrust is the canonical instance. Furthermore, raw cosine weighting induces severe round-to-round weight volatility, destabilizing convergence on non-IID topologies. A recent exception is GuardFed~\citep{li2025guardfed}, which augments the server reference with a fairness-aware component and screens clients by a dual-perspective trust score. Our contribution is therefore not the observation that a server anchor may carry a fairness term, but three properties that a threshold-screening dual reference does not provide: (i) exact syntactic metadata immunity as a domain invariant rather than an empirical robustness result (Theorem~\ref{thm:syntactic_immunity}); (ii) the endogenous/exogenous anchor taxonomy that explains why closing the declared channel is necessary but not sufficient (Remark~\ref{rem:anchor_taxonomy}); and (iii) an $O(KP)$ per-round attribution ledger with machine-checked axiomatic properties (Propositions~\ref{prop:linear_shapley}--\ref{prop:null_player}). We further separate the fairness term from the robustness mechanism and report it as mechanically inert under our attack model (Section~\ref{subsec:attribution}) rather than as a source of robustness.
+
+\subsubsection{Cooperative Game Theory and the Shapley Bottleneck}
+Evaluating individual client contributions via cooperative game theory has received substantial attention, notably through GTG-Shapley~\citep{liu2022gtg} and recent axiomatic frameworks~\citep{tastan2024redefining, shapley1953value}. However, exact Shapley computation requires evaluating model utility across all $2^K$ client coalitions, while Monte Carlo approximations require hundreds of retraining steps per round. In enterprise graph federations with communication time constraints, exponential game-theoretic evaluation is computationally intractable. In Section~\ref{subsec:governance}, Proposition~\ref{prop:linear_shapley} resolves this bottleneck by establishing an $O(KP)$ first-order linear decomposition, providing an efficient governance logging mechanism while maintaining transparent delineation from combinatorial Shapley values.
+
+\subsection{Operational Demarcation and Enterprise Practicality Scope}
+\label{subsec:rw_scope}
+
+\subsubsection{Exclusion of Heavy Cryptographic Overhead in Cross-Silo Graph FL}
+In cross-silo federations, several cryptographic and economic approaches are theoretically appealing but practically prohibitive:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Zero-Knowledge Proofs (ZK-SNARKs):} Generating cryptographic proofs for sparse graph message passing across multi-hop neighborhoods incurs prohibitive computational overhead (minutes per step and large proof payloads), violating enterprise service-level agreements.
+    \item \textbf{Secure Multi-Party Computation (SMPC):} Secret-sharing multi-hop graph embeddings across wide-area networks creates severe communication bottlenecks scaling quadratically with participant count.
+    \item \textbf{Hardware Enclaves (TEEs):} Legacy server diversity across enterprises precludes uniform enclave assumptions; furthermore, GPU enclaves remain nascent in production.
+    \item \textbf{Peer Prediction and Repeated Games:} Economic incentive schemes assume rational participants; they degrade rapidly under arbitrary or non-rational Byzantine adversaries seeking maximal model destruction.
+\end{enumerate}
+
+\subsubsection{Architectural Decoupling in \MethodName{}}
+To navigate these constraints, \MethodName{} implements a clear operational decoupling:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Client Side:} Local silos execute Fair Targeted Gradient Descent (FTGD) with first-order orthogonal projection (Theorem~\ref{thm:ftgd_orthogonality}) to decouple task optimization from local sensitive attributes.
+    \item \textbf{Server Side:} The server maintains an isolated, stratified audit anchor $\Droot$ ($125$ nodes), executing Canonical FU-Alignment (\texttt{fu\_shapley}) with rectified cosine gating, dynamic norm rescaling, and exponential smoothing. To protect against unbounded scaling without inducing the shielding paradox under camouflage, defense-in-depth coordinate median screening (\texttt{robust\_fu\_shapley}) is provided as a static configuration variant for high-threat deployments.
+\end{itemize}
+
+\subsubsection{Demarcation from Preliminary Conference Work}
+An earlier preliminary conference version of this investigation appeared as FedFairGNN~\citep{dang2026fedfairgnn} (PMLR vol.~319, pp.~74--86, IndabaX Nigeria 2026), which focused on client-side regularized message passing (FSER), local gradient projection (FTGD), and the heuristic BFWA aggregation rule for fraud detection across three clients ($K=3$). To maintain rigorous scientific demarcation and transparent provenance, we explicitly delineate the components inherited versus the novel contributions established in the present journal expansion:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Inherited Client-Side Modules:} Local Fair Targeted Gradient Descent (FTGD) is inherited from~\citep{dang2026fedfairgnn} as a client-side in-processing mechanism, where its theoretical scope is narrowed to exact linear subspace orthogonality (Theorem~\ref{thm:ftgd_orthogonality}). Client-side attention regularization (FSER) is retained strictly as an internal baseline, with ablation revealing a null effect on pure topology graphs (Table~\ref{tab:ablation_suite}).
+    \item \textbf{Self-Auditing and Re-Positioning of BFWA:} In~\citep{dang2026fedfairgnn}, BFWA adjusted server aggregation coefficients based on client-reported performance and disparity scalars. Rather than treating BFWA as an external straw man, the present work subjects our own preliminary rule to rigorous adversarial audit on identical footing (Section~\ref{subsec:vulnerability}, Table~\ref{tab:metadata_capture}). We prove that BFWA is captured at $w_{\mathrm{adv}} = 0.5703$ ($2.85\times$ uniform share), demonstrating that the vulnerability is structural to the self-reporting interface rather than an optimization artifact (Theorem~\ref{thm:bfwa_dual_convergence}).
+    \item \textbf{Architectural Paradigm Shift (FU-Alignment):} Completely absent from~\citep{dang2026fedfairgnn}, the canonical server-side FU-Alignment aggregator (\texttt{fu\_shapley}) replaces unverified client declarations with an exogenous holdout audit anchor $\Droot$, achieving exact syntactic metadata immunity ($\Delta w \equiv 0$, Theorem~\ref{thm:syntactic_immunity}) alongside scaling-safe norm rescaling.
+    \item \textbf{Information-Theoretic and Formal Proof Suite:} The minimax observability lower bound under LDP (Theorem~\ref{thm:minimax_lecam}), the folded-normal expectation bias (Lemma~\ref{lem:folded_normal}), and the formal axiomatic derivation of contribution properties (Propositions~\ref{prop:linear_shapley}--\ref{prop:null_player}) are entirely novel theoretical contributions of this manuscript.
+    \item \textbf{Expanded Empirical Validation:} The experimental scope expands from three clients on fraud subgraphs to comprehensive stress testing across six benchmark datasets (social networks, recidivism, credit default), multi-ratio Byzantine poisoning, Dirichlet topology skew, and 30 paired random seeds per contrast.
+\end{enumerate}

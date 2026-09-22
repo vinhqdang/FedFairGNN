@@ -1,0 +1,25 @@
+{
+  "flame": {
+    "auc_low": 0.6829287525292878,
+    "auc_high": 0.6691496446752564,
+    "auc_drop": 0.013779107854031358,
+    "dpd_low": 0.016461441853500715,
+    "dpd_high": 0.03000175853628037,
+    "dpd_rise": 0.013540316682779656,
+    "w_adv_high": 0.4097672015428543,
+    "utility_verdict": "holds",
+    "fairness_verdict": "holds"
+  },
+  "manifest": {
+    "git_commit": "4e12a360fac2bd0609bf43eb6bab09a18283918e",
+    "git_dirty": true,
+    "device": "cpu",
+    "timestamp": "2026-09-20T10:46:49.645307+00:00",
+    "torch_version": "2.14.0",
+    "torch_num_threads": 4,
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "dataset": "bail",
+    "rounds": 15
+  }
+}

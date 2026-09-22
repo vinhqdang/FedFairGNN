@@ -1,0 +1,26 @@
+%% tables/supplementary/tab_update_attack.tex — T3: Detailed Multi-Channel Attribute Inference
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Empirical Attribute Inference Attack Success Across Release Channels (Bail Recidivism).}
+Evaluates sensitive-attribute leakage ($S_k$) through the released fairness statistic $(\mu_0, \mu_1)$ versus the transmitted model parameter updates $g_k = \theta_{\text{global}} - \theta_{\text{local}, k}$.
+FTGD successfully neutralizes the fairness-statistic channel ($1.000 \to 0.498$) with no degradation in global AUC ($+0.002$), whereas parameter updates retain residual correlation (AUC $\approx 0.645$).
+This demonstrates that FTGD acts as a specialized statistic protection mechanism, complementary to orthogonal parameter-level safeguards (such as Secure Aggregation or parameter DP-SGD).
+Probes are evaluated using 5-fold cross-validation grouped strictly by client ID to prevent measuring client re-identification.}
+\label{tab:update_attack}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{5pt}%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Observation Channel} & \textbf{Privacy Mechanism} & \textbf{Attack AUC $\downarrow$} & \textbf{Utility Impact} \\
+\midrule
+Fairness Statistic Channel (Raw) & None & 1.000 & Neutral (+0.000 AUC) \\
+Fairness Statistic Channel (FTGD) & $(\epsilon=8.0, \delta=10^{-5})$ & \textbf{0.498} & Neutral (+0.002 AUC) \\
+Model Parameter Channel & None (TrustFedGNN default) & 0.645 & Neutral (+0.000 AUC) \\
+Model Parameter Channel & Client DP-SGD ($\epsilon=8.0$) & 0.528 & Severe (-0.202 AUC) \\
+\midrule
+Random Guess Baseline & -- & 0.500 & -- \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

@@ -1,0 +1,60 @@
+{
+  "manifest": {
+    "experiment": "noninferiority_tost",
+    "device": "cpu",
+    "dataset": "pokec_z",
+    "seeds": 10,
+    "input_artifact": "results/revision/aggregator_control_pokecz.json",
+    "sha256_input": "0e8f852",
+    "git_commit": "0fbd20d",
+    "git_dirty": false,
+    "control_auc_std_raw": 0.0031088870087522067
+  },
+  "description": "Two One-Sided Tests (TOST) for benign utility trade-off (T7)",
+  "results": {
+    "margin_0.01": {
+      "margin": 0.01,
+      "mean_delta": 0.0015057533926747136,
+      "std_delta": 0.010729019132906612,
+      "se_delta": 0.0033928137519509695,
+      "ci90": [
+        -0.004713657374120538,
+        0.007725164159469965
+      ],
+      "t_based": {
+        "p1": 0.003991869149478022,
+        "p2": 0.016831215442186576,
+        "p_tost": 0.016831215442186576,
+        "equivalent_at_005": true
+      },
+      "wilcoxon_based": {
+        "p1": 0.0068359375,
+        "p2": 0.0419921875,
+        "p_tost": 0.0419921875,
+        "equivalent_at_005": true
+      }
+    },
+    "margin_0.0031": {
+      "margin": 0.0031,
+      "mean_delta": 0.0015057533926747136,
+      "std_delta": 0.010729019132906612,
+      "se_delta": 0.0033928137519509695,
+      "ci90": [
+        -0.004713657374120538,
+        0.007725164159469965
+      ],
+      "t_based": {
+        "p1": 0.10384069268071128,
+        "p2": 0.3248055978955655,
+        "p_tost": 0.3248055978955655,
+        "equivalent_at_005": false
+      },
+      "wilcoxon_based": {
+        "p1": 0.1162109375,
+        "p2": 0.24609375,
+        "p_tost": 0.24609375,
+        "equivalent_at_005": false
+      }
+    }
+  }
+}

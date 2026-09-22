@@ -1,0 +1,34 @@
+%% sections/05_theoretical_analysis.tex
+\section{Theoretical Analysis and Lower Bounds}
+\label{sec:theory}
+
+\subsection{Perpetual Bias of Folded-Normal Perturbations}
+When clients attempt to privatise non-negative disparity metrics $\dpd_k \ge 0$ under Local Differential Privacy (LDP) by adding Gaussian noise $\xi_k \sim \mathcal{N}(0, \sigma_k^2)$ and taking the absolute magnitude, the resulting noisy statistic follows a folded-normal distribution.
+\begin{lemma}[Folded-Normal Expectation]
+\label{lem:folded_normal}
+Let $X \sim \mathcal{N}(\mu, \sigma^2)$ and $Y = |X|$. Then $\EE[Y] = \sigma \sqrt{2/\pi} \exp(-\mu^2 / (2\sigma^2)) + \mu (1 - 2\Phi(-\mu/\sigma))$. In the perfectly fair limit $\mu \to 0$, the expected reported disparity is strictly positive:
+\begin{equation}
+\EE[\tilde{\dpd}] \;\to\; \sqrt{\frac{2}{\pi}} \sum_{k=1}^K w_k \tilde{\sigma}_k > 0.
+\end{equation}
+\end{lemma}
+Because this bias is strictly positive across all clients, taking an empirical average across silos or communication rounds cannot cancel the systematic error.
+
+\subsection{Minimax Observability Lower Bound}
+\begin{theorem}[Minimax Observability Lower Bound under LDP]
+\label{thm:minimax_lecam}
+Let $\mathcal{P}$ denote the family of local client distributions. Under any $(\epsilon, \delta)$-LDP channel satisfying differential privacy, the minimax risk $\Rstar$ of deciding whether the population satisfies disparity tolerance $\tau$ is bounded from below:
+\begin{equation}
+\Rstar \;\ge\; \frac{1}{2} \left( 1 - \frac{\tau \sqrt{K}}{2 \tilde{\sigma}} \right).
+\end{equation}
+At practical operational parameters ($\epsilon = 8.0, T = 60, \tau = 0.05, K = 10$), $\Rstar \ge 39.5\%$. By the Data Processing Inequality, no server-side post-processing algorithm can overcome this information-theoretic floor.
+\end{theorem}
+
+\subsection{First-Order Linear Shapley Decomposition for Auditable Governance}
+\begin{proposition}[Linear First-Order Decomposition]
+\label{prop:linear_shapley}
+Under \MethodName{}, client aggregation weights decompose linearly into task and fairness marginal contributions:
+\begin{equation}
+w_k^{(t)} = \Simplex\left( \EMA\left[ \varphi_k^{\mathrm{util}} + \alpha \varphi_k^{\mathrm{fair}} \right] \right),
+\end{equation}
+where $\varphi_k^{\mathrm{util}} = \Cosine(\Delta_k^{(t)}, \gtask^{\mathrm{srv}})$ and $\varphi_k^{\mathrm{fair}} = \Cosine(\Delta_k^{(t)}, \gfair^{\mathrm{srv}})$. This decomposition computes in $O(KP)$ operations, avoiding combinatorial $O(2^K P)$ exponential evaluation.
+\end{proposition}

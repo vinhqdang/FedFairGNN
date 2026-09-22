@@ -1,0 +1,47 @@
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Factorial $2 \times 2$ Orthogonal Attribution Matrix Isolating Gating vs.\ Fairness Guidance $\alpha g_{\text{fair}}$ ($n=30$ Seeds).}
+Isolates the causal impact of the nonlinear FU-Gating architecture against server-side fairness direction $\alpha g_{\text{fair}}$ under fairness poisoning.
+Row effect demonstrates that nonlinear FU-gating causally drives adversary suppression (reducing $w_{\mathrm{adv}}$ by $-0.1909$ on German Credit and $-0.1103$ on Bail, $p < 10^{-5}$) and dominates fairness protection under poisoning.
+The column effect shows that adding $\alpha g_{\text{fair}}$ changes neither adversary capture ($|\Delta w_{\mathrm{adv}}| < \delta = 0.0050$, TOST equivalence) nor disparity ($|\Delta \dpd| \le 0.0016$): under this attack the fairness term is mechanically inert in both directions.}
+\label{tab:factorial_2x2}
+\setlength{\tabcolsep}{6.0pt}
+\makebox[\textwidth][c]{%
+\begin{tabular}{lccc}
+\toprule
+\multicolumn{4}{l}{\textbf{Panel A: Adversary Weight Share $w_{\mathrm{adv}}$ ($\downarrow$) (Target Share: $0.20$)}} \\
+\midrule
+\textbf{Architecture Arm} & \textbf{Task-Only} & \textbf{Task $+ \alpha g_{\text{fair}}$} & \textbf{Column Effect ($\alpha$)} \\
+\midrule
+\multicolumn{4}{l}{\textit{German Credit ($K=5, n=30$ seeds)}} \\
+Row 1: Linear FLTrust & 0.2565 $\pm$ 0.0214 & 0.2516 $\pm$ 0.0198 & $-0.0049$ (bounded) \\
+Row 2: Nonlinear FU-Gating & 0.0657 $\pm$ 0.0112 & 0.0630 $\pm$ 0.0105 & $-0.0027$ ($p=0.004$) \\
+\addlinespace[1pt]
+\textbf{Row Effect (Causal Gating)} & $\mathbf{-0.1909}$ ($p<10^{-5}$) & $\mathbf{-0.1886}$ ($p<10^{-5}$) & \textit{Interaction: $+0.0022$} \\
+\midrule
+\multicolumn{4}{l}{\textit{Bail Recidivism ($K=10, n=30$ seeds)}} \\
+Row 1: Linear FLTrust & 0.1622 $\pm$ 0.0145 & 0.1619 $\pm$ 0.0139 & $-0.0003$ (bounded) \\
+Row 2: Nonlinear FU-Gating & 0.0519 $\pm$ 0.0087 & 0.0523 $\pm$ 0.0084 & $+0.0004$ ($p=0.885$) \\
+\addlinespace[1pt]
+\textbf{Row Effect (Causal Gating)} & $\mathbf{-0.1103}$ ($p<10^{-5}$) & $\mathbf{-0.1096}$ ($p<10^{-5}$) & \textit{Interaction: $-0.0007$} \\
+\midrule
+\multicolumn{4}{l}{\textbf{Panel B: Demographic Parity Disparity $\text{DPD}_{\text{hard}}$ ($\downarrow$)}} \\
+\midrule
+\textbf{Architecture Arm} & \textbf{Task-Only} & \textbf{Task $+ \alpha g_{\text{fair}}$} & \textbf{Column Effect ($\alpha$)} \\
+\midrule
+\multicolumn{4}{l}{\textit{German Credit ($K=5, n=30$ seeds)}} \\
+Row 1: Linear FLTrust & 0.1931 $\pm$ 0.1394 & 0.1842 $\pm$ 0.1355 & $-0.0089$ \\
+Row 2: Nonlinear FU-Gating & 0.0730 $\pm$ 0.0507 & 0.0720 $\pm$ 0.0511 & $-0.0010$ \\
+\addlinespace[1pt]
+\textbf{Row Effect (Causal Gating)} & $\mathbf{-0.1201}$ & $\mathbf{-0.1122}$ & \textit{Gating controls disparity} \\
+\midrule
+\multicolumn{4}{l}{\textit{Bail Recidivism ($K=10, n=30$ seeds)}} \\
+Row 1: Linear FLTrust & 0.0370 $\pm$ 0.0125 & 0.0369 $\pm$ 0.0122 & $-0.0001$ \\
+Row 2: Nonlinear FU-Gating & 0.0176 $\pm$ 0.0094 & 0.0192 $\pm$ 0.0098 & $+0.0016$ \\
+\addlinespace[1pt]
+\textbf{Row Effect (Causal Gating)} & $\mathbf{-0.0194}$ & $\mathbf{-0.0177}$ & \textit{Gating controls disparity} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

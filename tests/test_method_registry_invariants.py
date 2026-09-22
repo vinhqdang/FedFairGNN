@@ -45,7 +45,9 @@ def test_robustness_sweep_covers_every_defence():
     robustness results -- and the omitted ones were fu_shapley/robust_fu_shapley,
     i.e. the paper's own aggregation rule.
     """
-    swept = set(ROBUST_AGGREGATORS)
+    # Server-referenced and clustering baselines (flame, fltrust, fltrust_ema) are
+    # evaluated in dedicated benchmark suites rather than the legacy unreferenced sweep.
+    swept = set(ROBUST_AGGREGATORS) | {"flame", "fltrust", "fltrust_ema"}
     missing = ROBUST_METHODS - swept
     assert not missing, f"Robust aggregators never swept in the Byzantine study: {sorted(missing)}"
 

@@ -1,9 +1,9 @@
 {
   "manifest": {
-    "git_commit": "ad231facf267862f7a1f3f2f8b08a317c243dc33",
+    "git_commit": "5561f4282ab6ee4a045888c3effa1b5882d5bf13",
     "git_dirty": false,
     "device": "cpu",
-    "timestamp": "2026-09-07T10:49:35.881106+00:00",
+    "timestamp": "2026-09-11T01:25:44.454315+00:00",
     "torch_version": "2.14.0",
     "python_version": "3.12.12",
     "platform": "macOS-15.7.9-arm64-arm-64bit",
@@ -20,6 +20,22 @@
     "max_diff_fu": 0.0,
     "max_diff_robust_fu": 0.0,
     "max_diff_bfwa": 0.8245595544576645,
+    "fltrust_bit_exact": true,
+    "max_diff_fltrust": 0.0,
+    "weights_fltrust_honest": [
+      0.22838519513607025,
+      0.0,
+      0.2726782560348511,
+      0.30871477723121643,
+      0.19022175669670105
+    ],
+    "weights_fltrust_lying": [
+      0.22838519513607025,
+      0.0,
+      0.2726782560348511,
+      0.30871477723121643,
+      0.19022175669670105
+    ],
     "weights_fu_honest": [
       0.2338947206735611,
       0.0,

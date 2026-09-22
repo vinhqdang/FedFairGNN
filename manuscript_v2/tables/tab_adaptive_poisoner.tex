@@ -1,0 +1,39 @@
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Multi-Ratio Adaptive Stealth Poisoning Breakdown and Median Backfire Analysis.}
+\textbf{Panel A:} Performance of 11 aggregation rules under omniscient stealth poisoning on Bail Recidivism across corruption ratios $f/K \in \{0.1, 0.2, 0.3, 0.4\}$ ($n=10$ seeds). Malicious updates are constrained within the benign median radius ($\rho=0.85$) while falsifying $\widehat{\text{DPD}} = 0.0$.
+\textbf{Panel B:} Monotonic dose-dependent backfire effect of coordinate-wise median screening on Bail ($n=10$ seeds, paired Wilcoxon $p=0.0020$). Median screening inadvertently purges benign minority clients, increasing adversary weight by up to $+82.9\%$ ($+0.2421$) at $f/K=0.4$ on Bail; the same mechanism inflates adversary share by $+13.6\%$ on German Credit under $\rho = 0.85$ stealth (Table~\ref{tab:two_tier}, Panel~B).}
+\label{tab:adaptive_poisoner}
+\setlength{\tabcolsep}{5.0pt}
+\makebox[\textwidth][c]{%
+\begin{tabular}{lcccc}
+\toprule
+\multicolumn{5}{l}{\textbf{Panel A: Breakdown Point under Stealth Camouflage (AUC / DPD)}} \\
+\midrule
+\textbf{Aggregation Rule} & \makecell{\textbf{$f/K=0.1$} \\ \scriptsize (1/10)} & \makecell{\textbf{$f/K=0.2$} \\ \scriptsize (2/10)} & \makecell{\textbf{$f/K=0.3$} \\ \scriptsize (3/10)} & \makecell{\textbf{$f/K=0.4$} \\ \scriptsize (4/10)} \\
+\midrule
+FedAvg & 0.686 / 0.024 & 0.684 / 0.025 & 0.682 / 0.022 & 0.681 / 0.021 \\
+Krum & 0.621 / 0.072 & 0.615 / 0.081 & 0.610 / 0.089 & 0.607 / 0.096 \\
+Multi-Krum & 0.684 / 0.022 & 0.678 / 0.034 & 0.671 / 0.043 & 0.662 / 0.051 \\
+Coordinate Median & 0.673 / 0.025 & 0.671 / 0.026 & 0.669 / 0.028 & 0.666 / 0.029 \\
+Trimmed Mean & 0.683 / 0.026 & 0.679 / 0.027 & 0.675 / 0.029 & 0.671 / 0.031 \\
+FLAME & 0.683 / 0.016 & 0.676 / 0.022 & 0.679 / 0.026 & 0.669 / 0.030 \\
+BFWA & 0.647 / 0.044 & 0.641 / 0.051 & 0.636 / 0.058 & 0.631 / 0.064 \\
+robust BFWA & 0.645 / 0.046 & 0.640 / 0.062 & 0.635 / 0.075 & 0.631 / 0.090 \\
+FLTrust & 0.639 / 0.024 & 0.637 / 0.026 & 0.635 / 0.028 & 0.634 / 0.029 \\
+\textbf{FU-Alignment (canonical)} & \textbf{0.684 / 0.021} & \textbf{0.680 / 0.024} & \textbf{0.676 / 0.028} & \textbf{0.672 / 0.032} \\
+robust FU-Alignment & 0.684 / 0.024 & 0.678 / 0.024 & 0.671 / 0.025 & 0.665 / 0.025 \\
+\midrule
+\multicolumn{5}{l}{\textbf{Panel B: Dose-Dependent Median Screening Backfire on Adversary Share $w_{\mathrm{adv}}$}} \\
+\midrule
+\makecell[l]{\textbf{Adversary} \\ \textbf{Ratio $f/K$}} & \makecell{\textbf{Uniform} \\ \textbf{Share}} & \makecell{\textbf{FU-Align} \\ \scriptsize (Canonical)} & \makecell{\textbf{robust} \\ \textbf{FU-Align}} & \makecell{\textbf{Backfire $\Delta w_{\mathrm{adv}}$} \\ \scriptsize ($p$-value)} \\
+\midrule
+$f/K = 0.1$ & 0.1000 & $0.0692 \pm 0.0084$ & $0.0754 \pm 0.0091$ & $+0.0063$ ($p = 0.0020$) \\
+$f/K = 0.2$ & 0.2000 & $0.1364 \pm 0.0121$ & $0.1746 \pm 0.0145$ & $+0.0382$ ($p = 0.0020$) \\
+$f/K = 0.3$ & 0.3000 & $0.2121 \pm 0.0163$ & $0.3152 \pm 0.0204$ & $+0.1031$ ($p = 0.0020$) \\
+$f/K = 0.4$ & 0.4000 & $\mathbf{0.2922 \pm 0.0194}$ & $\mathbf{0.5343 \pm 0.0289}$ & $\mathbf{+0.2421}$ ($+82.9\%$) \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

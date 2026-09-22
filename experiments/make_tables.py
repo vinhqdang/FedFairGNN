@@ -3,6 +3,20 @@ import os
 import shutil
 import argparse
 
+# Ten tables below are written but nothing in main.tex inputs them. They are
+# outputs of an earlier layout in which each metric got its own table and each
+# file was a bare tabular fragment; the manuscript now uses combined floats
+# (main_pokecz_sota, credit_boundary_sota) and complete table environments.
+# shapley_fidelity.tex is additionally byte-identical to trust.tex, which IS
+# used -- the same content was being written twice under two names.
+#
+# They are kept because deleting a generator branch is not the same as
+# confirming the content is unwanted, and the acceptance pass should make that
+# call with the manuscript in front of it. What is NOT acceptable is leaving no
+# record, so: DEAD_OUTPUTS is the list, and experiments/revision/audit_refs.py
+# reports orphans on every run.
+DEAD_OUTPUTS = ['compliance.tex', 'efficiency.tex', 'large_scale.tex', 'main_auc.tex', 'main_dpd.tex', 'main_eod.tex', 'privacy_attack.tex', 'robustness.tex', 'shapley_fidelity.tex', 'significance.tex']
+
 def generate_all_tables(target_dirs=None):
     if target_dirs is None:
         target_dirs = [
@@ -20,7 +34,7 @@ def generate_all_tables(target_dirs=None):
             print(f"Skipping {d}: {e}")
 
     stats_path = "results/consolidated_statistics.json"
-    remed_path = "results/canonical_suite.json"
+    remed_path = "results/ablation_matrix.json" if os.path.exists("results/ablation_matrix.json") else "results/canonical_suite.json"
     shapley_path = "results/shapley_fidelity.json"
     
     with open(stats_path) as f:
@@ -44,6 +58,7 @@ def generate_all_tables(target_dirs=None):
         ("fairgfl", "FairGFL", "IEEE TPDS'26"),
         ("fedgraphfair", "FedGraph-Fair", "InfoSci'26"),
         ("cgsv", "CGSV", "NeurIPS'21"),
+        ("fltrust", "FLTrust", "NDSS'21"),
         ("ours-nofser", "Ours w/o FSER (Confounded)", "Ablation"),
         ("ours-nofser-true", "Ours w/o FSER (Clean Arm)", "Ablation"),
         ("fedfairgnn", r"\textbf{TrustFedGNN (Ours)}", "Proposed"),
@@ -143,11 +158,12 @@ def generate_all_tables(target_dirs=None):
     # 3. Ablation Suite Table (German Credit, M1-M7, n=10 seeds)
     # -------------------------------------------------------------
     ablation_matrix = remed["component_ablation_matrix"]
+    m3_entry = ablation_matrix.get("M3_wo_DP", ablation_matrix.get("M3_wo_FTGD"))
     ablation_rows = [
         ("M1 (Full Proposed)", r"\textbf{TrustFedGNN (Canonical)}", ablation_matrix["M1_Full"]),
         ("M2 (w/o FSER Confounded)", r"GAT Backbone (Confounds FSER \& Scaffold)", ablation_matrix["M2_wo_FSER"]),
         ("M2 (w/o FSER True Clean)", r"Freeze $\beta=0$ (Faithful Clean FSER Arm)", ablation_matrix["M2_wo_FSER_true"]),
-        ("M3 (w/o FTGD)", "Standard Local Optimization (No Orthogonal Surgery)", ablation_matrix["M3_wo_FTGD"]),
+        ("M3 (w/o DP)", "Standard Local Optimization without DP / Orthogonal Surgery", m3_entry),
         ("M4 (Full DP-SGD)", r"Standard Client-Wide DP-SGD ($\epsilon=8.0$)", ablation_matrix["M4_Full_DPSGD"]),
         ("M5 (w/o FairScore)", r"GTG-Shapley Metric ($\alpha=0.0$)", ablation_matrix["M5_wo_FairScore"]),
         ("M6 (w/o Two-Tier)", "CGSV Aggregation (No Server Holdout)", ablation_matrix["M6_wo_TwoTier"]),
@@ -186,13 +202,20 @@ def generate_all_tables(target_dirs=None):
 """
 
     # -------------------------------------------------------------
-    # 4. Shapley Probing Table (Exact vs FU-Shapley Extended)
+    # 4. Shapley Probing Table (Exact vs FU-Alignment Extended)
     # -------------------------------------------------------------
-    trust_tex = r"""\begin{table}[t]
+    sh_p = shapley["summary"]["global_pooled_pearson"]
+    sh_s = shapley["summary"]["global_pooled_spearman"]
+    sh_sa = shapley["summary"]["global_sign_agree"] * 100
+    sh_b1 = shapley["summary"]["mean_bottom1_hit"] * 100
+    sh_l1 = shapley["summary"]["mean_w_l1_dist"]
+
+    trust_tex = (
+        r"""\begin{table}[t]
 \centering
 \small
-\caption{\textbf{Empirical Evaluation of FU-Shapley Alignment vs Exact Shapley (125 probe points, $K=5$, 5 seeds).} 
-Evaluating across 5 probing rounds confirms FU-Shapley functions as a fast, first-order ranking heuristic ($O(KP)$ vs $O(2^K P)$) with strong directional alignment ($\rho = 0.690$, $73.6\%$ sign agreement).}
+\caption{\textbf{Empirical Evaluation of FU-Alignment vs Exact Shapley (125 probe points, $K=5$, 5 seeds).} 
+Evaluating across 5 probing rounds confirms FU-Alignment functions as a fast, first-order ranking heuristic ($O(KP)$ vs $O(2^K P)$) with strong directional alignment ($\rho = __SH_S_3F__$, $__SH_SA_1F__\%$ sign agreement).}
 \label{tab:shapley_fidelity}
 \resizebox{\linewidth}{!}{%
 \setlength{\tabcolsep}{5pt}%
@@ -200,11 +223,11 @@ Evaluating across 5 probing rounds confirms FU-Shapley functions as a fast, firs
 \toprule
 \textbf{Metric} & \textbf{Target Criterion (Pre-reg)} & \textbf{Empirical Value (125 points)} \\
 \midrule
-Pooled Pearson Correlation $r$ & $\ge 0.80$ & $0.7436$ ($p < 0.001$) \\
-Pooled Spearman Rank Correlation $\rho$ & $\ge 0.70$ & $0.6897$ ($p < 0.001$) \\
-Sign Agreement Proportion & $\ge 85\%$ & $73.60\%$ \\
-Bottom-1 Detection Rate & $\ge 75\%$ & $64.00\%$ \\
-Mean Simplex $L_1$ Distance & $\le 0.15$ & $0.7554$ \\
+Pooled Pearson Correlation $r$ & $\ge 0.80$ & __SH_P_4F__ ($p < 0.001$) \\
+Pooled Spearman Rank Correlation $\rho$ & $\ge 0.70$ & __SH_S_4F__ ($p < 0.001$) \\
+Sign Agreement Proportion & $\ge 85\%$ & __SH_SA_2F__\% \\
+Bottom-1 Detection Rate & $\ge 75\%$ & __SH_B1_2F__\% \\
+Mean Simplex $L_1$ Distance & $\le 0.15$ & __SH_L1_4F__ \\
 \midrule
 \textbf{Computational Complexity} & -- & \textbf{$O(KP)$ vs $O(2^K P)$} \\
 \bottomrule
@@ -212,6 +235,14 @@ Mean Simplex $L_1$ Distance & $\le 0.15$ & $0.7554$ \\
 }
 \end{table}
 """
+        .replace("__SH_S_3F__", f"{sh_s:.3f}")
+        .replace("__SH_SA_1F__", f"{sh_sa:.1f}")
+        .replace("__SH_P_4F__", f"{sh_p:.4f}")
+        .replace("__SH_S_4F__", f"{sh_s:.4f}")
+        .replace("__SH_SA_2F__", f"{sh_sa:.2f}")
+        .replace("__SH_B1_2F__", f"{sh_b1:.2f}")
+        .replace("__SH_L1_4F__", f"{sh_l1:.4f}")
+    )
 
     # -------------------------------------------------------------
     # 5. Significance & Hypothesis Testing Table

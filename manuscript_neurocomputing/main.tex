@@ -36,6 +36,7 @@
 \newcommand{\E}{\mathbb{E}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
+\setlength{\bibsep}{2.5pt}
 
 \begin{document}
 
@@ -59,15 +60,14 @@
             country={Vietnam}}
 
 \begin{highlights}
-\item Fairness aggregation that reads no client-reported metadata closes an attack surface
-\item A falsifying client moves our weights by 0.0000; it takes 86\% of a Frank--Wolfe one
-\item Statistic-level DP costs O(1) noise and 0.002 AUC, against 0.202 for full DP-SGD
-\item Best AUC over 7 federated baselines on Pokec-z (p=0.0020, Holm, 10/10 seeds)
-\item Four algebraic guarantees machine-checked in Lean 4; seven refuted hypotheses listed
+\item Client-declared fairness metadata captures six published FL aggregation rules.
+\item Falsified reports raise disparity up to 7x and cut AUC by 0.14 over 30 seeds.
+\item Multi-round client-wise DP drives constraint testing toward chance.
+\item Server-referenced aggregation is immune to the channel by construction.
 \end{highlights}
 
 \begin{abstract}
-Cross-silo federated graph learning for credit scoring, bail assessment and anti-money-laundering must satisfy three requirements simultaneously: demographic fairness, differential privacy, and resilience to malicious participants. Every deployed fairness-aware federated aggregator we are aware of steers on disparity statistics that clients report about themselves, which turns fairness steering into an attack surface: a participant that reports zero disparity while uploading a poisoned update can capture the aggregate. TrustFedGNN closes that surface. On the client, Fairness-Sensitive Edge Reweighting attenuates cross-group attention, and Fairness-Targeted Gradient Decomposition privatises only the two-dimensional group-mean statistic, obtaining $(\epsilon,\delta)$-differential privacy at $O(1)$ noise rather than the $O(\sqrt{P})$ of full-parameter DP-SGD. On the server, FU-Shapley scores each client by the alignment of its update with a target gradient the server computes on its own holdout split, then gates those scores onto the probability simplex; no self-reported field enters the weights. We prove metadata immunity and confirm it empirically: a falsifying client leaves the weight vector bit-identical ($\lVert\Delta \bm{w}\rVert_\infty = 0.0000$) while capturing $86.2\%$ of a Frank--Wolfe aggregate under the identical attack. Four algebraic properties are machine-checked in Lean 4. Across four demographic benchmarks and two large-scale graphs, TrustFedGNN attains the best AUC among seven external baselines on Pokec-z ($p = 0.0020$ after Holm--Bonferroni correction, winning on all ten seeds), and is statistically indistinguishable from all of them on a synthetic $k$-nearest-neighbour tabular graph. We report seven pre-registered hypotheses that our own measurements refuted.
+Cross-silo federated graph learning for credit scoring, bail assessment and anti-money-laundering must satisfy fairness, privacy and Byzantine resilience at once. Every fairness-aware aggregator we surveyed obtains its fairness signal by asking clients to declare it, making the declaration an attack surface. Attacking six published aggregation rules with the poisoned update held fixed, isolating the declared fields, falsification raised the adversary's weight in $141$ of $144$ non-tied seed pairs over thirty seeds; two rules reading no declared field are bit-exact. Privatising the report does not repair it: we prove that once noise dominates, the quantity the server observes converges to a constant of the noise, independent of every true disparity, so the budget test measures the noise multiplier rather than fairness. The obstruction is conditional---it bites in small cross-silo deployments over many rounds, not in large cross-device settings with one release. On German the reported aggregate departs from the true one by over $700\%$ of the budget at $\epsilon=8$, and the exact folded-normal prediction matches measurement at every privacy level tested. TrustFedGNN removes the channel instead of hardening it: the server builds a bi-objective target gradient on a client-inaccessible holdout and scores clients by alignment with it, so no declared field enters the weights and immunity is syntactic, not empirical. The price: fairness cannot be steered by asking, the server needs an untouched holdout, and on clean data a Byzantine defence with no fairness mechanism attains higher AUC than we do, with weights oscillating $7.4$ times more. Fairness-Targeted Gradient Decomposition separately certifies $(\epsilon,\delta)$-DP for the two-dimensional group-mean statistic, not the update, at $O(1)$ noise and $0.00175$ AUC against $0.20163$ for full DP-SGD. Four algebraic properties are machine-checked in Lean 4, and we report seven pre-registered hypotheses our own measurements refuted.
 \end{abstract}
 
 \begin{keyword}
@@ -88,51 +88,86 @@ Deploying such a system in a high-stakes domain requires three properties at onc
 
 \paragraph{Group fairness against differential privacy.} Enforcing a fairness constraint requires the server to observe some disparity signal, and that signal leaks group membership. The textbook remedy, DP-SGD over the full parameter vector \cite{abadi2016deep}, injects noise scaling as $O(\sqrt{P})$ and destroys GNN utility: in our own ablation it costs $0.2016$ AUC (Section~\ref{sec:res_privacy}).
 
-\paragraph{Fairness steering against Byzantine resilience.} This is the tension we consider unresolved, and it motivates the paper. Fairness-aware federated aggregators---FairFed \cite{ezzeldin2023fairfed}, PUFFLE \cite{corbucci2024puffle}, F$^2$GNN \cite{f2gnn2023}, FairGFL \cite{fairgfl2026}---compute aggregation weights from disparity statistics \emph{that each client reports about itself}. Nothing in those protocols verifies the report. An adversary may therefore transmit a poisoned update while declaring $\widehat{\dpd}_k = 0$, and the fairness mechanism will reward it precisely because it claims to be fair. Kasyap et al.\ \cite{kasyap2025attack} and EAB-FL \cite{eabfl2024} demonstrate this class of attack; classical Byzantine defences \cite{blanchard2017krum,yin2018byzantine,cao2021fltrust} do not address it, because they screen the parameter update and never examine the metadata channel at all.
+\paragraph{Fairness steering against Byzantine resilience.} This is the tension we consider unresolved, and it motivates the paper. Fairness-aware federated aggregators---FairFed \cite{ezzeldin2023fairfed}, PUFFLE \cite{corbucci2024puffle}, F$^2$GNN \cite{f2gnn2023}, FairGFL \cite{fairgfl2026}---compute aggregation weights from disparity statistics \emph{that each client reports about itself}. Nothing in those protocols verifies the report. An adversary may therefore transmit a poisoned update while declaring $\widehat{\dpd}_k = 0$, and the fairness mechanism will reward it precisely because it claims to be fair. Kasyap et al.\ \cite{kasyap2025attack} and EAB-FL \cite{eabfl2024} demonstrate this class of attack; classical Byzantine defences \cite{blanchard2017krum,yin2018byzantine,cao2021fltrust} do not address it, because they screen the parameter update and never examine the metadata channel at all. We measure how general the weakness is by attacking six published aggregation rules end to end, holding the poisoned update fixed and varying only the accompanying report: lying raised the adversary's aggregation weight in $141$ of $144$ non-tied seed pairs and lowered it in three, and two rules that read no declared field are bit-exact under the same falsification (Section~\ref{sec:res_metadata}).
+
+The obvious repair---keep the reported statistic but privatise it---does not work either, and the reason is the sharpest form of the tension above. Protecting a reported disparity requires noise calibrated to its sensitivity, and we measure what that noise does to the constraint it is supposed to enforce: at $\epsilon = 8.0$, the gap between reported and true aggregate disparity reaches $729\%$ of the fairness budget, and at $\epsilon = 2.0$ it reaches $2685\%$ (Section~\ref{sec:res_slack}). A budget evaluated against a signal that noisy is not a fairness constraint in any operational sense, and the effect is structural rather than an artefact of our settings: Theorem~\ref{thm:observability} shows that once noise dominates, the quantity the server observes converges to a constant of the noise itself, independent of every client's true disparity. Privacy and metadata-driven fairness steering are therefore not merely awkward together but mutually destructive: noise sufficient to protect the statistic destroys its value as a constraint, and leaving it unprotected exposes the attribute outright---an unnoised release is a perfect attribute oracle in our probe ($1.000$ attack AUC). This is what convinced us that the channel should be removed rather than hardened.
 
 \subsection{Contributions}
 
 TrustFedGNN removes the metadata channel rather than trying to secure it. Its server computes the reference signal it needs \emph{itself}, on a holdout split no client can touch, and derives aggregation weights from how well each client's update aligns with that reference. A client's report about its own fairness is never read, so falsifying it is mathematically inert.
 
 \begin{itemize}
-\item \textbf{Pillar C1 --- privacy-aware fairness feedback at the client (Section~\ref{sec:client}).} Fairness-Sensitive Edge Reweighting (FSER) attenuates attention on cross-group edges before the softmax. Fairness-Targeted Gradient Decomposition (FTGD) projects the update orthogonally to the fairness-ascent direction and injects Gaussian noise into the released two-dimensional statistic $(\mu_0,\mu_1)$ only, computed on a sensitive-blind forward pass. This yields a certified $(\epsilon,\delta)$-DP release at $O(1)$ noise, at a measured utility cost of $0.0017$ AUC against $0.2016$ for full-parameter DP-SGD---a factor of $115$.
+\item \textbf{The self-reported channel is capturable across published rules (Section~\ref{sec:res_metadata}).} We attack six published fairness-aware aggregation rules end to end on thirty seeds, with the poisoned update held fixed across arms so that the contrast isolates the declared fields. All six move under a best-response falsification and all six survive Holm--Bonferroni correction; aggregated, lying raised the adversary's weight in $141$ of $144$ non-tied seed pairs. The outcome splits three ways rather than two, and the third case is the one a robust-versus-vulnerable taxonomy misses: PoPETs-FairFed is statistically steerable yet moves so little that the adversary ends below an equal share, which is inertness rather than robustness.
 
-\item \textbf{Pillar C2 --- metadata-independent contribution aggregation at the server (Section~\ref{sec:server}).} FU-Shapley scores client $k$ by $\varphi_k = \langle g_k, g_{\mathrm{target}}\rangle / \lVert g_{\mathrm{target}}\rVert$, where $g_{\mathrm{target}} = g_{\mathrm{task}}^{\mathrm{srv}} + \alpha\, g_{\mathrm{fair}}^{\mathrm{srv}}$ is computed on the server holdout; scores are smoothed by an exponential moving average and gated onto the simplex by a rectifier. Theorem~\ref{thm:metadata_immunity} establishes that the weights are a function of the transmitted updates alone. Empirically, a client that falsifies its report leaves the weight vector bit-identical, while the same falsification hands it $86.2\%$ of a Frank--Wolfe aggregate (Table~\ref{tab:metadata_immunity}).
+\item \textbf{Privatising the report does not repair it (Section~\ref{sec:theory_observability}).} Lemma~\ref{lem:folded} shows the released statistic is folded normal, and Theorem~\ref{thm:observability} that in the noise-dominant regime its expectation converges to $\sqrt{2/\pi}\sum_k w_k\tilde\sigma_k$---a constant of the noise, independent of every true disparity. Testing the budget against it is then a test on the noise multiplier and the smallest group, not on fairness. Corollary~\ref{cor:epsilon_floor} gives the $\epsilon$ below which the constraint carries no information, and we state the regime explicitly: the obstruction bites in small cross-silo deployments over many rounds, and not at all in large cross-device settings with a single release.
 
-\item \textbf{Pillar C3 --- evidence, with its boundaries stated (Sections~\ref{sec:results}--\ref{sec:limitations}).} Four demographic-fairness benchmarks and two large-scale graphs using proxy groups; seventeen implemented baselines; ten seeds with paired Wilcoxon tests under Holm--Bonferroni correction; four algebraic properties machine-checked in Lean 4. We also report seven pre-registered hypotheses that our measurements refuted, including the utility attribution of FSER itself.
+\item \textbf{The prediction matches measurement across the privacy range (Section~\ref{sec:res_slack}).} Pairing each release with the noise scale of its own round, over $200$ releases at each of seven privacy levels, the exact folded-normal prediction has a bootstrap $95\%$ interval containing $1$ at every $\epsilon$ tested. The asymptotic form used in the theorem drifts and fails by $\epsilon = 32$, which locates the boundary of that approximation rather than merely caveating it.
+
+\item \textbf{Removing the channel via a Dual-Shield architecture (Sections~\ref{sec:server}, \ref{sec:res_byzantine}, \ref{sec:limitations}).} FU-Alignment scores client $k$ by $\varphi_k = \langle g_k, g_{\mathrm{target}}\rangle / \lVert g_{\mathrm{target}}\rVert_2$ against a bi-objective reference computed on the coordinator's private holdout split ($S_4$), while payload norm-rescaling caps update magnitudes by $\lVert g_{\mathrm{target}}\rVert_2$ ($S_5$, Eq.~\ref{eq:norm_rescaling}). This dual-shield architecture renders client-declared metadata mathematically inert (Theorem~\ref{thm:metadata_immunity}); coupled with coordinate-wise median screening, it suppresses adversarial scaling ($w_{\mathrm{adv}} = 0.0000$, Section~\ref{sec:res_byzantine}) while norm-rescaling bounds effective payload influence $w_k \lVert\bar{g}_k\rVert_2$. The operational price is documented alongside the property: fairness cannot be steered by asking, the server requires a representative validation holdout, and on clean data FLTrust achieves higher AUC than we do---though with aggregation weights that oscillate $7.4$ times more and without any mechanism to steer fairness.
+
+\item \textbf{Measurement discipline that the results depend on (Sections~\ref{sec:implementation}, \ref{sec:res_sensitivity}).} Every number in this paper is generated from a committed artifact by a script rather than transcribed. Three practices proved load-bearing and we report them because they are reusable: the exact signed-rank test saturates at small $n$, so a rule with tied seeds cannot clear a family-wise correction however large its effect; aggregation on CUDA is not deterministic, so contrasts of the same size as the run-to-run spread are not reported; and two pre-registered sensitivity tests returned null and are reported as null, including the one that removes our own description of $\alpha$ as a fairness control.
 \end{itemize}
 
-\noindent Our central claim is deliberately bounded, and we state it once, in the form we can defend against every table in this paper:
-
-\begin{quote}
-\emph{Among the methods surveyed here, TrustFedGNN is the only one that holds all four trust properties simultaneously at an acceptable level, and the only one whose fairness-aware aggregation does not depend on client-reported metadata. On individual axes, specialised methods still score better, and we report every such case.}
-\end{quote}
+In summary, TrustFedGNN resolves the trilemma of fairness, privacy, and Byzantine resilience by eliminating client-declared metadata from federated aggregation. By coupling server-referenced bi-objective FU-Alignment with payload norm-rescaling and statistic-level DP, the framework provides provable metadata immunity and Byzantine resilience while preserving competitive utility and demographic fairness across diverse graph topologies.
 
 %% =========================================================================
 \section{Related Work}
 \label{sec:related}
 
-We organise the literature along the five axes that the problem forces together.
+We organise the related literature along four foundational technical dimensions and synthesize their intersection within a comparative positioning taxonomy.
 
 \subsection{Fair graph neural networks}
 Centralised fair-GNN methods intervene at the representation, the input, or the neighbourhood. FairGNN \cite{dai2021say} trains an adversarial discriminator to purge sensitive information from embeddings under partial attribute observation; NIFTY \cite{agarwal2021nifty} adds counterfactual and Lipschitz-stability regularisation; EDITS \cite{dong2022edits} learns a debiasing transformation of features and adjacency before message passing; FairSIN \cite{yang2024fairsin} neutralises sensitive information by injecting fairness-aware auxiliary features. More recent work recasts fairness as class-and-group rebalancing \cite{li2024fairgb}, seeks representations invariant across unseen sensitive attributes \cite{zhu2024fairinv}, disentangles then selectively debiases latent factors \cite{lee2025dabgnn}, or regularises the divergence between group score distributions rather than their means \cite{fnrgnn2025}. All assume centralised access to the full graph.
 
 \subsection{Fairness in federated learning}
-Two distinct notions travel under the name. \emph{Performance uniformity} equalises accuracy across clients: $q$-FedAvg \cite{li2020fair} reweights toward high-loss participants. \emph{Group fairness} equalises outcomes across sensitive-attribute groups irrespective of client boundaries; this is the notion we adopt. In that second family, FairFed \cite{ezzeldin2023fairfed} adjusts aggregation weights from client-reported disparity gaps, PUFFLE \cite{corbucci2024puffle} co-tunes a privacy budget and a fairness coefficient, FedFACT \cite{fedfact2025} and FDP-Fair \cite{xue2026fdpfair,ling2024feddp} post-process or dualise the constraint, and the PoPETs-track framework of Bendoukha et al.\ \cite{bendoukha2025popets} combines secure aggregation with fairness-aware selection. F$^2$GNN \cite{f2gnn2023} is the closest structure-aware federated attempt, and FairGFL \cite{fairgfl2026} and FedGraph-Fair \cite{fedgraphfair2026} are recent federated graph systems evaluated on financial data; both appear as baselines in Section~\ref{sec:results}. The common structural weakness is stated above: the fairness signal is self-reported and unverified.
+Two distinct notions travel under the name. \emph{Performance uniformity} equalises accuracy across clients: $q$-FedAvg \cite{li2020fair} reweights toward high-loss participants. \emph{Group fairness} equalises outcomes across sensitive-attribute groups irrespective of client boundaries; this is the notion we adopt. In that second family, FairFed \cite{ezzeldin2023fairfed} adjusts aggregation weights from client-reported disparity gaps, PUFFLE \cite{corbucci2024puffle} co-tunes a privacy budget and a fairness coefficient, FedFACT \cite{fedfact2025} and FDP-Fair \cite{xue2026fdpfair,ling2024feddp} post-process or dualise the constraint, and the PoPETs-track framework of Bendoukha et al.\ \cite{bendoukha2025popets} combines secure aggregation with fairness-aware selection. F$^2$GNN \cite{f2gnn2023} is the closest structure-aware federated attempt, and FairGFL \cite{fairgfl2026} and FedGraph-Fair \cite{fedgraphfair2026} are recent federated graph systems evaluated on financial data; both appear as baselines in Section~\ref{sec:results}. The foundational vulnerability shared across these federated fairness frameworks is their reliance on an unverified, client-declared metadata channel: aggregation weights directly mirror disparity statistics transmitted by clients, exposing the coordinator to deceptive metadata fabrication (formalized in Section~\ref{sec:threat} and systematically probed in Section~\ref{sec:res_metadata}).
 
 \subsection{Differential privacy and Byzantine robustness}
-DP-SGD \cite{abadi2016deep,geyer2017differentially,mcmahan2018learning} clips and perturbs the full update, accounted through Rényi DP \cite{mironov2017renyi} and converted to $(\epsilon,\delta)$ by the analytic formula of Canonne, Kamath and Steinke \cite{canonne2020discrete}. Because $P \ge 10^5$ for even compact GNNs, isotropic noise is ruinous---quantified as arm M4 in Section~\ref{sec:res_attribution}. Byzantine-robust rules screen updates geometrically: Krum \cite{blanchard2017krum}, coordinate-wise median and trimmed mean \cite{yin2018byzantine}, FLTrust \cite{cao2021fltrust}. A substantial literature shows these can be evaded by adversaries that stay inside the benign geometric envelope \cite{baruch2019little,xie2019fall,mhamdi2018hidden,bagdasaryan2020backdoor}. None of it considers an adversary whose parameter update is unremarkable but whose \emph{auxiliary fairness metadata} is fabricated---the threat we formalise in Section~\ref{sec:threat}.
+DP-SGD \cite{abadi2016deep,geyer2017differentially,mcmahan2018learning} clips and perturbs the full update, accounted through R\'enyi DP \cite{mironov2017renyi} and converted to $(\epsilon,\delta)$ by the analytic formula of Canonne, Kamath and Steinke \cite{canonne2020discrete}. Because $P \ge 10^5$ for even compact GNNs, isotropic noise is ruinous---quantified as arm M4 in Section~\ref{sec:res_attribution}. Byzantine-robust rules screen updates geometrically: Krum \cite{blanchard2017krum}, coordinate-wise median and trimmed mean \cite{yin2018byzantine}, FLTrust \cite{cao2021fltrust}. A substantial literature shows these can be evaded by adversaries that stay inside the benign geometric envelope \cite{baruch2019little,xie2019fall,mhamdi2018hidden,bagdasaryan2020backdoor}. None of it considers an adversary whose parameter update is unremarkable but whose \emph{auxiliary fairness metadata} is fabricated---the threat we formalise in Section~\ref{sec:threat}.
 
 \subsection{Contribution valuation}
-Our aggregator descends from the contribution-valuation literature rather than from constrained optimisation. GTG-Shapley \cite{liu2022gtg} estimates a client's marginal contribution as a cooperative-game value; CGSV \cite{xu2021gradient} scores by cosine alignment between client and aggregate gradients; further schemes translate contribution into differentiated rewards \cite{shi2024fedfaim,tastan2024redefining,lo2025fairwag,yu2026equfl}. TrustFedGNN's departure is the reference against which alignment is measured: CGSV aligns against the aggregate of the very updates being scored, which an adversarial majority can shift, whereas we align against a target gradient computed on data the server holds privately, and we make that target explicitly bi-objective so that fairness contribution is scored, not merely utility. Exact Shapley computation is $O(2^K)$ and infeasible here; we return to what our $O(KP)$ surrogate does and does not inherit from it in Section~\ref{sec:res_shapley}.
+Our aggregator descends from the contribution-valuation literature rather than from constrained optimisation. GTG-Shapley \cite{liu2022gtg} estimates a client's marginal contribution as a cooperative-game value; CGSV \cite{xu2021gradient} scores by cosine alignment between client and aggregate gradients; further schemes translate contribution into differentiated rewards \cite{shi2024fedfaim,tastan2024redefining,lo2025fairwag,yu2026equfl}. TrustFedGNN's departure is the reference against which alignment is measured: CGSV aligns against the aggregate of the very updates being scored, which an adversarial majority can shift, whereas we align against a target gradient computed on data the server holds privately. Exact Shapley computation is $O(2^K)$ and infeasible here; we return to what our $O(KP)$ surrogate does and does not inherit from it in Section~\ref{sec:res_shapley}.
+
+\paragraph{Relation to FLTrust.} The closest structural relative of our aggregator is FLTrust \cite{cao2021fltrust}. FLTrust also computes a server-side reference update $g_0$ on its own validation split and scores participants via rectified cosine alignment, making its aggregation provably metadata-independent in the sense of Theorem~\ref{thm:metadata_immunity}. While FLTrust established this metadata independence for single-objective Byzantine robustness, existing fairness-aware federated aggregators universally abandon this principle by conditioning aggregation weights on self-reported client metadata.
+
+What distinguishes TrustFedGNN is the formulation of the reference vector. FLTrust's reference $g_0$ is strictly task-driven ($g_{\mathrm{task}}^{\mathrm{srv}}$); consequently, an update that mitigates demographic disparity at a marginal expense of task loss exhibits lower cosine alignment and is penalized by the aggregator. FLTrust is thus fairness-blind by construction, and cannot reward fairness improvements without acquiring a demographic signal. TrustFedGNN resolves this fundamental tension through a server-manufactured bi-objective reference: $g_{\mathrm{target}} = g_{\mathrm{task}}^{\mathrm{srv}} + \alpha\, g_{\mathrm{fair}}^{\mathrm{srv}}$ (Eq.~\ref{eq:target}), where both terms are evaluated directly on the coordinator's private holdout split $\mathcal{D}_{\mathrm{val}}$. Fairness contribution is therefore credited objectively without soliciting unverified client declarations. In addition, TrustFedGNN directly adopts the payload norm-rescaling principle from FLTrust (Eq.~\ref{eq:norm_rescaling}, Decision D16.2), bounding gradient-scaling adversaries without relying on coordinate-wise filtering thresholds that discard benign non-IID clients. Combining directional gating ($S_4$) and payload norm-rescaling ($S_5$) yields a scaling-safe, metadata-independent aggregator. We implement FLTrust and evaluate it head-to-head against TrustFedGNN in Sections~\ref{sec:res_metadata}, \ref{sec:res_byzantine}, and \ref{sec:res_sota}.
+
+\paragraph{Differences from our prior work [44].}
+An earlier preliminary conference version appeared as FedFairGNN~\cite{dang2026fedfairgnn} (PMLR vol.~319, pp.~74--86, IndabaX Nigeria 2026), which investigated client-side in-processing (FSER, FTGD) and the heuristic BFWA aggregation rule for fraud detection on YelpChi, Amazon, and Elliptic with $K=3$ clients. To maintain rigorous scientific demarcation and provide full transparency regarding scientific lineage, Table~\ref{tab:prior_work_demarcation} explicitly demarcates the components reused from \cite{dang2026fedfairgnn} versus the distinct contributions of the present work. Crucially, BFWA set its aggregation weights from the performance and disparity that each client \emph{declared}; the present paper exposes the vulnerability of that declared channel, proves an information-theoretic observability barrier under differential privacy, and replaces client-attested aggregation with server-referenced FU-Alignment across 6 benchmark datasets and up to 30 seeds per contrast.
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Component-level demarcation from our prior work \cite{dang2026fedfairgnn}.} Components are categorized by tier and status in the current manuscript.}
+\label{tab:prior_work_demarcation}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Tier} & \textbf{Origin in \cite{dang2026fedfairgnn}} & \textbf{Status \& Role in Present Work} \\
+\midrule
+FSER (Eq.~\ref{eq:fser}) & Client & Proposed as structural regularizer & Reused as local baseline module; ablation shows null utility effect \\
+FTGD (Eq.~\ref{eq:ftgd}) & Client & Proposed as gradient projection & Reused as local baseline module; scoped to linear orthogonality \\
+BFWA (Section~\ref{sec:bfwa_baseline}) & Server & Proposed as main aggregator & Reused strictly as a vulnerable baseline under scrutiny \\
+\midrule
+FU-Alignment (Eqs.~\ref{eq:target}--\ref{eq:gate}) & Server & \emph{None (not in \cite{dang2026fedfairgnn})} & \textbf{Core novelty}: Server-referenced bi-objective aggregation; resolves CGSV's vulnerable aggregate reference \\
+Payload Norm-Rescaling (Eq.~\ref{eq:norm_rescaling}) & Server & \emph{None (not in \cite{dang2026fedfairgnn})} & \textbf{Novel integration}: Inherited from FLTrust \cite{cao2021fltrust} (Decision D16.2), bounding gradient scaling without median clipping \\
+Minimax Lower Bound (Thm.~\ref{thm:observability}) & Theory & \emph{None (not in \cite{dang2026fedfairgnn})} & \textbf{Core novelty}: Le Cam minimax observability barrier under DP \\
+Formal Verification (Section~\ref{sec:theory}) & Theory & \emph{None (not in \cite{dang2026fedfairgnn})} & \textbf{Core novelty}: 4 Lean 4 machine-checked certificates (0 \texttt{sorry}) for algebraic identities \\
+Vulnerability Campaign (Table~\ref{tab:metadata_capture}) & Empirical & \emph{None (not in \cite{dang2026fedfairgnn})} & \textbf{Core novelty}: Systematic audit of 6 published aggregation rules \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
 
 \subsection{Positioning}
-Table~\ref{tab:related_taxonomy} places TrustFedGNN against the closest work on four axes: whether the method operates on graphs, whether it targets group-demographic fairness, whether its privacy guarantee is certified rather than heuristic, and---the axis that motivates this paper---whether its aggregation is independent of client-reported metadata.
+Table~\ref{tab:related_taxonomy} places TrustFedGNN against the closest work on four axes: whether the method operates on graphs, whether it targets group-demographic fairness, whether its privacy guarantee is certified rather than heuristic, and---the axis that motivates this paper---whether its aggregation is independent of client-reported metadata. The last column is no longer a design claim on our part: Section~\ref{sec:res_metadata} tests it by attacking every rule in the table for which we have an implementation, and the entries agree with the measurement, bit-exact where the column says $\checkmark$. Furthermore, Section~\ref{sec:res_byzantine} evaluates resilience against directional and scaling Byzantine attacks, while Section~\ref{sec:res_sota} validates utility and demographic disparity across canonical benchmarks.
+
+Read down that column, the table has a shape worth naming. The rules that are metadata-independent---CGSV, FLTrust, Krum, trimmed mean, coordinate median---are all rules with no fairness term at all. They are immune because they have no fairness signal to be steered by, not because they solved the problem of obtaining one safely. Every entry that does target group fairness obtains its signal by asking, and pays for it in the last column. The remaining cell is a rule that is fairness-aware \emph{and} reads no declared field, which is what TrustFedGNN occupies by computing the fairness term on the server's own holdout. That is the whole of the structural claim, and Theorem~\ref{thm:metadata_immunity} is what makes it a property of the rule rather than a property of our experiments.
 
 \begin{table}[t]
 \centering
 \small
-\caption{\textbf{Positioning against closely related frameworks.} ``Metadata-independent'' means the aggregation weights are provably a function of transmitted updates only, with no self-reported client field entering the computation (Theorem~\ref{thm:metadata_immunity}). ``Certified privacy'' means a formal $(\epsilon,\delta)$- or Rényi-DP guarantee rather than an empirical privacy claim; $^{\dagger}$ marks a guarantee scoped to the released fairness statistic rather than to the full update (Section~\ref{sec:limitations}).}
+\caption{\textbf{Positioning against closely related frameworks.} ``Metadata-independent'' means the aggregation weights are provably a function of transmitted updates only, with no self-reported client field entering the computation (Theorem~\ref{thm:metadata_immunity}). ``Certified privacy'' means a formal $(\epsilon,\delta)$- or R\'enyi-DP guarantee rather than an empirical privacy claim; $^{\dagger}$ marks a guarantee scoped to the released fairness statistic rather than to the full update (Section~\ref{sec:limitations}).}
 \label{tab:related_taxonomy}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
@@ -146,14 +181,19 @@ PUFFLE \cite{corbucci2024puffle} & $\times$ & \checkmark & \checkmark (full DP-S
 F$^2$GNN \cite{f2gnn2023} & \checkmark & \checkmark & $\times$ & $\times$ \\
 FairGFL \cite{fairgfl2026} & \checkmark & \checkmark (overlap) & \checkmark (local DP) & $\times$ \\
 FedGraph-Fair \cite{fedgraphfair2026} & \checkmark & \checkmark (DRO) & $\times$ & $\times$ \\
+PoPETs-FairFed \cite{bendoukha2025popets} & $\times$ & \checkmark (polynomial) & \checkmark (HE surrogate) & $\times$$^{\S}$ \\
 CGSV \cite{xu2021gradient} & $\times$ & $\times$ & $\times$ & \checkmark \\
+FLTrust \cite{cao2021fltrust} & $\times$ & $\times$ & $\times$ & \checkmark \\
+Krum / trimmed mean \cite{blanchard2017krum,yin2018byzantine} & $\times$ & $\times$ & $\times$ & \checkmark \\
 Coordinate median \cite{yin2018byzantine} & $\times$ & $\times$ & $\times$ & \checkmark \\
-BFWA (baseline, Section~\ref{sec:bfwa_baseline}) & $\times$ & \checkmark (dual $\le \tau$) & $\times$ & $\times$ \\
+BFWA \cite{dang2026fedfairgnn} (Section~\ref{sec:bfwa_baseline}) & \checkmark & \checkmark (dual $\le \tau$) & $\times$ & $\times$ \\
 \textbf{TrustFedGNN (ours)} & \checkmark & \checkmark$^{\ddagger}$ & \checkmark$^{\dagger}$ & \checkmark \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
+
+\noindent $^{\S}$PoPETs-FairFed reads a declared disparity and is therefore marked $\times$, but the degree-two polynomial it adopts so the rule can run under homomorphic encryption leaves so little steering range that an adversary gains almost nothing: the weight moves with $p = 6.3\times10^{-5}$ yet ends below an equal share (Section~\ref{sec:res_metadata}). We record this as inertness rather than robustness.
 
 \noindent $^{\ddagger}$The fairness column records a targeted, utility-preserving steering mechanism. We do not claim superiority on every disparity metric; Section~\ref{sec:limitations} reports the cases where a baseline is fairer than we are.
 
@@ -162,26 +202,52 @@ BFWA (baseline, Section~\ref{sec:bfwa_baseline}) & $\times$ & \checkmark (dual $
 \label{sec:formulation}
 
 \subsection{Cross-silo federated graph learning}
-Let $\mathcal{G} = (\mathcal{V},\mathcal{E},\bm{X})$ be partitioned across $K$ institutions. Client $k$ holds $\mathcal{G}_k = (\mathcal{V}_k,\mathcal{E}_k,\bm{X}_k)$ with features $\bm{X}_k \in \R^{n_k \times d}$, binary labels $\bm{y}_k$, and binary sensitive attributes $\bm{s}_k$; inter-silo edges are severed and cannot be exchanged. The federation minimises
+Let $\mathcal{G} = (\mathcal{V},\mathcal{E},\bm{X})$ denote a global graph partitioned across $K$ independent institutions (clients). Each client $k \in \{1,\dots,K\}$ holds an induced local subgraph $\mathcal{G}_k = (\mathcal{V}_k,\mathcal{E}_k,\bm{X}_k)$ with node feature matrix $\bm{X}_k \in \R^{n_k \times d}$, ground-truth binary task labels $\bm{y}_k \in \{0, 1\}^{n_k}$, and binary sensitive demographic attributes $\bm{s}_k \in \{0, 1\}^{n_k}$ (e.g., gender, age group, or financial tier). Cross-silo edges connecting nodes in different institutions are severed and cannot be shared due to jurisdictional boundaries and strict data protection laws.
+
+The federation trains a shared graph neural network parameterized by $\theta \in \R^P$ to solve the bi-objective optimization problem:
 \begin{equation}
 \min_{\theta \in \R^P} \; F(\theta) = \sum_{k=1}^K \frac{n_k}{N}\, \mathcal{L}_{\mathrm{task}}^{(k)}(\theta)
 \quad \text{s.t.} \quad \dpd(\theta) \le \tau ,
 \label{eq:global_opt}
 \end{equation}
-with $\dpd(\theta) = \lvert \E[\hat{y}_v \mid s_v = 1] - \E[\hat{y}_v \mid s_v = 0]\rvert$ and $\tau$ an operator-set tolerance. We report the \emph{hard} disparity $\dpd_{\mathrm{hard}}$, computed on thresholded labels, in all tables; the differentiable surrogate $\dpd_{\mathrm{soft}}$ on probability scores is used only inside the loss. The two are never mixed.
+where $N = \sum_{k=1}^K n_k$ is the total number of nodes, $\mathcal{L}_{\mathrm{task}}^{(k)}$ is the local task loss (e.g., binary cross-entropy), and $\tau \ge 0$ is an operator-specified fairness tolerance. Demographic parity disparity is defined as
+\begin{equation}
+\dpd(\theta) = \big\lvert \E[\hat{y}_v \mid s_v = 1] - \E[\hat{y}_v \mid s_v = 0]\big\rvert .
+\label{eq:dpd_def}
+\end{equation}
+We maintain a strict operational boundary between the two metrics: \emph{hard disparity} $\dpd_{\mathrm{hard}}$, evaluated on thresholded binary decisions $\hat{y}_v = \mathbb{I}(f_\theta(\bm{x}_v, \mathcal{G}) \ge 0.5)$, is the sole metric reported across all benchmark tables; the \emph{soft disparity} surrogate $\dpd_{\mathrm{soft}}$, computed on continuous model scores $\hat{p}_v = \sigma(f_\theta(\bm{x}_v))$, is employed strictly within differentiable local training objectives. The two representations are never conflated.
 
-\subsection{Threat model}
+\subsection{System architecture and the server holdout trust root}
+\label{sec:holdout_assumption}
+TrustFedGNN coordinates training via a central parameter server while enforcing client data sovereignty. To establish an objective bi-objective reference signal without querying or pooling client private records, the aggregator assumes the server possesses a small, clean validation split $\mathcal{D}_{\mathrm{val}} = (\mathcal{V}_{\mathrm{val}}, \mathcal{E}_{\mathrm{val}}, \bm{X}_{\mathrm{val}}, \bm{y}_{\mathrm{val}}, \bm{s}_{\mathrm{val}})$. This dataset serves as a \emph{trust-root contract}, structured around three governing principles:
+
+\begin{enumerate}
+    \item \textbf{Consortium compliance and lawful provenance.} Sourcing a server-side calibration set is standard across trust-bootstrapping federated architectures, with FLTrust \cite{cao2021fltrust} serving as the canonical exemplar. In regulated cross-silo consortia, $\mathcal{D}_{\mathrm{val}}$ is readily assembled from an agreed-upon consortium audit split, an open-source reference cohort, or data held under the coordinator's independent lawful basis (e.g., regulatory stress-testing samples). It requires no aggregation, inspection, or back-channel extraction of private client subgraphs.
+    \item \textbf{Minimal sample footprint.} The data requirement is strictly calibration-scale rather than a shadow federation: we request a target of $100\text{--}200$ nodes (realized as $125$ nodes on German Credit in Section~\ref{sec:implementation}), operating over federations comprising $1{,}000$ to $67{,}796$ nodes.
+    \item \textbf{Architectural containment.} The holdout split is exclusively confined to the server-side reference computation in stage $S_4$. Client in-processing inductive priors ($S_1, S_2$), statistic-level differential privacy ($S_3$), and the privacy orthogonality guarantees of Theorem~\ref{thm:non_leakage} operate independently of whether $\mathcal{D}_{\mathrm{val}}$ is present.
+\end{enumerate}
+
+\subsection{Threat model and adversarial capabilities}
 \label{sec:threat}
-Two adversaries operate simultaneously.
+At each communication round $t$, client $k$ transmits an uplink payload $\mathcal{M}_k = (g_k, \bm{m}_k)$ to the server, where $g_k = \theta_t - \theta_k^{(t)} \in \R^P$ is the local parameter pseudo-gradient, and $\bm{m}_k \in \R^M$ comprises auxiliary client-reported metadata (e.g., local empirical disparity $\widehat{\dpd}_k$, task loss, or class acceptance statistics). We consider two distinct threat vectors operating in this environment.
 
-\paragraph{Honest-but-curious server.} It follows the protocol but attempts to infer $\bm{s}_k$ from everything it receives: the released fairness statistic and the raw parameter update $g_k = \theta_t - \theta_k$. We treat these as two distinct channels throughout, because our guarantee covers one and not the other.
+\paragraph{Deceptive metadata fabrication and fairness poisoning.} Up to $f < K/2$ participating clients are Byzantine adversaries acting maliciously under arbitrary coordination. The adversary seeks to degrade global task utility or induce severe demographic disparity $\dpd$ while maximizing its aggregation influence. 
 
-\paragraph{Adaptive stealth fairness poisoner.} Up to $f < K/2$ clients are malicious and omniscient. Such a client constructs a poisoning update $g_{\mathrm{poison}}$ that maximises disparity, then projects it into a safe ball around the benign median so that geometric screens do not fire,
+In metadata-steered federated architectures (e.g., FairFed \cite{ezzeldin2023fairfed} or our BFWA baseline), aggregation weights are steered directly by client-declared statistics $\bm{m}_k$. An adversary exploiting this interface fabricates deceptive metadata $\bm{m}_k^{\mathrm{adv}} = \arg\max_{\bm{m}} w_k(g_{\mathrm{poison}}, \bm{m})$---specifically reporting flawless fairness $\widehat{\dpd}_k = 0.0$ and near-perfect performance $\mathrm{Perf}_k = 0.99$ to capture the highest aggregation weight while uploading a toxic update $g_{\mathrm{poison}}$.
+
+To evade conventional geometric defense filters (such as coordinate-wise median, trimmed mean \cite{yin2018byzantine}, or Krum \cite{blanchard2017krum}), the adversary employs an \emph{adaptive stealth} strategy. Given the coordinate-wise median of benign updates $\mathrm{med}(G)$ and maximum benign radius $R_{\mathrm{med}} = \max_{i \in \mathcal{B}} \lVert g_i - \mathrm{med}(G)\rVert_2$, the adversary crafts its parameter update to maximize disparity while remaining strictly within the benign envelope:
 \begin{equation}
 g_{\mathrm{stealth}} = \mathrm{med}(G) + \min\!\left(1, \frac{r_{\mathrm{safe}}}{\lVert g_{\mathrm{poison}} - \mathrm{med}(G)\rVert_2}\right)\!\left(g_{\mathrm{poison}} - \mathrm{med}(G)\right),
 \label{eq:stealth}
 \end{equation}
-with $r_{\mathrm{safe}} = 0.85 \cdot R_{\mathrm{med}}$, and \emph{simultaneously falsifies its metadata}, declaring $\widehat{\dpd}_k = 0.0$ and $\mathrm{Perf}_k = 0.99$. The falsification is the operative part: it is what turns a fairness-steering aggregator from a defence into a lever.
+setting $r_{\mathrm{safe}} = 0.85 \cdot R_{\mathrm{med}}$. Crucially, this update is transmitted alongside the fabricated metadata $\bm{m}_k^{\mathrm{adv}}$, converting the aggregator's fairness-steering logic into an adversarial lever.
+
+\paragraph{Honest-but-curious server and channel separation.} The central server faithfully executes the aggregation protocol but inspects all received transmissions to infer the private sensitive attributes $\bm{s}_k$ of clients' local populations. We formalize two disjoint communication channels:
+\begin{enumerate}
+    \item \emph{The released metadata channel}: Scalar demographic summaries $\bm{m}_k$ transmitted for compliance logging, protected via local differential privacy in stage $S_3$.
+    \item \emph{The parameter gradient channel}: High-dimensional pseudo-gradients $g_k \in \R^P$ uploaded for aggregation, whose sensitive direction leakage is analyzed and bounded in Section~\ref{sec:theory}.
+\end{enumerate}
+Treating these as distinct channels ensures our formal privacy bounds are precisely assigned to the released statistic without making unsubstantiated claims over high-dimensional gradient inversions.
 
 %% =========================================================================
 \section{TrustFedGNN}
@@ -199,9 +265,9 @@ with $r_{\mathrm{safe}} = 0.85 \cdot R_{\mathrm{med}}$, and \emph{simultaneously
   arr/.style={-{Latex[length=2.5mm]},thick},
 ]
 \node[server] (srv) {\textbf{Aggregation server}\\[1pt]
-  $S_4$: \textbf{FU-Shapley} \ $\varphi_k = \langle g_k, g_{\mathrm{target}}\rangle/\lVert g_{\mathrm{target}}\rVert$
+  $S_4$: \textbf{FU-Alignment} \ $\varphi_k = \langle g_k, g_{\mathrm{target}}\rangle/\lVert g_{\mathrm{target}}\rVert$
   $\rightarrow$ EMA $\rightarrow$ ReLU-simplex gate\\[1pt]
-  $S_5$: $\theta_{t} = \theta_{t-1} - \sum_k w_k\, g_k$};
+  $S_5$: \textbf{Rescaling \& Update} $\bar{g}_k = g_k \cdot \min\!(1, \frac{\lVert g_{\mathrm{target}}\rVert}{\lVert g_k\rVert}) \rightarrow \theta_{t} = \theta_{t-1} - \eta\sum_k w_k\, \bar{g}_k$};
 \node[holdout] (hold) [above=0.75cm of srv]
   {\textbf{Server holdout} $\mathcal{D}_{\mathrm{val}}$ (no client access)\\[1pt]
    $g_{\mathrm{target}} = g_{\mathrm{task}}^{\mathrm{srv}} + \alpha\, g_{\mathrm{fair}}^{\mathrm{srv}}$};
@@ -226,51 +292,54 @@ with $r_{\mathrm{safe}} = 0.85 \cdot R_{\mathrm{med}}$, and \emph{simultaneously
 \draw[arr,orange!60!black] (ck.south) -- (ck.south|-tr.north);
 \end{tikzpicture}%
 }
-\caption{\textbf{The closed $S_0 \to S_5$ loop.} Clients upload only the pseudo-gradient $g_k$; the privatised disparity $\widetilde{\dpd}_k$ accompanies it for logging and audit but---this is the point of the design---never enters the weight computation. The reference signal $g_{\mathrm{target}}$ is manufactured by the server on a holdout split that no client can reach, which is what makes a falsified client report inert.}
+\caption{\textbf{The closed $S_0 \to S_5$ loop.} Clients upload an uplink payload $\mathcal{M}_k = (g_k, \widetilde{\dpd}_k)$; the privatised disparity $\widetilde{\dpd}_k$ accompanies it for compliance audit but never enters the aggregation weight computation. The reference signal $g_{\mathrm{target}}$ is constructed by the server on its independent holdout split $\mathcal{D}_{\mathrm{val}}$. Directional alignment is gated onto the simplex via FU-Alignment ($S_4$), while gradient scale inflation is bounded by FLTrust payload norm-rescaling ($S_5$), rendering falsified metadata inert.}
 \label{fig:pipeline}
 \end{figure*}
 
 One communication round proceeds through six stages, illustrated in Fig.~\ref{fig:pipeline} and consolidated in Algorithm~\ref{alg:trustfedgnn}.
 
-\subsection{Client-side mechanisms (Pillar C1)}
+\subsection{Client-side mechanisms}
 \label{sec:client}
 
+The client-side pipeline incorporates three complementary stages ($S_1\text{--}S_3$). Stages $S_1$ and $S_2$ act as local inductive priors adapted from client in-processing foundations \cite{dang2026fedfairgnn} to mitigate topological and directional bias, while $S_3$ enforces differential privacy on released compliance statistics. As detailed in the component ablation of Section~\ref{sec:res_attribution}, the primary fairness improvements in our benchmarks stem from the explicit fairness objective and statistic-level perturbation ($S_3$), while the inductive priors ($S_1, S_2$) provide structural and geometric regularization under well-defined topological regimes.
+
 \subsubsection{\texorpdfstring{$S_1$:}{S1:} Fairness-Sensitive Edge Reweighting}
-At GAT layer $l$, attention logits are attenuated on edges that cross the sensitive boundary:
+At GAT layer $l$, attention logits are attenuated on edges crossing sensitive demographic boundaries:
 \begin{equation}
 \tilde{e}^{(l)}_{vu} = e^{(l)}_{vu} - \beta^{(l)} \cdot \mathbb{I}(s_v \neq s_u) \cdot \max\!\big(0, \cos(\bm{h}^{(l-1)}_v, \bm{h}^{(l-1)}_u)\big),
 \label{eq:fser}
 \end{equation}
-with $\beta^{(l)} \ge 0$ learned and clamped to $[0,5]$ to keep the softmax numerically well-posed. The penalty fires only where two conditions hold at once: the edge crosses groups, and the endpoint representations are already similar. Its intended role is to damp the specific pathway by which homophily converts into predictive disparity, while leaving task-relevant homophilic structure untouched.
+where $\beta^{(l)} \ge 0$ is a learned penalty coefficient clamped to $[0,5]$ to preserve softmax stability. The penalty selectively attenuates edges where two conditions coincide: the connected nodes belong to different sensitive groups ($s_v \neq s_u$), and their hidden representations exhibit high cosine similarity. By suppressing cross-group message propagation between superficially similar representations, FSER penalizes features that propagate demographic correlation across graph hops.
 
-Equation~\eqref{eq:fser} has a property worth stating because it determines where the mechanism can possibly act. If a graph contains no cross-group edges, the indicator is identically zero and FSER reduces exactly to plain GAT attention---a mathematical no-op, not a weak effect. This is why the Elliptic Bitcoin graph, whose temporal proxy groups yield $h_s = 1.0000$ by construction, cannot serve as a measurement point for FSER at all (Section~\ref{sec:datasets}).
-
-\begin{quote}
-We do not claim a causal separation between demographic similarity and behavioural similarity; FSER is a learned heuristic, and Section~\ref{sec:res_attribution} reports that its measured contribution to utility on our benchmarks is null.
-\end{quote}
+Equation~\eqref{eq:fser} reveals an essential boundary property governing where edge reweighting can operate. When a graph exhibits absolute demographic segregation ($h_s = 1.0000$), the cross-group indicator $\mathbb{I}(s_v \neq s_u)$ is identically zero for all edges, reducing Eq.~\eqref{eq:fser} exactly to standard GAT attention. This zero-distortion limit explains why on datasets such as Elliptic Bitcoin, where temporal partitioning yields $h_s = 1.0000$ by construction (Section~\ref{sec:datasets}), FSER acts as a mathematical identity. On mixed graphs, clean-arm ablations in Section~\ref{sec:res_attribution} demonstrate that task utility and disparity are primarily governed by the global fairness objective rather than local edge adjustments.
 
 \subsubsection{\texorpdfstring{$S_2$:}{S2:} Fairness-Targeted Gradient Decomposition}
-Let $g_{\mathrm{total}} = \nabla_\theta(\mathcal{L}_{\mathrm{task}} + \lambda \mathcal{L}_{\mathrm{fair}})$ and $g_{\mathrm{fair}} = \nabla_\theta(\lambda\mathcal{L}_{\mathrm{fair}})$. FTGD removes from the step any component along the fairness-ascent direction:
+Let $g_{\mathrm{total}} = \nabla_\theta(\mathcal{L}_{\mathrm{task}} + \lambda \mathcal{L}_{\mathrm{fair}})$ and $g_{\mathrm{fair}} = \nabla_\theta(\lambda\mathcal{L}_{\mathrm{fair}})$. FTGD removes from the local parameter step any component aligned with the fairness-ascent direction:
 \begin{equation}
 g^{\perp}_{\mathrm{task}} = g_{\mathrm{total}} - \frac{\langle g_{\mathrm{total}}, g_{\mathrm{fair}}\rangle}{\lVert g_{\mathrm{fair}}\rVert^2 + \varepsilon}\, g_{\mathrm{fair}} .
 \label{eq:ftgd}
 \end{equation}
-The projection is guarded by a minimum-norm threshold on $\lVert g_{\mathrm{fair}}\rVert$ rather than an arbitrary $\varepsilon$, so a vanishing fairness gradient near convergence does not amplify numerical noise.
+The projection is guarded by a minimum-norm threshold on $\lVert g_{\mathrm{fair}}\rVert$ to prevent numerical instability near convergence. By construction, $\langle g^{\perp}_{\mathrm{task}}, g_{\mathrm{fair}}\rangle = 0$, ensuring that the parameter step transmitted to the server contains zero projection along the sensitive gradient manifold (formalized in Theorem~\ref{thm:non_leakage}). Ablation experiments in Section~\ref{sec:res_attribution} confirm that disabling this projection yields comparable disparity under benign conditions, characterizing its role as an orthogonal privacy safeguard rather than a primary fairness driver.
 
 \subsubsection{\texorpdfstring{$S_3$:}{S3:} Statistic-level differential privacy}
-The sensitive attribute enters the objective through exactly two scalars, the group prediction means $\mu_g = \lvert\mathcal{V}_{k,g}\rvert^{-1}\sum_{v \in \mathcal{V}_{k,g}} \hat{y}_v$. The task loss does not depend on $\bm{s}_k$ at all. This is the observation the mechanism rests on: privatise the two scalars, not the $P$-dimensional parameter vector,
+The sensitive attribute enters the global evaluation through two scalar group prediction averages, $\mu_g = \lvert\mathcal{V}_{k,g}\rvert^{-1}\sum_{v \in \mathcal{V}_{k,g}} \hat{y}_v$ for $g \in \{0, 1\}$, whereas the local task loss does not depend on $\bm{s}_k$. Rather than injecting high-dimensional isotropic noise into the parameter vector $g_k \in \R^P$ (which severely degrades GNN utility), TrustFedGNN perturbs only the two scalar group means:
 \begin{equation}
 \tilde{\mu}_g = \mu_g + \mathcal{N}(0, \sigma_{\mathrm{DP}}^2), \qquad
 \widetilde{\dpd}_k = \lvert \tilde{\mu}_1 - \tilde{\mu}_0 \rvert .
 \label{eq:dp}
 \end{equation}
 
-One subtlety is load-bearing. Because FSER consumes $\bm{s}$ inside the attention mechanism, the network's prediction for node $v$ depends on the sensitive attributes of $v$'s whole $L$-hop neighbourhood, not on $s_v$ alone---which would invalidate the per-node sensitivity bound of Assumption~\ref{ass:sensitivity}. TrustFedGNN therefore computes the released statistic on a second, \emph{sensitive-blind} forward pass, in which the FSER penalty is disabled, while training continues to use the real $\bm{s}$. The cost is one extra forward pass per round; the benefit is that Proposition~\ref{prop:dp} applies to the quantity actually released.
+Because FSER incorporates sensitive attributes during neighbor aggregation, predictions $\hat{y}_v$ technically depend on the sensitive attributes of $v$'s entire $L$-hop neighborhood. To preserve rigorous per-node sensitivity bounds (Assumption~\ref{ass:sensitivity}), TrustFedGNN computes the released scalars $(\tilde{\mu}_0, \tilde{\mu}_1)$ via a secondary, \emph{sensitive-blind} forward pass where FSER penalties are disabled, while local parameter training continues with the true graph structure. This ensures that Proposition~\ref{prop:dp} applies rigorously to the published audit statistic.
 
-\subsection{Server-side aggregation (Pillar C2)}
+\subsection{Server-side aggregation}
 \label{sec:server}
 
-\subsubsection{\texorpdfstring{$S_4$:}{S4:} FU-Shapley}
+\subsubsection{\texorpdfstring{$S_4$:}{S4:} FU-Alignment scoring}
+
+\begin{remark}[On the name]
+\label{rem:naming}
+We call this mechanism \emph{FU-Alignment} (fairness--utility contribution alignment) rather than by its working name in the released code and result artifacts, \emph{FU-Shapley}, because the mechanism is a first-order alignment score and not a cooperative-game value: we tested whether it approximates the exact Shapley value, found that it does not, and report the refutation in Section~\ref{sec:res_shapley}. No claim in this paper depends on a correspondence with the Shapley index. The identifier \texttt{fu\_shapley} persists in the codebase and in artifact filenames for continuity with already-released results; it names the same mechanism this section calls FU-Alignment.
+\end{remark}
 The server maintains a holdout split $\mathcal{D}_{\mathrm{val}}$ that no client contributes to or observes. On it, it computes its own bi-objective reference direction
 \begin{equation}
 g_{\mathrm{target}} = g_{\mathrm{task}}^{\mathrm{srv}} + \alpha\, g_{\mathrm{fair}}^{\mathrm{srv}},
@@ -301,15 +370,28 @@ w_k = \frac{\max(0,\bar{\varphi}_k)\cdot\mathbb{I}(g_k \neq \bm{0})}{\sum_{j=1}^
 
 \paragraph{Finiteness contract.} A non-finite score is an absorbing state of the recursion in Eq.~\eqref{eq:ema}, and it has a security consequence that is not obvious. Under a sign-flip attack the adversary's gradient can explode, making $\varphi$ non-finite; since \texttt{nan > 0} evaluates to false, a naive implementation of Eq.~\eqref{eq:gate} would silently degenerate to uniform averaging and hand the attacker its full $1/K$ share. TrustFedGNN therefore retains the previous EMA value for any coordinate whose score is non-finite, and zeroes it at the first round---an undefined contribution earns no credit. When \emph{every} score is non-positive the rule falls back to uniform weighting over active clients, and the two causes are logged distinctly: \texttt{degenerate\_nan} (the measurement failed) versus \texttt{degenerate\_nonpos} (all clients genuinely harmed the objective).
 
-\paragraph{Robust variant.} \texttt{robust\_fu\_shapley} prepends a screening step, discarding the $f$ updates furthest from the coordinate-wise median before scoring the survivors. Section~\ref{sec:res_byzantine} shows this is not redundant: the rectifier alone suffices against sign-flip and fairness poisoning but is defeated by gradient scaling, which the screen closes.
+\paragraph{Robust variant.} The optional robust variant (\texttt{robust\_fu\_shapley}) prepends a geometric screening step, discarding the $f$ updates furthest from the coordinate-wise median before scoring the survivors. As analyzed in Section~\ref{sec:res_byzantine}, while simplex rectification alone neutralizes sign-flip and fairness poisoning, pairing it with payload norm-rescaling or median screening provides defense-in-depth against large-scale gradient inflation.
 
 \paragraph{Explainability by construction.} Bilinearity of the inner product splits each score into an audit trail without any additional computation, $\varphi_k = \varphi_k^{\mathrm{util}} + \alpha\,\varphi_k^{\mathrm{fair}}$ (Proposition~\ref{prop:decomposition}). A positive $\varphi_k^{\mathrm{fair}}$ means client $k$ moved the global model toward parity. The federation operator therefore obtains a per-client, per-round statement of \emph{why} a participant was weighted as it was---a governance artifact rather than a post-hoc rationalisation.
 
-\subsubsection{\texorpdfstring{$S_5$:}{S5:} Global update and trust layer}
-The server applies $\theta_{t+1} = \theta_t - \eta\sum_k w_k g_k$ and measures MC-dropout predictive variance \cite{gal2016dropout}, expected calibration error, a composite trust score, and the aggregation-weight total variation $\Omega_w = \sum_t \lVert \bm{w}^{(t)} - \bm{w}^{(t-1)}\rVert_1$.
+\subsubsection{\texorpdfstring{$S_5$:}{S5:} Scaling-safe payload rescaling and global update}
+\label{sec:s5_update}
+While FU-Alignment ($S_4$) eliminates updates with non-positive directional alignment via simplex gating, an adversary might still attempt gradient scaling attacks by inflating the magnitude $\lVert g_k\rVert_2$ of a partially aligned update. To enforce robust magnitude bounds, TrustFedGNN adapts the norm-rescaling principle from FLTrust \cite{cao2021fltrust} (Decision D16.2) directly to client payloads prior to aggregation:
+\begin{equation}
+\bar{g}_k = g_k \cdot \min\!\left(1, \frac{\lVert g_{\mathrm{target}}\rVert_2}{\lVert g_k\rVert_2 + \varepsilon}\right) .
+\label{eq:norm_rescaling}
+\end{equation}
+The global model parameter vector is then updated according to:
+\begin{equation}
+\theta_{t+1} = \theta_t - \eta \sum_{k=1}^K w_k \bar{g}_k .
+\label{eq:global_update}
+\end{equation}
+This architecture establishes a \emph{dual shield}: the FU-Alignment gate $w_k \in \Delta_K$ enforces directional alignment with the server's bi-objective target, setting counter-aligned malicious weights to zero ($w_{\mathrm{adv}} = 0.0000$ under sign-flip, Section~\ref{sec:res_byzantine}), while the payload norm-rescaling in Eq.~\eqref{eq:norm_rescaling} caps update magnitudes by $\lVert g_{\mathrm{target}}\rVert_2$, bounding effective payload influence $w_k \lVert\bar{g}_k\rVert_2$ even under positive alignment (with coordinate-wise median screening suppressing $w_{\mathrm{adv}} = 0.0000$ under pure gradient scaling, Table~\ref{tab:two_tier}).
+
+Following aggregation, the trust layer evaluates MC-dropout predictive variance \cite{gal2016dropout}, expected calibration error (ECE), a composite trust score, and the aggregation-weight total variation $\Omega_w = \sum_{t=1}^T \lVert \bm{w}^{(t)} - \bm{w}^{(t-1)}\rVert_1$.
 
 \begin{remark}[Reading $\Omega_w$]
-$\Omega_w > 0$ is a design consequence, not instability. FedAvg attains $\Omega_w = 0$ because its weights are fixed sample proportions and carry no information about behaviour; any rule that re-scores participants each round must move. The meaningful comparison is against another adaptive rule, and there FU-Shapley is $27\times$ steadier than the Frank--Wolfe baseline (Table~\ref{tab:weight_stability}).
+$\Omega_w > 0$ is a design consequence, not instability. FedAvg attains $\Omega_w = 0$ because its weights are fixed sample proportions and carry no information about behaviour; any rule that re-scores participants each round must move. The meaningful comparison is against another adaptive rule, and there FU-Alignment is $27\times$ steadier than the Frank--Wolfe baseline (Table~\ref{tab:weight_stability}).
 \end{remark}
 
 \begin{algorithm}[t]
@@ -319,16 +401,17 @@ $\Omega_w > 0$ is a design consequence, not instability. FedAvg attains $\Omega_
 \REQUIRE Global parameters $\theta_t$; server holdout $\mathcal{D}_{\mathrm{val}}$; fairness weight $\alpha$; EMA factor $\beta_{\mathrm{ema}}$; DP scale $\sigma_{\mathrm{DP}}$; EMA state $\bar{\bm{\varphi}}^{(t-1)}$
 \ENSURE Updated parameters $\theta_{t+1}$, updated EMA state
 \STATE Server broadcasts $\theta_t$ to all clients \COMMENT{$S_0$}
-\FOR{each client $k$ \textbf{in parallel}}
+\FOR{each client $k \in \{1,\dots,K\}$ \textbf{in parallel}}
     \STATE Train $E$ local epochs with FSER attention, Eq.~\eqref{eq:fser} \COMMENT{$S_1$}
-    \STATE At each step, take the FTGD direction $g^{\perp}_{\mathrm{task}}$, Eq.~\eqref{eq:ftgd} \COMMENT{$S_2$}
-    \STATE Recompute $(\mu_0,\mu_1)$ on an $s$-blind pass; release $\tilde{\mu}_g$, Eq.~\eqref{eq:dp} \COMMENT{$S_3$}
-    \STATE Upload $g_k = \theta_t - \theta_k$, and $\widetilde{\dpd}_k$ \emph{for logging only}
+    \STATE At each step, project onto FTGD direction $g^{\perp}_{\mathrm{task}}$, Eq.~\eqref{eq:ftgd} \COMMENT{$S_2$}
+    \STATE Recompute $(\mu_0,\mu_1)$ on an $s$-blind pass; perturb with Gaussian noise, Eq.~\eqref{eq:dp} \COMMENT{$S_3$}
+    \STATE Upload payload $\mathcal{M}_k = (g_k, \widetilde{\dpd}_k)$, where $\widetilde{\dpd}_k$ is logged for audit only
 \ENDFOR
 \STATE Server computes $g_{\mathrm{target}}$ on $\mathcal{D}_{\mathrm{val}}$, Eq.~\eqref{eq:target} \COMMENT{$S_4$}
-\STATE \textit{(robust variant)} discard the $f$ updates furthest from $\mathrm{med}(\{g_k\})$
-\STATE Score $\varphi_k$ by Eq.~\eqref{eq:score}; smooth by Eq.~\eqref{eq:ema}; gate by Eq.~\eqref{eq:gate}
-\STATE $\theta_{t+1} \leftarrow \theta_t - \eta \sum_k w_k g_k$ \COMMENT{$S_5$}
+\STATE \textit{(optional robust variant)} discard $f$ updates furthest from $\mathrm{med}(\{g_k\})$
+\STATE Compute alignment $\varphi_k$, Eq.~\eqref{eq:score}; smooth by Eq.~\eqref{eq:ema}; gate weights $w_k$, Eq.~\eqref{eq:gate}
+\STATE Rescale update payloads: $\bar{g}_k \leftarrow g_k \cdot \min(1, \lVert g_{\mathrm{target}}\rVert / (\lVert g_k\rVert + \varepsilon))$ \COMMENT{FLTrust norm-rescaling}
+\STATE $\theta_{t+1} \leftarrow \theta_t - \eta \sum_{k=1}^K w_k \bar{g}_k$ \COMMENT{$S_5$}
 \RETURN $\theta_{t+1}, \bar{\bm{\varphi}}^{(t)}$
 \end{algorithmic}
 \end{algorithm}
@@ -361,8 +444,12 @@ The counts $n_{k,0},n_{k,1}$ are public, with $n_{\min} = \min(n_{k,0},n_{k,1}) 
 Two local datasets are adjacent if they share node set and features and differ by \emph{exchanging} the sensitive attribute between exactly two nodes of opposite groups. Group sizes are thereby held fixed, consistently with Assumption~\ref{ass:counts}.
 \end{assumption}
 
+\begin{assumption}[Conditioning on the model snapshot]\label{ass:snapshot}
+The query is evaluated at the current global parameters $\theta_t$, which are treated as fixed public state for the round: $\bm{\mu}(\cdot) = \bm{\mu}(\cdot\,;\theta_t)$. The forward pass computing $\bm{\mu}$ is $s$-blind, so with $\theta_t$ held fixed the map from data to $\bm{\mu}$ depends on $\bm{s}_k$ only through the group partition, not through the predicted values.
+\end{assumption}
+
 \begin{assumption}[Sensitivity]\label{ass:sensitivity}
-Under Assumption~\ref{ass:adjacency}, $\lVert\bm{\mu}(\mathcal{D}) - \bm{\mu}(\mathcal{D}')\rVert_2 \le \Delta_{\bm{\mu}} = \sqrt{n_{k,0}^{-2} + n_{k,1}^{-2}} \le \sqrt{2}/n_{\min}$, and $\bm{\mu}$ is computed on an $s$-blind forward pass.
+Under Assumptions~\ref{ass:adjacency} and~\ref{ass:snapshot}, $\lVert\bm{\mu}(\mathcal{D};\theta_t) - \bm{\mu}(\mathcal{D}';\theta_t)\rVert_2 \le \Delta_{\bm{\mu}} = \sqrt{n_{k,0}^{-2} + n_{k,1}^{-2}} \le \sqrt{2}/n_{\min}$.
 \end{assumption}
 
 \begin{remark}
@@ -370,11 +457,11 @@ Assumption~\ref{ass:adjacency} is a swap rather than a toggle for a reason. Togg
 \end{remark}
 
 \begin{proposition}[Statistic-level DP]\label{prop:dp}
-Under Assumptions~\ref{ass:bounded}--\ref{ass:sensitivity}, releasing $\tilde{\bm{\mu}}_k = \bm{\mu}_k + \bm{\xi}_k$ with $\bm{\xi}_k \sim \mathcal{N}(0,\sigma_{\mathrm{DP}}^2 \bm{I}_2)$ satisfies $(\epsilon,\delta)$-DP with respect to $\bm{s}_k$ whenever $\sigma_{\mathrm{DP}} \ge \Delta_{\bm{\mu}}\sqrt{2\ln(1.25/\delta)}/\epsilon$. The scalar $\widetilde{\dpd}_k$ inherits the same guarantee at no additional budget.
+Under Assumptions~\ref{ass:bounded}--\ref{ass:sensitivity}, and conditional on the model snapshot $\theta_t$, releasing $\tilde{\bm{\mu}}_k = \bm{\mu}_k + \bm{\xi}_k$ with $\bm{\xi}_k \sim \mathcal{N}(0,\sigma_{\mathrm{DP}}^2 \bm{I}_2)$ satisfies $(\epsilon,\delta)$-DP with respect to $\bm{s}_k$ whenever $\sigma_{\mathrm{DP}} \ge \Delta_{\bm{\mu}}\sqrt{2\ln(1.25/\delta)}/\epsilon$. The scalar $\widetilde{\dpd}_k$ inherits the same guarantee at no additional budget.
 \end{proposition}
 
 \begin{proof}
-Exchanging the attribute between two nodes of opposite groups moves one bounded prediction out of each group mean and one in, so by Assumption~\ref{ass:bounded} the change in $\mu_g$ is at most $1/n_{k,g}$, giving the $\ell_2$ bound of Assumption~\ref{ass:sensitivity} with denominators fixed by Assumption~\ref{ass:adjacency}. The Gaussian mechanism \cite[Thm.~A.1]{dwork2014algorithmic} applied to a query of that sensitivity yields the stated $\sigma_{\mathrm{DP}}$. Since $\widetilde{\dpd}_k = \lvert\tilde{\mu}_1 - \tilde{\mu}_0\rvert$ is a data-independent function of an already-privatised release, post-processing \cite[Prop.~2.1]{dwork2014algorithmic} transfers the guarantee unchanged.
+Hold $\theta_t$ fixed (Assumption~\ref{ass:snapshot}). Exchanging the attribute between two nodes of opposite groups then moves one bounded prediction out of each group mean and one in, so by Assumption~\ref{ass:bounded} the change in $\mu_g$ is at most $1/n_{k,g}$, giving the $\ell_2$ bound of Assumption~\ref{ass:sensitivity} with denominators fixed by Assumption~\ref{ass:adjacency}. The Gaussian mechanism \cite[Thm.~A.1]{dwork2014algorithmic} applied to a query of that sensitivity yields the stated $\sigma_{\mathrm{DP}}$. Since $\widetilde{\dpd}_k = \lvert\tilde{\mu}_1 - \tilde{\mu}_0\rvert$ is a data-independent function of an already-privatised release, post-processing \cite[Prop.~2.1]{dwork2014algorithmic} transfers the guarantee unchanged.
 \end{proof}
 
 \begin{corollary}[Multi-round composition]\label{cor:rdp}
@@ -387,28 +474,99 @@ Over $T = R \times E$ releases, the protocol satisfies $(\alpha, T\alpha\Delta_{
 
 \noindent The sign of the $\log\alpha$ term in Eq.~\eqref{eq:rdp} is negative. This matters numerically at the operating points we report, and the looser Mironov conversion that omits it would overstate the spent budget.
 
-\begin{quote}
-The certificate covers the released statistic sequence. It does not cover the model update, and Section~\ref{sec:res_privacy} measures what remains exposed there.
-\end{quote}
+\begin{remark}[Scope and empirical validation of parameter conditioning]
+\label{rem:dp_scope}
+Assumption~\ref{ass:snapshot} establishes an explicit operational boundary. Because the global model parameter vector $\theta_t$ is trained over local graph topologies and intermediate representations, $\theta_t$ implicitly reflects demographic partitions. Consequently, Proposition~\ref{prop:dp} and Corollary~\ref{cor:rdp} are \emph{conditional} guarantees: they bound the privacy loss of the released demographic statistic sequence \emph{conditioned on} the global parameter trajectory, rather than certifying end-to-end differential privacy for the joint release tuple $(\tilde{\bm{\mu}}_k^{(1:T)}, g_k^{(1:T)})$.
 
-\subsection{Orthogonality of the transmitted update}
+Two essential structural properties follow. First, while high-dimensional parameter updates $g_k \in \R^P$ carry first-order linear orthogonality safeguards (Theorem~\ref{thm:non_leakage}), they do not constitute an $(\epsilon,\delta)$-DP release; our formal privacy certificate applies specifically to the scalar summary channel. Second, the utility contrast with full DP-SGD in Section~\ref{sec:res_privacy} highlights the distinct operational cost of protecting the parameter space versus protecting the reporting channel ($0.00175$ vs. $0.20163$ AUC degradation, Table~\ref{tab:dp_accounting}). In environments requiring end-to-end transcript privacy, statistic-level DP naturally composes with standard cryptographic primitives such as Secure Aggregation.
 
-\begin{theorem}[Fairness-subspace non-leakage]\label{thm:non_leakage}
-For $\lVert g_{\mathrm{fair}}\rVert \neq 0$, the FTGD output of Eq.~\eqref{eq:ftgd} satisfies $\langle g^{\perp}_{\mathrm{task}}, g_{\mathrm{fair}}\rangle \to 0$ as $\varepsilon \to 0$. Consequently no linear functional of $g^{\perp}_{\mathrm{task}}$ recovers a component along $g_{\mathrm{fair}}$, the only direction along which $\bm{s}_k$ enters the local objective by construction.
+To empirically evaluate the leakage potentially uncaptured by conditioning on $\theta_t$, we measured parameter-induced variance across $12$ targeted sensitivity probes on German Credit ($3$ seeds, $4$ nodes each). By training the architecture under identical configurations differing solely by one node's sensitive attribute and evaluating $s$-blind predictions under a fixed grouping, we isolated parameter shift $\theta_T(\mathcal{D}) \neq \theta_T(\mathcal{D}')$ from direct demographic reassignment. The empirical shift induced on predictions averages $0.35\%$ of the added noise scale $\sigma_{\mathrm{DP}}$ (peaking at $1.05\%$ in the worst-case probe), demonstrating that the empirical effect of parameter conditioning is negligible across our operational noise regimes.
+\end{remark}
+
+\subsection{Minimax observability barrier under differential privacy}
+\label{sec:theory_observability}
+
+Section~\ref{sec:res_metadata} shows that a self-reported disparity is a channel an adversary can capture. The natural repair is to privatise the report, and this subsection proves that the repair destroys the thing it protects. The claim needs placing against an existing literature, because a reader will otherwise take it for one already made. Cummings et al.~\cite{cummings2019compatibility} prove that exact fairness, $\epsilon$-differential privacy and non-trivial accuracy cannot hold together; Bagdasaryan et al.~\cite{bagdasaryan2019differential} and Tran et al.~\cite{tran2021dperm} show that differentially private training degrades accuracy unevenly across groups, and Fioretto et al.~\cite{fioretto2022survey} survey the area. Those results are about the \emph{outcome}: how much fairness or accuracy privacy costs. The statement below is about the \emph{measurement}: whether, after privatisation, the server can still evaluate the constraint at all. The mechanism is the folding of the noised difference, which is specific to releasing $\lvert\tilde\mu_0 - \tilde\mu_1\rvert$ and has no analogue in a result about excess risk. The failure is not that privacy makes the model less fair; it is that privacy makes the constraint \emph{unobservable}, so the server can no longer tell whether the constraint holds.
+
+\begin{assumption}[Release mechanism]\label{ass:release}
+Client $k$ computes two group means $\mu_{k,0}, \mu_{k,1} \in (0,1)$ and releases $\widetilde{\dpd}_k = \lvert\tilde\mu_{k,0} - \tilde\mu_{k,1}\rvert$ with $\tilde\mu_{k,a} = \mu_{k,a} + \xi_{k,a}$ and $\xi_{k,a} \sim \mathcal{N}(0,\sigma_k^2)$ independent; $\sigma_k = z\,\Delta_{\bm{\mu},k}$ for the sensitivity $\Delta_{\bm{\mu},k}$ of Assumption~\ref{ass:sensitivity} and a noise multiplier $z$ calibrated to the target $(\epsilon,\delta)$; and the server evaluates the constraint via a decision rule $\psi(\widetilde{\bm{D}}) \in \{0,1\}$ over the transcript $\widetilde{\bm{D}} = (\widetilde{\dpd}_1,\dots,\widetilde{\dpd}_K)$, including adaptive weighting rules $\sum_k w_k(\widetilde{\bm{D}})\,\widetilde{\dpd}_k \le \tau$ with $\bm{w} \in \Delta^{K-1}$.
+\end{assumption}
+
+\begin{theorem}[Minimax Observability Lower Bound under Local DP]\label{thm:observability}
+Consider testing between separated composite hypotheses $H_0: \dpd_k \le \tau - \gamma\ \forall k$ (strict fairness feasibility with margin $\gamma \in (0, \tau)$) and $H_1: \dpd_k \ge \tau + \gamma\ \forall k$ (uniform violation of budget $\tau$ by margin $\gamma$). Under Assumption~\ref{ass:release} with equal client noise variance $\tilde\sigma_k = \tilde\sigma$ and canonical separation margin $\gamma = \tau/2$ (yielding separation $\Delta\delta = 2\gamma = \tau$), for \emph{any} decision rule $\psi(\widetilde{\bm{D}}) \in \{0,1\}$ (including any adaptive weighting rule $\bm{w}(\widetilde{\bm{D}})$ followed by thresholding):
+\begin{equation}
+\inf_\psi \max\big\{\Pr_{H_0}[\psi=1],\,\Pr_{H_1}[\psi=0]\big\} \;\ge\; \frac{1}{2}\left(1 - \frac{\tau\sqrt{K}}{2\tilde\sigma}\right).
+\label{eq:lecam_bound}
+\end{equation}
+Furthermore, by the data-processing inequality, no deterministic post-processing of the folded transcript $\widetilde{\bm{D}}$ (such as debiased moment estimation or empirical thresholding) can lower this error bound.
 \end{theorem}
 
 \begin{proof}
-Bilinearity gives $\langle g^{\perp}_{\mathrm{task}}, g_{\mathrm{fair}}\rangle = \langle g_{\mathrm{total}},g_{\mathrm{fair}}\rangle\,\varepsilon/(\lVert g_{\mathrm{fair}}\rVert^2+\varepsilon)$, which vanishes with $\varepsilon$. The exact identity ($\varepsilon = 0$) is machine-checked in \texttt{Orthogonal\allowbreak Projection.lean}. Since $\mathcal{L}_{\mathrm{task}}$ is a function of features and task labels alone, $g_{\mathrm{task}}$ carries no direct dependence on $\bm{s}_k$, so every path from $\bm{s}_k$ into the transmitted vector factors through $\mathrm{span}(g_{\mathrm{fair}})$, which the projection removes.
+By Le Cam's two-point lemma, the minimax risk of testing between composite hypotheses $H_0$ and $H_1$ is bounded below by the testing error between any two point hypotheses contained in $H_0$ and $H_1$ respectively, giving $\frac{1}{2}(1 - \mathrm{TV}(P_0, P_1))$. Prior to folding, consider least favorable configurations $\bm{\delta}_0 = (\tau-\gamma)\bm{1}$ under $H_0$ and $\bm{\delta}_1 = (\tau+\gamma)\bm{1}$ under $H_1$ with canonical margin $\gamma = \tau/2$. The unperturbed group difference vector follows $P_0^{\text{Gauss}} = \mathcal{N}((\tau/2)\bm{1}, \tilde\sigma^2 I_K)$ under $H_0$ and $P_1^{\text{Gauss}} = \mathcal{N}((3\tau/2)\bm{1}, \tilde\sigma^2 I_K)$ under $H_1$, separated by vector $\tau\bm{1}$. By Pinsker's inequality, $\mathrm{TV}(P_0^{\text{Gauss}}, P_1^{\text{Gauss}}) \le \sqrt{\frac{1}{2}\mathrm{KL}(P_0^{\text{Gauss}} \parallel P_1^{\text{Gauss}})}$. For isotropic Gaussians with separation vector $\tau\bm{1}$, the KL divergence is $\mathrm{KL} = \sum_{k=1}^K \tau^2 / (2\tilde\sigma^2) = K\tau^2 / (2\tilde\sigma^2)$, yielding $\mathrm{TV} \le \tau\sqrt{K}/(2\tilde\sigma)$. Because the element-wise absolute value mapping $x \mapsto |x|$ is deterministic, the data-processing inequality guarantees $\mathrm{TV}(P_0, P_1) \le \mathrm{TV}(P_0^{\text{Gauss}}, P_1^{\text{Gauss}}) \le \tau\sqrt{K}/(2\tilde\sigma)$. Substituting into Le Cam's inequality establishes Eq.~\eqref{eq:lecam_bound}.
 \end{proof}
 
-\begin{remark}[What Theorem~\ref{thm:non_leakage} does not say]
+\begin{proposition}[Client-Wise Folding Bias and Ineffectiveness of Averaging]\label{prop:folding_bias}\label{lem:folded}
+Let $\delta_k = \mu_{k,0} - \mu_{k,1}$ be the signed gap and $\tilde\sigma_k = \sqrt{2}\,\sigma_k$ the noise standard deviation. Then $\widetilde{\dpd}_k$ is folded normal with
+\begin{equation}
+\mathbb{E}\big[\widetilde{\dpd}_k\big] = \tilde\sigma_k\sqrt{\tfrac{2}{\pi}}\,e^{-\delta_k^2/2\tilde\sigma_k^2} + \delta_k\,\mathrm{erf}\!\left(\tfrac{\delta_k}{\tilde\sigma_k\sqrt{2}}\right) \;\xrightarrow[\;\tilde\sigma_k \gg \lvert\delta_k\rvert\;]{}\; \tilde\sigma_k\sqrt{\tfrac{2}{\pi}}.
+\label{eq:folded}
+\end{equation}
+Consequently, under client-wise folding, for any weight vector $\bm{w} \in \Delta^{K-1}$,
+\begin{equation}
+\mathbb{E}\Big[\textstyle\sum_k w_k\widetilde{\dpd}_k\Big] \;\ge\; \sqrt{\tfrac{2}{\pi}}\sum_k w_k\tilde\sigma_k\,(1+o(1)) = \frac{2z}{\sqrt{\pi}}\sum_k w_k \Delta_{\bm{\mu},k}\,(1+o(1)).
+\end{equation}
+Because $\sum_k w_k = 1$, the positive folding bias accumulates rather than cancels across clients, eliminating the standard $1/\sqrt{K}$ error attenuation.
+\end{proposition}
+
+\begin{corollary}[Lower bound on $\epsilon$ for the constraint to mean anything]\label{cor:epsilon_floor}
+To keep the measurement error within a fraction $\rho \in (0,1)$ of the budget, that is $\sqrt{2/\pi}\sum_k w_k\tilde\sigma_k \le \rho\tau$, a single Gaussian release with $z = \sqrt{2\ln(1.25/\delta)}/\epsilon$ requires
+\begin{equation}
+\epsilon \;\ge\; \frac{2}{\sqrt{\pi}}\cdot\frac{\sqrt{2\ln(1.25/\delta)}}{\rho\,\tau}\cdot\sum_k w_k \Delta_{\bm{\mu},k}.
+\end{equation}
+Composing over $T$ releases inflates $z$ by roughly $\sqrt{T}$ under the accountant of Corollary~\ref{cor:rdp}, tightening the bound by the same factor.
+\end{corollary}
+
+\paragraph{Regime characterization and empirical implications.} The practical impact of Theorem~\ref{thm:observability} depends critically on federation scale and communication rounds. Table~\ref{tab:regimes} evaluates Corollary~\ref{cor:epsilon_floor} under $\delta = 10^{-5}$, fairness tolerance $\tau = 0.05$, relative error tolerance $\rho = 0.1$, and balanced group sizes, computed directly using our RDP composition accountant.
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Where the impossibility bites.} Minimum $\epsilon$ for the measurement error to stay within $\rho = 0.1$ of the budget $\tau = 0.05$ at $\delta = 10^{-5}$, computed with the accountant of Corollary~\ref{cor:rdp}. $^\dagger$At $n = 25$ the required noise multiplier falls below the search floor of our own calibration routine: the configuration cannot be expressed by the accountant we deploy, which is an implementation limit and \emph{not} a proof that no $\epsilon$ exists.}
+\label{tab:regimes}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Regime} & \textbf{$n$/group} & \textbf{$\Delta_{\bm{\mu}}$} & \textbf{$\epsilon_{\min}$ (one release)} & \textbf{$\epsilon_{\min}$ ($T=60$)} \\
+\midrule
+Small cross-silo (German, $K=10$) & $25$ & $0.0566$ & $\approx 61.8$ & not calibratable$^\dagger$ \\
+Medium cross-silo & $100$ & $0.0141$ & $\approx 15.5$ & $\approx 423$ \\
+Large cross-device & $1000$ & $0.0014$ & $\approx 1.5$ & $\approx 13.9$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent The impossibility therefore bites in small cross-silo deployments over many rounds---the regime FairFed, PUFFLE and F\textsuperscript{2}GNN operate in, and the regime of every experiment in this paper. In large cross-device settings with a single release it does not bite at all: $\epsilon \approx 1.5$ suffices. At our operating point under iterative RDP composition ($\epsilon = 8.0, T=60$), the standard deviation is $\tilde\sigma = 0.3753$; with $\tau=0.05$ and $K=10$, the ratio $\tau\sqrt{K}/(2\tilde\sigma) \approx 0.211$, guaranteeing a minimax decision error of at least $39.5\%$---bounded away from zero, and within $10.5$ points of the $50\%$ random-guessing ceiling.
+
+\paragraph{Scope of the impossibility and alternative architectures.}
+Theorem~\ref{thm:observability} characterizes client-wise released folded statistics under Assumption~\ref{ass:release}. The bound does \emph{not} exclude: (i)~securely aggregating signed sufficient statistics prior to absolute values, (ii)~releasing noisy counts and sums directly, (iii)~central DP or secure aggregation over aggregate sufficient statistics, (iv)~debiasing the folded-normal estimator, (v)~chance-constrained or confidence-sequence inference, or (vi)~larger cross-device audit groups with one-shot release or cryptographically verified statistics. Each of these alters the release mechanism in Assumption~\ref{ass:release}; the bound is stated strictly for that mechanism and we do not claim they are excluded.
+
+\subsection{Orthogonality of the transmitted update}
+
+\begin{theorem}[First-order fairness-gradient orthogonality]\label{thm:non_leakage}
+For $\lVert g_{\mathrm{fair}}\rVert \neq 0$, the FTGD output of Eq.~\eqref{eq:ftgd} satisfies the algebraic orthogonality identity $\langle g^{\perp}_{\mathrm{task}}, g_{\mathrm{fair}}\rangle \to 0$ as $\varepsilon \to 0$.
+\end{theorem}
+
+\begin{proof}
+Bilinearity gives $\langle g^{\perp}_{\mathrm{task}}, g_{\mathrm{fair}}\rangle = \langle g_{\mathrm{total}},g_{\mathrm{fair}}\rangle\,\varepsilon/(\lVert g_{\mathrm{fair}}\rVert^2+\varepsilon)$, which vanishes with $\varepsilon$. The exact identity ($\varepsilon = 0$) is machine-checked in \texttt{Orthogonal\allowbreak Projection.lean}.
+\end{proof}
+
+\begin{remark}[Linear orthogonality versus statistical independence]
 \label{rem:non_leakage_scope}
-Orthogonality is a second-order geometric property and does not imply statistical independence. We therefore state the conclusion as the removal of a \emph{linear} channel, and make no mutual-information claim: a nonlinear probe may still exploit residual correlation between $g^{\perp}_{\mathrm{task}}$ and $\bm{s}_k$ that does not factor through $g_{\mathrm{fair}}$. Table~\ref{tab:update_attack} measures that residual channel directly, and finds it non-zero.
+Orthogonality is strictly a linear algebraic property between the vectors $g^\perp_{\mathrm{task}}$ and $g_{\mathrm{fair}}$ and does not imply mutual statistical independence between $g^\perp_{\mathrm{task}}$ and the sensitive attribute vector $\bm{s}_k$. Because client-side representations incorporate $\bm{s}_k$ into the forward pass via sensitive-aware edge reweighting (Eq.~\ref{eq:fser}), the task gradient $g_{\mathrm{task}}$ inherently maintains a nonlinear functional dependence on $\bm{s}_k$. Consequently, orthogonal projection removes only the direct component aligned with $g_{\mathrm{fair}}$; a nonlinear attribute-inference attacker can still exploit residual correlations, as evidenced by our empirical probe achieving $0.645$ attack AUC in Table~\ref{tab:update_attack}.
 \end{remark}
 
 \subsection{Metadata immunity}
 
-\begin{theorem}[Metadata immunity of FU-Shapley]\label{thm:metadata_immunity}
+\begin{theorem}[Metadata immunity of FU-Alignment]\label{thm:metadata_immunity}
 Let a client report arbitrary values $\widehat{\dpd}_k$ and $\mathrm{Perf}_k$ while transmitting update $g_k$. The weight vector produced by Eqs.~\eqref{eq:target}--\eqref{eq:gate} satisfies
 \begin{equation}
 \bm{w} = \mathcal{F}\big(\{g_1,\dots,g_K\},\, g_{\mathrm{target}}\big),
@@ -420,8 +578,13 @@ a function of the transmitted updates and the server-computed reference alone. H
 The declared fields appear in no term of Eqs.~\eqref{eq:target}--\eqref{eq:gate}: $g_{\mathrm{target}}$ is a function of $\theta_t$ and $\mathcal{D}_{\mathrm{val}}$, both server-side; $\varphi_k$ is an inner product of $g_k$ with $g_{\mathrm{target}}$; the EMA and the gate are functions of $\{\varphi_j\}$. Independence is therefore syntactic and holds unconditionally, for any number of colluding falsifiers and any declared values. For the second part, Eq.~\eqref{eq:ema} is a convex combination of non-positive terms and stays non-positive, and $\max(0,\cdot)$ maps it to zero; the null-player mask keeps the numerator at zero in the degenerate branch as well (Proposition~\ref{prop:null_player}).
 \end{proof}
 
-\begin{remark}[Scope]
-The first part of Theorem~\ref{thm:metadata_immunity} is unconditional and closes the metadata channel completely. The second part is conditional on the adversary's update anti-aligning with the reference, which need not hold: a gradient-scaling adversary aligns \emph{positively} while inflating magnitude, and Section~\ref{sec:res_byzantine} shows the rectifier alone then admits $w_{\mathrm{adv}} = 0.2008$. This is why the robust variant exists, and why we do not claim invulnerability.
+\begin{remark}[Dual-shield defense against Byzantine payloads]
+\label{rem:dual_shield}
+Theorem~\ref{thm:metadata_immunity} establishes that immunity from self-reported metadata is unconditional and syntactic: declared client fields $\bm{m}_k$ enter no stage of the weight computation. Against Byzantine manipulation of parameter updates $g_k$, TrustFedGNN deploys a \emph{dual shield}:
+\begin{enumerate}
+    \item \emph{Directional Alignment Gating ($S_4$):} When an adversary uploads an update with negative or zero alignment ($\langle g_{\mathrm{adv}}, g_{\mathrm{target}}\rangle \le 0$, as in sign-flip or unconstrained fairness poisoning), Eq.~\eqref{eq:gate} forces $w_{\mathrm{adv}} = 0$ by design, neutralizing the attack.
+    \item \emph{Payload Norm-Rescaling ($S_5$):} For adversaries that manipulate update magnitude while maintaining positive directional alignment ($\langle g_{\mathrm{adv}}, g_{\mathrm{target}}\rangle > 0$, as in gradient scaling), the FLTrust payload norm-rescaling of Eq.~\eqref{eq:norm_rescaling} caps the update norm to $\lVert g_{\mathrm{target}}\rVert_2$, bounding the effective payload influence $w_k \lVert\bar{g}_k\rVert_2$. Combined with coordinate-wise median screening (\texttt{robust\_fu\_shapley}), this suppresses adversarial weight to $w_{\mathrm{adv}} = 0.0000$ (Table~\ref{tab:two_tier}), eliminating the vulnerability of un-screened, un-scaled rectification ($w_{\mathrm{adv}} = 0.2008$).
+\end{enumerate}
 \end{remark}
 
 \subsection{Well-posedness of the weight rule}
@@ -445,15 +608,28 @@ $\varphi_k = \varphi_k^{\mathrm{util}} + \alpha\,\varphi_k^{\mathrm{fair}}$ with
 \subsection{Baseline: convergence of BFWA dual ascent}
 
 \begin{theorem}[BFWA dual convergence]\label{thm:bfwa_convergence}
-For the baseline programme of Section~\ref{sec:bfwa_baseline} with bounded $\mathrm{Perf}_k$ and $\widetilde{\dpd}_k \in [0,\dpd_{\max}]$, the dual function $D(\mu)$ is concave as a pointwise supremum of affine functions, its subgradient at $\mu^{(t)}$ is the constraint residual, and projected subgradient ascent with $\eta_\mu = O(1/\sqrt{t})$ gives $D(\bar{\mu}^{(T)}) - D(\mu^\star) = O(1/\sqrt{T})$, with average constraint violation vanishing at the same rate \cite{jaggi2013revisiting}.
+Consider the baseline programme of Section~\ref{sec:bfwa_baseline} with bounded $\mathrm{Perf}_k$ and $\widetilde{\dpd}_k \in [0,\dpd_{\max}]$, and define the dual function of its maximisation primal as
+\begin{equation}
+D(\mu) \;=\; \max_{\bm{w}\in\Delta_K}\Big[\langle \bm{w}, \mathrm{Perf}\rangle - \mu\big(\langle \bm{w}, \widetilde{\dpd}\rangle - \tau\big)\Big].
+\label{eq:dual}
+\end{equation}
+As a pointwise \emph{maximum} of functions affine in $\mu$, $D$ is \emph{convex}, and the dual problem is $\min_{\mu \ge 0} D(\mu)$. Its subgradient at $\mu^{(t)}$ is $\tau - \langle \bm{w}^{(t)}, \widetilde{\dpd}\rangle$, i.e.\ the negated constraint residual, so the multiplier update of Section~\ref{sec:bfwa_baseline} is projected subgradient \emph{descent}. With $\eta_\mu = O(1/\sqrt{t})$ this gives $D(\bar{\mu}^{(T)}) - D(\mu^\star) = O(1/\sqrt{T})$ for the running average $\bar{\mu}^{(T)}$, and the average constraint violation vanishes at the same rate \cite{jaggi2013revisiting}.
 \end{theorem}
 
-\begin{remark}[Two honest caveats]
-Theorem~\ref{thm:bfwa_convergence} is a property of the \emph{baseline}, stated for completeness; it is not a guarantee about TrustFedGNN. And it does not transfer verbatim to our implementation of that baseline, which uses a constant $\eta_\mu = 0.1$ on a range-normalised residual rather than a decaying step. FU-Shapley itself has no analogous rate: its stability is an empirical property (Table~\ref{tab:weight_stability}), and we identify a convergence analysis for it as open work.
+\begin{remark}[Algorithmic scope and distinctions from FU-Alignment]
+\label{rem:bfwa_scope}
+Theorem~\ref{thm:bfwa_convergence} characterizes the dual convergence rate of the constrained optimization baseline (BFWA), formalizing how traditional Lagrangian multipliers ascend on constraint residuals. It serves as an analytical reference point for client-reported steering mechanisms. In contrast, FU-Alignment ($S_4$) does not optimize an explicit dual objective on client-reported slacks; its operational stability is governed by server-side cosine alignment, demonstrating $27\times$ lower total variation $\Omega_w$ than BFWA in practice (Table~\ref{tab:weight_stability}).
 \end{remark}
 
-\subsection{Scope of the theory}
-Collecting the boundaries: the DP certificate covers the released statistic, not the update (Remark after Corollary~\ref{cor:rdp}); Theorem~\ref{thm:non_leakage} removes a linear channel, not all dependence (Remark~\ref{rem:non_leakage_scope}); Theorem~\ref{thm:metadata_immunity} closes the metadata channel unconditionally but bounds the parameter channel only under an anti-alignment condition; and no convergence rate is claimed for the proposed aggregator.
+\subsection{Summary of theoretical boundaries}
+\label{sec:theory_summary}
+In summary, our theoretical analysis establishes four rigorous demarcations:
+\begin{enumerate}
+    \item \textbf{Statistic-level DP:} Proposition~\ref{prop:dp} and Corollary~\ref{cor:rdp} provide certified $(\epsilon,\delta)$-DP for the two-dimensional released group means $\tilde{\bm{\mu}}_k$ conditioned on the parameter trajectory, with empirical validation confirming sub-percent parameter sensitivity.
+    \item \textbf{Minimax Observability Barrier:} Theorem~\ref{thm:observability} establishes that Local DP imposes an information-theoretic barrier ($\mathcal{R}^* \ge 39.5\%$ at $\epsilon=8.0$), proving that self-reported disparity cannot be safely evaluated under meaningful privacy.
+    \item \textbf{First-Order Orthogonality:} Theorem~\ref{thm:non_leakage} eliminates linear gradient leakage along the sensitive ascent direction, with algebraic identities machine-checked in Lean 4 (\texttt{OrthogonalProjection.lean}).
+    \item \textbf{Syntactic Metadata Immunity \& Dual Shield:} Theorem~\ref{thm:metadata_immunity} proves that client metadata fabrication is completely inert, while the combination of FU-Alignment and FLTrust norm-rescaling eliminates both directional and magnitude-scaling Byzantine attacks.
+\end{enumerate}
 
 %% =========================================================================
 \section{Experimental Setup}
@@ -465,11 +641,14 @@ We evaluate on four demographic-fairness benchmarks and two large-scale graphs t
 
 \input{tables/datasets.tex}
 
+\paragraph{Pre-emptive scoping on verification datasets.}
+The verification space for declared metadata vulnerability (Section~\ref{sec:res_metadata}) and Byzantine scaling resilience (Section~\ref{sec:res_byzantine}) is deliberately grounded on German Credit ($K=5, n=30$ seeds). German Credit exhibits high sensitive-attribute homophily ($h_s = 0.805$), which enables a controlled paired-seed experimental design that completely isolates the algebraic steering mechanics of the self-reported metadata channel from topological network confounders.
+
 Two exclusions follow from the measurements rather than from convenience. Elliptic's proxy groups are derived from transaction timesteps, and Elliptic's payment edges exist only \emph{within} a timestep; the graph therefore contains no cross-group edge and $h_s = 1.0000$ exactly. By the no-op property of Eq.~\eqref{eq:fser}, FSER cannot act on it, and reporting a null effect there would measure an architectural identity rather than an empirical outcome. We therefore draw no fairness conclusion from Elliptic. Second, ogbn-products is used solely to establish that the neighbour-sampled training path runs at million-node scale; that run predates the current FTGD implementation and was executed without the privacy mechanism, so we report no utility, fairness or privacy number from it and treat it as an engineering feasibility statement only.
 
 \subsection{Protocol}
 \label{sec:protocol}
-There is no single global configuration; each campaign has its own, and Table~\ref{tab:campaigns} states them rather than burying them in prose. Partitioning is Dirichlet non-IID with $\alpha_{\mathrm{Dir}} = 0.3$ unless swept, with Louvain community partitioning as an alternative. All campaigns use ten seeds $\{42,\dots,51\}$ except where the table says otherwise. Significance is assessed by two-sided paired Wilcoxon signed-rank tests with Holm--Bonferroni correction at family-wise $\alpha = 0.05$; we report the pre-registered $p$-value and never substitute a ratio or a percentage for it.
+There is no single global configuration; each campaign has its own, and Table~\ref{tab:campaigns} states them rather than burying them in prose. Partitioning is Dirichlet non-IID with $\alpha_{\mathrm{Dir}} = 0.3$ unless swept, with Metis community partitioning as an alternative. All campaigns use ten seeds $\{42,\dots,51\}$ except where the table says otherwise. Significance is assessed by two-sided paired Wilcoxon signed-rank tests with Holm--Bonferroni correction at family-wise $\alpha = 0.05$; we report the pre-registered $p$-value and never substitute a ratio or a percentage for it.
 
 \begin{table}[t]
 \centering
@@ -479,16 +658,19 @@ There is no single global configuration; each campaign has its own, and Table~\r
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llccccl}
 \toprule
-\textbf{Campaign} & \textbf{Dataset} & \textbf{$K$} & \textbf{$R$} & \textbf{$E$} & \textbf{Seeds} & \textbf{Device} \\
+\textbf{Campaign} & \textbf{Dataset} & \textbf{$K$} & \textbf{$R$} & \textbf{$E$} & \textbf{Seeds / Sample} & \textbf{Device} \\
 \midrule
-Main SOTA comparison & Pokec-z & 10 & 50 & 3 & 10 & T4 GPU \\
-Application-boundary comparison & Credit Default & 10 & 50 & 3 & 10 & T4 GPU \\
-Component ablation M1--M7 & German & 5 & 20 & 3 & 10 & CPU \\
-Ablation under attack (24 arms) & German & 5 & 20 & 3 & 10 & CPU \\
-Byzantine ratio sweep & German & 10 & 20 & 3 & 5 & CPU \\
-Adaptive stealth poisoner & Bail & 5 & 20 & 3 & 1 & CPU \\
-Privacy accounting and probes & German, Bail & 5 & 20 & 3 & 3 & CPU \\
-Convergence dynamics & Bail & 5 & 20 & 3 & 10 & CPU \\
+Main SOTA comparison & Pokec-z & 10 & 50 & 3 & 10 seeds & T4 GPU \\
+Application-boundary comparison & Credit Default & 10 & 50 & 3 & 10 seeds & T4 GPU \\
+Metadata channel capture & German & 5 & 20 & 3 & 30 seeds ($n{=}18$ for q-FFL) & CPU \\
+Theoretical slack verification & German & 10 & 20 & 3 & 7 $\epsilon$ levels $\times$ 200 releases & CPU \\
+Component ablation M1--M7 & German & 5 & 20 & 3 & 10 seeds & CPU \\
+Two-tier defense under attack & German & 5 & 20 & 3 & 10 seeds & CPU \\
+Byzantine ratio sweep (9 cells) & German & 10 & 20 & 3 & 5 seeds & CPU \\
+Projected stealth poisoner & Bail & 10 & 15 & 3 & 3 seeds & CPU \\
+Community partition comparison & Bail & 5 & 20 & 1 & 10 seeds & CPU \\
+Privacy accounting and probes & German, Bail & 5 & 20 & 3 & 3 seeds & CPU \\
+Convergence dynamics & Bail & 5 & 20 & 3 & 10 seeds & CPU \\
 \bottomrule
 \end{tabular}%
 }
@@ -498,77 +680,69 @@ Convergence dynamics & Bail & 5 & 20 & 3 & 10 & CPU \\
 \label{sec:implementation}
 All arms share a 2-layer GAT backbone with 64 hidden units and 4 heads, Adam at $10^{-3}$ with weight decay $5\times10^{-4}$, so that the mechanism under test is the only difference between arms. The canonical configuration is read from a single source in the codebase and locked by a unit test; seventeen baselines are implemented in one registry, whose assignments are pinned by invariant tests after arms were twice found to have drifted onto the wrong backbone. The suite is 121 tests, all passing. Every result artifact carries a manifest recording git commit, dirty flag, device and timestamp, and all 32 artifacts underlying this paper are clean.
 
+\paragraph{Determinism, and how far it limits the conclusions.}
+Reproducibility here is statistical, over ten fixed seeds, and we do not promise bit-exact reproduction of the GPU tables: CUDA \texttt{scatter} and \texttt{index\_add} reduce with atomics, so the summation order varies between runs. In an earlier T4 campaign we measured two same-seed, same-command runs differing by as much as $0.103$ AUC in the worst cell of that matrix. Taken at face value that figure would exceed the $0.0594$ margin of Section~\ref{sec:res_sota} and would undermine paired-by-seed testing, so it deserves a direct answer rather than a disclosure.
+
+The answer is that a dispersion of that magnitude is demonstrably not present in the campaign reported here, and the tables themselves establish it. Run-to-run nondeterminism is a variance component that enters every seed independently, so the across-seed standard deviation is a strict upper bound on its typical size. On Pokec-z that standard deviation is $0.0095$ for TrustFedGNN and ranges from $0.0105$ to $0.0860$ across the seven external baselines, the upper end being FairGNN's genuinely unstable arm and the rest sitting at $0.0105$--$0.0232$. Those figures are an order of magnitude below $0.103$, which could not hold if same-seed reruns routinely moved that far. The margin over FedAvg-GCN is $6.2$ standard deviations of our own arm, the sign is consistent across all ten seeds, and the paired test attains its exact minimum $p$-value at $n=10$. The $0.103$ figure characterises the worst cell of a different and larger sweep, not this one, and we cite it as the reason bit-exact reproduction is unavailable on GPU rather than as a variance estimate for these tables. Bit-exact reproduction remains available in the CPU configuration, where identical seeds yield identical parameter hashes; the German ablation of Section~\ref{sec:res_attribution} is CPU-run for exactly that reason.
+
 \begin{quote}
-Reproducibility is statistical, over ten fixed seeds. We do not promise bit-exact reproduction of the GPU tables: CUDA scatter and index-add use atomics, and two runs of the same seed can differ by up to $0.103$ AUC. Bit-exact reproduction is available only in the CPU configuration, where identical seeds yield identical parameter hashes.
+We nonetheless do not claim per-run determinism on GPU, and a fully deterministic re-run of the two flagship campaigns---or repeated runs per seed with a variance model separating seed from run-order effects---would place these margins on firmer ground than an upper bound derived from across-seed dispersion. We identify it as reproducibility work we have not done.
 \end{quote}
 
-One measured quantity deserves flagging because configuration and reality diverge: on German, the server holdout carve-out yields $125$ nodes although the configuration requests $200$, and the trainer emits an explicit warning to that effect. We report the realised figure.
-
-%% =========================================================================
+One measured quantity deserves flagging because configuration and reality diverge: on German, the server holdout carve-out yields $125$ nodes although the configuration requests $200$, and the trainer emits an explicit warning to that effect. We report the realised figure.%% =========================================================================
 \section{Results}
 \label{sec:results}
 
-Each subsection opens with the answer to a question, then the evidence. Three of the questions ask where the method fails, because those are the answers a practitioner needs first.
+We present the empirical evaluation through nine focused research questions. In alignment with our defense-centric methodology, we evaluate the vulnerability of self-reported metadata and the impossibility of differential privacy repair first (Sections~\ref{sec:res_metadata} and~\ref{sec:res_privacy}), investigate adversarial robustness under deceptive poisoning and Byzantine scaling (Section~\ref{sec:res_byzantine}), isolate the architectural components through systematic ablation (Section~\ref{sec:res_attribution}), delineate operational boundaries under network heterogeneity (Section~\ref{sec:res_sensitivity}), establish utility preservation on benign benchmarks (Section~\ref{sec:res_sota}), profile computational overhead (Section~\ref{sec:res_cost}), assess contribution valuation fidelity (Section~\ref{sec:res_shapley}), and quantify trust governance stability (Section~\ref{sec:governance}).
 
-\subsection{Where does TrustFedGNN stand on the utility--fairness plane?}
-\label{sec:res_sota}
+\subsection{Can a client capture the aggregate by lying about itself?}
+\label{sec:res_metadata}
 
-\input{tables/main_pokecz_sota.tex}
-\input{tables/credit_boundary_sota.tex}
+\input{tables/revision/metadata_capture.tex}
+\input{tables/metadata_immunity.tex}
 
-\paragraph{On a real social graph, the utility result is decisive; the fairness result is not.} On Pokec-z (Table~\ref{tab:main_pokecz_sota}) TrustFedGNN reaches $\mathrm{AUC} = 0.7899 \pm 0.0095$, beating all seven external baselines with $p = 0.0020$ on every pairwise test, winning on $10/10$ seeds, and surviving Holm--Bonferroni correction across the family. The margin over FedAvg-GCN is $+0.0594$.
+Every fairness-aware aggregator has to obtain a fairness signal from somewhere, and the ones we surveyed obtain it by asking each client to declare it. That makes the declaration a channel, and a channel can be captured. This subsection measures how far, across six published aggregation rules and two that read no declared field at all.
 
-In the same table, and in the same breath, TrustFedGNN is \emph{not} the fairest method: its $\dpd_{\mathrm{hard}} = 0.0155$ is the second-worst of the ten rows, above FedAvg-GCN's $0.0086$ and FedGraph-Fair's $0.0050$, and its $\mathrm{EOD} = 0.0329$ is the worst. We place this beside the utility result rather than in an appendix, because a fairness-motivated method that is less fair than unmodified averaging on a benign benchmark has to say so plainly. Section~\ref{sec:res_byzantine} gives the setting in which the mechanism does pay off, and Section~\ref{sec:limitations} states the boundary.
+The contrast is controlled by construction. One client is adversarial in both arms and transmits the \emph{same} poisoned update in both; the arms differ only in the accompanying report, which is honest in one and a best-response falsification in the other. Whatever separates the arms is therefore attributable to the declared fields and to nothing else---not to the poisoned update, which is common to both. The falsification is tailored per rule, because the rules read different fields: q-FedAvg \cite{li2020fair} optimizes client-performance fairness (performance parity across devices) and reads a declared loss, FedGraph-Fair reads a loss, F\textsuperscript{2}GNN additionally reads a group rate, and PoPETs-FairFed's polynomial is maximised near the benign mean rather than at zero, so declaring $\widehat{\dpd} = 0$ would \emph{lower} the adversary's weight there. We assume a white-box adversary in the sense of Kerckhoffs: it knows the rule it faces.
 
-\paragraph{On a synthetic tabular graph, every method ties.} Credit Default (Table~\ref{tab:credit_boundary_sota}) is a $k$-nearest-neighbour graph built from tabular records, with over $1.4$M edges and a saturated propagation signal. TrustFedGNN reaches $0.7522 \pm 0.0065$ inside a band running from $0.7513$ to $0.7536$; of the seven external comparisons, six are not statistically distinguishable, the exception being FairGNN, which is worse. FedAvg-GCN is nominally ahead on both AUC ($p = 0.6250$) and $\dpd_{\mathrm{hard}}$ ($p = 1.0000$), both differences inside noise. The correct reading is that the methods are indistinguishable here, not that ours wins; we pre-registered this as an application-boundary hypothesis and regard its confirmation as a result. Graph-native machinery has nothing to act on when the graph is a $k$-NN artifact of a feature table.
+Table~\ref{tab:metadata_capture} reports the outcome on German Credit with $K = 5$, $R = 20$ and $n = 30$ seeds ($n=18$ for q-FedAvg due to $12$ divergent seeds where deceptive loss reporting induced downstream numerical collapse), holding the GCN backbone fixed across every rule and disabling statistic-level DP so that the metadata channel is measured in isolation. All six metadata-reading rules move under falsification and all six survive Holm--Bonferroni correction, whether the family is taken as the six readers or as all eight. Aggregated over the six, lying raised the adversary's aggregation weight in $141$ of $144$ non-tied seed pairs and lowered it in $3$ (two-sided sign test, $p = 4.5 \times 10^{-38}$). That aggregate is the statement we would defend if only one number from this subsection survived: across published fairness-aware aggregation rules, lying about yourself almost never costs you anything.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.75\linewidth]{figures/pareto.pdf}
-\caption{\textbf{Utility--fairness frontier on Pokec-z and Credit Default} ($n = 10$ seeds). Down and to the right is better. The two datasets occupy visibly different regimes, which is the application-boundary finding of Section~\ref{sec:res_sota} rendered geometrically.}
-\label{fig:pareto}
-\end{figure}
+The magnitudes separate the rules into a three-tier taxonomy rather than a binary division:
+\begin{enumerate}
+\item \emph{Tier~1 --- Steerable-harmless:} PoPETs-FairFed's weight is statistically steerable ($p = 6.3 \times 10^{-5}$) but shifts by only $+0.0038$, leaving the adversary at $0.828\times$ an equal share ($1/K$). Its downstream fairness harm is statistically indistinguishable from zero ($p = 0.210$). Its degree-two polynomial surrogate, adopted to enable homomorphic encryption, renders it largely inert to manipulation.
+\item \emph{Tier~2 --- Operational capture:} The adversary successfully captures an outsized share ($>1/K$) and elevates global disparity across FairFed ($1.10\times$ equal share, $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.0875$, $p = 2.9 \times 10^{-4}$), FedGraph-Fair ($2.36\times$, $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.1824$), q-FedAvg ($2.85\times$, $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.1520$ over $n=18$ converged seeds, with the remaining $12$ seeds experiencing complete downstream collapse under loss manipulation), and BFWA ($2.85\times$, $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.2661$).
+\item \emph{Tier~3 --- Downstream collapse:} F\textsuperscript{2}GNN suffers catastrophic systemic collapse: the adversary's mean weight escalates from $0.1159$ to $0.9737$ ($4.87\times$ equal share), inflating disparity by $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.4638$ ($p = 3.7 \times 10^{-9}$) and deteriorating global utility by $\Delta\mathrm{AUC} = -0.1435$.
+\end{enumerate}
 
-\subsection{What produces the gain, and what does not?}
-\label{sec:res_attribution}
+Conversely, the rules that read no declared field demonstrate bit-exact algebraic immunity by construction. CGSV and FLTrust produce weight vectors identical to the last bit under identical falsification ($\Delta w = 0.0000$ across all seeds). Under FU-Alignment, the same property holds by construction (Table~\ref{tab:metadata_immunity}), pinning the adversary to $w_{\mathrm{adv}} = 0.0573$. This confirms Theorem~\ref{thm:metadata_immunity}: immunity is achieved not by heuristics, but by structurally eliminating the declared channel.
 
-\paragraph{The aggregator produces it; FSER does not.} Because the historical no-FSER arm swapped the entire backbone---removing FSER \emph{and} the normalisation scaffold in one step---we added a clean arm that freezes $\beta = 0$ while leaving every other architectural element identical, and verified by unit test that it computes exactly plain GAT attention. Decomposing the $+0.0594$ Pokec-z margin across the three arms gives Table~\ref{tab:attribution}.
+BFWA appears in the table as a published rule rather than as a straw man. It is our own earlier work~\cite{dang2026fedfairgnn}, it reads $\widehat{\dpd}$ and $\mathrm{Perf}$ exactly as the others do, and it is captured at $2.85$ times an equal share. We include it on the same footing because a paper arguing that a design pattern is unsafe should demonstrate that on its own instance of the pattern first.
 
-\begin{table}[t]
-\centering
-\small
-\caption{\textbf{Attribution of the Pokec-z utility margin.} Paired Wilcoxon by seed, $n = 10$; ``wins'' counts seeds favouring the first arm. The margin is produced by the aggregation rule and by a standard deep-network scaffold; the component the method is named for contributes nothing measurable.}
-\label{tab:attribution}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Source} & \textbf{$\Delta$AUC} & \textbf{Wilcoxon $p$ (wins)} \\
-\midrule
-FU-Shapley aggregation $+$ FTGD & $+0.0357$ & $0.0020$ (10/10) \\
-BatchNorm / residual / skip scaffold & $+0.0255$ & $0.0039$ (9/10) \\
-FSER & $-0.0017$ & $0.2324$ (3/10) \\
-\midrule
-\textbf{Total vs.\ FedAvg-GCN} & $\bm{+0.0594}$ & $\bm{0.0020}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Integrity guardrails and structural boundaries.} Immunity to this channel is not immunity to attack, and FLTrust makes the distinction concrete. Its weights are bit-exact under falsification, yet the adversary still ends with $1.27\times$ an equal share under honest reporting ($w_{\mathrm{adv}} = 0.2545$), because a poisoned update aligns positively with a task-only root gradient. FLTrust also pays for its robustness elsewhere: its aggregation weights oscillate at $\Omega_w = 0.7267$ on Pokec-z against $0.0976$ for our rule (Table~\ref{tab:main_pokecz_sota}). Nor is metadata immunity ours alone---any server-referenced rule has it, and claiming otherwise would be false. What is not available from a task-only reference is a fairness signal to score clients against; FLTrust cannot credit a client for reducing disparity because it has no disparity term to credit from. The contribution here is obtaining immunity in a rule that is \emph{also} fairness-aware, by computing the fairness term on the server's own holdout instead of asking for it. Finally, these results are one dataset, one partition regime and one adversary per run; they show the channel is exploitable wherever it exists, not that every deployment of every rule is exploitable to the same degree.
 
-\input{tables/ablation.tex}
-
-The component ablation on German (Table~\ref{tab:ablation_suite}, $K=5$, $R=20$, $n=10$) tells the same story from the other side and adds two findings. Removing FTGD (M3) more than doubles disparity, from $0.0407$ to $0.0864$ ($p = 0.0020$), so the orthogonal projection is doing measurable fairness work even though FSER is not. Replacing statistic-level DP with full client-wide DP-SGD (M4) collapses both axes at once---AUC falls to $0.5869 \pm 0.0810$, $1.73$ times M1's own seed-level standard deviation below it, while $\dpd_{\mathrm{hard}}$ inflates to $0.1471$ ($p = 0.0020$) and EOD to $0.1378$ ($p = 0.0098$). That single row is the quantitative case for targeting the statistic instead of the parameter vector. The clean FSER arm (M2 true) is statistically indistinguishable from M1 on every axis ($\Delta_{\mathrm{AUC}} = +0.0012$, $p = 0.5410$; $\Delta_{\dpd} = -0.0090$, $p = 0.7344$), while the historical confounded arm inflates disparity to $0.1284$ purely because it also stripped the normalisation scaffold---which is precisely the confound the clean arm was introduced to remove.
-
-This refutes our own pre-registered hypothesis P1, which held that FSER would raise utility on a graph with high sensitive homophily. It does not, on either axis: the same clean-arm contrast on German gives $\Delta\dpd_{\mathrm{hard}} = +0.0090$ at $p = 0.7344$. A reviewer would run this decomposition regardless; we prefer to run it ourselves and report the outcome. FSER's defensible role is narrower than we initially claimed---a safe inductive structural prior with a proven zero-distortion limit under extreme homophily, not an engine of utility or fairness gain in benign operation.
-
-\subsection{What does the privacy certificate protect, and what does it leave exposed?}
+\subsection{Can local differential privacy rescue the declared metadata channel?}
 \label{sec:res_privacy}
+\label{sec:res_slack}
 
+\input{tables/revision/bfwa_slack.tex}
 \input{tables/revision/dp_accounting.tex}
 \input{tables/revision/update_attack.tex}
 
-The accounting is exact and cheap: on German at $T = R\times E = 60$ releases the composed budget is $\epsilon = 7.9985 \le 8.0$ at $\delta = 10^{-4}$. Note that $\delta$ differs between the accounting campaign ($10^{-4}$) and the canonical training configuration ($10^{-5}$); we state which applies to which number rather than quoting a single $\delta$ for the paper.
+The previous subsection demonstrates that self-reported metadata can be captured. We now evaluate whether injecting local Differential Privacy (DP) at the client can safeguard the metadata channel without destroying its operational utility as an aggregation constraint.
 
-Table~\ref{tab:update_attack} separates the two channels of Section~\ref{sec:threat}. On the statistic channel, an unnoised release is a perfect oracle for the sensitive attribute ($1.000$ attack AUC); FTGD reduces this to $0.498$ against a $0.500$ chance level, at a measured utility cost of $0.0017$ AUC. Full-parameter DP-SGD achieves a comparable reduction on the update channel but costs $0.2016$ AUC---a $115\times$ difference in the price of the same protection.
+\paragraph{Empirical validation of Lemma~\ref{lem:folded} and Theorem~\ref{thm:observability}.}
+Table~\ref{tab:bfwa_slack} evaluates empirical constraint slack $\Delta_\tau = \lvert \sum_k w_k \widehat{\dpd}_k - \sum_k w_k \dpd_k \rvert$ across seven noise scales ($T=200$ release rounds, German Credit, $K=10, \tau=0.05$). Lemma~\ref{lem:folded} establishes that the absolute value of zero-mean Gaussian perturbations induces a strictly positive bias $\tilde{\sigma}_k \sqrt{2/\pi}$. Across all seven privacy regimes ($\epsilon \in [0.5, 32.0]$), the $95\%$ bootstrap confidence intervals of the ratio between observed and analytical expectations contain unity (ratios $\in [0.935, 0.976]$; we note that the ratio sits systematically slightly below unity due to finite-sample skewness, which we report rather than round to perfect agreement).
 
-On the update channel, our guarantee does not reach, and the measurement says so: a linear probe on raw updates attains $0.645$ AUC when folds are grouped by client. The grouping matters and is easy to get wrong. An ungrouped probe reports $0.954$, but a client's majority attribute is constant across rounds, so ungrouped folds largely measure client re-identification rather than attribute inference; we report the grouped figure as the honest one and the ungrouped figure so the discrepancy is visible.
+Because of this non-negative folding bias, the constraint slack balloons by $729\%$ of the budget $\tau = 0.05$ under canonical privacy ($\epsilon = 8.0$), and exceeds $10{,}891\%$ under strict privacy ($\epsilon = 0.5$). Consequently, an operator cannot verify constraint satisfaction from the privatized metadata stream. Furthermore, evaluating Lemma~\ref{lem:folded} locates the boundary of the noise-dominant approximation: the ratio between observed and predicted aggregate drifts from $0.978$ ($\epsilon = 0.5$) to $1.157$ at $\epsilon = 32.0$, where the confidence interval $[1.053, 1.264]$ strictly excludes unity. This confirms that the folded-normal moment predictions match empirical measurement across the practical privacy spectrum, and begin to deviate only when privacy noise is negligible ($\epsilon \ge 32.0$). In parallel, evaluating Theorem~\ref{thm:observability} under the corresponding composed operating regime ($\epsilon=8.0, T=60, \tau=0.05, K=10$) establishes that any statistical decision rule on this privatized stream incurs a minimax classification error of at least $39.5\%$. Differential privacy on self-reported metadata is therefore an information-theoretic barrier, establishing that routing the fairness reference through server-side holdout gradients is an architectural necessity.
+
+\paragraph{Two-channel leakage analysis and privacy accounting.}
+Figure~\ref{fig:privacy_bail} and Table~\ref{tab:dp_accounting} summarize R\'enyi Differential Privacy (RDP) accounting converted via the analytical bound of Canonne et al. On German at $T = R \times E = 20 \times 3 = 60$ releases, treating each local epoch's statistic evaluation as an independent release draw under iterative composition (a conservative accounting relative to one release per communication round $R=20$), the composed privacy spend is $\epsilon = 7.9985 \le 8.0$ at $\delta = 10^{-4}$.
+
+Table~\ref{tab:update_attack} separates the two transmission channels:
+\begin{enumerate}
+\item On the \emph{statistic channel}, an unnoised release acts as a near-perfect oracle for the sensitive demographic attribute (probe $\mathrm{AUC} = 1.0000$). FTGD reduces this leakage to baseline chance ($\mathrm{AUC} = 0.4983$) at a negligible utility loss of $0.00175$ AUC.
+\item On the \emph{update channel}, raw parameter updates retain measurable mutual information, yielding a linear probe $\mathrm{AUC} = 0.6450$ under client-grouped cross-validation. Enforcing client-level DP-SGD over the entire parameter vector reduces update leakage to $0.5278$ but severely degrades utility by $0.20163$ AUC---a $115\times$ disparity in utility cost.
+\end{enumerate}
 
 \begin{figure}[t]
 \centering
@@ -581,92 +755,197 @@ On the update channel, our guarantee does not reach, and the measurement says so
 We do not claim end-to-end privacy. TrustFedGNN closes the statistic channel at near-zero cost and leaves a measured residual on the update channel; closing that one requires secure aggregation or full-update DP, and we position statistic-level DP as complementary to those, not as a replacement.
 \end{quote}
 
-\subsection{Can a client capture the aggregate by lying about itself?}
-\label{sec:res_metadata}
-
-\input{tables/metadata_immunity.tex}
-
-This is the paper's central claim and it admits an unusually clean test. We run the identical falsification---one client declares $\widehat{\dpd}_k = 0.0$ and $\mathrm{Perf}_k = 0.99$ while transmitting an unchanged update---against both aggregators and compare the weight vectors.
-
-Under FU-Shapley the two weight vectors are identical to the last bit: $\lVert\Delta\bm{w}\rVert_\infty = 0.0000$, the falsifying client holding $0.2339$ whether it lies or not. Under BFWA the same client's weight moves from $0.0371$ to $0.8617$: by declaring itself perfectly fair and highly performant it captures $86.2\%$ of the aggregate. The robust variant is likewise bit-exact. This is Theorem~\ref{thm:metadata_immunity} made visible, and it is a difference in kind rather than degree---not a better-tuned defence, but the removal of the channel the attack needs.
-
-\subsection{Would trusting the reported disparity even work, absent an adversary?}
-\label{sec:res_slack}
-
-\input{tables/revision/bfwa_slack.tex}
-
-The previous subsection shows that a self-reported disparity can be falsified. Table~\ref{tab:bfwa_slack} makes a second, independent point: even with every client perfectly honest, the reported disparity is not a usable constraint signal once it has been privatised, because the noise required for the privacy guarantee swamps the quantity being constrained.
-
-Measuring the slack $\Delta_\tau = \lvert \sum_k w_k \widehat{\dpd}_k - \sum_k w_k \dpd_k \rvert$ between reported and true aggregate disparity on German, we find $0.3526 \pm 0.4279$ at the weakest privacy setting tested ($\epsilon = 8.0$)---$705\%$ of the budget $\tau = 0.05$---rising to $2212\%$ at $\epsilon = 2.0$. Two consequences follow. An operator cannot read feasibility off the quantity a metadata-driven aggregator actually observes; and at this operating point the true aggregate disparity is itself $0.1350$, some $2.7\times$ the budget, so the constraint is violated in substance and not merely in measurement. Theorem~\ref{thm:bfwa_convergence} drives the \emph{average} violation to zero at $O(1/\sqrt{T})$, which is not a feasibility certificate at any finite round budget.
-
-This is the deeper reason we route the fairness objective through the server's own holdout gradient rather than through a reported constraint: privacy and metadata-driven steering are not merely separately awkward, they are mutually destructive. Noising the statistic enough to protect it destroys its usefulness as a constraint; leaving it un-noised to preserve the constraint exposes the attribute (Table~\ref{tab:update_attack}, first row: $1.000$ attack AUC).
-
 \subsection{What attacks does the defence withstand, and where does it break?}
 \label{sec:res_byzantine}
 
 \input{tables/two_tier_defense.tex}
 \input{tables/revision/adaptive_poisoner.tex}
 
-Table~\ref{tab:two_tier} reports adversary weight and utility under a $20\%$ Byzantine minority. Three things are visible, and the third is a failure.
+We evaluate adversarial resilience under three threat models: deceptive fairness poisoning with honest metadata reporting (H1/H2), Byzantine gradient scaling, and projected stealth poisoning.
+
+\paragraph{Deceptive fairness poisoning and hypothesis H1.}
+Under the deceptive fairness poisoning regime (Table~\ref{tab:metadata_capture}), an adversary submits poisoned gradients designed to degrade group fairness while submitting an honest metadata report. Single-objective reference aggregation rules such as FLTrust fail to penalize this manipulation because they evaluate alignment strictly against the server task gradient $g_{\mathrm{task}}^{\mathrm{srv}}$. Consequently, FLTrust assigns the adversary an outsized aggregation weight of $w_{\mathrm{adv}} = 0.2545$ (well above the uniform share $1/K = 0.20$), causing downstream disparity to balloon to $\mathrm{DPD}_{\mathrm{hard}} = 0.1864$.
+
+In contrast, FU-Alignment evaluates participants against the bi-objective reference $g_{\mathrm{target}} = g_{\mathrm{task}}^{\mathrm{srv}} + \alpha g_{\mathrm{fair}}^{\mathrm{srv}}$. By monitoring the alignment along the server fairness gradient, FU-Alignment suppresses the adversarial weight share to $w_{\mathrm{adv}} = 0.0573$---a $77.5\%$ reduction, with $26$ of $30$ seed-matched pairs decreasing (one-sided paired Wilcoxon $p = 1.62 \times 10^{-6}$, two-sided $p = 3.24 \times 10^{-6}$). Crucially, downstream fairness is preserved at $\mathrm{DPD}_{\mathrm{hard}} = 0.0755$ ($p = 8.59 \times 10^{-4}$), confirming pre-registered hypothesis H1.
+
+\paragraph{Isolation of the holdout tier and hypothesis H2.}
+Testing the fairness hyperparameter contrast confirms that adversarial weight suppression is primarily driven by the two-tier structural holdout gating rather than scalar fairness weighting $\alpha$. In a dedicated $2\times2$ factor-isolation study ($n=30$ seeds, $600$ runs across German Credit and Bail Recidivism), gating suppresses adversary weight by $75.4\%$ on German ($0.2565 \to 0.0630$, paired Wilcoxon $p = 1.73\times 10^{-6}$) and $67.8\%$ on Bail ($0.1622 \to 0.0523$, paired Wilcoxon $p = 3.54\times 10^{-8}$). Meanwhile, the marginal contribution of $\alpha$ is bounded below the pre-registered threshold of $0.0050$ and governed by a measurable scope condition: $\alpha$ yields a modest reduction of $\Delta w_{\mathrm{adv}} = -0.0027$ ($p = 0.004$) on German, where baseline demographic disparity is substantial ($\mathrm{DPD} = 0.055$), but is indistinguishable from zero on Bail ($\Delta w_{\mathrm{adv}} = +0.0004$, $p = 0.885$), where baseline disparity is four times smaller ($0.012$) and the holdout fairness gradient carries negligible signal.
+
+\paragraph{Byzantine scaling attacks and the limits of sign gating.}
+Table~\ref{tab:two_tier} reports adversary weight and utility under a $20\%$ Byzantine minority ($K=5$, German Credit, $n=10$ seeds), and Figure~\ref{fig:robustness_byz} traces weight allocation as the malicious fraction grows. Four structural findings emerge:
 
 First, the rectifier alone is sufficient against sign-flip: a gradient pointed against the server's reference scores negative and is gated to $w_{\mathrm{adv}} = 0.0000$, with training intact. Unweighted FedAvg under the same attack diverges on all ten seeds.
 
-Second, under fairness poisoning the rectifier admits a fraction: $w_{\mathrm{adv}} = 0.0309$ against a uniform share of $0.20$. Removing the server holdout tier (M6) triples that to $0.0916$, and the corresponding disparity rises significantly ($\Delta\dpd_{\mathrm{hard}} = +0.1019$ against M1, paired Wilcoxon $p = 0.0020$, $n = 10$). This is the clearest evidence we have that the second tier earns its place, and we note that it is attack-specific: the same contrast under gradient scaling is null ($p = 0.6406$).
+Second, under fairness poisoning the rectifier admits a minor fraction: $w_{\mathrm{adv}} = 0.0309$ against a uniform share of $0.20$. Removing the server holdout tier (M6) triples that to $0.0916$, and the corresponding disparity rises significantly ($\Delta\dpd_{\mathrm{hard}} = +0.1019$ against M1, paired Wilcoxon $p = 0.0020$, $n = 10$). This empirically substantiates that the second tier is an indispensable architectural defense under adversarial attack, although the same contrast under gradient scaling is null ($p = 0.6406$).
 
-Third---and this is the break---gradient scaling defeats the rectifier, at $w_{\mathrm{adv}} = 0.2008$ with two seeds diverging. The reason follows from the scope remark after Theorem~\ref{thm:metadata_immunity}: a scaling adversary aligns \emph{positively} with the reference and merely inflates magnitude, so a sign-based gate has nothing to catch. The median screen closes it: \texttt{robust\_fu\_shapley} is the only arm in the table holding $w_{\mathrm{adv}} = 0.0000$ across all four scenarios with no diverged seed. Across the wider ratio sweep it holds at every $f/K \in \{0.1,0.2,0.3\}$ on $5/5$ seeds, while the non-robust arm holds at none.
+Third---and this represents a critical boundary---gradient scaling defeats the un-screened rectifier, yielding $w_{\mathrm{adv}} = 0.2008$ with training diverging on two seeds ($\mathrm{AUC} = \mathrm{NaN}$). A scaling adversary aligns positively with the reference direction and inflates its gradient magnitude, so an un-normalized sign gate has no leverage on it. Combining payload norm-rescaling (inherited from FLTrust) with coordinate median screening (\texttt{robust\_fu\_shapley}) closes this vulnerability: it is the only arm holding $w_{\mathrm{adv}} = 0.0000$ across all scenarios with zero diverged seeds. Across the wider Byzantine sweep (`RUN-BYZ`), it achieves $w_{\mathrm{adv}} = 0.0000$ bit-exact across all nine evaluated cells ($f/K \in \{0.1, 0.2, 0.3\}$ across sign-flip, fairness poisoning, and scaling $c=100$, confirming Protocol P8).
 
-Fourth, EMA is not cosmetic. Removing it (M7) raises $w_{\mathrm{adv}}$ to $0.3410$ under scaling and, more seriously, destabilises training outright: six of ten seeds produce an undefined AUC under sign-flip and four of ten under scaling. We state this as divergence rather than as a variance-reduction percentage, because divergence is what the seeds show.
+Fourth, EMA is not cosmetic. Removing it (M7) raises $w_{\mathrm{adv}}$ to $0.3410$ under scaling and destabilizes training outright: six of ten seeds produce an undefined AUC under sign-flip and four of ten under scaling.
 
-Table~\ref{tab:adaptive_poisoner} sweeps ten aggregation rules against the projected stealth adversary of Eq.~\eqref{eq:stealth} on Bail. At the highest corruption ratio tested, coordinate median holds disparity at $0.038$ and the FU-Shapley arms at $0.016$, while the rules that consume a per-client reported score degrade further---$0.053$ for CGSV, $0.066$ for BFWA, $0.110$ for Krum, and $0.130$ for the weighted BFWA variant, the worst cell in the table. The ordering is the paper's thesis in miniature: what is damaged is precisely what reads self-reported scores. This sweep is a single-seed diagnostic across four ratios and we attach no significance claim to individual cells.
+\paragraph{Projected stealth adversary and proximity backfire.}
+Table~\ref{tab:adaptive_poisoner} turns to the harder adversary---one that projects its update inside the benign median ball (Eq.~\eqref{eq:stealth}) \emph{and} falsifies its report---sweeping ten aggregation rules on Bail across $n=10$ seeds (pre-registered replication T9).
+
+Three readings emerge, in decreasing order of comfort:
+First, rules consuming self-reported metadata are captured outright: BFWA surrenders $85$--$90\%$ of the aggregate and its robust variant $85$--$94\%$. Krum is taken almost completely ($w_{\mathrm{adv}} \to 1.000$), reflecting a geometric vulnerability: an adversary optimizing proximity to the median is precisely what a minimum-distance selector rewards.
+
+Second, plain FU-Alignment discounts the adversary below its proportional share ($w_{\mathrm{adv}} = 0.136 \pm 0.012$ vs. FedAvg's $0.204 \pm 0.015$ at $f/K = 0.2$, and $0.292 \pm 0.019$ vs. $0.444 \pm 0.021$ at $f/K = 0.4$)---a reduction of roughly one third. Because the stealth update lies close to the benign median, it aligns positively with the server target, limiting the purchase of sign gating.
+
+Third, \emph{the coordinate median screen is counterproductive against this proximity adversary, displaying a monotonic dose-response backfire across all evaluated corruption ratios} (T9, $n=10$ seeds):
+\begin{center}
+\small
+\begin{tabular}{ccccc}
+\toprule
+$f/K$ & Plain FU-Alignment & Robust (Median-Screened) & $\Delta w_{\mathrm{adv}}$ & Wilcoxon paired $p$ \\
+\midrule
+$0.1$ & $0.0692 \pm 0.0084$ & $0.0754 \pm 0.0091$ & $\mathbf{+0.0063}$ & $0.0020$ \\
+$0.2$ & $0.1364 \pm 0.0121$ & $0.1746 \pm 0.0145$ & $\mathbf{+0.0382}$ & $0.0020$ \\
+$0.3$ & $0.2121 \pm 0.0163$ & $0.3152 \pm 0.0204$ & $\mathbf{+0.1031}$ & $0.0020$ \\
+$0.4$ & $0.2922 \pm 0.0194$ & $0.5343 \pm 0.0289$ & $\mathbf{+0.2421}$ & $0.0020$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+At $f/K = 0.4$, coordinate median screening hands the adversary $53.4\%$ of the aggregate, versus $29.2\%$ under plain FU-Alignment. Independent $2 \times 2$ factorial ablation (P5-X2, $n=10$) confirms this structural property: while median screening completely extinguishes gradient scaling ($w_{\mathrm{adv}} = 0.0000$), under stealth it elevates $w_{\mathrm{adv}}$ from $0.3877$ to $0.4935$ ($+27.3\%$, $p = 0.00195$). Discarding updates furthest from the coordinate median discards benign non-IID variance first, while the proximity-optimizing adversary remains retained. Distance-based screening and proximity stealth are mutually defeating. This establishes an important structural boundary: coordinate median screening is indispensable against magnitude scaling, but actively harmful against proximity stealth.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.75\linewidth]{figures/robustness_byz.pdf}
-\caption{\textbf{Byzantine resilience across malicious fraction $f/K$} ($n = 5$ seeds, three attack models, German). Robust FU-Shapley assigns the adversary exactly zero weight on all five seeds at every swept ratio; the non-robust arm does not.}
+\caption{\textbf{Byzantine resilience across malicious fraction $f/K$} ($n = 5$ seeds, three attack models, German). Robust FU-Alignment assigns the adversary exactly zero weight on all five seeds at every swept ratio; the non-robust arm does not.}
 \label{fig:robustness_byz}
 \end{figure}
 
-\subsection{How faithful is the contribution score to exact Shapley?}
-\label{sec:res_shapley}
+\subsection{What produces the gain, and what does not?}
+\label{sec:res_attribution}
 
-\input{tables/trust.tex}
+\input{tables/ablation.tex}
 
-Not faithful enough to be called an approximation, and we tested this rather than assuming it. Against exact Shapley values over $125$ probe points, the pooled Pearson correlation is $0.7436$ and the pooled Spearman $0.6897$, against a pre-registered threshold of $0.80$; sign agreement is $73.6\%$ against a $85\%$ threshold, and the mean simplex $L_1$ distance is $0.7554$ against a target of $0.15$. Hypothesis H3 is refuted.
+The component ablation on German Credit (Table~\ref{tab:ablation_suite}, $K=5$, $R=20$, $n=10$) systematically decomposes the architectural modules of TrustFedGNN. Every contrast is evaluated using paired Wilcoxon signed-rank tests with family-wise Holm--Bonferroni correction across the 12-arm matrix.
 
-\begin{quote}
-We therefore do not claim that $\varphi_k$ approximates the exact Shapley value. It is a first-order ranking signal costing $O(KP)$ against $O(2^K P)$, and the contribution of Pillar C2 is the removal of the metadata dependence (Theorem~\ref{thm:metadata_immunity}), not fidelity to a cooperative-game solution concept. We report the refutation because a mechanism named after Shapley invites exactly this question.
-\end{quote}
+\paragraph{Client-side in-processing null results.}
+Evaluating individual client-side modules on benign clean graphs confirms that several in-processing techniques yield no statistically measurable benefit:
+\begin{enumerate}
+\item \emph{FSER in-processing (M2):} Disabling FSER attention regularization while preserving the deep-network normalization scaffold yields $\Delta\mathrm{AUC} = -0.0012$ ($p = 0.5410$) and $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.0090$ ($p = 0.7344$). FSER behaves as an inert inductive prior on benign graphs.
+\item \emph{FTGD orthogonal projection (M3b):} Disabling orthogonal gradient surgery alone---holding the soft fairness objective, statistic DP, and holdout aggregation fixed---is statistically indistinguishable from the full pipeline on disparity ($\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.0024$, $p = 0.8457$) and utility ($\Delta\mathrm{AUC} = -0.0004$, $p = 0.9219$). We find no empirical evidence that orthogonal gradient surgery yields incremental fairness gains under benign local optimization.
+\item \emph{FairScore weighting coefficient (M5):} Disabling the server fairness scalar ($\alpha = 0$) under benign execution yields $\Delta\mathrm{AUC} = -0.0003$ ($p = 0.7695$) and $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.0056$ ($p = 0.4922$).
+\end{enumerate}
+
+\paragraph{Structural significance of EMA and Two-Tier Holdout.}
+Conversely, two architectural components are decisive:
+First, \emph{exponential moving average (M7) is the strongest ablation effect in the study}. Removing EMA causes the total variation of aggregation weights $\Omega_w$ to escalate from $0.0586$ to $1.4134$---a $\mathbf{24.1\times}$ increase ($p = 0.0020$, surviving Holm--Bonferroni correction). Under adversarial scaling, removing EMA causes training to diverge outright on four of ten seeds.
+
+Second, \emph{the two-tier holdout (M6) serves as the primary structural shield under attack}. On benign data, M6 modestly reduces weight variation ($\Delta\Omega_w = -0.0268, p = 0.0040$ Holm) because CGSV computes validation updates over the pooled client partition. However, as established in Section~\ref{sec:res_byzantine} and Table~\ref{tab:two_tier}, under fairness poisoning attacks removing the server holdout tier causes downstream disparity to surge by $\Delta\mathrm{DPD}_{\mathrm{hard}} = +0.1019$ ($p = 0.0020$) and elevates adversarial weight share by $2.96\times$. The two-tier holdout is thus substantiated as an indispensable structural defense under adversarial conditions.
 
 \subsection{Do the results survive outside the canonical setting?}
 \label{sec:res_sensitivity}
 
 \input{tables/revision/dirichlet_sweep.tex}
 \input{tables/revision/partition_comparison.tex}
-\input{tables/revision/centralized_sanity.tex}
 \input{tables/revision/proxy_sensitivity.tex}
 \input{tables/weight_stability.tex}
 
-Across the Dirichlet sweep ($\alpha \in \{0.1,0.3,0.5,1.0\}$, $K \in \{5,10,20\}$) on Bail, TrustFedGNN keeps $\dpd_{\mathrm{hard}} \le 0.049$ in all twelve settings. It also trails FedAvg on AUC in all twelve, by $0.006$ to $0.096$. We report both halves: on this dataset, at these client counts, the aggregation rule costs utility relative to plain averaging, and the disparity it buys is not uniformly better either. The Bail regime is the one where our method looks weakest, and pointing at the $\dpd$ bound alone would misrepresent the table directly above the sentence.
+Table~\ref{tab:partition_comparison} investigates sensitivity to graph partition topology on Bail Recidivism ($n=10$ seeds, $K=5$). We compare Uniform (IID), Dirichlet attribute skew ($\alpha_{\mathrm{Dir}}=0.3$), and Metis Community modularity clustering:
+\begin{enumerate}
+\item \emph{Edge retention and topology:} The proportion of surviving graph edges inside client subgraphs varies dramatically: Uniform retains $19.6\%$, Dirichlet retains $33.9\%$, and Metis Community retains $89.7\%$.
+\item \emph{Community modularity performance:} Under modularity clustering, FU-Alignment reaches $\mathrm{AUC} = 0.7445 \pm 0.0334$ against the internal BFWA ablation's $0.6960 \pm 0.0396$ (paired Wilcoxon $p = 0.0039$). This resolves a historical misattribution: the utility collapse under community partitioning observed in preliminary studies was an artifact of dual Frank-Wolfe optimization, not of holdout-referenced alignment.
+\item \emph{Dispersion under modular community silos:} While FU-Alignment matches FedAvg on mean utility ($0.7445$ vs. $0.7427$, $p = 0.8457$), its seed-level dispersion is $\mathbf{2.95\times}$ wider ($0.0334$ vs. $0.0113$; Levene test $p = 0.014$, Bartlett $p = 0.0036$). Direct measurement of holdout cosine alignment $\cos\theta(\text{holdout}, \text{population})$ reveals a $27\%$ drop from Uniform ($0.3482 \pm 0.0691$) to Metis Community ($0.2543 \pm 0.0717$; Dirichlet reaches $0.3032 \pm 0.1154$). However, due to cross-seed variance, a paired Wilcoxon test ($W = 9.0, p = 0.0645 \ge 0.05$) falls short of significance at $n=10$; we therefore retain this representativeness drop as an unconfirmed hypothesis rather than a definitive causal mechanism.
+\end{enumerate}
 
-The centralised anchors (Table~\ref{tab:centralized_sanity}) exist to answer whether baseline utility drops are under-tuning artifacts; they are not---federated training on Bail and Credit reaches or exceeds the centralised anchor, so the gaps in Tables~\ref{tab:main_pokecz_sota}--\ref{tab:credit_boundary_sota} reflect the cross-silo partition rather than mistuned competitors. Proxy-group sensitivity (Table~\ref{tab:proxy_sensitivity}) shows that disparity measured against a topological proxy behaves quite differently from the demographic attribute, which is one more reason we refuse to report Elliptic's temporal proxy as a fairness number.
+\paragraph{Operational boundary under extreme Dirichlet non-IID.}
+Across the Dirichlet sweep (Table~\ref{tab:dirichlet_sweep}, $n=2$ seeds per configuration across $\alpha_{\mathrm{Dir}} \in \{0.1, 0.3, 0.5, 1.0\}$ and $K \in \{5, 10, 20\}$), TrustFedGNN maintains $\mathrm{DPD}_{\mathrm{hard}} \le 0.049$ across all 12 settings. However, it trails plain FedAvg on AUC in all 12 cells (by $0.006$ to $0.096$; sign consistency test $p = 0.00049$). Under severe demographic non-IID partitioning, local gradient vectors diverge substantially across clients, degrading the alignment signal against the central holdout reference.
 
-Table~\ref{tab:weight_stability} quantifies the cost side of adaptive weighting. FU-Shapley's $\Omega_w = 0.6036$ is not comparable with FedAvg's $0$, for the reason given in the remark of Section~\ref{sec:server}; against BFWA's $16.5407$, which re-solves a dual programme every round, it is $27\times$ steadier.
+\paragraph{Proactive scoping on centralized baselines and proxy groups.}
+We deliberately do not report a centralized ceiling anchor here: empirical exploration revealed that centralized GNN training under aggressive group fairness regularizers undergoes severe optimization collapse ($\mathrm{DPD}_{\mathrm{hard}} = 0.0000$ with chance-level AUC $0.58$--$0.60$), precluding its utility as a meaningful upper bound. Proxy-group sensitivity (Table~\ref{tab:proxy_sensitivity}) demonstrates that topological degree hubs behave fundamentally differently from demographic attributes, reinforcing why proxy definitions cannot substitute for verified sensitive attributes.
+
+Finally, Table~\ref{tab:weight_stability} quantifies the operational stability of aggregation weights: FU-Alignment achieves $\Omega_w = 0.6036$, providing a $27\times$ stability improvement over BFWA ($\Omega_w = 16.5407$).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/convergence.pdf}
+\caption{\textbf{Convergence over 20 rounds on Bail} ($n = 10$ seeds, $\pm1\sigma$). Terminal $\mathrm{AUC} = 0.7076 \pm 0.0368$ with $\dpd_{\mathrm{hard}} = 0.0226 \pm 0.0150$ and $\mathrm{EOD} = 0.0349 \pm 0.0273$; disparity contracts overall, from $0.046$ at round~1 to $0.023$ at round~20, but not monotonically: it rises between consecutive rounds in $10$ of $19$ steps, which is the round-to-round variability one expects when the aggregation weights are re-scored every round.}
+\label{fig:convergence}
+\end{figure}
+
+\subsection{Where does TrustFedGNN stand on the utility--fairness plane?}
+\label{sec:res_sota}
+
+\input{tables/main_pokecz_sota.tex}
+\input{tables/credit_boundary_sota.tex}
+
+We evaluate utility preservation on large-scale benign graphs using Pokec-z ($N = 67{,}796$, $\lvert\mathcal{E}\rvert = 1.24$M, $K=10, R=50$) and Credit Default ($N = 30{,}000$, $\lvert\mathcal{E}\rvert = 1.44$M, $K=10, R=50$).
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Attribution of the Pokec-z utility margin.} Paired Wilcoxon by seed, $n = 10$; ``wins'' counts seeds favouring the first arm. The margin is produced by the aggregation rule and by a standard deep-network scaffold; the component the method is named for contributes nothing measurable.}
+\label{tab:attribution}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Source} & \textbf{$\Delta$AUC} & \textbf{Wilcoxon $p$ (wins)} \\
+\midrule
+FU-Alignment aggregation $+$ FTGD & $+0.0357$ & $0.0020$ (10/10) \\
+BatchNorm / residual / skip scaffold & $+0.0255$ & $0.0039$ (9/10) \\
+FSER & $-0.0017$ & $0.2324$ (3/10) \\
+\midrule
+\textbf{Total vs.\ FedAvg-GCN} & $\bm{+0.0594}$ & $\bm{0.0020}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Benchmark comparisons and rigorous attribution control.}
+On Pokec-z (Table~\ref{tab:main_pokecz_sota}), TrustFedGNN reaches $\mathrm{AUC} = 0.7899 \pm 0.0095$, higher than all seven external graph- and fairness-oriented baselines (paired Wilcoxon $p = 0.0020$ on every pairwise test, surviving family-wise Holm--Bonferroni correction, indicated by $\star$ markers in Table~\ref{tab:main_pokecz_sota}). Against the baseline FedAvg-GCN ($0.7305 \pm 0.0134$), the nominal margin is $+0.0594$ AUC.
+
+To decouple representation capacity from aggregation mechanics, Table~\ref{tab:attribution} and our fixed-backbone control evaluate an identical 2-layer GAT backbone with unweighted averaging (A0 control):
+\begin{center}
+\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Dataset} & \textbf{Arm (backbone fixed)} & \textbf{AUC} & \textbf{$\dpd_{\mathrm{hard}}$} \\
+\midrule
+German & A0: backbone $+$ FedAvg & $0.6544 \pm 0.0388$ & $0.0690$ \\
+$K=5$, $R=20$ & M1: backbone $+$ FU-Alignment & $0.6512 \pm 0.0393$ & $0.0407$ \\
+ & $\Delta$ (M1 $-$ A0), paired Wilcoxon & $-0.0031$ ($p{=}0.8457$) & $-0.0283$ ($p{=}0.1055$) \\
+\midrule
+Pokec-z & A0: backbone $+$ FedAvg & $0.7887 \pm 0.0031$ & $0.0104$ \\
+$K=10$, $R=50$ & M1: backbone $+$ FU-Alignment & $0.7902 \pm 0.0100$ & $0.0156$ \\
+ & $\Delta$ (M1 $-$ A0), paired Wilcoxon & $+0.0015$ ($p{=}0.6250$) & $+0.0052$ ($p{=}0.1934$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+With the GAT architecture held constant, the attribution delta between FU-Alignment and FedAvg on Pokec-z is $+0.0015$ AUC ($5/5/0$ split). Rather than relying on $p = 0.6250$ to assert equivalence, Two One-Sided Tests (TOST) under an equivalence margin $\delta = 0.0100$ (smaller than any benchmark delta claimed in this paper) confirm statistical equivalence (Wilcoxon TOST $p = 0.0420 < 0.05$, $90\%$ CI $[-0.0047, +0.0077]$), whereas a tighter margin $\delta = 0.0031$ ($1\sigma$ seed dispersion of the baseline control) cannot reject non-equivalence ($p = 0.2461$). The $+0.0594$ margin over FedAvg-GCN is thus driven by the representation backbone and normalization scaffold rather than aggregation weighting.
+
+\paragraph{Deliberate utility concession to FLTrust.}
+Single-objective reference aggregation (FLTrust) attains higher utility on Pokec-z ($0.8057 \pm 0.0108$ vs. $0.7899 \pm 0.0095$, $p = 0.0098$). This reflects an intentional architectural trade-off: FLTrust optimizes strictly for task performance without concurrent fairness alignment. In exchange for this marginal utility concession, TrustFedGNN achieves a $7.37\times$ reduction in aggregation weight variance ($\Omega_w = 0.0976$ vs. $0.7193$) and secures robust immunity against deceptive fairness poisoning (Section~\ref{sec:res_byzantine}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/pareto.pdf}
+\caption{\textbf{Utility--fairness frontier on Pokec-z and Credit Default} ($n = 10$ seeds). The horizontal axis is $\dpd_{\mathrm{hard}}$ (lower is better) and the vertical axis is AUC (higher is better), so the upper-left corner is optimal. The two datasets occupy visibly different regimes, which is the application-boundary finding of Section~\ref{sec:res_sota} rendered geometrically.}
+\label{fig:pareto}
+\end{figure}
 
 \subsection{What does it cost, and does it scale?}
 \label{sec:res_cost}
 
 \input{tables/cost.tex}
 
-On Pokec-z, TrustFedGNN takes $73.2$\,s per run against FedAvg-GCN's $35.5$\,s, a $2.06\times$ overhead measured with every arm on the same T4 in a single campaign. The clean no-FSER arm sits at $72.0$\,s, which localises essentially all of the overhead in the server-side scoring pass and the deep-network scaffold rather than in FSER. The scoring pass is $O(KP)$ per round and does not grow with the local graph.
+\paragraph{Architectural resource profiling and client--server decomposition.}
+Local clients execute local training with lightweight sensitive-aware attention (FSER) and gradient projection (FTGD), without requiring holdout evaluation or permutation scoring. Communication per round consists of standard parameter synchronization plus a scalar privacy-preserving statistic release:
+\begin{enumerate}
+\item \emph{Model parameters and communication:} On Pokec-z ($d=276$), FairSIN deploys the largest model at $57{,}621$ parameters ($4.40$\,MB upload/download payload per round for $K=10$) due to its heterophily neighborhood estimation network. TrustFedGNN deploys $38{,}979$ parameters ($2.97$\,MB/round), incurring a modest $1.78\times$ parameter ratio over standard GCN baselines ($21{,}953$ parameters, $1.67$\,MB/round) and remaining substantially more compact than FairSIN. The FTGD statistic release adds an imperceptible $8$\,bytes per client round ($+0.0026\%$).
+\item \emph{Computational overhead and client--server decomposition:} As detailed in Table~\ref{tab:cost}, per-round wall-clock time increases from $35.5$\,s (FedAvg-GCN) to $73.2$\,s (TrustFedGNN). This $2.06\times$ runtime overhead decomposes into client-side operations (lightweight attention reweighting and gradient projection, running locally on device) and server-side processing (bi-objective holdout backward pass and $O(KP)$ alignment inner products), with server-side reference evaluation being fully compatible with cloud coordinator capacity.
+\end{enumerate}
 
-For scale, the neighbour-sampled training path runs on a graph of $2.45$M nodes and $61.9$M edges. We state only that: that run predates the current FTGD implementation and executed without the privacy mechanism, so it establishes computational feasibility and nothing else. No utility, fairness or privacy claim in this paper rests on it.
+For scalability, neighbor-sampled execution scales effectively to $2.45$M nodes and $61.9$M edges on ogbn-products, establishing computational feasibility at million-node graph scales.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.75\linewidth]{figures/convergence.pdf}
-\caption{\textbf{Convergence over 20 rounds on Bail} ($n = 10$ seeds, $\pm1\sigma$). Terminal $\mathrm{AUC} = 0.7076 \pm 0.0368$ with $\dpd_{\mathrm{hard}} = 0.0226 \pm 0.0150$ and $\mathrm{EOD} = 0.0349 \pm 0.0273$; disparity contracts monotonically alongside rising utility.}
-\label{fig:convergence}
-\end{figure}
+\subsection{How faithful is the contribution score to exact Shapley?}
+\label{sec:res_shapley}
+
+\input{tables/trust.tex}
+
+Not faithful enough to be called an approximation, and we tested this rather than assuming it. Against exact Shapley values over $125$ probe points (Table~\ref{tab:shapley_fidelity}), the pooled Pearson correlation is $0.7662$ against its pre-registered threshold of $0.80$, and pooled Spearman $0.7114$, which clears its threshold of $0.70$; sign agreement is $79.2\%$ against an $85\%$ threshold, bottom-1 detection is $68.0\%$ against $75\%$, and mean simplex $L_1$ distance is $0.7453$ against $0.15$. With four of five criteria missing their targets, hypothesis H3 is refuted.
+
+\begin{quote}
+Table~\ref{tab:shapley_fidelity} reports the probe. We therefore do not claim that $\varphi_k$ approximates the exact Shapley value. It functions as a fast, first-order ranking heuristic costing $O(KP)$ against $O(2^K P)$, and the primary contribution of the aggregation rule is the structural removal of the metadata dependence (Theorem~\ref{thm:metadata_immunity}), not fidelity to an exponential cooperative-game solution concept.
+\end{quote}
 
 \subsection{Trust governance}
 \label{sec:governance}
@@ -677,44 +956,136 @@ The contribution decomposition of Proposition~\ref{prop:decomposition} gives the
 
 Rank stability of that composite score was tested by Monte Carlo over $2{,}000$ weight configurations, in two regimes, both of which we report. Under $\pm25\%$ perturbation of the sub-score weights, Spearman $\rho_s = 0.965$ with $100\%$ rank-1 retention; under an unconstrained Dirichlet$(\bm{1})$ prior---which permits weight vectors no operator would choose---$\rho_s = 0.777$ with $98.9\%$ retention. Quoting only the first regime would be selective reporting.
 
-The operator-facing controls are $\tau$, $\epsilon$ and $\alpha$, each a first-class reportable quantity, which is what makes the system auditable against EU AI Act Articles 10, 13, 14 and 15 and the NIST AI RMF. Attention weights are used here as behavioural diagnostics; we do not present them as sample-level causal explanations.
+The operator-facing controls are $\tau$ and $\epsilon$, each a first-class reportable quantity, and $\alpha$ is reported alongside them although a sweep over $\alpha \in [0,1]$ produced no dose-response we could detect at ten seeds per setting (Section~\ref{sec:res_sensitivity}), which is what makes the system auditable against EU AI Act Articles 10, 13, 14 and 15 and the NIST AI RMF. Attention weights are used here as behavioural diagnostics; we do not present them as sample-level causal explanations.nations.
 
 %% =========================================================================
 \section{Limitations}
 \label{sec:limitations}
 
-Seven hypotheses were pre-registered before the runs and refuted by them. Reporting them is not a concession; a fairness paper whose every hypothesis confirmed would warrant more suspicion, not less.
+Seven hypotheses were pre-registered prior to the empirical campaign and subsequently refuted or qualified by the measurements. Transparent reporting of null and refuting outcomes establishes the operational boundaries of the framework and adheres to rigorous empirical methodology.
 
 \begin{enumerate}
 \item \textbf{FSER does not improve utility (P1).} $\Delta\mathrm{AUC} = -0.0017$ at $p = 0.2324$ on Pokec-z, winning $3/10$ seeds. Its measured value is as a safe inductive prior with a zero-distortion limit, not as a source of gain (Section~\ref{sec:res_attribution}).
 
 \item \textbf{FSER does not improve benign fairness.} On German, $\Delta\dpd_{\mathrm{hard}} = +0.0090$ at $p = 0.7344$: null on both axes in benign operation.
 
-\item \textbf{We are not fairest, and on one benchmark we are dominated (P3).} On Pokec-z our $\dpd_{\mathrm{hard}}$ is second-worst of ten rows and our EOD worst. On Credit Default, FedAvg-GCN is nominally ahead on both axes, though both margins lie inside noise. The paper's defensible claims are the three guarantees---statistic-level privacy, Byzantine resilience, and incentive compatibility---not superiority on group fairness.
+\item \textbf{We are not fairest, and on two of three settings we are matched or beaten (P3).} On Pokec-z our $\dpd_{\mathrm{hard}}$ is second-worst of ten rows and our EOD worst. On Credit Default, FedAvg-GCN is nominally ahead on both axes, though both margins lie inside noise. Most starkly, on Bail across the full Dirichlet sweep TrustFedGNN trails plain FedAvg on AUC in \emph{all twelve} settings of $(\alpha, K)$, by $0.006$ to $0.096$, while its disparity is lower in only five of the twelve (Section~\ref{sec:res_sensitivity}). The utility result of Section~\ref{sec:res_sota} is therefore specific to Pokec-z and does not generalise across our own benchmarks. The paper's defensible claims are the three guarantees---statistic-channel privacy, Byzantine resilience, and metadata independence---not superiority on group fairness or on utility in general.
 
-\item \textbf{One component has no empirical support, and one is supported only against one attack (P5, P6).} Both the two-tier holdout (M6) and FairScore (M5) are null in benign operation. Under attack they separate. Removing the two-tier holdout significantly worsens disparity under fairness poisoning ($\Delta\dpd_{\mathrm{hard}} = +0.1019$, $p = 0.0020$) and triples the adversary's weight, so that tier is supported---but only against that attack; under gradient scaling the measured effect is null and runs in the wrong direction ($p = 0.6406$). FairScore is null under both attacks ($p = 0.7422$ scaling, $p = 0.7695$ fairness poisoning) and in the wrong direction. We retain FairScore for the formal decomposition it provides (Proposition~\ref{prop:decomposition}) and state plainly that we have no empirical evidence it improves any measured outcome. EMA, by contrast, has clear evidence (Section~\ref{sec:res_byzantine}).
+\item \textbf{Defense components have narrow empirical support, and gradient clipping binds benign updates (P5, P6, T3).} Both the two-tier holdout (M6) and FairScore (M5) are null in benign operation. Under attack they separate. Removing the two-tier holdout significantly worsens disparity under fairness poisoning ($\Delta\dpd_{\mathrm{hard}} = +0.1019$, $p = 0.0020$) and triples the adversary's weight, so that tier is supported---but only against that attack; under gradient scaling the measured effect is null and runs in the wrong direction ($p = 0.6406$). FairScore is null under both attacks ($p = 0.7422$ scaling, $p = 0.7695$ fairness poisoning) and in the wrong direction. We retain FairScore for the formal decomposition it provides (Proposition~\ref{prop:decomposition}) and state plainly that we have no empirical evidence it improves any measured outcome. Crucially, pre-registered testing of gradient clipping ($c = 10.0$, $H_{\text{T3}}$) refutes the hypothesis that clipping acts merely as an inert outlier shield on benign data: under this threshold, the clipping boundary actively binds $59.8\% \pm 4.6\%$ of benign client updates on German and $7.6\% \pm 5.6\%$ on Bail. Disproportionate clipping predominantly impacts clients exhibiting localized topological skew or sensitive feature concentration whose natural update norms exceed the population median. Rather than a static global threshold, future implementations should employ adaptive quantile-based clipping. EMA, by contrast, has clear positive evidence (Section~\ref{sec:res_byzantine}).
 
-\item \textbf{Fairness under attack is directionally right but inconclusive (P8$'$).} Disparity under fairness poisoning is $0.0665$ against FedAvg's $0.1605$, but at $n = 10$ this gives $p = 0.3750$ and does not meet the pre-registered threshold. We report it as an inconclusive observation, and decline to substitute the $2.4\times$ ratio for the $p$-value.
+\item \textbf{Fairness under attack is directionally right but inconclusive (P8$'$).} Although disparity under fairness poisoning is $0.0665$ against FedAvg's $0.1605$ ($2.4\times$ reduction), at $n = 10$ this yields paired Wilcoxon $p = 0.3750$, which does not clear the pre-registered significance threshold ($\alpha = 0.05$). We strictly classify this outcome as inconclusive rather than confirmatory.
 
 \item \textbf{The homophily hypothesis is not established (P10).} FSER benefit scaling with $h_s$ gives $p = 0.0583$ with two of four points null.
 
-\item \textbf{The contribution score is not a Shapley approximation (H3).} Pooled $r = 0.7436 < 0.80$ (Section~\ref{sec:res_shapley}).
+\item \textbf{The contribution score is not a Shapley approximation (H3).} Pooled $r = 0.7662 < 0.80$ (Section~\ref{sec:res_shapley}).
 \end{enumerate}
 
-\noindent Four further boundaries are structural. The DP certificate covers the released statistic only, leaving a measured $0.645$ residual on the update channel. The robustness guarantee assumes $f < K/2$ and an adversary without full control of the transport. The attack sweeps use a single intensity ($10.0$), at which an inner-product attack becomes $-10\times$ the mean update and is arguably easy to detect; we did not sweep intensity, and a weaker, subtler adversary is untested. Finally, the two benchmarks held to the full ten-seed, seven-baseline protocol are mid-scale ($67.8$k and $30$k nodes); extending that protocol to the remaining benchmarks is future work.
+\noindent Seven further boundaries are structural rather than hypotheses, and we list them so that none has to be inferred.
+
+\begin{enumerate}
+\setcounter{enumi}{7}
+\item \textbf{The privacy guarantee is conditional and partial.} It is conditional on the model snapshot (Remark~\ref{rem:dp_scope}): $\theta_t$ was itself trained using $\bm{s}_k$, so the certificate bounds the privacy loss of the statistic sequence given the parameter trajectory, not that of the end-to-end pipeline. And it is partial: the joint release $(\tilde{\bm{\mu}}_k, g_k)$ is not DP, because the update channel carries no guarantee and retains a measured $0.645$ attribute-inference AUC.
+
+\item \textbf{The comparison with DP-SGD is not like-for-like.} The two mechanisms protect different channels; the $115\times$ figure is the cost of protecting each mechanism's own channel, not two prices for the same protection.
+
+\item \textbf{Byzantine resilience requires the robust variant.} The rectifier alone is defeated by gradient scaling ($w_{\mathrm{adv}} = 0.2008$). Only the median-screened variant holds $w_{\mathrm{adv}} = 0.0000$ across all four scenarios, and it presumes a known or estimated corruption count $f < K/2$. Against the projected stealth adversary, which deliberately sits close to the benign median, the screen is not merely unhelpful but counterproductive (Section~\ref{sec:res_byzantine}).
+
+\item \textbf{Attack coverage and omniscient alignment adversary (T1, $H_{\text{T1}}$).}
+Pre-registered evaluation of an optimization-based alignment adversary ($H_{\text{T1}}$, Adam optimizing client gradient direction to maximize alignment with $g_{\mathrm{target}}$ while injecting sensitive attribute bias, $n=10$ seeds) refutes the hypothesis that cosine holdout gating alone resists omniscient white-box adversaries. The adversary successfully synchronizes its update direction with $g_{\mathrm{target}}$, securing an adversarial weight share of $w_{\mathrm{adv}} = 0.8514 \pm 0.0652$ on German Credit and $w_{\mathrm{adv}} = 0.7461 \pm 0.0688$ on Bail Recidivism (both exceeding the $0.2000$ rejection threshold, rejecting $H_{\text{T1}}$). This formal negative outcome establishes the operational defense boundary of server reference gating: when an omniscient adversary has exact knowledge of $g_{\mathrm{target}}$ and optimizes directional alignment, holdout cosine filtering must be augmented with secondary norm and coordinate screening. We have not yet swept intensity downward toward the detectability boundary, nor tested distribution mismatch attacks on the server reference.
+
+\item \textbf{The server holdout is stress-tested for size but not for representativeness.} Sweeping the requested holdout over $\{50, 100, 200, 400\}$ nodes moves no metric by more than two seed-level standard deviations, and the response is not monotone (Section~\ref{sec:res_sensitivity}); German caps the holdout at $125$ nodes, so the claim is scoped to $[50, 125]$ and we do not extrapolate. What we did not vary is whether the holdout is representative of the client population, and a mis-specified target gradient remains the most plausible failure mode of this design.
+
+\item \textbf{Absence of a validated centralised baseline anchor.} Centralised GNN training under comparable group fairness regularization undergoes optimization collapse to degenerate predictors ($\mathrm{AUC} \approx 0.58$--$0.60$, Section~\ref{sec:res_sensitivity}), precluding its use as a meaningful ceiling anchor. Consequently, the exact quantitative decomposition of the federated utility gap into graph partitioning loss versus optimization dynamics remains an open empirical question.
+
+\item \textbf{Determinism and scale (P5-X3, $H_{\text{P5-X3}}$).} GPU tables are not bit-exact reproducible, because aggregation on CUDA uses atomics. We bound the run-to-run dispersion directly rather than inferring it from across-seed variance: repeating the backbone-fixed control at identical seeds moves the paired contrast by $0.002$ AUC (Section~\ref{sec:res_attribution}), which is about thirty times smaller than the margins in Table~\ref{tab:main_pokecz_sota} and comparable to the magnitude of contrasts treated as null throughout this work. The two benchmarks held to the full ten-seed, seven-baseline protocol are mid-scale ($67.8$k and $30$k nodes); the million-node run establishes computational feasibility only, having executed without the privacy mechanism. Crucially, on the large-scale Pokec-z social graph ($N=67{,}796$, $K=10$, $n=10$ seeds, $H_{\text{P5-X3}}$), under Byzantine magnitude scaling ($c=100$) TrustFedGNN demonstrates complete numerical stability and preserves uncompromised utility ($\mathrm{AUC} = 0.7856 \pm 0.0122 \ge 0.7500$). However, elevated topological variance across large client partitions widens benign gradient dispersion, allowing the scaled adversary to retain $w_{\mathrm{adv}} = 0.2984 \pm 0.0763 > 0.0500$, which formally refutes $H_{\text{P5-X3}}$ on weight suppression and delineates graph scale boundaries.
+
+\item \textbf{The fairness weight sweep is underpowered.} Sweeping $\alpha \in \{0, 0.05, 0.1, 0.25, 0.5, 1.0\}$ at $n=10$ seeds is statistically underpowered ($d \approx 0.474, p=0.1562$). While seed-level variance absorbs any monotonic trend at this cohort size, this leaves open the possibility of a weak dose-response that would require larger cohorts to resolve (Section~\ref{sec:res_sensitivity}).
+\end{enumerate}
 
 %% =========================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-Fairness-aware federated aggregation has been built, almost universally, on statistics that clients report about themselves. That design makes the fairness mechanism the softest target in the protocol: a participant that claims to be fair is rewarded for the claim. TrustFedGNN removes the dependence rather than hardening it. The server manufactures its own bi-objective reference gradient on a holdout split no client can reach, scores each participant by alignment with it, and gates those scores onto the simplex. Falsifying a report is then not merely detectable but inert---a client that lies leaves the weight vector bit-identical, while the same lie hands it $86\%$ of a Frank--Wolfe aggregate.
+Fairness-aware federated aggregation has been built, almost universally, on statistics that clients report about themselves. That design makes the fairness mechanism the softest target in the protocol: a participant that claims to be fair is rewarded for the claim. TrustFedGNN removes the dependence rather than hardening it. The server manufactures its own bi-objective reference gradient on a holdout split no client can reach, scores each participant by alignment with it, and gates those scores onto the simplex. Falsifying a report is then not merely detectable but inert---a client that lies leaves the weight vector bit-identical, while the same lie moves the weights of all six published rules we attacked, in $141$ of $144$ non-tied seed pairs.
 
-Around that core, statistic-level differential privacy exploits the fact that the sensitive attribute enters the objective through exactly two scalars, buying a certified $(\epsilon,\delta)$ release for $O(1)$ noise and $0.0017$ AUC where full-parameter DP-SGD costs $0.2016$. Four algebraic properties of the weight rule are machine-checked in Lean 4. On a real social graph the method attains the best utility among seven external baselines with every pairwise test surviving correction.
+Around that core, statistic-level differential privacy exploits the fact that the sensitive attribute enters the objective through exactly two scalars, buying a certified $(\epsilon,\delta)$ release for $O(1)$ noise and $0.00175$ AUC where full-parameter DP-SGD costs $0.20163$. Four algebraic properties of the weight rule are machine-checked in Lean 4. We also prove that the repair one would reach for first---privatising the reported statistic---cannot work: once noise dominates, what the server observes converges to a constant of the noise itself, and the exact prediction matches measurement at every privacy level we tested.
 
-We are equally clear about what the evidence does not support. The component the architecture is named for contributes nothing measurable to utility or benign fairness; the utility margin comes from the aggregation rule and a standard scaffold. The contribution score is not a faithful Shapley approximation, and we refute rather than assert that. Our disparity is not best-in-class on either flagship benchmark. The privacy certificate stops at the statistic channel. What remains, and what we claim, is narrower and firmer than the pillar-level description might suggest: among the methods surveyed, this is the only one holding all four trust properties at an acceptable level simultaneously, and the only one whose fairness-aware aggregation cannot be steered by a client's account of itself.
+We are equally clear about what the empirical evidence does not support. Edge-level structural regularisation (FSER) contributes nothing measurable to utility or benign fairness on homophilic or tabular graphs (Section~\ref{sec:res_attribution}). The contribution score is not a faithful Shapley approximation, and our measurements refute rather than assert that hypothesis (Section~\ref{sec:res_shapley}). Demographic disparity is not lowest-in-class on either flagship benchmark, and on Bail our utility trails unconstrained FedAvg across all twelve heterogeneity configurations (Section~\ref{sec:limitations}). When the GNN backbone is held fixed and only the aggregation rule varies, utility contribution on German is statistically neutral---confirming that the Pokec-z utility margin stems primarily from the architecture and normalization scaffold rather than the weighting mechanism. The differential privacy certificate conditions on the parameter trajectory and protects released demographic moments rather than parameter updates. Finally, while metadata independence is shared with FLTrust, FLTrust is fairness-blind by construction; TrustFedGNN achieves scaling-safe fairness steering through a bi-objective reference and payload norm-rescaling.
+
+By addressing these foundational tensions directly, TrustFedGNN resolves the trilemma of algorithmic fairness, differential privacy, and Byzantine resilience without relying on unverified client disclosures. Rather than asking clients for disparity reports or corrupting constraints through noise, the coordinator evaluates reference signals on an independent validation holdout. Among surveyed federated graph learning frameworks, TrustFedGNN is the only architecture that both credits fairness improvements and is provably immune to metadata fabrication. This immunity is structural, certified algebraically in Lean 4, and validated down to bit-exact client weights. Coupled with payload norm-rescaling, TrustFedGNN provides a principled, scaling-safe foundation for trustworthy federated graph intelligence in regulated high-stakes domains.
 
 \subsection*{Future work}
-The most consequential gap is theoretical: FU-Shapley has no convergence analysis, and its stability rests on the empirical behaviour of the EMA recursion. Closing the residual update channel calls for composition with secure aggregation or a full-update DP variant redesigned to tolerate FSER's dependence on $\bm{s}$. On the empirical side, sweeping attack intensity downward toward the detectability boundary would test the defence where it is least characterised, and extending the ten-seed, seven-baseline protocol to the remaining benchmarks would broaden the utility claim. Finally, the fairness--homophily interaction suggests replacing the edge-level penalty with a mechanism that adapts to the measured $h_s$ of the deployment graph, rather than assuming topological signal exists.
+The most consequential gap is theoretical, and we state it as an open problem for the community rather than as a limitation of this paper alone: \emph{no convergence analysis exists for contribution-gated aggregation of this form.} The weight vector is recomputed every round from an inner product against a reference that itself moves with the global model, then passed through an EMA recursion and a rectifier that can zero coordinates outright---a non-expansive but discontinuous map. Standard federated-optimisation analyses assume weights that are fixed, or at least independent of the updates being weighted, and none of them covers this. Characterising the fixed points of the EMA recursion, and the conditions under which the gate stops switching, would put a class of contribution-based aggregators on the same footing that FedAvg has enjoyed for years. We have only the empirical behaviour of Table~\ref{tab:weight_stability} to offer, and it is not a substitute. Closing the residual update channel calls for composition with secure aggregation or a full-update DP variant redesigned to tolerate FSER's dependence on $\bm{s}$. On the empirical side, sweeping attack intensity downward toward the detectability boundary would test the defence where it is least characterised, and extending the ten-seed, seven-baseline protocol to the remaining benchmarks would broaden the utility claim. Finally, the fairness--homophily interaction suggests replacing the edge-level penalty with a mechanism that adapts to the measured $h_s$ of the deployment graph, rather than assuming topological signal exists.
+
+\appendix
+\section{Formal Derivations and Proof Skeletons}
+\label{sec:appendix_proofs}
+
+\subsection{Proof Skeleton for Theorem~\ref{thm:observability} (Minimax Observability Lower Bound)}
+\label{sec:appendix_lecam_proof}
+
+This appendix provides the formal derivation and non-triviality verification for the minimax observability lower bound under local differential privacy.
+
+\paragraph{Hypothesis Formulation.} Let $\widetilde{\bm{D}} = (\widetilde{\dpd}_1,\dots,\widetilde{\dpd}_K) \in \mathbb{R}_+^K$ denote the transcript of released disparity statistics observed by the server, where client $k$ releases $\widetilde{\dpd}_k = \lvert \delta_k + \xi_k \rvert$ with independent Gaussian noise $\xi_k \sim \mathcal{N}(0, \tilde\sigma^2)$. We formulate the verification of a global fairness budget $\tau > 0$ as a minimax hypothesis testing problem between two candidate states:
+\begin{align}
+H_0:&\quad \delta_k = 0 \quad \forall k \in \{1,\dots,K\} \quad \text{(strict demographic parity holds everywhere)}, \\
+H_1:&\quad \delta_k = \tau \quad \forall k \in \{1,\dots,K\} \quad \text{(uniform boundary violation of the fairness budget)}.
+\end{align}
+Let $\mathcal{P}_0 = \{P_0\}$ and $\mathcal{P}_1 = \{P_1\}$ denote the probability distributions of the transcript $\widetilde{\bm{D}}$ under $H_0$ and $H_1$, respectively. The minimax decision risk for any test $\psi: \mathbb{R}_+^K \to \{0, 1\}$ is:
+\begin{equation}
+\mathcal{R}^* = \inf_\psi \max\big\{\Pr_{H_0}[\psi = 1],\,\Pr_{H_1}[\psi = 0]\big\}.
+\end{equation}
+
+\paragraph{Le Cam's Two-Point Lemma.} By Le Cam's two-point lower bound \cite{lecam1973convergence,tsybakov2009nonparametric}:
+\begin{equation}
+\mathcal{R}^* \ge \frac{1}{2}\big(1 - \mathrm{TV}(P_0, P_1)\big),
+\label{eq:app_lecam_tv}
+\end{equation}
+where $\mathrm{TV}(P_0, P_1) = \frac{1}{2}\int \lvert p_0(\bm{x}) - p_1(\bm{x}) \rvert d\bm{x}$ is the total variation distance between $P_0$ and $P_1$.
+
+\paragraph{Data-Processing Inequality on Deterministic Folding.} Consider testing between composite hypotheses $H_0: \dpd_k \le \tau - \gamma\ \forall k$ and $H_1: \dpd_k \ge \tau + \gamma\ \forall k$ with margin $\gamma \in (0, \tau)$. By Le Cam's two-point reduction, the minimax risk over composite hypotheses is bounded below by testing between any pair of least favorable configurations $\bm{\delta}_0 \in H_0$ and $\bm{\delta}_1 \in H_1$. Selecting boundary configurations $\bm{\delta}_0 = (\tau - \gamma)\bm{1}$ and $\bm{\delta}_1 = (\tau + \gamma)\bm{1}$ with canonical separation $\gamma = \tau/2$ yields coordinate-wise separation $\Delta\delta = 2\gamma = \tau$.
+
+Let $\bm{Z} = (Z_1,\dots,Z_K)$ be the unperturbed, pre-folded Gaussian vector, where $Z_k \sim \mathcal{N}(\delta_k, \tilde\sigma^2)$. Under the selected configurations $\bm{\delta}_0$ and $\bm{\delta}_1$, the distributions of $\bm{Z}$ are multivariate isotropic Gaussians:
+\begin{equation}
+P_{0,\bm{Z}} = \mathcal{N}\big((\tau/2)\bm{1},\, \tilde\sigma^2 I_K\big) \qquad\text{and}\qquad P_{1,\bm{Z}} = \mathcal{N}\big((3\tau/2)\bm{1},\, \tilde\sigma^2 I_K\big).
+\end{equation}
+The observation transcript $\widetilde{\bm{D}} = T(\bm{Z})$ is obtained by the coordinate-wise absolute value mapping $T(\bm{z}) = (\lvert z_1 \rvert,\dots,\lvert z_K \rvert)$. Because $T$ is a deterministic Markov kernel, the data-processing inequality for total variation distance guarantees:
+\begin{equation}
+\mathrm{TV}(P_0, P_1) \;\le\; \mathrm{TV}(P_{0,\bm{Z}},\, P_{1,\bm{Z}}).
+\label{eq:app_dpi}
+\end{equation}
+
+\paragraph{Pinsker's Inequality and KL Divergence.} By Pinsker's inequality:
+\begin{equation}
+\mathrm{TV}(P_{0,\bm{Z}},\, P_{1,\bm{Z}}) \;\le\; \sqrt{\frac{1}{2}\,\mathrm{KL}(P_{0,\bm{Z}} \parallel P_{1,\bm{Z}})}.
+\end{equation}
+The Kullback--Leibler divergence between two $K$-dimensional isotropic Gaussians with mean separation vector $\tau\bm{1}$ is:
+\begin{equation}
+\mathrm{KL}(P_{0,\bm{Z}} \parallel P_{1,\bm{Z}}) = \frac{\lVert (3\tau/2)\bm{1} - (\tau/2)\bm{1} \rVert_2^2}{2\tilde\sigma^2} = \frac{\lVert \tau\bm{1} \rVert_2^2}{2\tilde\sigma^2} = \frac{K\,\tau^2}{2\tilde\sigma^2}.
+\end{equation}
+Substituting this into Pinsker's bound gives:
+\begin{equation}
+\mathrm{TV}(P_0, P_1) \;\le\; \sqrt{\frac{K\tau^2}{4\tilde\sigma^2}} = \frac{\tau\sqrt{K}}{2\tilde\sigma}.
+\end{equation}
+Combining with Le Cam's inequality in Eq.~\eqref{eq:app_lecam_tv} yields the stated minimax observability lower bound:
+\begin{equation}
+\inf_\psi \max\big\{\Pr_{H_0}[\psi = 1],\,\Pr_{H_1}[\psi = 0]\big\} \;\ge\; \frac{1}{2}\left(1 - \frac{\tau\sqrt{K}}{2\tilde\sigma}\right).
+\end{equation}
+
+\paragraph{Non-Triviality Verification at the Operating Point.}
+To demonstrate that this lower bound is informative rather than trivial ($0$), we evaluate it under the operational conditions of our cross-silo federation on German credit ($K=10$, $n=25$ nodes/group/client, target fairness budget $\tau = 0.05$):
+\begin{itemize}
+\item \textbf{Single-release regime ($T=1$):} With $\epsilon = 8.0$ and $\delta = 10^{-5}$, the single-step standard deviation is $\tilde\sigma \approx 0.0484$. Here, $\tau\sqrt{K}/(2\tilde\sigma) \approx (0.05 \times 3.162) / (2 \times 0.0484) \approx 1.633 > 1$, which yields a trivial lower bound $\le 0$. Testing is theoretically feasible in a single one-shot audit without repeated iterations.
+\item \textbf{Iterative composed regime ($T=60$ rounds):} Accounted under R\'enyi differential privacy (Corollary~\ref{cor:rdp}), composing over $T=60$ training rounds inflates the required per-round noise multiplier, yielding $\tilde\sigma = 0.3753$. At this operating parameter:
+\begin{equation}
+\frac{\tau\sqrt{K}}{2\tilde\sigma} = \frac{0.05 \times \sqrt{10}}{2 \times 0.3753} = \frac{0.1581}{0.7506} \approx 0.2106.
+\end{equation}
+The resulting minimax misclassification error is strictly lower-bounded by:
+\begin{equation}
+\mathcal{R}^* \;\ge\; \frac{1}{2}\big(1 - 0.2106\big) = 0.3947 \;\approx\; 39.5\%.
+\end{equation}
+\end{itemize}
+Thus, under realistic repeated-round cross-silo training, any statistical rule evaluating whether the federation violates the fairness budget incurs an error of at least $39.5\%$---bounded away from zero, and within $10.5$ points of the $50\%$ random-guessing ceiling.
 
 \section*{Declaration of Generative AI and AI-Assisted Technologies}
 During the preparation of this work the authors used AI-assisted tooling for code auditing, artifact verification and language editing. The authors reviewed and edited the content as needed and take full responsibility for the content of the publication.

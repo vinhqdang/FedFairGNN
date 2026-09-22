@@ -1,0 +1,56 @@
+%% tables/tab_datasets.tex — Benchmark Topologies & Federation Configuration Matrix
+\begin{table}[!t]
+\centering
+\footnotesize
+\caption{\textbf{Characteristics of Benchmark Graph Topologies and Federation Configuration Matrix.} 
+Summary of graph dimensions, demographic attributes, federated partitioning protocols, and server holdout parameters across all evaluated benchmarks. Primary benchmarks constitute the audited evidence base ($K \in \{5, 10\}, R \in \{20, 50\}, E=3, n \in \{10, 30\}$), while Class~D datasets provide external boundary and scalability probes.}
+\label{tab:datasets}
+\smallskip
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} >{\raggedright\arraybackslash}p{86pt} >{\raggedright\arraybackslash}p{72pt} >{\raggedright\arraybackslash}p{54pt} >{\raggedright\arraybackslash}p{138pt} @{}}
+\toprule
+\textbf{Topology \& Task} & 
+\textbf{Graph Scale} & 
+\textbf{Sensitive} & 
+\textbf{Federation \& Anchor} \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{Primary Benchmark Suite (Audited Evidence Base)}}} \\
+\addlinespace[3pt]
+\textbf{German Credit} \par \textit{Credit Risk} & 
+$1{,}000$ nodes \par $21{,}742$ edges \par $D = 26$ feat. & 
+Gender \par ($h_s = 0.80$) & 
+$K=5,\, R=20$ ($n=30$ seeds) \par Anchor $|\Droot| = 125$ ($12.5\%$) \par Regime: Louvain / IID \\
+\addlinespace[4pt]
+\textbf{Bail Recidivism} \par \textit{Recidivism Risk} & 
+$18{,}876$ nodes \par $311{,}870$ edges \par $D = 16$ feat. & 
+Race \par ($h_s = 0.52$) & 
+$K=10,\, R=50$ ($n=30$ seeds) \par Anchor $|\Droot| = 125$ ($0.66\%$) \par Regime: Dirichlet / Louvain \\
+\addlinespace[4pt]
+\textbf{Credit Default} \par \textit{Payment Default} & 
+$30{,}000$ nodes \par $1{,}421{,}858$ edges \par $D = 12$ feat. & 
+Age \par ($h_s = 0.96$) & 
+$K=10,\, R=50$ ($n=10$ seeds) \par Anchor $|\Droot| = 125$ ($0.42\%$) \par Regime: Dirichlet ($\alpha \le 1.0$) \\
+\addlinespace[4pt]
+\textbf{Pokec-z} \par \textit{Working Field} & 
+$67{,}796$ nodes \par $617{,}958$ edges \par $D = 276$ feat. & 
+Region \par ($h_s = 0.95$) & 
+$K=10,\, R=50$ ($n=10$ seeds) \par Anchor $|\Droot| = 125$ ($0.18\%$) \par Regime: Louvain Community \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{Class D: Boundary and Infrastructure Scalability Probes}}} \\
+\addlinespace[3pt]
+\textbf{Elliptic Bitcoin}$^{\dagger}$ \par \textit{Illicit Txns} & 
+$203{,}769$ nodes \par $234{,}355$ edges \par $D = 165$ feat. & 
+Timestep \par ($h_s = 1.00$) & 
+$K=5,\, R=20$ ($n=5$ seeds) \par Anchor $|\Droot| = 125$ ($0.06\%$) \par Regime: Temporal Slices \\
+\addlinespace[4pt]
+\textbf{ogbn-products}$^{\ddagger}$ \par \textit{Category} & 
+$2{,}449{,}029$ nodes \par $61{,}859{,}140$ edges \par $D = 100$ feat. & 
+Structural \par ($h_s = \text{---}$) & 
+$K=10,\, R=20$ ($n=1$ seed) \par Anchor $|\Droot| = 1{,}000$ ($0.04\%$) \par Regime: Metis Partition \\
+\bottomrule
+\end{tabular*}
+\smallskip
+\parbox{\textwidth}{\scriptsize%
+\textit{Notes:} $N$ and $|E|$ denote total node and undirected edge counts; $D$ is feature dimension. $S$ denotes the protected sensitive attribute; $h_s = \Pr[S_u = S_v \mid (u,v) \in E]$ is the sensitive homophily ratio. All benchmarks satisfy the pre-flight non-triviality criterion ($\max_j \text{AUC}(x_j, y) < 0.85$). All federations execute local epoch count $E=3$.
+$^{\dagger}$In Elliptic Bitcoin, temporal partition drift is evaluated ($\Delta_{\text{temporal}}$); it is excluded from demographic fairness sweeps due to extreme class imbalance ($<2\%$ illicit nodes) and absence of demographic labels.
+$^{\ddagger}$ogbn-products serves exclusively as an infrastructure scalability probe for neighborhood sampling and $O(Kd)$ server projection complexity. Complete hardware execution specifications, run configurations, and reproducibility logs are documented in Supplementary Material Section~S0.}
+\end{table}

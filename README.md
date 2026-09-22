@@ -140,7 +140,7 @@ For heavy workloads on large graphs (Pokec-z, Elliptic, ogbn-products), use the 
 
 ## 📚 Master Research Documentation
 For comprehensive theoretical derivations, provenance audit manifests, and publication narrative blueprints:
-- **Manuscript Blueprint:** [`../docs/05_manuscript_blueprint.md`](../docs/05_manuscript_blueprint.md)
+- **Dữ liệu & Kết quả:** [`../docs/05_data_and_results.md`](../docs/05_data_and_results.md)
 - **Novelty & Advantages Matrix:** [`../docs/04_1_novelty_advantages.md`](../docs/04_1_novelty_advantages.md)
 - **Archived Audit Manifests:** [`../docs/archived/audit/04_experiment_execution.md`](../docs/archived/audit/04_experiment_execution.md)
 - **Lean 4 Proofs Suite:** [`docs/proofs/`](docs/proofs/)

@@ -34,14 +34,44 @@ from experiments.fairshare_common import partition_edge_retention
 
 
 PARTITIONS = ["uniform", "dirichlet", "community"]
-MODELS = ["trustfedgnn", "fedavg"]
-SEEDS = [42, 43]
+
+# 3-way comparison cleanly separating model and aggregation rule:
+# 1. fu_shapley: Full TrustFedGNN (FU-Shapley, canonical)
+# 2. bfwa: Internal aggregator ablation holding client fair training & DP fixed
+# 3. fedavg: Standard FedAvg baseline with GCN
+MODEL_CONFIGS = {
+    "fu_shapley": {
+        "model": "trustfedgnn",
+        "aggregator": "fu_shapley",
+        "local_fairness": True,
+        "dp_enabled": True,
+        "display_name": "TrustFedGNN (Ours)",
+    },
+    "bfwa": {
+        "model": "trustfedgnn",
+        "aggregator": "bfwa",
+        "local_fairness": True,
+        "dp_enabled": True,
+        "display_name": "Ours w/ BFWA Agg.",
+    },
+    "fedavg": {
+        "model": "gcn",
+        "aggregator": "fedavg",
+        "local_fairness": False,
+        "dp_enabled": False,
+        "display_name": "FedAvg (Baseline)",
+    },
+}
+MODELS = list(MODEL_CONFIGS.keys())
+SEEDS = list(range(42, 52))  # n=10 seeds: 42..51
 
 
 def evaluate_partition_run(model_name: str, partition_method: str, seed: int,
                            dataset: str = "bail", num_clients: int = 5, rounds: int = 15) -> dict:
     t0 = time.perf_counter()
-    is_ours = (model_name == "trustfedgnn")
+    if model_name not in MODEL_CONFIGS:
+        raise ValueError(f"Unknown model_name: {model_name!r}. Allowed: {list(MODEL_CONFIGS)}")
+    mcfg = MODEL_CONFIGS[model_name]
 
     cfg = ExperimentConfig.canonical(
         dataset=dataset,
@@ -52,10 +82,10 @@ def evaluate_partition_run(model_name: str, partition_method: str, seed: int,
         partition=partition_method,
         dirichlet_alpha=0.3,
         device="cpu",
-        model="trustfedgnn" if is_ours else "gcn",
-        aggregator="bfwa" if is_ours else "fedavg",
-        local_fairness=is_ours,
-        dp_enabled=is_ours,
+        model=mcfg["model"],
+        aggregator=mcfg["aggregator"],
+        local_fairness=mcfg["local_fairness"],
+        dp_enabled=mcfg["dp_enabled"],
         dp_epsilon=8.0,
         dp_delta=1e-5,
     )
@@ -121,7 +151,7 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
                           f"({out['wall_clock_s']:.1f}s)", flush=True)
 
                     payload = {
-                        "manifest": build_manifest(experiment="partition_comparison", datasets=datasets, partitions=PARTITIONS),
+                        "manifest": build_manifest(experiment="partition_comparison", datasets=datasets, partitions=PARTITIONS, models=MODELS),
                         "records": records,
                     }
                     with open(out_json, "w") as f:
@@ -134,16 +164,18 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
         "\\begin{table}[t]",
         "\\centering",
         "\\small",
-        "\\caption{\\textbf{Robustness to Graph Partition Topology (Bail Recidivism, $K=5$ Clients).}",
-        "Comparison of TrustFedGNN vs FedAvg across Uniform (IID), Dirichlet ($\\alpha=0.3$ attribute skew), and Community (topological modularity clustering) graph partitions.",
-        "\\emph{Edge retention} $= \\sum_k |E_k| / |E|$ is the share of the global graph's edges that survives inside the induced client subgraphs; it is a property of the partition alone (identical for both methods at a given seed) and is reported because the three strategies do not leave the federation the same amount of relational signal to work with.",
-        "Demonstrates that TrustFedGNN's fairness and utility gains are preserved under naturally cohesive graph community silos.}",
+        "\\caption{\\textbf{Robustness to Graph Partition Topology (Bail Recidivism, $K=5$ Clients, $n=10$ Seeds).}",
+        "Comparison of TrustFedGNN (FU-Shapley, canonical) vs Ours w/ BFWA Aggregator (internal ablation holding client-side fair training and DP mechanism fixed, rather than the standalone system of~\\cite{dang2026fedfairgnn}) vs FedAvg-GCN across Uniform (IID), Dirichlet ($\\alpha=0.3$ attribute skew), and Community (topological modularity clustering) graph partitions.",
+        "\\emph{Edge retention} $= \\sum_k |E_k| / |E|$ is the share of the global graph's edges that survives inside the induced client subgraphs; it is a property of the partition alone (identical across methods at a given seed) and is reported because the three strategies do not leave the federation the same amount of relational signal to work with.",
+        "Under Dirichlet attribute skew ($\\alpha=0.3$), TrustFedGNN trails FedAvg by $0.029$ AUC ($p=0.027$, trailing in $8/10$ seeds), representing the regime where the design is weakest. Under modularity-based community silos mean utilities are indistinguishable ($0.744$ against $0.743$, $p=0.85$), but seed-level dispersion is $2.95\\times$ wider (Levene $p=0.014$), reflecting server-holdout mismatch when clients form dense topological communities.}",
         "\\label{tab:partition_comparison}",
-        "\\begin{tabular}{lccccc}",
+        "\\resizebox{\\linewidth}{!}{%",
+        "\\setlength{\\tabcolsep}{4pt}%",
+        "\\begin{tabular}{lccccccc}",
         "\\toprule",
-        " & \\multicolumn{2}{c}{\\textbf{TrustFedGNN (Ours)}} & \\multicolumn{2}{c}{\\textbf{FedAvg (Baseline)}} & \\\\",
-        "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5}",
-        "\\textbf{Partition Topology} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{Edge ret.\\ (\\%)} \\\\",
+        " & \\multicolumn{2}{c}{\\textbf{TrustFedGNN (Ours)}} & \\multicolumn{2}{c}{\\textbf{Ours w/ BFWA Agg.}} & \\multicolumn{2}{c}{\\textbf{FedAvg (Baseline)}} & \\\\",
+        "\\cmidrule(lr){2-3} \\cmidrule(lr){4-5} \\cmidrule(lr){6-7}",
+        "\\textbf{Partition Topology} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{AUC $\\uparrow$} & \\textbf{DPD $\\downarrow$} & \\textbf{Edge ret.\\ (\\%)} \\\\",
         "\\midrule",
     ]
 
@@ -154,7 +186,8 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
     }
 
     for p in PARTITIONS:
-        m_ours = [x for x in records if x["partition"] == p and x["model"] == "trustfedgnn"]
+        m_ours = [x for x in records if x["partition"] == p and x["model"] == "fu_shapley"]
+        m_bfwa = [x for x in records if x["partition"] == p and x["model"] == "bfwa"]
         m_base = [x for x in records if x["partition"] == p and x["model"] == "fedavg"]
 
         def fmt(lst):
@@ -162,12 +195,13 @@ def run_partition_experiment(out_json="results/revision/metis_partition.json",
                 return "-- & --"
             return f"{np.mean([x['auc'] for x in lst]):.3f} & {np.mean([x['dpd_hard'] for x in lst]):.3f}"
 
-        rets = [x["edge_retention"] for x in (m_ours + m_base) if "edge_retention" in x]
+        rets = [x["edge_retention"] for x in (m_ours + m_bfwa + m_base) if "edge_retention" in x]
         ret_cell = f"{100 * np.mean(rets):.1f}\\%" if rets else "--"
-        lines.append(f"{pretty_part[p]} & {fmt(m_ours)} & {fmt(m_base)} & {ret_cell} \\\\")
+        lines.append(f"{pretty_part[p]} & {fmt(m_ours)} & {fmt(m_bfwa)} & {fmt(m_base)} & {ret_cell} \\\\")
 
     lines.append("\\bottomrule")
-    lines.append("\\end{tabular}")
+    lines.append("\\end{tabular}%")
+    lines.append("}")
     lines.append("\\end{table}")
 
     with open(out_tex, "w") as f:

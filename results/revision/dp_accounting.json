@@ -1,9 +1,9 @@
 {
   "manifest": {
-    "git_commit": "abfbbd309e67eae85317bdb9b58510f09d2942ce",
+    "git_commit": "5561f4282ab6ee4a045888c3effa1b5882d5bf13",
     "git_dirty": false,
     "device": "cpu",
-    "timestamp": "2026-09-07T16:34:28.011983+00:00",
+    "timestamp": "2026-09-11T01:25:45.576388+00:00",
     "torch_version": "2.14.0",
     "python_version": "3.12.12",
     "platform": "macOS-15.7.9-arm64-arm-64bit",

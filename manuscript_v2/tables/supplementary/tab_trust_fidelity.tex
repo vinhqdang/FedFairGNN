@@ -1,0 +1,26 @@
+%% tables/supplementary/tab_trust_fidelity.tex — Limitation Scope: Shapley Axiomatic Divergence
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Scope of Validity and Axiomatic Divergence: FU-Alignment vs.\ Combinatorial Shapley Values (125 Probing Points, $K=5, n=5$ Seeds).}
+Stress-tests FU-Alignment against exact exponential Shapley values across 5 probing rounds on German Credit.
+While FU-Alignment preserves directional monotonicity ($\rho = 0.7114, p < 0.001$) and sign agreement ($79.20\%$), it systematically breaches four out of five pre-registered combinatorial approximation criteria (e.g., $L_1$ simplex distance $0.7453 > 0.15$, bottom-1 identification $68.0\% < 75\%$).
+Consequently, FU-Alignment is explicitly positioned as a scalable first-order gradient projection heuristic ($O(KP)$ per Proposition~\ref{prop:linear_shapley}), and is not claimed as an exact surrogate for exponential cooperative Shapley attribution ($O(2^K P)$).}
+\label{tab:shapley_fidelity_limitation}
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{5pt}%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Axiomatic Diagnostic Metric} & \textbf{Pre-Registered Threshold} & \textbf{Empirical Measurement} & \textbf{Diagnostic Status} \\
+\midrule
+Pooled Pearson Correlation $r$ & $\ge 0.80$ & 0.7662 ($p < 0.001$) & Marginal ($\Delta = -0.0338$) \\
+Pooled Spearman Rank Correlation $\rho$ & $\ge 0.70$ & 0.7114 ($p < 0.001$) & \textbf{SATISFIED} ($\rho \ge 0.70$) \\
+Sign Agreement Proportion & $\ge 85.0\%$ & 79.20\% & Breached ($\Delta = -5.80\%$) \\
+Bottom-1 Identification Rate & $\ge 75.0\%$ & 68.00\% & Breached ($\Delta = -7.00\%$) \\
+Mean Simplex $L_1$ Distance & $\le 0.15$ & 0.7453 & Severely Breached ($+0.5953$) \\
+\midrule
+\textbf{Computational Complexity} & -- & \textbf{$O(KP)$ vs.\ $O(2^K P)$} & \textbf{Scalable First-Order Heuristic} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

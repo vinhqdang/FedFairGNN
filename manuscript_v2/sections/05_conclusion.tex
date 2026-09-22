@@ -1,0 +1,26 @@
+%% sections/05_conclusion.tex — Conclusion and Operational Boundaries
+\section{Conclusion}
+\label{sec:conclusion}
+
+\subsection{Concluding Summary}
+\label{subsec:conclusion_summary}
+In this paper, we addressed the structural trilemma between Task Utility ($U$), Group Fairness ($F$), and Byzantine Robustness ($R$) in decentralized graph neural networks. We demonstrated empirically and theoretically that contemporary protocols relying on client-reported scalar metadata or endogenous representations remain fundamentally vulnerable to adversarial manipulation ($w_{\mathrm{adv}} \to 0.9737$). Applying local differential privacy to self-reported fairness metrics fails to restore trustworthiness, as the non-negative folding of Gaussian perturbations introduces perpetual positive expectation bias (Lemma~\ref{lem:folded_normal}) and an inescapable minimax testing error floor ($\Rstar \ge 43.5\%$ at $\epsilon = 8.0$, Theorem~\ref{thm:minimax_lecam}).
+
+To guarantee mathematical precision, foundational algebraic identities and axiomatic properties (first-order orthogonality, linear decomposition, simplex validity, and null-player attribution) were formally verified using the Lean~4 interactive theorem prover~\citep{demoura2021lean}, with complete proof certificates included in our artifact repository. \MethodName{} establishes an intentional, balanced operating point on the empirical Pareto frontier across four real-world graph benchmarks and three adversarial tiers, suppressing stealth adversaries below equal share without imposing a fairness penalty on benign silos.
+
+\subsection{Limitations and Operational Boundaries}
+\label{subsec:conclusion_limitations}
+In adherence to transparent scientific reporting, we outline four operational boundaries of \MethodName{} and highlight pathways for future investigation:
+
+\paragraph{Extreme Dirichlet Non-IID Topology Shifts ($\alpha_{\mathrm{Dir}} \le 0.1$)}
+When client graphs undergo severe label and topological heterogeneity ($\alpha_{\mathrm{Dir}} = 0.1$), Canonical FU-Alignment is outperformed by unconstrained FedAvg in task AUC across all 12 experimental conditions ($p = 0.00049$, Table~\ref{tab:topology_stress}). Under such severe domain shift, an exogenous global anchor $\Droot$ necessarily penalizes client updates that deviate towards extreme local community substructures. The trade-off is confined to the utility axis: across the same 12 cells, group disparity remains bounded for both rules (ours $\dpd \in [0.007, 0.049]$ against FedAvg $[0.006, 0.027]$, Table~\ref{tab:topology_stress}), with FedAvg nominally lower in $7$ of $12$ cells. We therefore claim no fairness advantage in this regime either, and record the severe-skew setting as a boundary where reference-anchored coordination is dominated on utility without a compensating fairness gain. Future research will explore hierarchical or cluster-adaptive anchor sets that respect localized topological communities while maintaining physical holdout isolation.
+
+\paragraph{White-Box Server Holdout Compromise (Tier~3 Adversary)}
+Under full Kerckhoffs Tier~3 adversarial capabilities, an adversary possessing complete read access to server memory can compute the exact holdout target gradient $\gtarg$ and craft an alignment-mimicking update that evades cosine gating ($w_{\mathrm{adv}} = 0.8514, 0.7461$, Table~\ref{tab:alignment_adversary}). This empirical result formally rejects the hypothesis of universal statistical filtering ($H_{\mathrm{T1}}$). It establishes that holdout memory confidentiality is an indispensable operational precondition for anchor-based federated mechanisms. In production deployments, $\Droot$ and its gradient computations must be sequestered within hardware-secured trusted execution environments or physically partitioned administrative enclaves.
+
+\paragraph{Linear Shapley Attribution vs.\ Combinatorial Game Theory}
+The proposed first-order attribution metric provides an efficient, closed-form $O(KP)$ per-round governance ledger suitable for regulatory audit compliance. However, it represents a local linear approximation rather than an exact combinatorial characteristic-function Shapley value, exhibiting moderate rank correlation ($r = 0.7662 < 0.80$, Table~\ref{tab:shapley_fidelity_limitation}) against exact Shapley probes. While this approximation satisfies practical latency budgets in large-scale federations, exact valuation remains an active theoretical frontier.
+
+\paragraph{Differential Privacy Scope}
+Formal differential privacy guarantees in this study are bounded to scalar reporting channels via Rényi Differential Privacy (RDP) accounting. We do not claim privacy guarantees over the high-dimensional parameter tensor, as empirical results indicate that full DP-SGD introduces a $115\times$ utility degradation penalty on relational graph structures (Figure~\ref{fig:privacy_bail}). Developing parameter-efficient, graph-aware cryptographic primitives that bridge relational message passing and differential privacy remains an important direction for decentralized graph learning.
+

@@ -1,27 +1,33 @@
 \begin{table}[t]
 \centering
 \small
-\caption{\textbf{Per-run wall-clock time on Pokec-z.} Single NVIDIA T4, $K = 10$, $R = 50$,
+\caption{\textbf{Resource profiling and per-run wall-clock time on Pokec-z.} Single NVIDIA T4, $K = 10$, $R = 50$,
 mean over $n = 10$ seeds, read from the same artifact as Table~\ref{tab:main_pokecz_sota}. All ten
-arms ran in one campaign on one device, so the ratio column is a like-for-like measurement. The
-overhead is dominated by the server-side scoring pass---one target-gradient evaluation on the
-holdout split plus $K$ inner products per round---and not by any term that grows with the local
-graph.}
+arms ran in one campaign on one device, so the ratio column is a like-for-like measurement. Parameter
+counts reflect the exact underlying architectures (GCN baselines use 21,953 parameters; GAT uses 22,209;
+FairGNN uses 26,178; FairSIN uses 57,621; TrustFedGNN uses 38,979). Communication volume reports
+upload$+$download float32 tensor payload per round ($2 \times K \times |\theta|$); FTGD statistic
+release adds an undetectable $8\text{ bytes}$ per client round ($+0.0026\%$). Forward evaluation over the graph
+requires $5.60\text{ GFLOPs}$. The $2.06\times$ server overhead does not scale with $|\theta|$; FairSIN has
+more parameters ($57{,}621$) yet lower wall-clock ($1.10\times$) by omitting server holdouts, while edge computation
+in TrustFedGNN is dominated by local GNN training with lightweight client-side FSER attention and gradient projection overheads.}
 \label{tab:cost}
-\begin{tabular}{lcc}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Method} & \textbf{Time / run (s)} & \textbf{vs.\ FedAvg} \\
+\textbf{Method} & \textbf{\#Params} & \textbf{Comm (MB/rnd)} & \textbf{Time / run (s)} & \textbf{vs.\ FedAvg} \\
 \midrule
-FedGraph-Fair & 34.3 & 0.96$\times$ \\
-FairFed & 34.5 & 0.97$\times$ \\
-FairGFL & 34.5 & 0.97$\times$ \\
-FedAvg-GCN & 35.5 & 1.00$\times$ \\
-CGSV & 36.5 & 1.03$\times$ \\
-FairGNN & 38.0 & 1.07$\times$ \\
-FairSIN & 39.1 & 1.10$\times$ \\
-Ours w/o FSER (confounded) & 43.4 & 1.22$\times$ \\
-Ours w/o FSER (clean arm) & 72.0 & 2.03$\times$ \\
-\textbf{TrustFedGNN (ours)} & \textbf{73.2} & \textbf{2.06}$\times$ \\
+FedGraph-Fair & 21,953 & 1.67 & 34.3 & 0.96$\times$ \\
+FairFed & 21,953 & 1.67 & 34.5 & 0.97$\times$ \\
+FairGFL & 21,953 & 1.67 & 34.5 & 0.97$\times$ \\
+FedAvg-GCN & 21,953 & 1.67 & 35.5 & 1.00$\times$ \\
+CGSV & 21,953 & 1.67 & 36.5 & 1.03$\times$ \\
+FairGNN & 26,178 & 2.00 & 38.0 & 1.07$\times$ \\
+FairSIN & 57,621 & 4.40 & 39.1 & 1.10$\times$ \\
+Ours w/o FSER (confounded) & 22,209 & 1.69 & 43.4 & 1.22$\times$ \\
+Ours w/o FSER (clean arm) & 38,977 & 2.97 & 72.0 & 2.03$\times$ \\
+\textbf{TrustFedGNN (ours)} & \textbf{38,979} & \textbf{2.97} & \textbf{73.2} & \textbf{2.06}$\times$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

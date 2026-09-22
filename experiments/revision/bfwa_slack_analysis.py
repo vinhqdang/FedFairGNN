@@ -1,15 +1,27 @@
-"""BFWA Disparity Constraint Slack Analysis under DP noise (Issue I4, Stanford Q4-Q6).
+"""BFWA disparity-constraint slack under DP noise.
 
-Evaluates the empirical slack between the DP-noised disparity reported by clients
-and the true underlying disparity under Frank-Wolfe aggregation:
-    Slack_t = | sum_k w_k * DPD_hat_k - sum_k w_k * DPD_true_k |
-Relative to the fairness budget tau = 0.05.
+Measures the gap between the disparity clients *report* once it is privatised and
+the disparity that is actually there:
+    Slack_t = | sum_k w_k * DPD_released_k - sum_k w_k * DPD_true_k |
+against the fairness budget tau. This is the empirical side of Theorem 4
+(docs/02): once the report is privatised, the constraint stops tracking fairness.
 
-Evaluates on Bail and Credit across eps in {2.0, 4.0, 8.0} over 5 seeds.
+CORRECTED 11-09-2026 (Phase 2a). The previous version re-implemented the noise
+mechanism here and got it wrong three ways, inflating the published slack by
+roughly 2.2-2.5x:
 
-Outputs:
-  - results/revision/bfwa_slack.json
-  - manuscript/tables/revision/bfwa_slack.tex
+  1. it used ``sqrt(2/n)`` -- a standard error, O(1/sqrt(n)) -- where the
+     deployed mechanism uses the L2 sensitivity ``sqrt(1/n0^2 + 1/n1^2)``,
+     O(1/n), the quantity assumption A4 actually bounds;
+  2. it read ``len(train_mask)`` (the mask's length, i.e. the whole subgraph)
+     instead of ``train_mask.sum()`` (the number of training nodes);
+  3. it added one noise draw to the scalar DPD and clipped at zero, whereas the
+     mechanism noises mu0 and mu1 independently and then folds |mu0 - mu1| --
+     a different distribution with a different, systematically positive bias.
+
+The fix is not a better re-implementation: it calls the production path
+(``Client._released_disparity``) so the measurement cannot drift from the
+mechanism again. See invariant R11 in docs/03.
 """
 from __future__ import annotations
 
@@ -31,14 +43,102 @@ from src.federated.client import _soft_dpd
 from src.utils.provenance import build_manifest
 
 
-def analyze_bfwa_slack(dataset="bail", seeds=(42, 43, 44), epsilons=(2.0, 4.0, 8.0),
-                       rounds=25, num_clients=10, tau=0.05):
+
+
+def folded_normal_mean(delta: float, sigma_tilde: float) -> float:
+    """Exact E[|N(delta, sigma_tilde^2)|] -- Lemma 4.1 in docs/02.
+
+        E[DPD~_k] = sigma~_k sqrt(2/pi) exp(-delta_k^2 / 2 sigma~_k^2)
+                    + delta_k erf(delta_k / (sigma~_k sqrt 2))
+
+    The limit sigma~ sqrt(2/pi) is what Theorem 4 uses, and it holds only when
+    sigma~ >> |delta|. Testing the measurement against that LIMIT is close to
+    circular: it can only agree in the regime whose assumption it encodes, and a
+    referee is entitled to say so. The exact expression has no such regime
+    condition, so it is what the data should be compared against.
+
+    Even in delta, so the unsigned per-client disparity is sufficient.
+    """
+    if sigma_tilde <= 0:
+        return abs(delta)
+    d = abs(delta)
+    return (sigma_tilde * math.sqrt(2.0 / math.pi) * math.exp(-(d * d) / (2.0 * sigma_tilde * sigma_tilde))
+            + d * math.erf(d / (sigma_tilde * math.sqrt(2.0))))
+
+
+def _pair_theorem4(per_round):
+    """Summarise Theorem 4 round by round, not as a ratio of means.
+
+    Two forms are checked separately because they say different things:
+
+      equality form  E[sum_k w_k DPD~_k] = sqrt(2/pi) * sum_k w_k sigma~_k,
+                     valid in the noise-dominant regime -> ratio should sit
+                     near 1, and drift BELOW 1 marks rounds where the true
+                     disparity is not yet negligible against the noise.
+
+      lower bound    E[slack] >= sqrt(2/pi) * sum_k w_k sigma~_k - sum_k w_k|delta_k|,
+                     so slack/predicted >= 1 is the claim; rounds below 1 are
+                     where the delta term still bites and must be reported, not
+                     averaged away.
+    """
+    if not per_round:
+        return None
+    def _boot_ci(a, n=10000):
+        rng = np.random.default_rng(0)
+        b = [rng.choice(a, size=len(a), replace=True).mean() for _ in range(n)]
+        return [float(np.percentile(b, 2.5)), float(np.percentile(b, 97.5))]
+
+    r = np.array([x["ratio_observed_over_predicted"] for x in per_round], float)
+    sl = np.array([x["slack_over_predicted"] for x in per_round], float)
+    ex = np.array([x["ratio_observed_over_exact"] for x in per_round
+                   if x.get("ratio_observed_over_exact") is not None], float)
+    return {
+        "n_rounds": int(len(per_round)),
+        # The comparison that carries no regime assumption. This is the one to
+        # read; the asymptotic ratio below is kept to show WHERE the
+        # noise-dominant approximation stops holding.
+        "ratio_observed_over_exact": ({
+            "mean": float(ex.mean()), "ci95_of_mean": _boot_ci(ex),
+            "median": float(np.median(ex)),
+            "min": float(ex.min()), "max": float(ex.max()),
+            "frac_within_10pct_of_1": float(np.mean(np.abs(ex - 1.0) <= 0.10)),
+        } if len(ex) else None),
+        # Theorem 4 constrains an EXPECTATION, so the quantity to read is the
+        # mean with its interval. A single round is a folded-normal draw whose
+        # mass sits near zero, so individual rounds below 1 are what the
+        # distribution looks like, not a refutation -- hence min/max and the
+        # fraction are reported for shape, never as a verdict.
+        "ratio_observed_over_predicted": {
+            "mean": float(r.mean()), "ci95_of_mean": _boot_ci(r),
+            "median": float(np.median(r)),
+            "min": float(r.min()), "max": float(r.max()),
+            "frac_within_10pct_of_1": float(np.mean(np.abs(r - 1.0) <= 0.10)),
+        },
+        "slack_over_predicted": {
+            "mean": float(sl.mean()), "ci95_of_mean": _boot_ci(sl),
+            "median": float(np.median(sl)),
+            "min": float(sl.min()), "max": float(sl.max()),
+            "frac_at_or_above_1": float(np.mean(sl >= 1.0)),
+        },
+    }
+
+
+def analyze_bfwa_slack(dataset="german", seeds=tuple(range(42, 52)),
+                       epsilons=(0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0),
+                       rounds=20, num_clients=10, tau=0.05):
     summary_by_eps = {}
 
     for eps in epsilons:
         slacks_all_rounds = []
+        sigma_tilde_weighted = []
         true_dpd_aggregates = []
         noisy_dpd_aggregates = []
+        # Theorem 4 is a statement about ONE release: the observed aggregate of a
+        # single round against the sigma of that same round. Comparing
+        # mean(observed) with mean(sigma) instead is a ratio of means, and the
+        # weights w vary round to round, so the two disagree for reasons that
+        # have nothing to do with the theorem. Pair them per round.
+        per_round = []
 
         for s in seeds:
             cfg = ExperimentConfig.canonical(
@@ -59,18 +159,36 @@ def analyze_bfwa_slack(dataset="bail", seeds=(42, 43, 44), epsilons=(2.0, 4.0, 8
                 # Compute true and reported DPD for each client
                 dpd_true_list = []
                 dpd_noisy_list = []
+                sigma_tilde_list = []      # sqrt(2)*z*Delta_mu, per client
 
                 for c in trainer.clients:
                     c.model.eval()
                     d = c.data
+                    sel = d.train_mask
+                    s_sel = d.sensitive_attr[sel]
                     with torch.no_grad():
-                        out = c.model(d.x, d.edge_index, d.sensitive_attr)[d.train_mask]
-                        true_val = float(_soft_dpd(out, d.sensitive_attr[d.train_mask]).item())
+                        pred_sel = c.model(d.x, d.edge_index, d.sensitive_attr)[sel]
+
+                        # TRUE: same release pass, no noise. _release_pred is the
+                        # s-blind forward when the mechanism is live, so true and
+                        # released are compared on the same predictions.
+                        pred_rel = c._release_pred(pred_sel, d.x, d.edge_index, sel)
+                        true_val = float(_soft_dpd(pred_rel, s_sel))
+
+                        # RELEASED: production mechanism -- correct sensitivity,
+                        # independent noise on mu0 and mu1, then the fold.
+                        c._last_privatised_dpd = None
+                        c._released_disparity(pred_sel, s_sel, d.x, d.edge_index, sel)
+                        noisy_val = c._last_privatised_dpd
+                        if noisy_val is None:          # sigma == 0: nothing released
+                            noisy_val = true_val
+
+                        n0 = int((s_sel == 0).sum()); n1 = int((s_sel == 1).sum())
+                        if n0 > 0 and n1 > 0:
+                            delta_mu = (1.0 / n0 ** 2 + 1.0 / n1 ** 2) ** 0.5
+                            sigma_tilde_list.append(math.sqrt(2.0) * c.noise_multiplier * delta_mu)
+
                     dpd_true_list.append(true_val)
-                    # Noisy value reported by client with DP noise
-                    # Noise on scalar mean difference
-                    noise_mag = c.dp_sigma * math.sqrt(2.0 / max(1, len(d.train_mask)))
-                    noisy_val = max(0.0, true_val + np.random.normal(0, noise_mag))
                     dpd_noisy_list.append(noisy_val)
 
                 dpd_true_arr = np.array(dpd_true_list)
@@ -81,8 +199,34 @@ def analyze_bfwa_slack(dataset="bail", seeds=(42, 43, 44), epsilons=(2.0, 4.0, 8
                 slack = abs(agg_noisy - agg_true)
 
                 slacks_all_rounds.append(slack)
+                sigma_w = (float(np.sum(w * np.array(sigma_tilde_list)))
+                           if sigma_tilde_list else None)
+                if sigma_w is not None:
+                    sigma_tilde_weighted.append(sigma_w)
                 true_dpd_aggregates.append(agg_true)
                 noisy_dpd_aggregates.append(agg_noisy)
+
+                if sigma_w:
+                    predicted = math.sqrt(2.0 / math.pi) * sigma_w
+                    # Exact Lemma 4.1 expectation, aggregated with the same
+                    # weights. Unlike the asymptotic form this carries no regime
+                    # condition, so it is the honest target for the measurement.
+                    predicted_exact = float(np.sum(w * np.array(
+                        [folded_normal_mean(dt, st)
+                         for dt, st in zip(dpd_true_list, sigma_tilde_list)])))
+                    per_round.append({
+                        "seed": int(s), "round": int(t),
+                        "agg_true": agg_true, "agg_noisy": agg_noisy,
+                        "slack": slack, "sigma_w": sigma_w,
+                        "predicted_noisy_agg": predicted,
+                        "predicted_noisy_agg_exact": predicted_exact,
+                        "ratio_observed_over_exact": (agg_noisy / predicted_exact
+                                                      if predicted_exact else None),
+                        # equality form of Theorem 4, in the noise-dominant regime
+                        "ratio_observed_over_predicted": agg_noisy / predicted,
+                        # lower-bound form: E[slack] >= sqrt(2/pi) * sigma_w - sum_k w_k|delta_k|
+                        "slack_over_predicted": slack / predicted,
+                    })
 
         mean_slack = float(np.mean(slacks_all_rounds))
         std_slack = float(np.std(slacks_all_rounds))
@@ -95,6 +239,12 @@ def analyze_bfwa_slack(dataset="bail", seeds=(42, 43, 44), epsilons=(2.0, 4.0, 8
             "mean_true_dpd_agg": float(np.mean(true_dpd_aggregates)),
             "mean_noisy_dpd_agg": float(np.mean(noisy_dpd_aggregates)),
             "tau": tau,
+            # Theorem 4 (docs/02): E[released aggregate] = sqrt(2/pi) * sum_k w_k * sigma_tilde_k
+            "mean_sigma_tilde_weighted": float(np.mean(sigma_tilde_weighted)) if sigma_tilde_weighted else None,
+            "theorem4_predicted_noisy_agg": (float(np.mean(sigma_tilde_weighted)) * math.sqrt(2.0 / math.pi))
+                                            if sigma_tilde_weighted else None,
+            "theorem4_paired": _pair_theorem4(per_round),
+            "per_round": per_round,
         }
         print(f"[*] eps={eps} -> Slack = {mean_slack:.4f} +/- {std_slack:.4f} ({slack_ratio * 100:.1f}% of tau={tau})", flush=True)
 
@@ -174,12 +324,18 @@ def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
         v["slack_bucket"] = slack_bucket(100.0 * v["slack_ratio_of_tau"])
 
     results["manifest"] = build_manifest(
-        dataset=dataset,
-        seeds=list(seeds),
-        epsilons=list(epsilons),
-        rounds=rounds,
-        num_clients=num_clients,
-        tau=tau,
+        experiment="bfwa_constraint_slack",
+        args={
+            "dataset": dataset,
+            "seeds": list(seeds),
+            "epsilons": list(epsilons),
+            "rounds": rounds,
+            "num_clients": num_clients,
+            "tau": tau,
+            "note": ("Noise comes from Client._released_disparity, the production path, "
+                     "not from a local re-implementation. See the module docstring for the "
+                     "three defects that re-implementation had."),
+        },
     )
 
     with open(out_json, "w") as f:
@@ -224,9 +380,15 @@ def run_bfwa_slack_experiment(out_json="results/revision/bfwa_slack.json",
 
 def main():
     ap = argparse.ArgumentParser(description="BFWA DP-induced constraint slack.")
-    ap.add_argument("--dataset", default="bail")
-    ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43])
-    ap.add_argument("--epsilons", type=float, nargs="+", default=[2.0, 4.0, 8.0])
+    # These MUST track the defaults of analyze_bfwa_slack above. A previous
+    # revision corrected the function signature and left these stale, so a run
+    # invoked with no flags silently measured Bail on two seeds while the
+    # caller believed it was measuring German on ten -- a plausible-looking
+    # table of the wrong thing. Same failure class as invariant R10.
+    ap.add_argument("--dataset", default="german")
+    ap.add_argument("--seeds", type=int, nargs="+", default=list(range(42, 52)))
+    ap.add_argument("--epsilons", type=float, nargs="+",
+                    default=[0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
     ap.add_argument("--rounds", type=int, default=20)
     ap.add_argument("--num-clients", type=int, default=10)
     ap.add_argument("--tau", type=float, default=0.05)

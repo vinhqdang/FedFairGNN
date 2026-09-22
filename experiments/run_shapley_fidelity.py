@@ -228,6 +228,7 @@ def main():
             "alpha": ALPHA,
             "git_commit": commit,
             "git_dirty": dirty,
+            "device": device,
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "wall_clock_s": total_time,
         },

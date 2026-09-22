@@ -1,0 +1,72 @@
+\documentclass[preprint,12pt]{elsarticle}
+
+\input{sections/00_preamble.tex}
+
+\journal{Neurocomputing}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Server-Anchored Trust Bootstrapping for Byzantine-Resilient and Auditable Federated Graph Learning}
+
+\author[inst1]{Ngoc-Son-An Nguyen}
+\ead{annns25871@pgr.iuh.edu.vn}
+
+\author[inst2]{Quang-Vinh Dang\corref{cor1}}
+\ead{vinh.dq4@buv.edu.vn}
+\cortext[cor1]{Corresponding author}
+
+\affiliation[inst1]{organization={Industrial University of Ho Chi Minh City},
+            city={Ho Chi Minh City},
+            country={Vietnam}}
+
+\affiliation[inst2]{organization={British University Vietnam},
+            city={Hung Yen},
+            country={Vietnam}}
+
+\begin{highlights}
+\item Client-declared fairness metadata captures six published FL aggregation rules.
+\item Falsified reports raise disparity by 0.46 DPD and cut AUC by 0.14 over 30 seeds.
+\item Multi-round client-wise DP drives constraint testing toward chance.
+\item TrustFedGNN achieves exact syntactic metadata immunity via server holdout.
+\item Holdout-guided alignment suppresses stealthy Byzantine fairness poisoning.
+\end{highlights}
+
+\begin{abstract}
+Federated learning on graph neural networks (Federated GNNs) across distributed, privacy-sensitive environments faces a critical structural vulnerability: existing fairness-aware and contribution-based aggregation protocols invariably rely on client-reported scalar telemetry or pooled validation graphs. In this work, we demonstrate empirically that across six representative fairness-aware federated rules, malicious clients submitting falsified disparity claims capture disproportionate aggregation weights (up to $97.4\%$ model control), severely corrupting downstream demographic parity and predictive utility. Furthermore, we establish via an information-theoretic Minimax lower bound (Le Cam's two-point method with Pinsker's inequality) that privatising self-reported statistics via Local Differential Privacy (LDP) inevitably collapses server observability ($\mathcal{R}^* \ge 43.5\%$ at $\epsilon = 8.0$, rising to $\ge 49.0\%$ at $\epsilon = 1.0$) due to perpetual folded-normal bias. To resolve this structural impasse, we propose \MethodName{}, a server-anchored federated graph learning framework operating under strict Kerckhoffs security assumptions. By deriving a dual-objective reference vector on an isolated server holdout graph ($D_{\mathrm{root}}$) and filtering client updates via non-linear coordinate gating (EMA smoothing, non-linear rectification, and dynamic norm rescaling), \MethodName{} establishes exact syntactic metadata immunity by construction ($\Delta w \equiv 0$). Across extensive evaluations on four real-world graph benchmarks (German Credit, Bail Recidivism, Credit Default, and Pokec-z) under three tiers of adversarial attacks, \MethodName{} restricts stealth adversaries below equal share ($0.68\times$--$0.73\times$) without imposing any robustness tax on group fairness. Finally, \MethodName{} incorporates an auditable, linear-complexity first-order contribution decomposition $O(KP)$ for per-round regulatory compliance logging, paired with a multi-criteria governance ranking whose stability is empirically preserved across 2,000 Monte Carlo weight configurations ($\rho_s = 0.965$), effectively bridging robust federated graph learning with enterprise risk governance.
+\end{abstract}
+
+\begin{keyword}
+Federated Learning \sep Graph Neural Networks \sep Byzantine Resilience \sep Group Fairness \sep Minimax Lower Bound \sep Auditable AI
+\end{keyword}
+
+\end{frontmatter}
+
+%% =========================================================================
+%% MODULAR MANUSCRIPT SECTIONS
+%% =========================================================================
+
+\input{sections/01_introduction.tex}
+\input{sections/02_related_work.tex}
+\input{sections/03_methodology.tex}
+\input{sections/04_implementation_results.tex}
+\input{sections/05_conclusion.tex}
+
+%% =========================================================================
+%% DECLARATIONS & REPRODUCIBILITY (ELSEVIER STANDARD)
+%% =========================================================================
+
+\section*{Declaration of Generative AI and AI-Assisted Technologies}
+During the preparation of this work the authors used AI-assisted tooling for code auditing, formal verification in Lean~4, and language polishing. The authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+
+\section*{Data and Code Availability}
+All benchmark datasets analyzed in this study are publicly accessible. Source code, Lean~4 formal proof scripts, and experimental configurations are available at \url{https://github.com/vinhqdang/FedFairGNN}.
+
+%% =========================================================================
+%% BIBLIOGRAPHY
+%% =========================================================================
+\bibliographystyle{elsarticle-num}
+\bibliography{ref}
+
+\end{document}

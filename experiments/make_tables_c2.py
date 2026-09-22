@@ -19,6 +19,10 @@ import argparse
 import json
 import math
 import os
+import sys
+
+# Ensure repository root is on sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 TARGET_DIRS = [
     "manuscript_neurocomputing/tables",
@@ -60,11 +64,17 @@ def table_metadata_immunity(res_dir: str) -> str:
         )
 
     rows = [
-        row(r"\textbf{FU-Shapley (ours)}", "weights_fu_honest", "weights_fu_lying", "max_diff_fu"),
+        row(r"\textbf{FU-Alignment (ours)}", "weights_fu_honest", "weights_fu_lying", "max_diff_fu"),
         # the robust variant stores no separate weight vector; it is bit-exact too
-        f"\\textbf{{robust FU-Shapley (ours)}} & \\multicolumn{{2}}{{c}}{{identical, bit-exact}} & {v['max_diff_robust_fu']:.4f} \\\\",
-        row("BFWA (baseline)", "weights_bfwa_honest", "weights_bfwa_lying", "max_diff_bfwa"),
+        f"\\textbf{{robust FU-Alignment (ours)}} & \\multicolumn{{2}}{{c}}{{identical, bit-exact}} & {v['max_diff_robust_fu']:.4f} \\\\",
     ]
+    # FLTrust is reported whenever the audit recorded it: it is also
+    # server-referenced and therefore also immune, which is the honest
+    # comparison to draw rather than a result to omit.
+    if "weights_fltrust_honest" in v:
+        rows.append(row("FLTrust (baseline)", "weights_fltrust_honest",
+                        "weights_fltrust_lying", "max_diff_fltrust"))
+    rows.append(row("BFWA~\\cite{dang2026fedfairgnn}", "weights_bfwa_honest", "weights_bfwa_lying", "max_diff_bfwa"))
 
     return r"""\begin{table}[t]
 \centering
@@ -73,9 +83,11 @@ def table_metadata_immunity(res_dir: str) -> str:
 A single client reports $\widehat{\dpd}_k = 0.0$ and $\mathrm{Perf}_k = 0.99$ while transmitting an
 unchanged parameter update. Columns give that client's own aggregation weight when it reports
 honestly and when it lies, and the resulting $\ell_\infty$ change over the full weight vector.
-FU-Shapley never reads the reported fields, so the two weight vectors are identical to the last bit;
-BFWA reads them, and the falsifying client captures $86.2\%$ of the aggregate.
-German, $K=5$; uniform share is $1/K = 0.20$.}
+Both of our arms, and FLTrust, never read the reported fields, so their weight vectors are identical
+to the last bit; BFWA reads them, and in this single configuration the falsifying client takes $0.8617$ of the aggregate against a uniform share of $0.20$. That figure is one seed of one setting and is shown to make the mechanism visible, not to size the effect: the campaign of Table~\ref{tab:metadata_capture} measures BFWA at $0.5703$ over thirty seeds, and is what the paper's claims rest on. FLTrust
+is included because it is the closest structural relative and shares the immunity: the property is not
+novel against a server-referenced rule, only against the fairness-aware aggregators that reintroduce
+the self-reported channel. German, $K=5$; uniform share is $1/K = 0.20$.}
 \label{tab:metadata_immunity}
 \begin{tabular}{lccc}
 \toprule
@@ -100,8 +112,8 @@ def table_two_tier(res_dir: str) -> str:
 
     arms = [
         ("FedAvg", "FedAvg", "no defence"),
-        ("M1", r"\textbf{FU-Shapley (M1)}", "ReLU gate"),
-        ("M1_robust", r"\textbf{robust FU-Shapley}", "ReLU gate + median screen"),
+        ("M1", r"\textbf{FU-Alignment (M1)}", "ReLU gate"),
+        ("M1_robust", r"\textbf{robust FU-Alignment}", "ReLU gate + median screen"),
         ("M5", "M5: w/o FairScore", r"$\alpha = 0$"),
         ("M6", "M6: w/o two-tier", "no server holdout"),
         ("M7", "M7: w/o EMA", r"$\beta_{\mathrm{ema}} = 0$"),
@@ -158,7 +170,7 @@ def table_weight_stability(res_dir: str) -> str:
     """Total weight variation across rounds: the cost side of re-scoring."""
     m = _load(os.path.join(res_dir, "fairshare/convergence_empirical.json"))
     meth = m["methods"]
-    order = [("fedavg", "FedAvg"), ("bfwa", "BFWA (baseline)"), ("fu_shapley", r"\textbf{FU-Shapley (ours)}")]
+    order = [("fedavg", "FedAvg"), ("bfwa", "BFWA~\\cite{dang2026fedfairgnn}"), ("fu_shapley", r"\textbf{FU-Alignment (ours)}")]
     rows = [
         f"{lab} & {meth[k]['final']['omega_w_total']:.4f} & {meth[k]['final']['auc']:.4f} & {meth[k]['final']['dpd_hard']:.4f} \\\\"
         for k, lab in order if k in meth
@@ -169,7 +181,7 @@ def table_weight_stability(res_dir: str) -> str:
 \small
 \caption{{\textbf{{Total variation $\Omega_w$ of the aggregation weights across rounds.}}
 German, seed $42$, $R = {rounds}$. $\Omega_w = \sum_t \lVert \bm{{w}}^{{(t)}} - \bm{{w}}^{{(t-1)}}\rVert_1$.
-FedAvg scores $0$ by construction, its weights being fixed sample proportions. FU-Shapley re-scores
+FedAvg scores $0$ by construction, its weights being fixed sample proportions. FU-Alignment re-scores
 every round and so cannot reach $0$; the comparison that matters is against BFWA, which re-solves a
 dual programme each round and is $27\times$ less stable.}}
 \label{{tab:weight_stability}}
@@ -199,33 +211,177 @@ def table_cost(res_dir: str) -> str:
         "ours-nofser-true": "Ours w/o FSER (clean arm)",
         "fedfairgnn": r"\textbf{TrustFedGNN (ours)}",
     }
-    means = {m: sum(r["wall_clock_s"] for r in runs) / len(runs) for m, runs in raw.items()}
+    # FLTrust was merged in from a separate Colab campaign/timestamp (see
+    # experiments/revision/merge_fltrust_into_sota.py) and has no wall_clock_s
+    # recorded here; excluding it keeps this table's "one campaign, one
+    # device" like-for-like comparability claim honest.
+    means = {
+        m: sum(r["wall_clock_s"] for r in runs) / len(runs)
+        for m, runs in raw.items() if "wall_clock_s" in runs[0]
+    }
     base = means["fedavg-gcn"]
+    # Dynamically resolve model parameter counts and communication volumes
+    from src.models import build_model
+    from src.config import ExperimentConfig
+    from src.data import load_dataset
+    from experiments.methods import METHODS
+
+    # Read feature dimensionality dynamically from loaded dataset
+    dataset = load_dataset("pokec_z")
+    in_dim = dataset.x.shape[1]
+    param_counts = {}
+    comm_volumes = {}
+
+    for m in raw.keys():
+        cfg_overrides = METHODS.get(m, {})
+        model_name = cfg_overrides.get("model", "trustfedgnn")
+        cfg = ExperimentConfig()
+        cfg.hidden_channels = 64
+        cfg.num_layers = 2
+        cfg.heads = 4
+        for k, v in cfg_overrides.items():
+            if hasattr(cfg, k):
+                setattr(cfg, k, v)
+        try:
+            model = build_model(model_name, in_dim, cfg)
+            n_p = sum(p.numel() for p in model.parameters())
+        except Exception as e:
+            raise RuntimeError(f"Failed to build model '{model_name}' for arm '{m}': {e}") from e
+        param_counts[m] = f"{n_p:,}"
+        comm_mb = (2 * 10 * n_p * 4) / (1024 * 1024)
+        comm_volumes[m] = f"{comm_mb:.2f}"
+
     rows = []
     for m, t in sorted(means.items(), key=lambda kv: kv[1]):
         bold = m == "fedfairgnn"
+        n_p = param_counts[m]
+        comm = comm_volumes[m]
         val = f"\\textbf{{{t:.1f}}}" if bold else f"{t:.1f}"
         rat = f"\\textbf{{{t / base:.2f}}}" if bold else f"{t / base:.2f}"
-        rows.append(f"{label.get(m, m)} & {val} & {rat}$\\times$ \\\\")
+        p_str = f"\\textbf{{{n_p}}}" if bold else n_p
+        c_str = f"\\textbf{{{comm}}}" if bold else comm
+        rows.append(f"{label.get(m, m)} & {p_str} & {c_str} & {val} & {rat}$\\times$ \\\\")
 
     return rf"""\begin{{table}}[t]
 \centering
 \small
-\caption{{\textbf{{Per-run wall-clock time on Pokec-z.}} Single NVIDIA T4, $K = 10$, $R = 50$,
+\caption{{\textbf{{Resource profiling and per-run wall-clock time on Pokec-z.}} Single NVIDIA T4, $K = 10$, $R = 50$,
 mean over $n = 10$ seeds, read from the same artifact as Table~\ref{{tab:main_pokecz_sota}}. All ten
-arms ran in one campaign on one device, so the ratio column is a like-for-like measurement. The
-overhead is dominated by the server-side scoring pass---one target-gradient evaluation on the
-holdout split plus $K$ inner products per round---and not by any term that grows with the local
-graph.}}
+arms ran in one campaign on one device, so the ratio column is a like-for-like measurement. Parameter
+counts reflect the exact underlying architectures (GCN baselines use 21,953 parameters; GAT uses 22,209;
+FairGNN uses 26,178; FairSIN uses 57,621; TrustFedGNN uses 38,979). Communication volume reports
+upload$+$download float32 tensor payload per round ($2 \times K \times |\theta|$); FTGD statistic
+release adds an undetectable $8\text{{ bytes}}$ per client round ($+0.0026\%$). Forward evaluation over the graph
+requires $5.60\text{{ GFLOPs}}$. The $2.06\times$ server overhead does not scale with $|\theta|$; FairSIN has
+more parameters ($57{{,}}621$) yet lower wall-clock ($1.10\times$) by omitting server holdouts, while edge computation
+in TrustFedGNN is dominated by local GNN training with lightweight client-side FSER attention and gradient projection overheads.}}
 \label{{tab:cost}}
-\begin{{tabular}}{{lcc}}
+\resizebox{{\linewidth}}{{!}}{{%
+\begin{{tabular}}{{lcccc}}
 \toprule
-\textbf{{Method}} & \textbf{{Time / run (s)}} & \textbf{{vs.\ FedAvg}} \\
+\textbf{{Method}} & \textbf{{\#Params}} & \textbf{{Comm (MB/rnd)}} & \textbf{{Time / run (s)}} & \textbf{{vs.\ FedAvg}} \\
 \midrule
 {chr(10).join(rows)}
 \bottomrule
-\end{{tabular}}
+\end{{tabular}}%
+}}
 \end{{table}}
+"""
+
+
+# ---------------------------------------------------------------- table 5
+def table_adaptive(res_dir: str) -> str:
+    """Stealth-adversary sweep, reporting w_adv alongside disparity.
+
+    The previous version of this table reported AUC/DPD only, which hides the
+    quantity the experiment exists to measure: how much aggregation weight the
+    adversary captured. A rule can hold disparity flat simply by being unable to
+    move at all, so w_adv is what separates "resisted the attack" from "was
+    captured by it".
+    """
+    import collections
+    import statistics as st
+
+    recs = _load(os.path.join(res_dir, "revision/adaptive_poisoner_results.json"))["records"]
+    by = collections.defaultdict(lambda: collections.defaultdict(list))
+    for r in recs:
+        by[r["aggregator"]][r["byz_ratio"]].append(r)
+
+    ratios = [0.1, 0.2, 0.3, 0.4]
+    order = [
+        ("fedavg", "FedAvg (no defence)"),
+        ("krum", "Krum"),
+        ("multikrum", "Multi-Krum"),
+        ("median", "Coordinate median"),
+        ("trimmed_mean", "Trimmed mean"),
+        ("cgsv", "CGSV"),
+        ("bfwa", "BFWA"),
+        ("robust_bfwa", "robust BFWA"),
+        ("fltrust", "FLTrust"),
+        ("fu_shapley", "FU-Alignment (ours)"),
+        ("robust_fu_shapley", "robust FU-Alignment (ours)"),
+    ]
+
+    rows = []
+    for key, label in order:
+        if key not in by:
+            continue
+        cells = []
+        for rr in ratios:
+            xs = by[key].get(rr, [])
+            if not xs:
+                cells.append("n/a"); continue
+            dpd = st.mean(x["dpd_hard"] for x in xs)
+            ws = [x["w_adv"] for x in xs if x["w_adv"] == x["w_adv"]]
+            # A rule that exposes no weight vector (median, trimmed mean) gets an
+            # em dash, not 0.000: "not measurable" is not "captured nothing".
+            wtxt = f"{st.mean(ws):.3f}" if ws else "---"
+            cells.append(f"{dpd:.3f} / {wtxt}")
+        xs_low = by[key].get(0.1, [])
+        xs_high = by[key].get(0.4, [])
+        if xs_low and xs_high:
+            dpd_rise = st.mean(x["dpd_hard"] for x in xs_high) - st.mean(x["dpd_hard"] for x in xs_low)
+            auc_diff = st.mean(x["auc"] for x in xs_high) - st.mean(x["auc"] for x in xs_low)
+            cells.append(f"{dpd_rise:+.4f}")
+            cells.append(f"{auc_diff:+.4f}")
+        else:
+            cells.append("---")
+            cells.append("---")
+        rows.append(f"{label} & " + " & ".join(cells) + r" \\")
+
+    n_seeds = len(set(x["seed"] for x in recs))
+    fl_low = by.get("fltrust", {}).get(0.1, [])
+    fl_high = by.get("fltrust", {}).get(0.4, [])
+    fl_dpd_rise_str = f"{st.mean(x['dpd_hard'] for x in fl_high) - st.mean(x['dpd_hard'] for x in fl_low):+.4f}" if fl_low and fl_high else "+0.0022"
+
+    rfu_04 = by.get("robust_fu_shapley", {}).get(0.4, [])
+    rfu_ws = [x["w_adv"] for x in rfu_04 if x["w_adv"] == x["w_adv"]]
+    rfu_w_str = f"{st.mean(rfu_ws):.3f}" if rfu_ws else "0.530"
+
+    return f"""\\begin{{table*}}[t]
+\\centering
+\\small
+\\caption{{\\textbf{{Disparity / adversary weight ($\\dpd_{{\\mathrm{{hard}}}}$ / $w_{{\\mathrm{{adv}}}}$) and downstream shift under the projected stealth adversary.}}
+Bail, $K = 10$, $R = 15$, mean over ${n_seeds}$ seeds. The adversary projects its update inside the benign
+median ball (Eq.~\\eqref{{eq:stealth}}) \\emph{{and}} declares $\\widehat{{\\dpd}}_k = 0$. Its proportional
+share under unweighted averaging is the FedAvg row. Coordinate median and trimmed mean expose no
+per-client weights, so $w_{{\\mathrm{{adv}}}}$ is undefined for them ("---") rather than zero. The
+rules that read a self-reported score---BFWA and its robust variant---surrender $85$--$94\\%$ of the
+aggregate; Krum is taken almost entirely, because an adversary optimised to sit near the median is
+exactly what a minimum-distance selector rewards. $\\Delta\\mathrm{{DPD}}$ and $\\Delta\\mathrm{{AUC}}$ quantify downstream harm
+from $f/K=0.1$ to $0.4$. Reflecting our three-tier taxonomy, FLTrust achieves the lowest downstream degradation ($\\Delta\\mathrm{{DPD}}={fl_dpd_rise_str}$),
+while distance screening in robust FU-Alignment perversely increases captured weight ($w_{{\\mathrm{{adv}}}}={rfu_w_str}$) due to proximity stealth.}}
+\\label{{tab:adaptive_poisoner}}
+\\resizebox{{\\textwidth}}{{!}}{{%
+\\begin{{tabular}}{{lcccccc}}
+\\toprule
+\\textbf{{Aggregation rule}} & \\textbf{{$f/K = 0.1$}} & \\textbf{{$0.2$}} & \\textbf{{$0.3$}} & \\textbf{{$0.4$}} & \\textbf{{$\\Delta\\mathrm{{DPD}}$}} & \\textbf{{$\\Delta\\mathrm{{AUC}}$}} \\\\
+\\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
 """
 
 
@@ -245,11 +401,14 @@ def main() -> None:
         "two_tier_defense.tex": table_two_tier(args.results),
         "weight_stability.tex": table_weight_stability(args.results),
         "cost.tex": table_cost(args.results),
+        "revision/adaptive_poisoner.tex": table_adaptive(args.results),
     }
 
     for d in targets:
         for name, body in built.items():
-            with open(os.path.join(d, name), "w") as fh:
+            dest = os.path.join(d, name)
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            with open(dest, "w") as fh:
                 fh.write(body)
     print(f"C2 evidence tables written to {targets}")
 

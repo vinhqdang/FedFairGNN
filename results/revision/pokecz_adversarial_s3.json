@@ -1,0 +1,179 @@
+{
+  "manifest": {
+    "git_commit": "8b65d45f33764c60c3e837fadaedb6143a49e4a6",
+    "git_dirty": false,
+    "device": "cpu",
+    "timestamp": "2026-09-17T11:59:58.137093+00:00",
+    "torch_version": "2.14.0",
+    "torch_num_threads": 1,
+    "python_version": "3.12.12",
+    "platform": "macOS-15.7.9-arm64-arm-64bit",
+    "benchmark": "p5_x3_pokecz_adversarial_s3",
+    "hardware": {
+      "device": "cpu",
+      "workers": 1,
+      "threads": 1
+    },
+    "metrics": {
+      "total_runs": 9,
+      "mean_wall_per_run_s": 229.0856371526865,
+      "total_wall_s": 2062.764904916985
+    },
+    "args": {
+      "dataset": "pokec_z",
+      "num_clients": 10,
+      "rounds": 50,
+      "local_epochs": 3,
+      "dirichlet_alpha": 0.3,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "scenarios": [
+        "clean",
+        "scaling_c100",
+        "fairness_poison"
+      ],
+      "aggregator": "fu_shapley"
+    }
+  },
+  "results": {
+    "clean": {
+      "summary": {
+        "auc": {
+          "mean": 0.7926820565202588,
+          "std": 0.010394975299912908
+        },
+        "dpd_hard": {
+          "mean": 0.005384089506775112,
+          "std": 0.0032632315594476272
+        },
+        "w_adv": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "per_seed": [
+        {
+          "seed": 42,
+          "auc": 0.7924635400554502,
+          "dpd_hard": 0.008970627271146281,
+          "w_adv": 0.0,
+          "wall_clock_s": 220.89144949999172
+        },
+        {
+          "seed": 43,
+          "auc": 0.7823980621625566,
+          "dpd_hard": 0.002590200637216905,
+          "w_adv": 0.0,
+          "wall_clock_s": 254.33773070794996
+        },
+        {
+          "seed": 44,
+          "auc": 0.8031845673427696,
+          "dpd_hard": 0.00459144061196215,
+          "w_adv": 0.0,
+          "wall_clock_s": 232.28875466703903
+        }
+      ]
+    },
+    "scaling_c100": {
+      "summary": {
+        "auc": {
+          "mean": 0.794675974512379,
+          "std": 0.008615005904564191
+        },
+        "dpd_hard": {
+          "mean": 0.0060455176420982915,
+          "std": 0.0018647903697448201
+        },
+        "w_adv": {
+          "mean": 0.26185260284556233,
+          "std": 0.05148815471708395
+        }
+      },
+      "per_seed": [
+        {
+          "seed": 42,
+          "auc": 0.7938111775864586,
+          "dpd_hard": 0.006637925510979303,
+          "w_adv": 0.282949412628077,
+          "wall_clock_s": 225.46580095903482
+        },
+        {
+          "seed": 43,
+          "auc": 0.7865259827812637,
+          "dpd_hard": 0.003956485547805616,
+          "w_adv": 0.2994417460734258,
+          "wall_clock_s": 248.10691199998837
+        },
+        {
+          "seed": 44,
+          "auc": 0.8036907631694149,
+          "dpd_hard": 0.007542141867509955,
+          "w_adv": 0.2031666498351842,
+          "wall_clock_s": 246.79486345802434
+        }
+      ]
+    },
+    "fairness_poison": {
+      "summary": {
+        "auc": {
+          "mean": 0.778219874507515,
+          "std": 0.017309503131755853
+        },
+        "dpd_hard": {
+          "mean": 0.05991666468818643,
+          "std": 0.060567567989957244
+        },
+        "w_adv": {
+          "mean": 0.14972067080777682,
+          "std": 0.03688542139525421
+        }
+      },
+      "per_seed": [
+        {
+          "seed": 42,
+          "auc": 0.7946240887202685,
+          "dpd_hard": 0.02951689229389204,
+          "w_adv": 0.11277335337130352,
+          "wall_clock_s": 189.74275291606318
+        },
+        {
+          "seed": 43,
+          "auc": 0.7799069137603969,
+          "dpd_hard": 0.02057005080513219,
+          "w_adv": 0.1498447760657291,
+          "wall_clock_s": 233.31367137504276
+        },
+        {
+          "seed": 44,
+          "auc": 0.7601286210418796,
+          "dpd_hard": 0.12966305096553507,
+          "w_adv": 0.18654388298629784,
+          "wall_clock_s": 210.8287987910444
+        }
+      ]
+    }
+  },
+  "rejection_criterion": {
+    "w_adv_scaling_threshold": 0.05,
+    "auc_threshold": 0.75,
+    "alpha": 0.05,
+    "n": 3
+  },
+  "hypothesis_test": {
+    "pre_registered_thresholds": {
+      "w_adv_scaling_max": 0.05,
+      "auc_min": 0.75,
+      "p_alpha": 0.05
+    },
+    "measured": {
+      "w_adv_scaling_mean": 0.26185260284556233,
+      "auc_clean_mean": 0.7926820565202588
+    },
+    "verdict": "REJECTED (H_P5X3 breached)",
+    "rejected": true
+  }
+}
