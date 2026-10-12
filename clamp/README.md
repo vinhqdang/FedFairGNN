@@ -8,7 +8,7 @@ It holds:
 - the code (`src/`, `experiments/`) and the tests,
 - the design specification (`docs/clamp_design.md`),
 - the manuscript (`manuscript/`),
-- the per-run results (`results/`).
+- the per-run results: `results/` is ignored by this branch's `.gitignore`, so they are kept under `results/clamp/` on the `main_trustfed` branch.
 
 ## Setup
 
