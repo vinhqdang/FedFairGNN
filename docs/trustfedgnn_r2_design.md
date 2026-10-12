@@ -339,3 +339,35 @@ E4 Privacy: epsilon sweep {1,2,4,8,16} for the statistics channel; T1
 E5 Ablations: FSER on/off (all four datasets), lambda step, C, sigma_u > 0.
 Dropped: ogbn-products, Elliptic (no genuine sensitive attribute; reviewer 2
 point 5). The scalability claim is removed from the paper.
+
+## 7. Addendum (after code review and pilot runs) - supersedes earlier sections where they conflict
+
+- The work becomes a new paper. FSER is dropped, which also removes the
+  train/statistics mismatch noted in review (the s-blind pass was a different
+  function from the s-aware FSER model). The backbone is GAT, with GCN as a
+  variant. Working name: CLAMP (Clipped secure aggregation with a LAgrangian
+  Multiplier and Private group statistics). Method keys: `clamp`, `clamp-gcn`,
+  `clamp-clipmean`.
+- Statistics period P (`r2_stat_period`). Statistics are released, and
+  lambda and d updated, only in rounds t with t mod P = 0. T1 composes
+  ceil(R/P) releases, so sigma_s = 2 z(eps, ceil(R/P), delta). T4 holds over
+  the release rounds. T2 is unchanged (it is per round). Motivation: with
+  P = 1, R = 100 and eps = 8, sigma_s is about 12.8. On German (n_cap = 50 per
+  client and group) that swamps the gap estimate. On Credit (thousands of
+  validation nodes) it does not.
+- Pilot (no statistics noise, GAT, seed 0):
+  - German: test soft DPD 0.151 (step 0), 0.148 (step 0.5), 0.129 (step 0.1).
+    The validation gap of about 0.05 does not track the test gap on this
+    1000-node graph.
+  - Credit: test DPD 0.060 (step 0), 0.046 (step 0.5), with validation gap
+    close to test gap.
+  - Report German as a small-sample limitation.
+- New attack `stat_falsify_mid` (both claimed rates equal the honest pooled
+  rate). This drives the aggregate gap to 0 without overshoot and is the
+  adversary's best valid response for hiding unfairness. It is used in E3
+  alongside `stat_falsify`.
+- FedFDP: one extra accountant step per round for the loss release.
+- The local term stays linear: lambda * d * (m1 - m0). A hinge on the local
+  gap was considered and rejected. Under non-IID partitions a client's local
+  gap can be small while the global gap is large, and a hinge would then
+  switch off exactly when the server asks for correction.
