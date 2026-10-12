@@ -45,7 +45,7 @@ def test_every_named_method_and_aggregator_exists():
 def test_clamp_period_defaults_follow_dataset():
     for j in expand("e1"):
         if j["method"].startswith("clamp"):
-            want = 10 if j["dataset"] == "german" else 1
+            want = 10 if j["dataset"] in ("german", "nba", "facebook") else 1
             assert j["overrides"]["r2_stat_period"] == want
 
 
