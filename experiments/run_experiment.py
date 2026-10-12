@@ -23,10 +23,14 @@ def build_config(method: str, dataset: str, seed: int, **overrides) -> Experimen
     return cfg
 
 
+def run_id_for(cfg: ExperimentConfig, tag: str = "") -> str:
+    return f"{cfg.exp_name}__{cfg.dataset}__{cfg.aggregator}__{cfg.attack}__b{cfg.num_byzantine}" \
+           f"__eps{cfg.dp_epsilon if cfg.dp_enabled else 'inf'}__lam{cfg.fairness_weight}" \
+           f"__K{cfg.num_clients}__s{cfg.seed}{('__' + tag) if tag else ''}"
+
+
 def run_one(cfg: ExperimentConfig, logger: ResultLogger, tag: str = "", verbose=False):
-    run_id = f"{cfg.exp_name}__{cfg.dataset}__{cfg.aggregator}__{cfg.attack}__b{cfg.num_byzantine}" \
-             f"__eps{cfg.dp_epsilon if cfg.dp_enabled else 'inf'}__lam{cfg.fairness_weight}" \
-             f"__K{cfg.num_clients}__s{cfg.seed}{('__' + tag) if tag else ''}"
+    run_id = run_id_for(cfg, tag)
     if logger.exists(run_id):
         return run_id, None
     t = time.time()

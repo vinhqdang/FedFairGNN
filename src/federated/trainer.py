@@ -25,6 +25,21 @@ from .attacks import falsify_group_stats, poison_updates
 from .client import Client, flatten_state, load_flat_state, sampled_predict, _soft_dpd
 
 
+def _honest_diagnostics(stats: List[Dict[str, float]], byzantine_ids: List[int],
+                        n_cap: float) -> Dict[str, float]:
+    """Honest-only gap D^H and the T3 bound sum_a b_a, from the statistics before
+    falsification. The bound is b_a = f n_cap / (N^H_a + f n_cap)."""
+    byz = set(byzantine_ids)
+    hon = [st for i, st in enumerate(stats) if i not in byz]
+    S = [sum(st[f"S{a}"] for st in hon) for a in (0, 1)]
+    N = [sum(st[f"N{a}"] for st in hon) for a in (0, 1)]
+    r = [S[a] / N[a] if N[a] > 0 else 0.5 for a in (0, 1)]
+    f = len(byz)
+    b = [f * n_cap / (N[a] + f * n_cap) if f > 0 else 0.0 for a in (0, 1)]
+    gap = r[1] - r[0]
+    return {"gap_honest": gap, "dhat_honest": abs(gap), "t3_bound": b[0] + b[1]}
+
+
 def _clip_to_norm(u: torch.Tensor, C: float) -> torch.Tensor:
     """Protocol step 3 of R2: scale a submission down to norm C (no-op inside the ball)."""
     return u * min(1.0, C / max(float(u.norm(2)), 1e-12))
@@ -270,8 +285,11 @@ class FederatedTrainer:
                                            meta_lie=getattr(self.cfg, 'meta_lie', None))
 
         secagg = None
+        diag = None
         if r2:
             C = self.cfg.r2_clip_norm
+            if r2_release:
+                diag = _honest_diagnostics(stats, self.byzantine_ids, self._r2_n_cap)
             if r2_release and self.byzantine_ids and self.cfg.attack.startswith("stat_falsify"):
                 mode = "mid" if self.cfg.attack == "stat_falsify_mid" else "swap"
                 stats = falsify_group_stats(stats, self.byzantine_ids, self._r2_n_cap, mode=mode)
@@ -360,6 +378,8 @@ class FederatedTrainer:
                     "n_accepted", "n_rejected", "u_norm"):
             if key in info:
                 rec[key] = info[key]
+        if diag is not None:
+            rec.update(diag)
         if fedfdp:
             rec["fedfdp_fbar"] = self._agg_state.get("fedfdp_fbar")
         # FTGD: how many local steps this round degraded to plain weighted-sum
