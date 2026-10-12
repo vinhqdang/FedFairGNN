@@ -1,0 +1,70 @@
+\section{The \clamp{} protocol}\label{sec:method}
+
+\clamp{} has three ideas. First, every quantity the server uses is a \emph{sum over clients} of a \emph{range-checked} summand, so it can be computed inside secure aggregation and no single client can move it by more than a known amount. Second, the fairness constraint is enforced by \emph{one} global Lagrange multiplier $\lambda$ and \emph{one} global direction $d$, both computed from noisy aggregate group statistics and broadcast to all clients; there is no per-client weight that could be captured. Third, the statistics are computed with a forward pass that never reads the sensitive attribute, which gives them a small, data-independent sensitivity and makes them cheap to privatise. Algorithm~\ref{alg:clamp} lists one round.
+
+\subsection{Client side}
+At round $t$ the server broadcasts $(\theta^t,\lambda^t,d^t)$ with $\lambda^0=0$ and $d^0=0$.
+
+\paragraph{Group statistics}
+Client $k$ evaluates the received model on its validation nodes and reports, for $a\in\{0,1\}$,
+\begin{equation}\label{eq:stats}
+N_{k,a}=\bigl|\{v\in\mathcal{V}^{\mathrm{val}}_k:s_v=a\}\bigr|,\qquad S_{k,a}=\sum_{v\in\mathcal{V}^{\mathrm{val}}_k,\;s_v=a}p_{\theta^t}(v).
+\end{equation}
+Because $s$ is not an input of the backbone, flipping one node's attribute changes no prediction; it only moves that node's prediction and count from one group to the other. A public constant $\ncap$ bounds $N_{k,a}$; it is fixed per dataset before training (Section~\ref{sec:setup}). A client whose group is larger than $\ncap$ reports a fixed subset chosen once, so every report satisfies $0\le S_{k,a}\le N_{k,a}\le\ncap$.
+
+\paragraph{Lagrangian local objective}
+Starting from $\theta^t$, the client runs $E$ local epochs on its training nodes with
+\begin{equation}\label{eq:local}
+\mathcal{L}_k(\theta)=\mathrm{BCE}_w\bigl(p_\theta,y\bigr)+\lambda^t d^t\bigl(m_{k,1}(\theta)-m_{k,0}(\theta)\bigr),
+\end{equation}
+where $\mathrm{BCE}_w$ is class-weighted binary cross-entropy and $m_{k,a}$ is the mean prediction over the client's training nodes in group $a$ (zero for an empty group). The penalty is \emph{signed}: $d^t$ is the sign of the estimated \emph{global} gap, so each client pushes the two group rates toward each other in the direction the federation needs, even when its own local gap has the opposite sign. With $\lambda^t=0$ or $d^t=0$, \eqref{eq:local} is ordinary weighted cross-entropy.
+
+\paragraph{Clipping}
+The client forms the pseudo-gradient $\Delta_k=\theta^t-\theta_k$ and clips it, $\Delta_k\leftarrow\Delta_k\min\bigl(1,C/\|\Delta_k\|_2\bigr)$. It submits $(\Delta_k,S_{k,0},S_{k,1},N_{k,0},N_{k,1})$ to secure aggregation.
+
+\subsection{Verifiable secure aggregation}
+A submission is \emph{valid} if
+\begin{equation}\label{eq:valid}
+\|\Delta_k\|_2\le C\quad\text{and}\quad 0\le S_{k,a}\le N_{k,a}\le\ncap\quad(a=0,1).
+\end{equation}
+Invalid submissions are dropped from every sum, and the number of accepted submissions $K'$ is public. In deployment, the sums are computed with secure aggregation~\citep{bonawitz2017practical} and validity is enforced with zero-knowledge norm and range proofs, as in Prio~\citep{corrigangibbs2017prio} and RoFL~\citep{lycklama2023rofl}, so the server learns the sums and $K'$ but no individual summand. Our experiments simulate this layer in plaintext: the server code applies~\eqref{eq:valid} and then reads only the sums. The cost of the cryptographic layer is not part of our evaluation.
+
+\subsection{Server side}
+If $K'=0$ the round is skipped. Otherwise the server receives
+\begin{equation}\label{eq:sums}
+U=\sum_{k\in A}\Delta_k+\xi_u,\qquad S_a=\sum_{k\in A}S_{k,a}+\xi_{S,a},\qquad N_a=\sum_{k\in A}N_{k,a}+\xi_{N,a},
+\end{equation}
+where $A$ is the set of accepted clients, $\xi_{S,a},\xi_{N,a}\sim\mathcal{N}(0,\sigma_s^2)$ are independent, and $\xi_u\sim\mathcal{N}(0,\sigma_u^2I)$ is optional ($\sigma_u=0$ unless stated). It then computes
+\begin{align}
+r_a&=\mathrm{clip}\bigl(S_a/\max(N_a,1),\,0,\,1\bigr),\qquad g=r_1-r_0,\qquad \Dhat=|g|,\label{eq:rates}\\
+\theta^{t+1}&=\theta^t-U/K',\label{eq:theta}\\
+\lambda^{t+1}&=\max\bigl(0,\;\lambda^t+\eta\,(\Dhat-\tau)\bigr),\label{eq:lambda}\\
+d^{t+1}&=\begin{cases}\mathrm{sign}(g)&\text{if }|g|>\tau/2,\\0&\text{otherwise.}\end{cases}\label{eq:direction}
+\end{align}
+Equation~\eqref{eq:lambda} is projected dual ascent with a constant step $\eta$: the multiplier grows while the estimated gap exceeds the budget and decays otherwise. The dead zone in~\eqref{eq:direction} stops the fairness push once the gap is well inside the budget, and it limits the ability of an adversary to flip the direction (Theorem~\ref{thm:stats}).
+
+\paragraph{Release period}
+On small graphs the statistics noise can dominate the gap estimate. \clamp{} therefore releases statistics, and updates $(\lambda,d)$, only every $P$ rounds; in the other rounds clients keep the last broadcast $(\lambda,d)$ and the server aggregates updates only. Privacy is then accounted over $\lceil T/P\rceil$ releases (Theorem~\ref{thm:dp}).
+
+\begin{algorithm}[t]
+\caption{One round $t$ of \clamp{}}\label{alg:clamp}
+\begin{algorithmic}[1]
+\REQUIRE $\theta^t$, $\lambda^t$, $d^t$; constants $C,\tau,\eta,\ncap,\sigma_s,\sigma_u,P$
+\STATE Server broadcasts $(\theta^t,\lambda^t,d^t)$
+\FOR{each client $k$ \textbf{in parallel}}
+  \IF{$t \bmod P=0$} \STATE compute $(S_{k,a},N_{k,a})_{a=0,1}$ with $\theta^t$ on validation nodes, Eq.~\eqref{eq:stats} \ENDIF
+  \STATE $\theta_k\leftarrow$ $E$ local epochs on $\mathcal{L}_k$, Eq.~\eqref{eq:local}, from $\theta^t$
+  \STATE $\Delta_k\leftarrow(\theta^t-\theta_k)\min(1,C/\|\theta^t-\theta_k\|_2)$
+  \STATE submit $\Delta_k$ (and the statistics) to secure aggregation
+\ENDFOR
+\STATE Secure aggregation drops invalid submissions, Eq.~\eqref{eq:valid}, and outputs the noisy sums, Eq.~\eqref{eq:sums}
+\IF{$K'=0$} \STATE \textbf{return} $(\theta^t,\lambda^t,d^t)$ \ENDIF
+\STATE $\theta^{t+1}\leftarrow\theta^t-U/K'$
+\IF{$t \bmod P=0$}
+  \STATE compute $g,\Dhat$ by Eq.~\eqref{eq:rates}; update $\lambda^{t+1}$ by Eq.~\eqref{eq:lambda} and $d^{t+1}$ by Eq.~\eqref{eq:direction}
+\ELSE \STATE $(\lambda^{t+1},d^{t+1})\leftarrow(\lambda^t,d^t)$ \ENDIF
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Cost}
+Relative to FedAvg, each client sends four extra scalars per release round and computes one extra forward pass on its validation nodes. The server's work is unchanged apart from four scalar sums. There is no per-client computation on the server, so the protocol scales with $K$ exactly as FedAvg does.

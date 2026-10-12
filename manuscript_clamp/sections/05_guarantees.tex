@@ -1,0 +1,81 @@
+\section{Guarantees}\label{sec:guarantees}
+
+This section states what \clamp{} guarantees and, just as explicitly, what it does not. Each result covers one channel of the protocol. None of them is a convergence theorem for a non-convex GNN.
+
+\subsection{Privacy of the sensitive attribute in the statistics channel}
+
+\begin{definition}[Attribute-neighbouring datasets]
+Two federated datasets are \emph{neighbouring} if they are identical except for the sensitive attribute $s_v$ of a single validation node $v$ of one client.
+\end{definition}
+
+The relation protects the quantity the statistics are about, namely group membership. Because the backbone never reads $s$, changing $s_v$ for a validation node changes neither the training of any client nor any prediction; only the statistics change.
+
+\begin{theorem}[Differential privacy of the released statistics]\label{thm:dp}
+Let $\sigma_s=2z$ and let the statistics be released in $R=\lceil T/P\rceil$ rounds. The sequence of released noisy statistics $(S_0,S_1,N_0,N_1)$ over all release rounds, together with every quantity computed from them ($\lambda^t$, $d^t$, and the models $\theta^t$), satisfies $(\alpha,\,2R\alpha/\sigma_s^2)$-R\'enyi differential privacy~\citep{mironov2017renyi} for every $\alpha>1$ with respect to attribute-neighbouring datasets, and hence $(\varepsilon,\delta)$-DP with $\varepsilon=\min_{\alpha>1}\bigl[R\alpha/(2z^2)+\log\frac{\alpha-1}{\alpha}-\frac{\log\delta+\log\alpha}{\alpha-1}\bigr]$.
+\end{theorem}
+
+\begin{proof}
+Fix all training data and all randomness of local training. Consider one release round. For neighbouring datasets that differ in $s_v$, the client's predictions are identical because the forward pass does not read $s$. The prediction $p_v\in[0,1]$ moves from one group's sum to the other's and one unit moves between the two counts, so the vector $(S_0,S_1,N_0,N_1)$ changes by $(\pm p_v,\mp p_v,\pm1,\mp1)$, whose $\ell_2$ norm is $\sqrt{2p_v^2+2}\le2$. Every other client's contribution is unchanged, and the validity check is unaffected because the changed report remains valid. Each coordinate receives independent $\mathcal{N}(0,\sigma_s^2)$ noise, so one release is a Gaussian mechanism with $\ell_2$ sensitivity $2$, which is $(\alpha,\,4\alpha/(2\sigma_s^2))$-RDP. The input to round $t$'s release depends on the dataset only through the training data (fixed) and through $(\lambda,d)$, which are functions of earlier releases. Adaptive composition of RDP over $R$ releases gives $(\alpha,2R\alpha/\sigma_s^2)$-RDP, and quantities computed from the releases are post-processing. The conversion to $(\varepsilon,\delta)$ is the one of~\citet{canonne2020discrete}. No subsampling amplification is used: the same validation nodes are used in every release.
+\end{proof}
+
+\begin{remark}[Scope]
+Theorem~\ref{thm:dp} protects the sensitive attribute of validation nodes as revealed through the statistics. It does \emph{not} make the update channel differentially private: the local objective~\eqref{eq:local} reads the attribute of training nodes, so the update sum $U$ depends on it. That channel is protected from the server by secure aggregation, which is a cryptographic guarantee about individual updates, not a bound on what the aggregate reveals. We measure the residual leakage of the aggregate with an attribute-inference probe in Section~\ref{sec:privacy}. Setting $\sigma_u>0$ makes $U$ a Gaussian mechanism with client-level sensitivity $C$; we report this as an ablation only and make no client-level claim for the full model sequence.
+\end{remark}
+
+\begin{remark}[Where the noise is added]
+In our simulation the noise is added once to the sum, which corresponds to a trusted aggregator. In a secure-aggregation deployment each client adds discrete Gaussian noise of variance $\sigma_s^2/(K-f)$~\citep{canonne2020discrete,kairouz2021distributed}; the sum then carries at least variance $\sigma_s^2$ as long as at most $f$ clients withhold their share.
+\end{remark}
+
+\subsection{Bounded influence of Byzantine updates}
+
+\begin{theorem}[Per-round influence on the model]\label{thm:update}
+Fix the state $(\theta^t,\lambda^t,d^t)$ and let $\sigma_u=0$. Let $A$ be the accepted set, $K'=|A|$, $B\subseteq A$ the accepted Byzantine clients with $|B|=f'\le f$, and $H=A\setminus B$. If every honest client is accepted, then
+\begin{equation}
+\Bigl\|\tfrac{U}{K'}-\tfrac{1}{|H|}\textstyle\sum_{k\in H}\Delta_k\Bigr\|_2\;\le\;\frac{2f'C}{K'}\;\le\;\frac{2fC}{K-f}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Write $\bar\Delta_H$ and $\bar\Delta_B$ for the means over $H$ and $B$. Then $U/K'-\bar\Delta_H=\frac{f'}{K'}(\bar\Delta_B-\bar\Delta_H)$. Every accepted update has norm at most $C$, so $\|\bar\Delta_B-\bar\Delta_H\|_2\le2C$. Finally $K'\ge|H|\ge K-f$ and $f'\le f$.
+\end{proof}
+
+The bound is per round and against a same-state counterfactual. It does not compose over rounds by summation, because later honest updates are computed at the perturbed model and the adversary can also act through the statistics; we make no multi-round claim. The bound is the price of compatibility with secure aggregation: a rule that inspects individual updates (median, Krum) can do better against some attacks, but it cannot run on sums.
+
+\subsection{Bounded influence on the fairness estimate}
+
+Let $S^H_a,N^H_a$ be the honest totals and $D^H=|S^H_1/N^H_1-S^H_0/N^H_0|$ the honest gap.
+
+\begin{theorem}[Influence of falsified statistics]\label{thm:stats}
+Let $\sigma_s=0$ and assume every honest client is accepted and $N^H_a>0$. For any statistics submitted by at most $f$ Byzantine clients that pass the validity check,
+\begin{equation}\label{eq:t3}
+\bigl|\Dhat-D^H\bigr|\le b_0+b_1,\qquad b_a=\frac{f\,\ncap}{N^H_a+f\,\ncap}.
+\end{equation}
+With noise, if $N^H_a>3e$ with $e=\sigma_s\sqrt{2\ln(8/\beta)}$, then with probability at least $1-\beta$ over the noise,
+\begin{equation}\label{eq:t3noise}
+\bigl|\Dhat-D^H\bigr|\le\sum_{a\in\{0,1\}}\Bigl[b_a+\frac{2e}{N^H_a-e}\Bigr].
+\end{equation}
+Moreover the estimated direction $d^{t+1}$ equals the honest direction whenever $|g^H|>\tau/2+(\text{right-hand side})$.
+\end{theorem}
+
+\begin{proof}
+Let $S^B_a\in[0,N^B_a]$ and $N^B_a\in[0,f\ncap]$ be the accepted Byzantine totals. The aggregate rate is a convex combination,
+$\frac{S_a}{N_a}-\frac{S^H_a}{N^H_a}=\frac{N^B_a}{N^H_a+N^B_a}\Bigl(\frac{S^B_a}{N^B_a}-\frac{S^H_a}{N^H_a}\Bigr)$,
+the difference of two rates in $[0,1]$ is at most $1$ in absolute value, and $x\mapsto x/(N^H_a+x)$ is increasing, so the rate error is at most $b_a$. The absolute value and the clip to $[0,1]$ are 1-Lipschitz, which gives~\eqref{eq:t3}. With noise, a Gaussian tail bound and a union bound over the four noise terms give $|\xi|\le e$ for all of them with probability at least $1-\beta$; on that event each rate is additionally perturbed by at most $2e/(N^H_a-e)$, since $|\frac{S+\xi_S}{N+\xi_N}-\frac{S}{N}|\le\frac{|\xi_S|+|\xi_N|}{N-|\xi_N|}$ when $S\le N$. The direction claim follows because $g$ and $g^H$ then have the same sign and $|g|>\tau/2$.
+\end{proof}
+
+The bound depends only on public quantities and on the honest validation mass, so it can be evaluated for every dataset (Table~\ref{tab:t3}). It is tight for a single round: an adversary that reports $N^B_a=f\ncap$ with an extreme rate attains it. It is small when honest validation sets are large relative to $f\ncap$ and weak on small graphs; we report both. Since there are no per-client weights, a Byzantine client cannot gain influence over time by building reputation.
+
+\subsection{A certificate for the fairness constraint}
+
+\begin{proposition}[Constraint-violation certificate]\label{prop:cert}
+For any sequence of models and estimates, the dual update~\eqref{eq:lambda} with $\lambda^0=0$ satisfies, over the $R$ release rounds,
+\begin{equation}\label{eq:cert}
+\frac{1}{R}\sum_{j=1}^{R}\bigl(\Dhat^{(j)}-\tau\bigr)\le\frac{\lambda^{(R)}}{\eta R}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+$\lambda^{(j+1)}=\max(0,\lambda^{(j)}+\eta(\Dhat^{(j)}-\tau))\ge\lambda^{(j)}+\eta(\Dhat^{(j)}-\tau)$. Sum over $j$ and use $\lambda^{(0)}=0$.
+\end{proof}
+
+Proposition~\ref{prop:cert} is a certificate, not a convergence result. It needs no convexity and no exact minimisation, and it holds for the constant step used in practice. Its right-hand side is logged, so the average constraint violation of every run can be checked after the fact (Table~\ref{tab:main}). It has three limits: it bounds an average, so violations in some rounds can be offset by slack in others; it bounds the estimated validation gap, which is noisy and biased upward by the absolute value, not the test gap; and it is informative only when $\lambda^{(R)}\ll\eta R$. Under the textbook assumptions of a convex loss and constraint, exact per-round minimisation and noiseless statistics, the dual function is concave and~\eqref{eq:lambda} is projected supergradient ascent with the usual $O(1/\sqrt{R})$ rate~\citep{cotter2019optimization}; none of these assumptions holds for a GNN, and we do not rely on them.
