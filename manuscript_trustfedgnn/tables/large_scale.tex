@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Large-Scale Evaluation on the Elliptic Bitcoin Transaction Graph.} $^{\ast}$FaVGNN and DP-FedAvg collapse to near-random utility under full-parameter DP-SGD; their near-zero disparity ($^{\dagger}$) reflects degenerate constant predictions rather than genuine fairness.}
+\label{tab:large_scale}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Method & AUC $\uparrow$ & DPD $\downarrow$ & EOD $\downarrow$ & Time/run (s) \\
+\midrule
+FedAvg-GAT & 0.877 & 0.101 & 0.039 & 1449 \\
+FairSIN & \textbf{0.894} & \textbf{0.095} & \textbf{0.011} & 1345 \\
+FaVGNN$^{\ast}$ (2026) & 0.495 & 0.000$^{\dagger}$ & 0.000$^{\dagger}$ & 2791 \\
+DP-FedAvg & 0.556 & 0.009$^{\dagger}$ & 0.021$^{\dagger}$ & 1251 \\
+TrustFedGNN (no DP) & 0.861 & 0.114 & 0.071 & 3550 \\
+\textbf{TrustFedGNN} & 0.862 & 0.103 & 0.053 & 3665 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

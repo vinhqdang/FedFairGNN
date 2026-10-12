@@ -1,0 +1,35 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Sensitivity to Data Heterogeneity (Dirichlet $\alpha$) and Client Scaling ($K$) on Bail Recidivism.}
+Comparison of TrustFedGNN vs FedAvg across non-IID skew $\alpha \in \{0.1, 0.3, 0.5, 1.0\}$ and client counts $K \in \{5, 10, 20\}$.
+Results reported as $\text{Mean} \pm \text{Std}$ over random seeds. Lower $\alpha$ indicates more severe label/sensitive distribution skew.}
+\label{tab:dirichlet_sweep}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{4}{c}{\textbf{TrustFedGNN (Ours)}} & \multicolumn{4}{c}{\textbf{FedAvg (Baseline)}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+\textbf{Setting} & \textbf{AUC $\uparrow$} & \textbf{DPD $\downarrow$} & \textbf{EOD $\downarrow$} & \textbf{$\Omega_w$ $\downarrow$} & \textbf{AUC $\uparrow$} & \textbf{DPD $\downarrow$} & \textbf{EOD $\downarrow$} & \textbf{$\Omega_w$ $\downarrow$} \\
+\midrule
+\multicolumn{9}{l}{\textit{Client Population $K = 5$}} \\
+$\alpha = 0.1$ & 0.632$\pm$0.027 & 0.023$\pm$0.011 & 0.036$\pm$0.011 & 0.236 & 0.728$\pm$0.003 & 0.010$\pm$0.007 & 0.027$\pm$0.014 & 0.000 \\
+$\alpha = 0.3$ & 0.637$\pm$0.024 & 0.017$\pm$0.001 & 0.036$\pm$0.013 & 0.887 & 0.718$\pm$0.002 & 0.014$\pm$0.006 & 0.032$\pm$0.023 & 0.000 \\
+$\alpha = 0.5$ & 0.631$\pm$0.031 & 0.008$\pm$0.001 & 0.031$\pm$0.015 & 0.709 & 0.709$\pm$0.002 & 0.015$\pm$0.009 & 0.021$\pm$0.019 & 0.000 \\
+$\alpha = 1.0$ & 0.663$\pm$0.035 & 0.007$\pm$0.003 & 0.005$\pm$0.005 & 0.473 & 0.726$\pm$0.008 & 0.010$\pm$0.004 & 0.036$\pm$0.025 & 0.000 \\
+\midrule
+\multicolumn{9}{l}{\textit{Client Population $K = 10$}} \\
+$\alpha = 0.1$ & 0.661$\pm$0.010 & 0.010$\pm$0.008 & 0.009$\pm$0.006 & 0.653 & 0.687$\pm$0.016 & 0.012$\pm$0.011 & 0.036$\pm$0.029 & 0.000 \\
+$\alpha = 0.3$ & 0.673$\pm$0.000 & 0.021$\pm$0.013 & 0.024$\pm$0.008 & 1.186 & 0.688$\pm$0.008 & 0.014$\pm$0.000 & 0.046$\pm$0.024 & 0.000 \\
+$\alpha = 0.5$ & 0.663$\pm$0.006 & 0.039$\pm$0.017 & 0.027$\pm$0.020 & 0.593 & 0.683$\pm$0.010 & 0.013$\pm$0.002 & 0.036$\pm$0.011 & 0.000 \\
+$\alpha = 1.0$ & 0.671$\pm$0.019 & 0.031$\pm$0.017 & 0.020$\pm$0.007 & 0.831 & 0.681$\pm$0.000 & 0.027$\pm$0.015 & 0.030$\pm$0.027 & 0.000 \\
+\midrule
+\multicolumn{9}{l}{\textit{Client Population $K = 20$}} \\
+$\alpha = 0.1$ & 0.651$\pm$0.004 & 0.015$\pm$0.000 & 0.030$\pm$0.010 & 1.129 & 0.657$\pm$0.012 & 0.016$\pm$0.002 & 0.031$\pm$0.010 & 0.000 \\
+$\alpha = 0.3$ & 0.632$\pm$0.008 & 0.049$\pm$0.005 & 0.060$\pm$0.005 & 0.654 & 0.655$\pm$0.009 & 0.006$\pm$0.005 & 0.023$\pm$0.001 & 0.000 \\
+$\alpha = 0.5$ & 0.625$\pm$0.001 & 0.024$\pm$0.020 & 0.034$\pm$0.021 & 0.059 & 0.656$\pm$0.010 & 0.006$\pm$0.006 & 0.025$\pm$0.004 & 0.000 \\
+$\alpha = 1.0$ & 0.641$\pm$0.001 & 0.015$\pm$0.011 & 0.022$\pm$0.013 & 0.357 & 0.657$\pm$0.010 & 0.021$\pm$0.006 & 0.034$\pm$0.005 & 0.000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

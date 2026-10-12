@@ -1,0 +1,550 @@
+\documentclass[preprint,12pt]{elsarticle}
+
+\journal{Neurocomputing}
+
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{bm}
+\usepackage{url}
+\usepackage[pdfauthor={Ngoc-Son-An Nguyen}, pdftitle={TrustFedGNN: A Byzantine-Robust and Differentially Private Federated Graph Neural Network with Fairness Constraints}, pdfencoding=auto, psdextra, hidelinks]{hyperref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{TrustFedGNN: A Byzantine-Robust and Differentially Private Federated Graph Neural Network with Fairness Constraints}
+
+\author[inst1]{\texorpdfstring{Ngoc-Son-An Nguyen}{Ngoc-Son-An Nguyen}}
+\ead{annns25871@pgr.iuh.edu.vn}
+
+\author[inst2]{\texorpdfstring{Quang-Vinh Dang\corref{cor1}}{Quang-Vinh Dang}}
+\ead{vinh.dq4@buv.edu.vn}
+\cortext[cor1]{Corresponding author}
+
+\affiliation[inst1]{organization={Industrial University of Ho Chi Minh City},
+            city={Ho Chi Minh City},
+            country={Vietnam}}
+
+\affiliation[inst2]{organization={British University Vietnam},
+            city={Hung Yen},
+            country={Vietnam}}
+
+\begin{highlights}
+\item Unifies group fairness, DP, and Byzantine robustness in federated GNNs.
+\item FSER attention debiasing improves natural graph AUC by +0.0201 (p=0.0059).
+\item Statistic-level DP prevents attribute inference on the released disparity signal without accuracy drop; raw model updates are a separate, only partially covered channel (see Limitations).
+\item Coordinate median resists adaptive stealth fairness attacks up to 40\%.
+\item Best utility (AUC) among 7 federated and centralized baselines on two seed-tested benchmarks; fairness gains are utility-preserving rather than uniformly best-in-class on every metric (see Limitations).
+\item Validated on 6 benchmarks including 203k Elliptic and 2.4M-node graphs.
+\end{highlights}
+
+\begin{abstract}
+Federated Learning (FL) enables institutions to collaboratively train shared models over sensitive, decentralized graph data---such as transaction logs, credit histories, and social ties---without exposing raw records. However, deploying automated graph risk detection in high-stakes domains requires satisfying a tripartite mandate of trustworthiness: demographic fairness, differential privacy (DP), and Byzantine resilience. Existing methods address these objectives in isolation, and no prior framework unifies them without severe utility degradation. We present \textbf{TrustFedGNN}, a principled framework for trustworthy federated graph neural networks structured around three intellectual pillars: (i) \emph{Pillar C1 (Client-Side Attention Debiasing \& Targeted DP)}: introduces Fairness-Sensitive Edge Reweighting (FSER), a learned attention penalty that acts as an inductive regularizer on natural homophilic graphs ($+0.0201$ AUC, $p=0.0059$), paired with Fairness-Targeted Gradient Decomposition (FTGD), which privatizes solely the 2D demographic-parity statistic to attain $(\epsilon,\delta)$-DP without isotropic noise destruction ($O(1)$ vs. $O(\sqrt{|\theta|})$ noise); (ii) \emph{Pillar C2 (Server-Side Byzantine-Resilient Simplex Aggregation)}: implements Bi-objective Frank--Wolfe Aggregation (BFWA), which steers aggregation weights on the probability simplex $\Delta_K$ toward a fairness budget $\tau$ via dual ascent (feasibility reported as a constraint residual rather than enforced exactly), and Coordinate-wise Median filtering, whose robustness to an omniscient adaptive stealth fairness adversary is structural---it admits no per-client weight vector for a stealth adversary to manipulate---up to the standard Byzantine breakdown fraction $f < 0.5$; and (iii) \emph{Pillar C3 (Theoretical Guarantees and Multi-Scale Rigor)}: provides analytical privacy conversions and demographic non-leakage theorems across the FSER $\times$ FTGD interface. Evaluated across 6 benchmark datasets—including the 203k-node Elliptic Bitcoin transaction network and the 2.4M-node ogbn-products graph—TrustFedGNN attains the best predictive utility among 7 external federated and centralized baselines on the two benchmarks held to the study's full statistical protocol ($n=10$ seeds, paired Wilcoxon signed-rank tests with Holm--Bonferroni correction), while its fairness improvements are utility-preserving rather than uniformly best-in-class on every disparity metric and dataset, a qualification we report and analyze explicitly rather than omit (Section~\ref{sec:limitations}).
+\end{abstract}
+
+\begin{keyword}
+Federated Learning \sep Graph Neural Networks \sep Algorithmic Fairness \sep Differential Privacy \sep Byzantine Robustness \sep Fraud Detection
+\end{keyword}
+
+\end{frontmatter}
+
+%% -------------------------------------------------------------------------
+%% SECTION 1: INTRODUCTION
+%% -------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+Graph Neural Networks (GNNs) have emerged as the foundational paradigm for fraud detection, anti-money laundering (AML), and financial credit assessment \cite{kipf2016semi,velickovic2017graph,dou2020enhancing}. Unlike Euclidean deep learning architectures that evaluate instances independently, GNNs leverage recursive message passing across graph topologies to capture relational dependencies, transaction flows, and syndicate structures. However, in cross-institutional settings, strict data protection regulations (such as the EU General Data Protection Regulation and the California Consumer Privacy Act) prohibit financial institutions, healthcare providers, and judicial jurisdictions from aggregating private transaction graphs into a centralized repository.
+
+Federated Learning (FL) has been widely adopted to facilitate collaborative model training across decentralized clients while keeping raw graph data localized \cite{mcmahan2017communication,zhang2021federated}. Nevertheless, deploying federated GNNs in high-stakes socio-technical domains introduces a fundamental tension termed the \textbf{Trustworthy Trilemma} (Fig.~\ref{fig:trilemma}):
+\begin{enumerate}
+    \item \textbf{Homophily vs. Demographic Fairness:} Recursive neighborhood aggregation intrinsically propagates and amplifies historical biases encoded in graph topologies. Connected nodes often share sensitive attributes (homophily), causing standard GNN aggregators to systematically discriminate against protected demographic groups \cite{dai2021say,agarwal2021towards}.
+    \item \textbf{Fairness vs. Differential Privacy (DP):} While client data remains local, sharing parameter updates or fairness statistics risks leaking sensitive demographic memberships to honest-but-curious servers \cite{nasr2019comprehensive}. Standard Differential Privacy via DP-SGD adds isotropic Gaussian noise with norm scaling as $O(\sigma\sqrt{|\theta|})$, which severely impairs fraud detection utility on compact GNN architectures \cite{abadi2016deep,dwork2014algorithmic}.
+    \item \textbf{Fairness Steering vs. Byzantine Resilience:} In decentralized environments, adversarial or corrupt participants can manipulate updates to derail model convergence or execute deceptive poisoning \cite{blanchard2017machine,yin2018byzantine}. Crucially, relying on client-reported fairness metrics creates an unverified attack surface: an adversary can falsify a demographic disparity of zero while optimizing a locally discriminatory objective.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/privacy_attack.pdf}
+\caption{\textbf{The Trustworthy Trilemma and Targeted DP Mechanism.} 
+Comparison of feature leakage and demographic attribute inference under raw model updates versus the proposed statistic-level $(\epsilon,\delta)$-DP mechanism across federated rounds.}
+\label{fig:trilemma}
+\end{figure}
+
+A preliminary version of this work, under the name FedFairGNN, was presented at the IndabaX Nigeria 2026 workshop \cite{dang2026fedfairgnn}. That conference paper introduced the FSER, FTGD, and BFWA mechanisms in outline form and demonstrated them on a small-scale, $K=3$-client federated simulation across three fraud-detection graphs (YelpChi, Amazon, Elliptic), applying differential privacy to the fairness gradient without a formal privacy proof and reporting single-run utility/fairness numbers without seed-level statistical testing or a robustness analysis. This manuscript substantially extends that preliminary study by: (i) providing a certified $(\epsilon,\delta)$-differential-privacy guarantee for the released fairness statistic together with a full proof and explicit multi-round R\'enyi-DP composition (Section~\ref{sec:theory}); (ii) formalizing and proving structural Byzantine robustness of Coordinate-wise Median aggregation against an omniscient adaptive stealth fairness poisoner, a threat model and guarantee absent from the conference version; (iii) supplying a formal convergence analysis of BFWA's dual-ascent iterates; (iv) scaling the empirical evaluation to six benchmark datasets up to 2.4 million nodes with $K \in \{5,10,20\}$ clients, Dirichlet and Louvain-community partitioning, and $n=10$ random seeds with paired Wilcoxon and Holm--Bonferroni significance testing, in place of the conference version's single-run, $K=3$-client demonstration; and (v) adding a comprehensive trust-governance, explainability, computational-cost, and regulatory-compliance evaluation not present in the preliminary study. Two further differences from the conference version merit explicit note. First, the present evaluation replaces the conference paper's YelpChi and Amazon benchmarks with German Credit, Bail Recidivism, Credit Default, and Pokec-z, prioritizing datasets with a well-documented, non-proxy sensitive attribute (gender, race, age, geographic region) over the operational proxies (reviewer rank, account activity duration) used in the conference version, while retaining Elliptic as the one large-scale benchmark common to both studies. Second, on that shared Elliptic benchmark, TrustFedGNN's utility in this manuscript ($0.862$ AUC, Table~\ref{tab:large_scale}) is lower than the conference version's $0.97$ AUC \cite{dang2026fedfairgnn}: the conference result used $K=3$ clients without a certified privacy mechanism, whereas the present evaluation partitions the same graph across $K=10$ clients (Table~\ref{tab:dp_accounting}) and applies the full FTGD statistic-level DP guarantee together with Coordinate-wise Median filtering; the utility difference is consistent with the added privacy and robustness machinery and the finer partition, rather than a regression in the underlying FSER mechanism, though we did not run a controlled ablation isolating each factor's individual contribution to this specific gap.
+
+To address these intertwined challenges without sacrificing model utility, this paper introduces \textbf{TrustFedGNN}, a unified framework structured around three cohesive intellectual pillars:
+\begin{itemize}
+    \item \textbf{Pillar C1: Privacy-Aware Fairness Feedback (Client-Side).} We propose \emph{Fairness-Sensitive Edge Reweighting (FSER)}, which applies a parameterized cosine penalty to downweight cross-group attention logits during local message passing. Empirical ablation across 10 random seeds demonstrates that FSER serves as an inductive structural regularizer on natural homophilic graphs, improving AUC by $+0.0201$ ($p=0.0059$). Concurrently, \emph{Fairness-Targeted Gradient Decomposition (FTGD)} projects task gradients orthogonal to fairness ascent gradients ($g_{\text{task}}^\perp \perp g_{\text{fair}}$) and injects calibrated Gaussian noise strictly into the 2D scalar disparity statistics $(\mu_0, \mu_1)$, computed from an $s$-blind forward pass so the released statistic's sensitivity bound holds even though FSER's own predictions depend on $s$. This gives certified $(\epsilon, \delta)$-DP for the released fairness signal with $O(1)$ noise sensitivity, reducing a differencing attribute-inference attack on that released statistic from a perfect oracle ($1.000$ AUC) to balanced-random ($0.500$); unnoised model updates $\theta_k$ are a separate channel outside this guarantee's scope, and remain vulnerable to a parameter-space attribute probe (client-grouped AUC $\approx 0.672$) unless combined with full-gradient DP-SGD or secure aggregation.
+    \item \textbf{Pillar C2: Byzantine-Robust Fairness Aggregation (Server-Side).} We formulate federated aggregation as a constrained bi-objective optimization problem on the probability simplex $\Delta_K$ solved via \emph{Bi-objective Frank--Wolfe Aggregation (BFWA)}, whose dual-ascent penalty steers weights toward a fairness budget $\tau$ (feasibility reported as a constraint residual, not enforced exactly). Furthermore, we characterize an omniscient \emph{Adaptive Stealth Fairness Poisoner} and show that \emph{Coordinate-wise Median} aggregation's robustness to it is structural rather than empirical---the rule admits no per-client weight vector and consumes no self-reported metadata, so falsifying disparity cannot influence it by construction---bounded by the standard Byzantine breakdown fraction $f < 0.5$.
+    \item \textbf{Pillar C3: Theoretical Rigor and Multi-Scale Scalability.} We formalize the analytical privacy conversion of the 2D mechanism under explicit bounded assumptions and prove zero demographic attribute leakage across the FSER $\times$ FTGD interface. Empirical validation across 6 diverse datasets—including the 203k-node Elliptic Bitcoin transaction network and the 2.4M-node ogbn-products graph—confirms that TrustFedGNN attains the best predictive utility among 7 external federated and centralized baselines on the two datasets held to the full $n=10$-seed statistical protocol, with a mixed rather than uniformly superior fairness profile analyzed in full in Section~\ref{sec:limitations}.
+\end{itemize}
+
+The remainder of this manuscript is organized as follows: Section~\ref{sec:related} reviews related literature and establishes a comparative taxonomy. Section~\ref{sec:formulation} formalizes the cross-silo graph learning problem, the threat model, and presents the proposed TrustFedGNN methodology in full algorithmic detail. Section~\ref{sec:theory} provides formal privacy, robustness, and convergence guarantees with complete proofs. Section~\ref{sec:results} details the experimental protocol, presents comprehensive empirical results and ablation studies, and discusses computational cost, trust governance, regulatory alignment, and the limitations of the present study. Section~\ref{sec:conclusion} concludes the paper and outlines future research directions.
+
+%% -------------------------------------------------------------------------
+%% SECTION 2: RELATED WORK
+%% -------------------------------------------------------------------------
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Fair Graph Neural Networks}
+Graph Neural Networks achieve state-of-the-art node classification and link prediction by recursive message passing over relational graphs \cite{kipf2016semi,velickovic2017graph,hamilton2017inductive,hamilton2017graphsage}. However, standard message-passing operators propagate bias across homophilic topological connections, since neighbor aggregation implicitly averages over the sensitive-attribute distribution of a node's local neighborhood. A first generation of centralized fair-GNN methods addressed this at the representation level: FairGNN \cite{dai2021say} trains an adversarial discriminator to purge sensitive information from node embeddings when sensitive attributes are only partially observed, while NIFTY \cite{agarwal2021nifty} pursues counterfactual and Lipschitz-stability regularization to obtain representations that are simultaneously fair and robust to small perturbations. EDITS \cite{dong2022edits} instead intervenes on the input, learning a bias-mitigating transformation of the attribute matrix and adjacency structure prior to message passing, and FairSIN \cite{kose2024fairsin,yang2024fairsin} neutralizes sensitive information by injecting fairness-aware auxiliary features into the neighborhood aggregation step. More recent work has explored complementary mechanisms: FairGB \cite{li2024fairgb} recasts fairness as a class-and-group re-balancing problem to counteract the compounding effect of topological and label imbalance; FairInv \cite{zhu2024fairinv} seeks invariant representations that transfer across arbitrary, potentially unseen sensitive attributes rather than a single attribute fixed at training time; DAB-GNN \cite{lee2025dabgnn} disentangles sensitive and task-relevant latent factors before selectively amplifying and debiasing each; and FnRGNN \cite{fnrgnn2025} targets distribution-level fairness by regularizing the divergence between the predicted-score distributions of the protected groups rather than only their first moments. Each of these methods, however, is designed under the standing assumption of centralized access to the full graph topology and node features, and none addresses the setting in which the graph is partitioned across mutually distrusting institutions that cannot exchange raw node data---the cross-silo federated setting that motivates this work.
+
+\subsection{Federated Fairness and Constrained Optimization}
+Fairness in federated learning has predominantly been pursued through two paradigms: performance-uniformity (minimax/DRO) fairness, which equalizes accuracy \emph{across clients}, and group-demographic fairness, which equalizes outcomes \emph{across sensitive-attribute groups} irrespective of client boundaries---the notion adopted in this paper. In the former paradigm, $q$-FedAvg \cite{li2020fair} reweights client updates to favor high-loss clients, and Agnostic Federated Learning pursues a similar minimax objective without explicitly modeling demographic subgroups. In the latter, FairFed \cite{ezzeldin2023fairfed} updates aggregation weights heuristically based on client-reported demographic disparity gaps, but this requires unencrypted disparity reporting, rendering it vulnerable to manipulation and privacy leakage---precisely the attack surface TrustFedGNN's Pillar C2 is designed to close. PUFFLE \cite{corbucci2024puffle} jointly tunes a privacy budget and a fairness regularization coefficient to trace a Pareto front between the two objectives, while the POPETS-track framework of Bendoukha et al.\ \cite{bendoukha2025popets} combines secure aggregation with fairness-aware client selection. FedFACT \cite{fedfact2025} and FDP-Fair \cite{fdpfair2026,ling2024feddp} consider post-processing offsets or Lagrangian dual formulations of the fairness constraint, and F$^2$GNN \cite{f2gnn2023} is, to our knowledge, the closest prior attempt at structure-aware group fairness for federated GNNs specifically, equipping the aggregation step with a fairness-propagation penalty derived from the graph topology. None of these methods, however, jointly certifies the released fairness signal under differential privacy \emph{and} proves that the aggregation rule is structurally immune to an adversary that falsifies that very signal---the two properties TrustFedGNN's Pillars C1 and C2 are designed to guarantee simultaneously. The federated graph learning literature has also produced several fairness-aware architectures evaluated on financial and fraud-detection graphs directly comparable to our own baselines, including FairGFL \cite{fairgfl2026} and FedGraph-Fair \cite{fedgraphfair2026}, both of which we include as state-of-the-art baselines in Section~\ref{sec:results}.
+
+\subsection{Differentially Private and Byzantine-Robust Federated Learning}
+Differentially private federated learning typically relies on DP-SGD \cite{abadi2016deep,geyer2017differentially,mcmahan2018learning}, which clips local parameter updates to a norm bound $C$ and adds isotropic Gaussian noise calibrated via the moments accountant or, more tightly, R\'enyi Differential Privacy (RDP) composition \cite{mironov2017renyi}. Because parameter dimensions in modern neural architectures are large ($|\theta| \ge 10^5$), isotropic noise injection severely degrades predictive utility---a tension we quantify directly in the ablation of Section~\ref{sec:results} (arm M4). Conversely, Byzantine-robust aggregation rules filter outliers based on spatial geometry: Krum \cite{blanchard2017krum} selects the update with the smallest sum of squared distances to its nearest neighbors, Coordinate-wise Median \cite{yin2018byzantine} and Trimmed Mean apply robust univariate statistics per parameter coordinate, and FLTrust \cite{cao2021fltrust} bootstraps a trusted root-of-trust update on the server to re-weight client contributions by cosine similarity. These robust aggregators, however, were designed against adversaries that corrupt \emph{model utility}, and a substantial body of work has shown that such geometric defenses can themselves be circumvented by adaptive attackers that remain within the benign geometric envelope while still biasing convergence, including the ``Little is Enough'' attack \cite{baruch2019little}, inner-product manipulation attacks that defeat Byzantine-tolerant SGD \cite{xie2019fall}, and the broader vulnerability catalog of Byzantine-resilient distributed learning \cite{mhamdi2018hidden}; federated learning is additionally susceptible to semantic backdoor attacks that survive robust aggregation entirely \cite{bagdasaryan2020backdoor}. Crucially, none of these robustness results considers an adversary that manipulates auxiliary \emph{fairness metadata} while its parameter update remains statistically indistinguishable from a benign one---the specific Adaptive Stealth Fairness Poisoner threat formalized in Section~\ref{sec:formulation}. A concurrent and closely related line of work has begun to study exactly this interaction: EAB-FL \cite{eabfl2024} demonstrates that conventional model-poisoning attacks can be redirected to exacerbate algorithmic bias rather than merely degrade accuracy, and a fairness-constrained optimization attack \cite{kasyap2025attack} shows that an adversary can exploit the fairness constraint of Eq.~\eqref{eq:global_opt} itself as an attack vector when the constraint is enforced using unverified client-reported statistics---empirically corroborating the necessity of TrustFedGNN's structural (rather than metadata-dependent) robustness guarantee in Theorem~\ref{thm:median_immunity}.
+
+\subsection{Incentives, Contribution Attribution, and Emerging Federated Trust Primitives}
+A separate but related literature studies how to fairly \emph{attribute} and \emph{reward} client contributions in federated learning, which we draw on when evaluating TrustFedGNN's optional incentive layer. Shapley-value-based contribution estimation \cite{liu2022gtg,tastan2024redefining} formalizes a client's marginal contribution to the global model as a cooperative game, while gradient-driven reward schemes \cite{xu2021gradient} and model-agnostic fair aggregation-and-incentive mechanisms \cite{shi2024fedfaim} translate contribution estimates directly into differentiated model updates or monetary rewards. FairWAG \cite{lo2025fairwag} extends weighted aggregation specifically to the federated graph setting, and the recent survey of calibrated server-side updates \cite{yu2026equfl} catalogs a broader design space of aggregation rules that trade off client-level equity against global utility. Beyond incentives, several very recent proposals target orthogonal trust primitives that could, in principle, compose with TrustFedGNN: communication-efficient privacy-preserving federated GNNs \cite{guo2026cefedgnn}, cryptographically verifiable fairness guarantees \cite{ali2026cryptofair}, post-quantum secure aggregation for Byzantine-robust federated learning \cite{rahmati2026pqbyzantine,nath2026cqsa}, conformal uncertainty quantification under client and label heterogeneity \cite{nguyen2026conformal}, and vertical federated GNNs that tolerate incomplete sensitive-attribute coverage across parties \cite{wang2026favgnn}. Adversarial robustness at the level of locally private graph representations has also been examined directly \cite{varun2026adversarial}, reinforcing that the attribute-inference threat modeled in Section~\ref{sec:formulation} is an active and recognized concern in the graph learning community. We position TrustFedGNN as unifying three of these previously disjoint trust axes---client-side fairness-aware debiasing, certified statistic-level privacy, and structurally Byzantine-robust aggregation---within a single closed-loop protocol, while treating cryptographic secure aggregation, post-quantum primitives, and incentive-compatible payment mechanisms as complementary layers outside the present scope (Section~\ref{sec:limitations}).
+
+\input{tables/main_pokecz_sota.tex}
+
+\input{tables/credit_boundary_sota.tex}
+
+As detailed in Table~\ref{tab:main_pokecz_sota}, TrustFedGNN is the first framework to concurrently satisfy certified statistic-level differential privacy, Byzantine robustness against metadata-deceptive attacks, and GNN-specific attention debiasing. Table~\ref{tab:related_taxonomy} summarizes this comparative positioning against the eight most closely related lines of work discussed above along four trust axes: whether the method operates on graph-structured data, whether it targets group-demographic fairness, whether its privacy mechanism is certified (as opposed to heuristic), and whether its robustness guarantee is structural (i.e., independent of any self-reported client metadata) rather than purely empirical.
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Comparative Positioning Against Closely Related Frameworks.} ``Structural Robustness'' denotes a robustness property that provably does not depend on trusting any client-reported auxiliary signal (Theorem~\ref{thm:median_immunity}); ``Certified Privacy'' denotes a formal $(\epsilon,\delta)$- or Renyi-DP guarantee rather than an empirical or heuristic privacy claim.}
+\label{tab:related_taxonomy}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Framework} & \textbf{Graph-Aware} & \textbf{Group Fairness} & \textbf{Certified Privacy} & \textbf{Structural Robustness} \\
+\midrule
+FairGNN \cite{dai2021say} & \checkmark & \checkmark & $\times$ & $\times$ \\
+FairSIN \cite{kose2024fairsin} & \checkmark & \checkmark & $\times$ & $\times$ \\
+FairFed \cite{ezzeldin2023fairfed} & $\times$ & \checkmark & $\times$ & $\times$ \\
+PUFFLE \cite{corbucci2024puffle} & $\times$ & \checkmark & \checkmark & $\times$ \\
+F$^2$GNN \cite{f2gnn2023} & \checkmark & \checkmark & $\times$ & $\times$ \\
+FLTrust \cite{cao2021fltrust} & $\times$ & $\times$ & $\times$ & $\times$ \\
+Coordinate Median \cite{yin2018byzantine} & $\times$ & $\times$ & $\times$ & \checkmark \\
+\textbf{TrustFedGNN (Ours)} & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+%% -------------------------------------------------------------------------
+%% SECTION 3: PROBLEM FORMULATION, THREAT MODELING & PROPOSED METHODOLOGY
+%% -------------------------------------------------------------------------
+\section{Problem Formulation, Threat Modeling, and Proposed Methodology: TrustFedGNN}
+\label{sec:formulation}
+
+\subsection{Cross-Silo Federated Graph Learning}
+Let $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \bm{X})$ denote a global graph partitioned across $K$ independent institutions (clients) $\mathcal{C} = \{1, \dots, K\}$. Each client $k \in \mathcal{C}$ holds an induced local subgraph $\mathcal{G}_k = (\mathcal{V}_k, \mathcal{E}_k, \bm{X}_k)$ with node feature matrix $\bm{X}_k \in \R^{n_k \times d}$, binary ground-truth labels $\bm{y}_k \in \{0, 1\}^{n_k}$, and binary sensitive demographic attributes $\bm{s}_k \in \{0, 1\}^{n_k}$ (e.g., gender, race, or age group). Inter-silo cross-client edges $\mathcal{E}_{\text{cross}} = \mathcal{E} \setminus \bigcup_{k=1}^K \mathcal{E}_k$ cannot be shared due to regulatory privacy barriers.
+
+The clients collaboratively train a parameterized graph neural network $f_\theta: \mathcal{V} \to [0, 1]$ parameterized by $\theta \in \R^P$ under the orchestration of a central server. The global learning objective is formulated as:
+\begin{equation}
+\min_{\theta \in \R^P} F(\theta) = \sum_{k=1}^K \frac{n_k}{N} \mathcal{L}_{\text{task}}^{(k)}(\theta) \quad \text{s.t.} \quad \dpd(\theta) \le \tau,
+\label{eq:global_opt}
+\end{equation}
+where $N = \sum_{k=1}^K n_k$, $\mathcal{L}_{\text{task}}^{(k)}(\theta)$ is the local weighted binary cross-entropy loss, $\tau > 0$ is an operator-specified global fairness tolerance, and Demographic Parity Disparity ($\dpd$) is defined as:
+\begin{equation}
+\dpd(\theta) = |\E_{v \sim \mathcal{V}}[\hat{y}_v \mid s_v = 1] - \E_{v \sim \mathcal{V}}[\hat{y}_v \mid s_v = 0]|.
+\end{equation}
+
+\subsection{Threat Models}
+We formalize two orthogonal threat surfaces operating within the federated ecosystem:
+\begin{enumerate}
+    \item \textbf{Honest-but-Curious Server (Attribute Inference Threat):} The central server faithfully executes the aggregation protocol but attempts to infer the sensitive demographic memberships $\bm{s}_k$ of client $k$'s private nodes by analyzing transmitted parameter updates $g_k = \theta_t - \theta_t^{(k)}$ and auxiliary metadata.
+    \item \textbf{Adaptive Stealth Fairness Poisoner (Byzantine Threat):} Up to a fraction $f < 0.5$ of clients are malicious. An omniscient stealth adversary possesses full knowledge of benign model parameters and crafts adversarial updates $g_{\text{stealth}}$ satisfying:
+    \begin{equation}
+    g_{\text{stealth}} \in \mathcal{B}_\rho(\text{med}(\{g_k\}_{k \in \mathcal{C}_{\text{benign}}})) \quad \text{with falsified} \quad \widehat{\dpd}_k = 0.0,
+    \end{equation}
+    where $\mathcal{B}_\rho(\cdot)$ denotes an $\ell_2$-ball of radius $\rho = 0.85 \cdot R_{\text{med}}$. By evading spatial Euclidean outlier detectors while broadcasting a fraudulent zero-disparity metric, the adversary exploits metadata-driven aggregation to bias the global model.
+\end{enumerate}
+
+\subsection{TrustFedGNN: Closed-Loop Client-Server Protocol}
+\label{sec:method}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/pareto.pdf}
+\caption{\textbf{End-to-End TrustFedGNN Architecture.} Overview of the closed-loop $S_0 \to S_5$ pipeline: local FSER message passing and FTGD orthogonal gradient surgery (Client), targeted statistic-level DP noise injection, Coordinate-wise Median filtering, and Bi-objective Frank--Wolfe Simplex Aggregation (Server).}
+\label{fig:pipeline}
+\end{figure*}
+
+TrustFedGNN coordinates local client computations and server-side model aggregation through a closed-loop sequence of six stages ($S_0 \to S_5$), illustrated in Fig.~\ref{fig:pipeline}.
+
+\subsection{Client-Side Mechanisms (Pillar C1)}
+
+\subsubsection{Stage $S_1$: Fairness-Sensitive Edge Reweighting (FSER)}
+In standard GAT architectures, attention coefficients $e_{vu}$ are computed solely from feature representations. To suppress bias propagation across demographic boundaries, FSER introduces a parameterized structural penalty:
+\begin{equation}
+\tilde{e}_{vu} = e_{vu} - \beta \cdot \mathbb{I}(s_v \neq s_u) \cdot \max\left(0, \cos(\bm{h}_v, \bm{h}_u)\right),
+\label{eq:fser}
+\end{equation}
+where $\beta \in [0.0, 5.0]$ is a learnable coefficient bounded to prevent softmax underflow, $\mathbb{I}(\cdot)$ is the indicator function, and $\bm{h}_v, \bm{h}_u$ are intermediate node representations. In natural homophilic graphs, FSER acts as an edge-regularizer, penalizing cross-group spurious correlations while preserving task-relevant homophilic topologies.
+
+\subsubsection{Stage $S_2$: Fairness-Targeted Gradient Decomposition (FTGD)}
+During local optimization, client $k$ computes the task gradient $g_{\text{task}} = \nabla_\theta \mathcal{L}_{\text{task}}^{(k)}$ and fairness gradient $g_{\text{fair}} = \nabla_\theta \mathcal{L}_{\text{fair}}^{(k)}$. To prevent fairness alignment from degrading task performance, FTGD performs orthogonal gradient surgery:
+\begin{equation}
+g_{\text{task}}^\perp = g_{\text{total}} - \frac{\langle g_{\text{total}}, g_{\text{fair}} \rangle}{\|g_{\text{fair}}\|^2 + \varepsilon} g_{\text{fair}},
+\label{eq:ftgd}
+\end{equation}
+where $g_{\text{total}} = g_{\text{task}} + \lambda_{\text{fair}} g_{\text{fair}}$. The parameter update is executed exclusively along $g_{\text{task}}^\perp$, ensuring that gradient descent steps are mathematically orthogonal to the direction of fairness degradation.
+
+\subsubsection{Stage $S_3$: Targeted Statistic-Level Differential Privacy}
+Rather than perturbing the high-dimensional weight vector $\theta$ via DP-SGD, TrustFedGNN computes local sensitive-group prediction means:
+\begin{equation}
+\mu_a^{(k)} = \frac{1}{|\mathcal{V}_{k, a}|} \sum_{v \in \mathcal{V}_{k, a}} \sigma(f_\theta(\bm{x}_v)), \quad a \in \{0, 1\}.
+\end{equation}
+Calibrated Gaussian noise is added directly to the scalar statistics:
+\begin{equation}
+\tilde{\mu}_a^{(k)} = \mu_a^{(k)} + \mathcal{N}\left(0, \sigma_{\text{DP}}^2\right), \quad \widetilde{\dpd}_k = |\tilde{\mu}_1^{(k)} - \tilde{\mu}_0^{(k)}|.
+\end{equation}
+By post-processing immunity, releasing $\widetilde{\dpd}_k$ satisfies certified $(\epsilon, \delta)$-DP for client $k$'s sensitive attribute partition without degrading model parameters---provided $\mu_a^{(k)}$ is itself computed from an $s$-blind forward pass. FSER's own predictions depend on $s$ through the $L$-hop neighborhood attention, so a naive release computed on FSER's actual (sensitive-aware) predictions would not satisfy this sensitivity bound; TrustFedGNN computes the released statistic from a second, sensitive-blind forward pass for this purpose while FSER continues to train on the real $s$.
+
+\subsection{Server-Side Mechanisms (Pillar C2)}
+
+\subsubsection{Stage $S_4$: Coordinate-Wise Median Filtering}
+Upon receiving client parameter updates $\{g_1, \dots, g_K\}$, the server filters potential Byzantine corruption by evaluating coordinate-wise medians:
+\begin{equation}
+[g_{\text{med}}]_j = \text{median}\left(\{[g_1]_j, [g_2]_j, \dots, [g_K]_j\}\right), \quad \forall j \in \{1, \dots, P\}.
+\end{equation}
+Because the median operator is computed coordinate-by-coordinate across parameter updates independently of self-reported disparity metadata, a stealth poisoner that falsifies its reported disparity cannot influence the aggregate by construction; this structural property holds up to the standard Byzantine breakdown fraction $f < 0.5$ and does not by itself bound the parameter-space component of the attack as $f$ approaches that limit.
+
+\subsubsection{Stage $S_5$: Bi-Objective Frank--Wolfe Aggregation (BFWA)}
+To satisfy the global fairness budget $\tau$ without heuristic reweighting, the server solves a dual-constrained optimization over the probability simplex $\Delta_K$:
+\begin{equation}
+\max_{\bm{w} \in \Delta_K} \sum_{k=1}^K w_k \text{Perf}_k \quad \text{s.t.} \quad \sum_{k=1}^K w_k \widetilde{\dpd}_k \le \tau,
+\label{eq:bfwa}
+\end{equation}
+where $\Delta_K = \{\bm{w} \in \R_+^K \mid \sum_{k=1}^K w_k = 1\}$. At each communication round, the server performs Frank--Wolfe linear subproblem searches and updates dual Lagrange multiplier $\mu$ via dual gradient ascent:
+\begin{equation}
+\mu^{(t+1)} = \max\left(0, \mu^{(t)} + \eta_\mu \left(\sum_{k=1}^K w_k^{(t)} \widetilde{\dpd}_k - \tau\right)\right).
+\end{equation}
+
+\subsection{The Complete $S_0 \to S_5$ Protocol}
+Algorithm~\ref{alg:trustfedgnn} consolidates the six stages described above into a single closed-loop procedure executed once per communication round $t = 1, \dots, T$. Stage $S_0$ (implicit in the pseudocode as the round-initialization step) broadcasts the current global parameters $\theta_t$ to all $K$ clients; stages $S_1$--$S_3$ execute locally and in parallel across clients; stages $S_4$--$S_5$ execute once on the server after all client uploads are received. This strict client/server partition means no client ever observes another client's raw update, and the server never observes raw node-level features, labels, or sensitive attributes---only the coordinate-median-filtered gradient and the two privatized scalars $\tilde{\mu}_0^{(k)}, \tilde{\mu}_1^{(k)}$ per client per round.
+
+\begin{algorithm}[t]
+\caption{TrustFedGNN: One Communication Round}
+\label{alg:trustfedgnn}
+\begin{algorithmic}[1]
+\REQUIRE Global parameters $\theta_t$, fairness budget $\tau$, DP noise scale $\sigma_{\text{DP}}$, dual step size $\eta_\mu$, current multiplier $\mu^{(t)}$
+\ENSURE Updated global parameters $\theta_{t+1}$, updated multiplier $\mu^{(t+1)}$
+\STATE Server broadcasts $\theta_t$ to all clients $k \in \{1, \dots, K\}$ \COMMENT{Stage $S_0$}
+\FOR{each client $k \in \{1, \dots, K\}$ \textbf{in parallel}}
+    \STATE Compute FSER-attenuated attention $\tilde{e}_{vu}$ via Eq.~\eqref{eq:fser} \COMMENT{Stage $S_1$}
+    \STATE Compute $g_{\text{task}}$, $g_{\text{fair}}$ on local batch; form $g_{\text{task}}^\perp$ via Eq.~\eqref{eq:ftgd} \COMMENT{Stage $S_2$}
+    \STATE Take one local SGD step along $g_{\text{task}}^\perp$ to obtain local update $g_k = \theta_t - \theta_t^{(k)}$
+    \STATE Recompute $\mu_0^{(k)}, \mu_1^{(k)}$ from an $s$-blind forward pass; release $\tilde{\mu}_a^{(k)} = \mu_a^{(k)} + \mathcal{N}(0, \sigma_{\text{DP}}^2)$ \COMMENT{Stage $S_3$}
+    \STATE Upload $(g_k, \widetilde{\dpd}_k = |\tilde{\mu}_1^{(k)} - \tilde{\mu}_0^{(k)}|)$ to server
+\ENDFOR
+\STATE Server computes $g_{\text{med}}$ via coordinate-wise median of $\{g_1, \dots, g_K\}$ \COMMENT{Stage $S_4$}
+\STATE Server solves the Frank--Wolfe linear subproblem over $\Delta_K$ to obtain weights $\bm{w}^{(t)}$ \COMMENT{Stage $S_5$}
+\STATE Update dual multiplier: $\mu^{(t+1)} \leftarrow \max\left(0, \mu^{(t)} + \eta_\mu\left(\sum_k w_k^{(t)} \widetilde{\dpd}_k - \tau\right)\right)$
+\STATE $\theta_{t+1} \leftarrow \theta_t - \eta_\theta \sum_{k=1}^K w_k^{(t)} [g_{\text{med}}]_k$
+\RETURN $\theta_{t+1}, \mu^{(t+1)}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Communication and Computational Complexity}
+\label{sec:complexity}
+Each communication round transmits exactly one parameter vector $\theta \in \R^P$ per direction per client, identical in size to standard FedAvg---FSER, FTGD, and the DP noise injection are all computed locally and add zero bytes to the uplink payload beyond the two scalar statistics $(\tilde{\mu}_0^{(k)}, \tilde{\mu}_1^{(k)})$, an $O(1)$ addition regardless of $P$. This is in sharp contrast to secure-aggregation-based alternatives, whose per-round communication typically scales as $O(K^2)$ or $O(K \log K)$ due to pairwise masking or commitment exchange. The per-round \emph{computational} overhead relative to unmodified FedAvg decomposes into three additive terms: (i) FSER's cosine-penalty term in Eq.~\eqref{eq:fser} costs $O(|\mathcal{E}_k| \cdot d)$ per client, identical in order to the attention computation it modifies; (ii) FTGD's orthogonal projection in Eq.~\eqref{eq:ftgd} costs $O(P)$, a single inner product and scalar-vector operation over the full parameter vector, performed once per local step; (iii) the server-side coordinate median (Stage $S_4$) costs $O(K \log K \cdot P)$ per round via a per-coordinate sort, versus $O(K \cdot P)$ for a simple weighted mean. The Frank--Wolfe subproblem in Stage $S_5$ admits a closed-form linear-program solution over the simplex $\Delta_K$ at each dual-ascent iteration, costing $O(K)$ per iteration and converging within a small constant number of iterations in practice (Table~\ref{tab:bfwa_slack}). Empirically, this analysis is corroborated by the wall-clock measurements of Section~\ref{sec:compcost}: TrustFedGNN incurs a $1.86\times$ overhead over unmodified FedAvg-GCN on Pokec-z, consistent with the median filter's $O(\log K)$ factor dominating at $K=10$ clients rather than any term that grows with $P$ or with the graph size $|\mathcal{V}_k|$ beyond what standard message passing already requires.
+
+\subsection{Hyperparameter Configuration and Design Rationale}
+\label{sec:hyperparams}
+TrustFedGNN introduces five method-specific hyperparameters beyond the standard federated-optimization set (learning rate, local epochs, batch size); Table~\ref{tab:hyperparam_rationale} summarizes their canonical values and the rationale for each choice, all held fixed across every dataset and baseline comparison reported in Section~\ref{sec:results} unless explicitly varied as the independent variable of a sensitivity sweep (Tables~\ref{tab:dirichlet_sweep} and \ref{tab:proxy_sensitivity}).
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{TrustFedGNN Hyperparameter Configuration.} All values are held fixed across datasets unless noted as a swept independent variable.}
+\label{tab:hyperparam_rationale}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Canonical Value} & \textbf{Rationale} \\
+\midrule
+FSER penalty bound $\beta \in [0, 5.0]$ & learned, bounded & Upper bound prevents the softmax logits of Eq.~\eqref{eq:fser} from underflowing to numerically degenerate attention. \\
+FTGD regularization $\varepsilon$ & $10^{-8}$ & Numerical stabilizer for the denominator of Eq.~\eqref{eq:ftgd}; negligible relative to $\|g_{\text{fair}}\|^2$ in practice. \\
+Fairness loss weight $\lambda_{\text{fair}}$ & $0.5$ & Selected via grid search over $\{0.1, 0.3, 0.5, 1.0\}$ on German Credit validation split (Table~\ref{tab:ablation_suite}, arm M1). \\
+DP privacy budget $(\epsilon, \delta)$ & $(8.0, 10^{-5})$ & Standard operating point in the DP-SGD literature \cite{abadi2016deep}; $\delta < 1/N$ satisfies the conventional privacy-composition guideline. \\
+Dual step size $\eta_\mu$ & $0.1$ & Selected to ensure BFWA dual-ascent convergence within $\le 20$ rounds without oscillation (Table~\ref{tab:bfwa_slack}). \\
+EMA smoothing (aggregation weights) & $0.9$ & Ablated directly in arm M7 ($20.1\times$ weight-oscillation inflation when removed). \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+%% -------------------------------------------------------------------------
+%% SECTION 4: THEORETICAL ANALYSIS & FORMAL GUARANTEES
+%% -------------------------------------------------------------------------
+\section{Theoretical Analysis and Formal Guarantees}
+\label{sec:theory}
+
+\begin{assumption}[Bounded Sigmoid Logits]
+Node-level prediction logits are bounded: $|f_\theta(\bm{x}_v)| \le M < \infty$, such that $\sigma(f_\theta(\bm{x}_v)) \in (0, 1)$.
+\label{ass:bounded}
+\end{assumption}
+
+\begin{assumption}[Public Demographic Counts]
+Group counts $n_{k, 0} = |\mathcal{V}_{k, 0}|$ and $n_{k, 1} = |\mathcal{V}_{k, 1}|$ are public or lower-bounded by $n_{\min} = \min(n_{k, 0}, n_{k, 1})$.
+\label{ass:counts}
+\end{assumption}
+
+\begin{assumption}[Fixed Node Topology]
+The client local graph $\mathcal{G}_k$ possesses a fixed node set $\mathcal{V}_k$ with fixed degree matrix during evaluation.
+\label{ass:topology}
+\end{assumption}
+
+\begin{assumption}[$\ell_2$ Sensitivity Bound]
+Modifying the sensitive attribute $s_v$ of any single node alters the 2D vector $\bm{\mu} = (\mu_0, \mu_1)^\top$ with $\ell_2$ sensitivity bounded by:
+\begin{equation}
+\Delta_{\bm{\mu}} \le \sqrt{\left(\frac{1}{n_{k, 0}}\right)^2 + \left(\frac{1}{n_{k, 1}}\right)^2} \le \frac{\sqrt{2}}{n_{\min}}.
+\end{equation}
+\label{ass:sensitivity}
+\end{assumption}
+
+\begin{proposition}[Statistic-Level DP Guarantee]
+Under Assumptions~\ref{ass:bounded}--\ref{ass:sensitivity}, releasing privatized demographic statistics $\tilde{\bm{\mu}}_k = \bm{\mu}_k + \bm{\xi}_k$ with $\bm{\xi}_k \sim \mathcal{N}(0, \sigma_{\text{DP}}^2 \bm{I}_2)$ satisfies $(\epsilon, \delta)$-Differential Privacy with respect to client demographic memberships $\bm{s}_k$ for:
+\begin{equation}
+\sigma_{\text{DP}} \ge \frac{\Delta_{\bm{\mu}} \sqrt{2 \ln(1.25/\delta)}}{\epsilon}.
+\end{equation}
+By the post-processing theorem \cite{dwork2014algorithmic}, the scalar disparity $\widetilde{\dpd}_k = |\tilde{\mu}_1^{(k)} - \tilde{\mu}_0^{(k)}|$ satisfies the identical $(\epsilon, \delta)$-DP bound.
+\label{prop:dp}
+\end{proposition}
+
+\begin{proof}
+Fix client $k$ and consider two neighboring databases $\mathcal{D}, \mathcal{D}'$ differing in the sensitive label $s_v$ of exactly one node $v \in \mathcal{V}_k$. Toggling $s_v$ moves $v$'s prediction $\sigma(f_\theta(\bm{x}_v)) \in (0,1)$ (Assumption~\ref{ass:bounded}) from the numerator of $\mu_0^{(k)}$ to $\mu_1^{(k)}$ or vice versa. Since $\mu_a^{(k)}$ is a normalized sum over $|\mathcal{V}_{k,a}|$ terms each bounded in $(0,1)$, the resulting change in $\mu_0^{(k)}$ is at most $1/n_{k,0}$ and in $\mu_1^{(k)}$ at most $1/n_{k,1}$ (Assumption~\ref{ass:counts}), giving the $\ell_2$-sensitivity bound of Assumption~\ref{ass:sensitivity}: $\|\bm{\mu}(\mathcal{D}) - \bm{\mu}(\mathcal{D}')\|_2 \le \Delta_{\bm{\mu}}$. The classical Gaussian mechanism theorem (Dwork \& Roth~\cite{dwork2014algorithmic}, Theorem A.1) states that for any query with $\ell_2$-sensitivity $\Delta$, releasing $q(\mathcal{D}) + \mathcal{N}(0, \sigma^2 \bm{I})$ satisfies $(\epsilon,\delta)$-DP whenever $\sigma \ge \Delta\sqrt{2\ln(1.25/\delta)}/\epsilon$; instantiating $q = \bm{\mu}$ and $\Delta = \Delta_{\bm{\mu}}$ gives the claimed bound on $\sigma_{\text{DP}}$. Because $\widetilde{\dpd}_k = |\tilde{\mu}_1^{(k)} - \tilde{\mu}_0^{(k)}|$ is a deterministic (data-independent) function of the already-privatized release $\tilde{\bm{\mu}}_k$, the post-processing theorem (\cite{dwork2014algorithmic}, Proposition 2.1) implies it inherits the identical $(\epsilon,\delta)$-DP guarantee without further composition cost.
+\end{proof}
+
+\begin{corollary}[Multi-Round Privacy Composition via R\'enyi Differential Privacy]
+Let the protocol run for $T$ communication rounds, releasing one privatized statistic $\tilde{\bm{\mu}}_k^{(t)}$ per client per round under the Gaussian mechanism of Proposition~\ref{prop:dp}. Each per-round release satisfies $(\alpha, \epsilon_\alpha)$-R\'enyi DP for $\epsilon_\alpha = \alpha \Delta_{\bm{\mu}}^2/(2\sigma_{\text{DP}}^2)$ at every order $\alpha > 1$ \cite{mironov2017renyi}. By the additive composition property of R\'enyi DP, the full $T$-round protocol satisfies $(\alpha, T \cdot \epsilon_\alpha)$-RDP, which converts to $(\epsilon_{\text{total}}, \delta)$-DP via $\epsilon_{\text{total}} = T\epsilon_\alpha + \frac{\ln(1/\delta)}{\alpha - 1}$, optimized numerically over $\alpha$.
+\label{cor:rdp_composition}
+\end{corollary}
+
+\begin{proof}
+The Gaussian mechanism with noise scale $\sigma_{\text{DP}}$ applied to a query of $\ell_2$-sensitivity $\Delta_{\bm{\mu}}$ satisfies $(\alpha, \alpha\Delta_{\bm{\mu}}^2/2\sigma_{\text{DP}}^2)$-RDP for every $\alpha > 1$ (\cite{mironov2017renyi}, Proposition 7). RDP composes additively across $T$ independent (or adaptively chosen, by the sequential-composition property of RDP) mechanism invocations, yielding $(\alpha, T\epsilon_\alpha)$-RDP for the full protocol. The RDP-to-$(\epsilon,\delta)$-DP conversion lemma of \cite{mironov2017renyi} (Proposition 3) then yields the stated $\epsilon_{\text{total}}$ for any target $\delta$, minimized by numerical search over $\alpha$; this recovers the standard practice of reporting the tighter RDP-composed budget rather than the loose basic-composition bound $T\epsilon$ used implicitly when treating each round in isolation.
+\end{proof}
+
+\begin{theorem}[Demographic Label Non-Leakage across FSER $\times$ FTGD]
+Let node sensitive labels $\bm{s}_k \in \{0, 1\}^{n_k}$ be stored in isolated memory. In the forward pass of FSER, sensitive labels modulate attention weights exclusively via the symmetric indicator $\mathbb{I}(s_v \neq s_u)$. The gradient $\nabla_\theta \mathcal{L}_{\text{task}}$ evaluated on non-sensitive node features contains no explicit demographic indicator terms. Furthermore, because FTGD projects parameter updates orthogonal to $g_{\text{fair}}$, the released model update $g_{\text{task}}^\perp$ transmits zero mutual information regarding $\bm{s}_k$ along the fairness gradient subspace.
+\label{thm:non_leakage}
+\end{theorem}
+
+\begin{proof}
+Decompose the raw combined gradient as $g_{\text{total}} = g_{\text{task}} + \lambda_{\text{fair}} g_{\text{fair}}$, where $g_{\text{fair}} = \nabla_\theta \mathcal{L}_{\text{fair}}^{(k)}$ is, by construction, the unique gradient component whose defining loss $\mathcal{L}_{\text{fair}}^{(k)}$ is a function of $\bm{s}_k$ (via the group-disparity statistic); $\mathcal{L}_{\text{task}}^{(k)}$ depends only on node features and task labels, so $g_{\text{task}}$ carries no direct dependence on $\bm{s}_k$ by definition. Every channel through which information about $\bm{s}_k$ could reach the transmitted update must therefore factor through the component of $g_{\text{total}}$ lying along $\mathrm{span}(g_{\text{fair}})$. Equation~\eqref{eq:ftgd} constructs $g_{\text{task}}^\perp$ as the Gram--Schmidt residual of $g_{\text{total}}$ after subtracting its projection onto $g_{\text{fair}}$, i.e. $g_{\text{task}}^\perp \perp g_{\text{fair}}$ by direct algebraic verification: $\langle g_{\text{task}}^\perp, g_{\text{fair}}\rangle = \langle g_{\text{total}}, g_{\text{fair}}\rangle - \frac{\langle g_{\text{total}}, g_{\text{fair}}\rangle}{\|g_{\text{fair}}\|^2+\varepsilon}\langle g_{\text{fair}}, g_{\text{fair}}\rangle = \langle g_{\text{total}}, g_{\text{fair}}\rangle\left(1 - \frac{\|g_{\text{fair}}\|^2}{\|g_{\text{fair}}\|^2+\varepsilon}\right) \to 0$ as $\varepsilon \to 0$. Since the server receives only $g_{\text{task}}^\perp$ (the update is applied exclusively along this direction) and this vector is orthogonal to the sole $\bm{s}_k$-dependent subspace, no linear functional of $g_{\text{task}}^\perp$ can recover a component along $g_{\text{fair}}$; by the data-processing inequality, any statistic computed from $g_{\text{task}}^\perp$ alone satisfies $I(g_{\text{task}}^\perp; \bm{s}_k \mid g_{\text{fair}}) = 0$, establishing the claimed non-leakage along the fairness gradient subspace. This is a statement about the fairness-gradient channel specifically, and does not preclude a nonlinear probe from exploiting residual second-order correlations between $g_{\text{task}}^\perp$ and $\bm{s}_k$ that do not factor through $g_{\text{fair}}$---the empirical attribute-inference probe of Table~\ref{tab:update_attack} directly quantifies this residual channel.
+\end{proof}
+
+\begin{theorem}[Structural Robustness of Coordinate Median against Stealth Poisoning]
+Let $f < 0.5$ be the fraction of compromised clients. Consider an adaptive adversary that projects malicious parameter updates $g_{\text{stealth}} \in \mathcal{B}_\rho(\text{med})$ and falsifies metadata $\widehat{\dpd}_k = 0.0$. Because Coordinate-wise Median computes:
+\begin{equation}
+[g_{\text{agg}}]_j = \text{median}\left(\{[g_k]_j\}_{k=1}^K\right),
+\end{equation}
+the rule admits no per-client weight vector and consumes no self-reported metadata: whenever benign updates occupy the coordinate median interval, a falsified $\widehat{\dpd}$ cannot influence the aggregate by construction. This is a structural property of the median rule rather than a quantity we measure per run, and it holds only up to the standard breakdown fraction $f < 0.5$; it does not extend to the parameter-space component of the attack once $f$ approaches that bound.
+\label{thm:median_immunity}
+\end{theorem}
+
+\begin{proof}
+The aggregation rule $[g_{\text{agg}}]_j = \text{median}(\{[g_k]_j\}_{k=1}^K)$ is, syntactically, a function of the numeric coordinate values $\{[g_k]_j\}_{k=1}^K$ only; the falsified scalar $\widehat{\dpd}_k$ does not appear anywhere in its definition. Hence for any two adversary strategies that differ only in the reported value of $\widehat{\dpd}_k$ but produce the identical parameter update $g_k$, the aggregate $[g_{\text{agg}}]_j$ is identical---this establishes the metadata-independence claim unconditionally, for any $f \in [0,1]$. The residual question is how much the aggregate can be perturbed through the parameter-update channel $g_k$ itself. By the classical breakdown-point result for the coordinate-wise median (a special case of the univariate sample median applied independently per coordinate), replacing at most $\lfloor (K-1)/2 \rfloor$ of the $K$ values with arbitrary (even unbounded) values cannot move the median outside the convex hull of the remaining, unperturbed values. Since $f < 0.5$ implies fewer than $K/2$ compromised clients, at least $\lceil K/2 \rceil$ coordinates originate from benign clients at every round, so $[g_{\text{agg}}]_j$ remains within the range spanned by benign updates regardless of the magnitude or direction chosen by $g_{\text{stealth}}$. This guarantee is tight at $f = 0.5$: once a majority of clients are compromised, the median itself is no longer anchored to the benign distribution, which is why the theorem's scope is explicitly restricted to $f < 0.5$ and does not extend further.
+\end{proof}
+
+\begin{theorem}[Convergence of the BFWA Dual-Ascent Iterates]
+Consider the constrained simplex program of Eq.~\eqref{eq:bfwa} with $\text{Perf}_k$ bounded and $\widetilde{\dpd}_k \in [0, \dpd_{\max}]$ for all $k$. At each round, the primal Frank--Wolfe subproblem $\bm{w}^{(t)} = \argmax_{\bm{w} \in \Delta_K} \langle \bm{w}, \text{Perf} - \mu^{(t)}\widetilde{\dpd}\rangle$ admits a closed-form vertex solution (a one-hot indicator on the coordinate maximizing $\text{Perf}_k - \mu^{(t)}\widetilde{\dpd}_k$), and the dual update of Eq.~\eqref{eq:bfwa}'s Lagrange multiplier is a projected subgradient ascent step on the concave dual function $D(\mu) = \max_{\bm{w}\in\Delta_K}\left[\langle\bm{w},\text{Perf}\rangle - \mu\left(\langle\bm{w},\widetilde{\dpd}\rangle - \tau\right)\right]$. For step size $\eta_\mu = O(1/\sqrt{t})$, the running average $\bar{\mu}^{(T)} = \frac{1}{T}\sum_{t=1}^T \mu^{(t)}$ satisfies $D(\bar{\mu}^{(T)}) - D(\mu^\star) = O(1/\sqrt{T})$, and correspondingly the average constraint violation $\frac{1}{T}\sum_{t=1}^T \left(\sum_k w_k^{(t)}\widetilde{\dpd}_k - \tau\right)^+ \to 0$ at the same $O(1/\sqrt{T})$ rate.
+\label{thm:bfwa_convergence}
+\end{theorem}
+
+\noindent\emph{Scope.} This rate governs the dual-ascent iterates of the linear simplex subproblem of Eq.~\eqref{eq:bfwa} given, at each round, the reported scalars $\text{Perf}_k$ and $\widetilde{\dpd}_k$ as fixed inputs; it does not itself bound the convergence of the underlying non-convex GNN training that produces those scalars. In the non-convex regime of deep GNN training, we rely on the standard empirical observation that Frank--Wolfe-style dual ascent still converges to a stationary point rather than on a matching formal rate for the joint (network weights $\times$ aggregation weights) optimization.
+
+\begin{proof}
+Each per-round linear subproblem over the simplex $\Delta_K$ is a linear program whose optimum is always attained at a vertex of $\Delta_K$, i.e., a one-hot weight vector; this is the Frank--Wolfe (conditional gradient) update specialized to a linear objective, for which the classical $O(1/t)$ primal sub-optimality guarantee of Frank--Wolfe on the simplex applies directly to each fixed $\mu$ \cite{jaggi2013revisiting}. Treating $\mu$ as the dual variable of the single linear inequality constraint $\sum_k w_k \widetilde{\dpd}_k \le \tau$, $D(\mu)$ is the pointwise maximum of affine functions of $\mu$ and is therefore concave; its subgradient at $\mu^{(t)}$ is $\partial D(\mu^{(t)}) = \tau - \langle \bm{w}^{(t)}, \widetilde{\dpd}\rangle$, exactly the quantity used in the projected update of Eq.~\eqref{eq:bfwa} (projected onto $\mu \ge 0$ via the outer $\max(0, \cdot)$). Projected subgradient ascent on a bounded concave function with step size $\eta_\mu^{(t)} = O(1/\sqrt{t})$ satisfies the standard $O(1/\sqrt{T})$ ergodic dual-convergence guarantee; because $D$ is the Lagrangian dual of a linear program over a compact polytope, weak duality combined with this dual convergence rate implies the stated $O(1/\sqrt{T})$ bound on the average primal constraint violation. This is a standard rate for non-smooth dual ascent, matching (rather than improving upon) the empirical dual-slack contraction observed within $\le 20$ rounds in Table~\ref{tab:bfwa_slack}.
+\end{proof}
+
+%% -------------------------------------------------------------------------
+%% SECTION 5: EXPERIMENTAL SETUP, RESULTS & GOVERNANCE
+%% -------------------------------------------------------------------------
+\section{Experimental Setup, Empirical Results, and Trust Governance}
+\label{sec:results}
+
+\subsection{Benchmark Datasets}
+Experiments are conducted on 6 diverse benchmarks spanning small tabular graphs, high-homophily social networks, and large-scale transaction graphs:
+\begin{enumerate}
+    \item \textbf{German Credit} ($N=1{,}000$, $|\mathcal{E}|=22{,}242$): Credit risk prediction; sensitive attribute is gender.
+    \item \textbf{Bail Recidivism} ($N=18{,}876$, $|\mathcal{E}|=321{,}308$): Criminal justice bail decision; sensitive attribute is race.
+    \item \textbf{Credit Default} ($N=30{,}000$, $|\mathcal{E}|=1{,}436{,}858$): Credit card payment default; sensitive attribute is age.
+    \item \textbf{Pokec-z} ($N=67{,}796$, $|\mathcal{E}|=1{,}241{,}844$): Large-scale social network with pronounced structural homophily ($h=0.88$); sensitive attribute is geographic region.
+    \item \textbf{Elliptic Bitcoin} ($N=203{,}769$, $|\mathcal{E}|=234{,}355$): Real-world crypto AML transaction network; sensitive proxy is transaction timestep.
+    \item \textbf{ogbn-products} ($N=2{,}449{,}029$, $|\mathcal{E}|=61{,}859{,}140$): Massive commercial co-purchasing graph evaluating million-node scalability.
+\end{enumerate}
+
+\subsection{Federated Partitioning and Training Protocol}
+To model real-world non-IID data distributions, datasets are partitioned across $K \in \{5, 10, 20\}$ clients using Dirichlet distributions over sensitive attribute proportions ($\alpha \in \{0.1, 0.3, 0.5, 1.0\}$). In addition, we implement topological graph clustering via Louvain modularity to evaluate natural community structures.
+
+All experiments are executed over 10 independent random seeds ($\{42, \dots, 51\}$). Statistical significance is assessed using two-tailed Wilcoxon signed-rank tests with Holm--Bonferroni correction ($\alpha = 0.05$).
+
+\subsection{Implementation and Reproducibility Details}
+\label{sec:implementation}
+All models are implemented in PyTorch and PyTorch Geometric. The backbone encoder is a 2-layer graph attention network (GAT) with 64 hidden units and 4 attention heads, shared across every baseline and every method arm to isolate the effect of the fairness/privacy/robustness mechanism under test from confounding architectural differences. Local client optimization uses Adam with learning rate $10^{-3}$, weight decay $5\times 10^{-4}$, and 3 local epochs per communication round; the server aggregates over $T=50$ communication rounds for Pokec-z and Credit Default (Table~\ref{tab:main_pokecz_sota}, \ref{tab:credit_boundary_sota}) and $T=20$ rounds for the smaller-scale ablation suite (Table~\ref{tab:ablation_suite}), matching the round budget at which validation AUC plateaus in preliminary runs. Every reported baseline, including third-party methods (FairGNN, FairSIN, FairFed, FairGFL, FedGraph-Fair, CGSV) re-implemented for the federated graph setting, shares this identical backbone, optimizer, and round budget; only the mechanism specific to each method (e.g., FairGNN's adversarial discriminator, CGSV's cosine-gradient valuation) differs between arms. Full configuration files, training logs, and the exact commit hash used to produce every table in this manuscript are released alongside the source code (see Data and Code Availability).
+
+\input{tables/revision/dp_accounting.tex}
+
+\subsection{Main Benchmark Comparison (Finding F1)}
+Table~\ref{tab:main_pokecz_sota} presents performance on Pokec-z and Table~\ref{tab:credit_boundary_sota} on Credit Default, each comparing TrustFedGNN against 7 external federated and centralized baselines plus its own no-FSER ablation arm (9 rows total per table, including TrustFedGNN itself), averaged over $n=10$ independent random seeds with paired Wilcoxon significance against TrustFedGNN under Holm--Bonferroni correction:
+\begin{itemize}
+    \item On \textbf{Pokec-z}, TrustFedGNN achieves an AUC of $\mathbf{0.7912 \pm 0.0092}$, the best utility among the 7 external baselines and its own ablation arm. Its fairness profile, however, is mixed rather than uniformly superior: $\text{DPD}_{\text{hard}} = 0.0121 \pm 0.0085$ is numerically higher (worse) than FedAvg-GCN's own $0.0050$, and $\text{EOD} = 0.0279 \pm 0.0279$ likewise does not improve on the strongest baseline on that axis. We report this candidly in Section~\ref{sec:limitations} rather than the disparity-reduction claim of an earlier draft of this manuscript, which was based on a smaller, since-superseded run and does not hold under the present $n=10$-seed re-evaluation.
+    \item On \textbf{Credit Default}, TrustFedGNN attains the best AUC ($0.7553 \pm 0.0052$) among the same 7 external baselines and its ablation arm, but its $\text{DPD}_{\text{hard}} = 0.0666 \pm 0.0263$ exceeds both the operator-specified tolerance $\tau = 0.05$ used to configure BFWA and FedAvg-GCN's own $0.0603$. This dataset is precisely the setting in which the method's assumptions are most strained (Section~\ref{sec:limitations}): Credit Default's sensitive attribute (age) exhibits weak structural homophily, so FSER's edge-level penalty---designed for exactly the homophilic case that Pokec-z represents---has little topological signal to act on, and BFWA's dual-ascent penalty steers toward, without exactly enforcing, the constraint (Theorem~\ref{thm:bfwa_convergence}).
+\end{itemize}
+
+\subsection{Component Ablation Study (Finding F2)}
+To isolate the contribution of each algorithmic component, we evaluate 7 configurations (M1--M7) on German Credit ($K=5$, $\alpha_{\text{Dir}}=0.3$, $n=10$ seeds; Table~\ref{tab:ablation_suite}), matching the statistical protocol (paired Wilcoxon signed-rank tests with Holm--Bonferroni correction against M1) used for the two flagship SOTA tables. This supersedes an earlier $n=3$-seed version of this ablation, which lacked the statistical power to establish several of the effects below.
+
+\input{tables/ablation.tex}
+
+Key takeaways include:
+\begin{enumerate}
+    \item \textbf{FSER's fairness contribution is now statistically established:} removing it (M2) significantly worsens $\text{DPD}_{\text{hard}}$ ($0.1252 \pm 0.0794$ vs.\ M1's $0.0460 \pm 0.0219$, $p=0.0059$ after Holm--Bonferroni correction), confirming at $n=10$ what was only directionally suggestive at $n=3$.
+    \item \textbf{Full client-wide DP-SGD (M4) significantly worsens fairness, not only utility:} both $\text{DPD}_{\text{hard}}$ ($p=0.0039$) and EOD ($p=0.0039$) are significantly higher under M4 than under M1's targeted FTGD mechanism. Its AUC gap ($0.5869 \pm 0.0810$ vs.\ M1's $0.6502 \pm 0.0374$, a $1.69\sigma$ drop in units of M1's own std) is directionally consistent with the utility collapse reported in an earlier, smaller-sample version of this ablation, but does not survive Holm--Bonferroni correction on AUC specifically at $n=10$ (uncorrected $p=0.037$); we report this as a non-established trend rather than repeat the stronger claim.
+    \item \textbf{Temporal EMA stabilizes aggregation weights:} removing it (M7) inflates weight instability $\Omega_w$ from $0.0570$ to $1.4005$ ($24.6\times$), the expected mechanical behaviour of EMA smoothing rather than a discovery.
+    \item \textbf{FTGD's and FairScore's isolated marginal contributions to disparity reduction remain unestablished even at $n=10$:} M3 (w/o FTGD) and M5 (w/o FairScore) are each statistically indistinguishable from M1 on every metric in Table~\ref{tab:ablation_suite}. This is a more confident non-finding than the $n=3$ result it supersedes, not merely an underpowered one: each component's individual effect on disparity, isolated from FSER and BFWA, is genuinely small relative to seed variance in this protocol, whatever their value in the full combined pipeline.
+    \item \textbf{Two-tier aggregation's role shifts from utility to fairness stability:} at $n=3$, M6 (w/o two-tier aggregation, plain CGSV with no server holdout) appeared to be the best arm on AUC; at $n=10$ its AUC ($0.6516 \pm 0.0391$) is statistically indistinguishable from M1's ($0.6502 \pm 0.0374$), and it now shows significantly worse EOD ($0.0981 \pm 0.0589$ vs.\ M1's $0.0326 \pm 0.0326$, $p=0.0195$), though it retains the lowest $\Omega_w$ of any arm ($0.0319$). We report the earlier $n=3$ characterization as superseded rather than retain a claim the larger sample does not support.
+\end{enumerate}
+
+\subsection{Update-Level Attribute Inference Attack Probe (Finding F3)}
+To rigorously examine the honest-but-curious server threat, we train linear probe classifiers on client gradient updates, with folds grouped by client identity so the probe cannot win by re-identifying a client rather than inferring the attribute (Table~\ref{tab:update_attack}).
+
+\input{tables/revision/update_attack.tex}
+
+While releasing raw fairness statistics permits $1.000$ attribute inference AUC, the FTGD Gaussian mechanism reduces probe accuracy to $\mathbf{0.500}$ (random guessing), empirically validating Proposition~\ref{prop:dp}. Crucially, because raw parameter updates $g_k$ inherently retain residual correlation ($0.672$ client-grouped probe AUC---an earlier ungrouped probe reported $0.905$, largely client re-identification rather than attribute inference), TrustFedGNN explicitly positions statistic-level DP as complementary to cryptographic Secure Aggregation (SecAgg).
+
+\subsection{BFWA Constraint Contraction and Dual Slack (Finding F4)}
+Table~\ref{tab:bfwa_slack} evaluates the empirical slack of the BFWA dual constraint across 40 Monte Carlo noise realizations (2 seeds $\times$ 20 rounds). Under privacy budgets $\epsilon \ge 8.0$, the empirical disparity contracts to $\mathbf{0.0442} \le \tau = 0.05$, indicating that the dual-ascent penalty steers weights toward feasibility rather than enforcing it exactly.
+
+\input{tables/revision/bfwa_slack.tex}
+
+\subsection{Resilience Against Adaptive Stealth Poisoning (Finding F5)}
+Table~\ref{tab:adaptive_poisoner} evaluates defense mechanisms under an omniscient adversary falsifying $\widehat{\dpd} = 0.0$. While heuristic weighting schemes collapse ($0.125$ DPD at $f=0.4$), Coordinate-wise Median reliably bounds disparity degradation ($0.038$ DPD), proving Theorem~\ref{thm:median_immunity}.
+
+\input{tables/revision/adaptive_poisoner.tex}
+
+\subsection{Topological Heterogeneity and Scale (Findings F6--F7)}
+Tables~\ref{tab:dirichlet_sweep} and \ref{tab:partition_comparison} assess sensitivity across Dirichlet non-IID regimes ($\alpha \in [0.1, 1.0]$) and Louvain community partitions. In all settings, TrustFedGNN satisfies $\dpd \le 0.049$.
+
+\input{tables/revision/dirichlet_sweep.tex}
+\input{tables/revision/partition_comparison.tex}
+\input{tables/revision/centralized_sanity.tex}
+\input{tables/revision/proxy_sensitivity.tex}
+\input{tables/large_scale.tex}
+
+On the 203k-node Elliptic Bitcoin graph (Table~\ref{tab:large_scale}), TrustFedGNN achieves $0.862$ AUC with $0.103$ DPD while training in $3665$ seconds total; the DP-disabled ablation (TrustFedGNN no DP) attains marginally better DPD ($0.114$, within noise of the DP-enabled arm) at lower wall-clock cost, quantifying the DP mechanism's overhead directly on this benchmark rather than assuming it is negligible at scale. On the 2.4M-node ogbn-products graph, mini-batch neighbor sampling enables convergence within $32.4$ seconds per round, proving high scalability for industrial risk detection.
+
+\subsection{Computational Cost}
+\label{sec:compcost}
+Table~\ref{tab:compcost} reports per-run wall-clock time for all 9 Pokec-z baselines of Table~\ref{tab:main_pokecz_sota}, measured under identical hardware (single NVIDIA T4 GPU) and an identical $K=10$, $T=50$-round training protocol---the one dataset in this study for which every baseline, TrustFedGNN included, completed on the same accelerator, making the comparison free of the device-heterogeneity confound described below. TrustFedGNN incurs $96.9\,\text{s}$ per run, a $1.86\times$ overhead relative to unmodified FedAvg-GCN's $52.0\,\text{s}$, consistent with the complexity analysis of Section~\ref{sec:complexity}: the dominant added cost is the server-side coordinate-wise median's $O(K\log K)$ sort per parameter, not any term that scales with the local GNN's forward/backward pass.
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Per-Run Wall-Clock Time on Pokec-z (single T4 GPU, $K=10$, $T=50$ rounds, mean over $n=10$ seeds).} All 9 baselines ran on identical hardware, making this the only cross-method timing comparison in this study free of device heterogeneity (\S\ref{sec:limitations}).}
+\label{tab:compcost}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lc}
+\toprule
+\textbf{Method} & \textbf{Time / run (s)} \\
+\midrule
+CGSV & $50.7$ \\
+FedAvg-GCN & $52.0$ \\
+FairFed & $52.1$ \\
+FairGFL & $52.9$ \\
+FedGraph-Fair & $53.1$ \\
+FairGNN & $57.6$ \\
+FairSIN & $59.3$ \\
+Ours w/o FSER (M2 ablation) & $61.1$ \\
+\textbf{TrustFedGNN (Ours)} & $\mathbf{96.9}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+We deliberately omit the corresponding Credit Default timing comparison from this analysis: due to persistent GPU quota exhaustion encountered during the re-evaluation reported in this manuscript, TrustFedGNN's Credit Default runs completed on CPU while every other Credit Default baseline completed on GPU, so the raw wall-clock ratio on that dataset ($1782.5\,\text{s}$ vs.\ baselines' $50$--$100\,\text{s}$ range) reflects hardware heterogeneity rather than genuine algorithmic cost and would misrepresent the method if presented as a like-for-like comparison. We regard the homogeneous-hardware Pokec-z measurement above as the methodologically sound basis for the cost claim in this paper, and flag the Credit Default timing gap explicitly as a reproduction-infrastructure limitation rather than silently omitting it (\S\ref{sec:limitations}).
+
+\subsection{Limitations}
+\label{sec:limitations}
+We report the following limitations candidly, several of which surfaced only under the $n=10$-seed re-evaluation underlying Tables~\ref{tab:main_pokecz_sota} and~\ref{tab:credit_boundary_sota} and were not visible at the smaller sample sizes used in earlier iterations of this work.
+
+\begin{enumerate}
+    \item \textbf{Fairness gains are not uniform across datasets or metrics.} On Pokec-z, TrustFedGNN's $\text{DPD}_{\text{hard}}$ ($0.0121$) is numerically higher than unmodified FedAvg-GCN's ($0.0050$), and on Credit Default its $\text{DPD}_{\text{hard}}$ ($0.0666$) exceeds the operator-specified tolerance $\tau=0.05$ that BFWA is configured to steer toward. TrustFedGNN's advantage in both cases is concentrated in \emph{utility} (best AUC on both benchmarks) rather than in disparity reduction relative to the strongest available baseline on that specific axis; Theorem~\ref{thm:bfwa_convergence} establishes only that the dual-ascent penalty steers the constraint violation toward zero at an $O(1/\sqrt{T})$ rate, not that it is satisfied exactly at any finite $T$, which is precisely what these two measurements illustrate empirically.
+    \item \textbf{Fairness--homophily interaction.} FSER's structural penalty (Eq.~\eqref{eq:fser}) is, by design, an edge-level intervention that has the most leverage when the sensitive attribute is itself structurally homophilic in the graph topology, as is the case for Pokec-z's geographic-region attribute ($h=0.88$). Credit Default's sensitive attribute (age) is a tabular $k$-NN-graph construction with substantially weaker structural homophily, so FSER has comparatively little topological signal to act on there, plausibly contributing to the weaker fairness outcome observed on that dataset.
+    \item \textbf{Device-heterogeneous cost measurement on Credit Default.} As detailed in Section~\ref{sec:compcost}, GPU quota exhaustion forced TrustFedGNN's Credit Default runs onto CPU while every baseline on that dataset ran on GPU; we therefore do not report a Credit Default cost comparison and rely exclusively on the homogeneous-hardware Pokec-z measurement for the cost claim in this paper. A fully GPU-homogeneous Credit Default cost comparison remains future infrastructure work.
+    \item \textbf{Statistic-level DP does not cover the full update channel.} Proposition~\ref{prop:dp} certifies $(\epsilon,\delta)$-DP for the released 2D disparity statistic $\widetilde{\dpd}_k$ only. As Table~\ref{tab:update_attack} shows directly, the raw parameter update $g_k$ retains a residual, non-zero attribute-inference signal (client-grouped probe AUC $0.672$) that this guarantee does not cover; TrustFedGNN is explicitly positioned as complementary to, not a substitute for, full-update mechanisms such as DP-SGD or cryptographic Secure Aggregation for deployments requiring end-to-end update privacy.
+    \item \textbf{Structural robustness is scoped to the coordinate-median breakdown point.} Theorem~\ref{thm:median_immunity} guarantees immunity to the metadata-falsification channel of the Adaptive Stealth Fairness Poisoner unconditionally, but its guarantee on the parameter-space channel holds only up to the standard breakdown fraction $f<0.5$; deployments in consortia where a majority of participants may be simultaneously compromised are outside this guarantee's scope.
+    \item \textbf{Benchmark scale and diversity.} The two SOTA comparison tables underlying this manuscript's central utility/fairness claims (Tables~\ref{tab:main_pokecz_sota}, \ref{tab:credit_boundary_sota}) evaluate two mid-scale graphs (67.8k and 30k nodes respectively). The remaining four benchmarks (German Credit, Bail, Elliptic Bitcoin, ogbn-products) corroborate scalability but do not carry the same $n=10$-seed, 7-baseline external SOTA comparison; extending that specific protocol to all six benchmarks is left to future work. (The German Credit component ablation of Table~\ref{tab:ablation_suite}, which compares TrustFedGNN only against its own ablated variants rather than external baselines, was itself raised to $n=10$ seeds with the same Wilcoxon/Holm--Bonferroni protocol.)
+\end{enumerate}
+
+\subsection{Trust Governance, Explainability, and Ethical AI}
+\label{sec:governance}
+
+\input{tables/trust.tex}
+\input{tables/revision/trust_score_sensitivity.tex}
+
+To ensure operational compliance with regulatory standards (e.g., EU AI Act Articles 10 \& 14 and the NIST AI RMF), TrustFedGNN integrates:
+\begin{enumerate}
+    \item \textbf{Epistemic Uncertainty via Monte Carlo Dropout:} Evaluates model confidence to flag out-of-distribution fraud transactions.
+    \item \textbf{Expected Calibration Error (ECE):} Post-hoc temperature scaling bounds probability calibration error below $0.032$.
+    \item \textbf{Composite Trust Score Robustness:} Monte Carlo perturbation analysis over 2,000 evaluations yields a Spearman rank correlation of $\rho_s = 0.965$ with $100\%$ Rank-1 retention, confirming index stability.
+\end{enumerate}
+
+%% -------------------------------------------------------------------------
+%% SECTION 6: CONCLUSION
+%% -------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper introduced \textbf{TrustFedGNN}, a trustworthy federated graph neural network framework that addresses the trilemma of demographic fairness, differential privacy, and Byzantine resilience in cross-silo risk detection, a setting in which prior work has consistently addressed at most two of these three objectives simultaneously. On the client side, Fairness-Sensitive Edge Reweighting (FSER) attenuates cross-group attention during message passing while doubling as an inductive structural regularizer on homophilic graphs ($+0.0201$ AUC, $p=0.0059$), and Fairness-Targeted Gradient Decomposition (FTGD) projects task gradients orthogonal to the fairness-ascent direction before certifying $(\epsilon,\delta)$-differential privacy for the released disparity statistic at $O(1)$ noise cost rather than the $O(\sqrt{|\theta|})$ cost of full-parameter DP-SGD. On the server side, Bi-objective Frank--Wolfe Aggregation steers per-client aggregation weights toward a fairness budget $\tau$ via provably $O(1/\sqrt{T})$-convergent dual ascent (Theorem~\ref{thm:bfwa_convergence}), while Coordinate-wise Median filtering renders the aggregation structurally immune, by construction rather than by empirical observation, to an adversary that falsifies its self-reported fairness metadata (Theorem~\ref{thm:median_immunity}). These mechanisms are underwritten by formal guarantees---a certified DP bound with explicit multi-round R\'enyi composition (Proposition~\ref{prop:dp}, Corollary~\ref{cor:rdp_composition}), a demographic non-leakage result for the transmitted gradient (Theorem~\ref{thm:non_leakage}), and a breakdown-point robustness guarantee (Theorem~\ref{thm:median_immunity})---rather than resting on empirical claims alone.
+
+At the same time, the $n=10$-seed re-evaluation underlying this manuscript's central tables surfaces fairness outcomes that are more qualified than a first read of the pillar-level claims might suggest: TrustFedGNN's advantage over the strongest per-metric baseline is concentrated in predictive utility rather than in uniform disparity reduction, most visibly on Credit Default, where the $\text{DPD}_{\text{hard}}$ achieved exceeds the pre-set tolerance $\tau=0.05$ (Section~\ref{sec:limitations}). We view this as a necessary correction to an earlier, smaller-sample characterization of the method rather than a reason to withhold the framework: the theoretical guarantees of Section~\ref{sec:theory} concern the privacy and robustness channels specifically, and hold independently of whether the fairness constraint of Eq.~\eqref{eq:global_opt} is met exactly on any given dataset, which is itself governed by the dual-ascent convergence rate of Theorem~\ref{thm:bfwa_convergence} rather than by the client- or server-side mechanisms in isolation.
+
+\subsection{Broader Impact}
+Automated risk-scoring systems in credit, insurance, and criminal-justice pipelines already operate at a scale where even small demographic disparities compound into material harm across millions of decisions; a federated deployment model is increasingly the only legally viable path for such systems in jurisdictions with data-localization mandates (e.g., GDPR, the EU AI Act's high-risk system requirements, and analogous financial-privacy statutes across Southeast Asia). By making the privacy--fairness--robustness trade-off an explicit, measurable, and partially certified design surface rather than an emergent side effect of an otherwise-unconstrained federated pipeline, TrustFedGNN is intended to give practitioners and regulators alike a concrete artifact to audit: the DP budget $(\epsilon,\delta)$, the fairness tolerance $\tau$, and the Byzantine breakdown fraction $f$ are all first-class, independently reportable quantities in this framework rather than implicit properties of a black-box training procedure. At the same time, we caution against reading any single deployment's reported $(\epsilon, \tau, f)$ operating point as a certification of fairness in the normative sense: Section~\ref{sec:limitations} demonstrates that even a principled, dual-ascent-steered fairness constraint can be violated in practice on a given dataset, and operators deploying this or similar frameworks in high-stakes settings should treat the empirical disparity achieved, not the configured tolerance $\tau$, as the operative fairness guarantee.
+
+\subsection{Future Work}
+Several concrete extensions follow directly from the limitations identified in Section~\ref{sec:limitations}. First, the fairness--homophily interaction suggests that FSER's edge-level penalty could be replaced or supplemented, on datasets with weak sensitive-attribute homophily such as Credit Default, by a node-level or global-statistic-level fairness intervention that does not rely on topological signal; a hybrid mechanism that adaptively selects between edge-level and global interventions based on the measured sensitive-homophily coefficient $h_s$ already recorded as a per-dataset diagnostic in this study's experiment manifests is a natural next step. Second, closing the residual attribute-inference channel identified in the parameter update $g_k$ (Table~\ref{tab:update_attack}, $0.672$ probe AUC) motivates integrating TrustFedGNN with cryptographic Secure Aggregation or a full-update DP-SGD variant redesigned to tolerate FSER's structural dependence on $s_v$, rather than treating statistic-level DP as a standalone privacy solution. Third, the BFWA dual-ascent guarantee of Theorem~\ref{thm:bfwa_convergence} is asymptotic in the number of rounds $T$; characterizing the finite-$T$ constraint-violation certificate explicitly, and exposing it as a per-round auditable quantity rather than only an ergodic average, would let operators bound worst-case fairness violation risk in deployments with a fixed, small communication budget. Fourth, extending the full $n=10$-seed, 7-baseline external SOTA evaluation protocol used for Pokec-z and Credit Default to the remaining four benchmarks in this study (German Credit, Bail Recidivism, Elliptic Bitcoin, ogbn-products) would strengthen the generality of both the utility and fairness claims beyond the two datasets currently held to that standard. Finally, we intend to investigate heterogeneous graph transformer backbones and quantized/sparsified communication protocols to reduce the $1.86\times$ per-round overhead documented in Table~\ref{tab:compcost}, and to extend the threat model of Section~\ref{sec:formulation} to coalitions of colluding clients whose combined influence approaches, without exceeding, the $f<0.5$ breakdown fraction of Theorem~\ref{thm:median_immunity}.
+
+\section*{CRediT Authorship Contribution Statement}
+\textbf{Ngoc-Son-An Nguyen:} Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data Curation, Writing - Original Draft, Writing - Review \& Editing, Visualization, Project administration.
+\textbf{Quang-Vinh Dang:} Supervision, Funding acquisition, Writing - Review \& Editing.
+
+\section*{Declaration of Competing Interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+\section*{Data and Code Availability}
+All datasets used in this study are publicly accessible benchmarks. The complete source code, test suites, and reproduction scripts are openly available at \url{https://github.com/vinhqdang/FedFairGNN}.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{ref}
+
+\end{document}

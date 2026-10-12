@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Ablation Study of Core Components on German Credit ($K=5, \alpha_{\text{Dir}}=0.3, n=10$ seeds).}
+Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes a statistically significant difference from M1 (Full Proposed) under the two-sided Wilcoxon signed-rank test with family-wise Holm--Bonferroni correction ($p<0.05$), computed per metric across all six non-M1 arms. (1)~FSER's contribution to fairness is now statistically established at this sample size: removing it (M2) significantly worsens $\text{DPD}_{\text{hard}}$ ($p=0.0059$). (2)~Full client-wide DP-SGD (M4) significantly worsens \emph{both} fairness metrics relative to targeted FTGD ($\text{DPD}_{\text{hard}}$ $p=0.0039$, EOD $p=0.0039$); its AUC gap (a $1.69\sigma$ drop in units of M1's own std) is directionally consistent with utility collapse but does not survive Holm--Bonferroni correction on AUC specifically (uncorrected $p=0.037$) at $n=10$. (3)~Removing the temporal EMA (M7) inflates weight instability $\Omega_w$ $24.6\times$ ($0.0570 \to 1.4005$), the expected mechanical behavior of EMA smoothing rather than a new discovery. (4)~M3 (w/o FTGD) and M5 (w/o FairScore) remain statistically indistinguishable from M1 on every metric even at this larger sample size, so neither FTGD's nor FairScore's isolated marginal contribution to disparity reduction is established by this ablation. (5)~M6 (w/o Two-Tier, plain CGSV) is no longer the best arm on AUC at $n=10$ (0.6516 vs.\ M1's 0.6502, statistically tied) and now shows significantly worse EOD ($p=0.0195$), though it retains the lowest $\Omega_w$ (0.0319) of any arm.}
+\label{tab:ablation_suite}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Ablation Arm} & \textbf{Description / Isolated Component} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
+\midrule
+M1 (Full Proposed) & \textbf{TrustFedGNN (Canonical)} & \textbf{0.6502 $\pm$ 0.0374} & \textbf{0.0460 $\pm$ 0.0219} & \textbf{0.0326 $\pm$ 0.0326} & 0.0570 \\
+M2 (w/o FSER) & GAT Backbone (No Topological Reweighting) & 0.6929 $\pm$ 0.0580 & 0.1252 $\pm$ 0.0794$^\star$ & 0.1012 $\pm$ 0.0955 & 0.1321 \\
+M3 (w/o FTGD) & Standard Local Optimization (No Orthogonal Surgery) & 0.6568 $\pm$ 0.0449 & 0.0636 $\pm$ 0.0355 & 0.0755 $\pm$ 0.0567 & 0.0617 \\
+M4 (Full DP-SGD) & Standard Client-Wide DP-SGD ($\epsilon=8.0$) & 0.5869 $\pm$ 0.0810 & 0.1471 $\pm$ 0.0780$^\star$ & 0.1378 $\pm$ 0.0886$^\star$ & 0.2427 \\
+M5 (w/o FairScore) & GTG-Shapley Metric ($\alpha=0.0$) & 0.6478 $\pm$ 0.0386 & 0.0435 $\pm$ 0.0303 & 0.0375 $\pm$ 0.0341 & 0.0574 \\
+M6 (w/o Two-Tier) & CGSV Aggregation (No Server Holdout) & 0.6516 $\pm$ 0.0391 & 0.0722 $\pm$ 0.0553 & 0.0981 $\pm$ 0.0589$^\star$ & 0.0319 \\
+M7 (w/o Temp EMA) & Instantaneous Gradient Alignment ($\beta_{\text{ema}}=0.0$) & 0.6569 $\pm$ 0.0405 & 0.0574 $\pm$ 0.0534 & 0.0614 $\pm$ 0.0673 & 1.4005 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

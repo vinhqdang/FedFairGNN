@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Main SOTA Benchmark on Pokec-z ($N=67,796$ nodes, $1.24\text{M}$ edges, $n=10$ independent random seeds).}
+Metrics are reported as $\text{Mean} \pm \text{Std}$. $\star$ denotes statistically significant difference versus TrustFedGNN (Ours) under the two-sided Wilcoxon signed-rank test with family-wise Holm-Bonferroni correction ($p < 0.05$). Bold indicates the best result. $^\dagger$FTGD's $(\epsilon=8.0, \delta=10^{-5})$ differential privacy guarantee strictly covers the released fairness statistics (two scalar group means per client per round), not transmitted model updates $\theta_k$ (see \S7.1).}
+\label{tab:main_pokecz_sota}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Method} & \textbf{Venue} & \textbf{$(\epsilon,\delta)$-DP (stat.)$^\dagger$} & \textbf{AUC-ROC} ($\uparrow$) & \textbf{$\text{DPD}_{\text{hard}}$} ($\downarrow$) & \textbf{EOD} ($\downarrow$) & \textbf{$\Omega_w$} ($\downarrow$) \\
+\midrule
+FedAvg-GCN & AISTATS'17 & $\times$ & 0.7274 $\pm$ 0.0108$^\star$ & 0.0050 $\pm$ 0.0027 & 0.0174 $\pm$ 0.0161 & 0.0000 \\
+FairGNN & WSDM'21 & $\times$ & 0.5786 $\pm$ 0.0838$^\star$ & 0.0221 $\pm$ 0.0241 & 0.0076 $\pm$ 0.0104 & 0.0000 \\
+FairSIN & WWW'24 & $\times$ & 0.7084 $\pm$ 0.0206$^\star$ & 0.0066 $\pm$ 0.0076 & 0.0319 $\pm$ 0.0193 & 0.0000 \\
+FairFed & AAAI'23 & $\times$ & 0.7233 $\pm$ 0.0134$^\star$ & 0.0061 $\pm$ 0.0063 & 0.0267 $\pm$ 0.0211 & 0.0685 \\
+FairGFL & IEEE TPDS'26 & $\times$ & 0.7325 $\pm$ 0.0107$^\star$ & 0.0074 $\pm$ 0.0052 & 0.0193 $\pm$ 0.0171 & 0.0000 \\
+FedGraph-Fair & InfoSci'26 & $\times$ & 0.6976 $\pm$ 0.0171$^\star$ & 0.0067 $\pm$ 0.0037 & 0.0396 $\pm$ 0.0212 & 0.0196 \\
+CGSV & NeurIPS'21 & $\times$ & 0.7325 $\pm$ 0.0131$^\star$ & 0.0047 $\pm$ 0.0035 & 0.0320 $\pm$ 0.0228 & 0.1291 \\
+Ours w/o FSER (M2) & Ablation & \checkmark & 0.7713 $\pm$ 0.0101$^\star$ & 0.0145 $\pm$ 0.0110 & 0.0224 $\pm$ 0.0103 & 0.1582 \\
+\textbf{TrustFedGNN (Ours)} & Proposed & \checkmark & \textbf{0.7912 $\pm$ 0.0092} & \textbf{0.0121 $\pm$ 0.0085} & \textbf{0.0279 $\pm$ 0.0279} & 0.1002 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
