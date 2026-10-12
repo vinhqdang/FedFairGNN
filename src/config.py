@@ -75,6 +75,18 @@ class ExperimentConfig:
     trimmed_beta: float = 0.1        # fraction trimmed each side for trimmed_mean
     krum_f: int = 1                  # assumed number of Byzantine clients for Krum/Multi-Krum
 
+    # ---- TrustFedGNN-R2 (secagg_lagrangian aggregator; see docs/trustfedgnn_r2_design.md) ----
+    fair_mode: str = "none"          # none | lagrangian (client-side signed Lagrangian loss)
+    r2_clip_norm: float = 1.0        # C: update norm bound, also the validity-check bound
+    r2_lambda_step: float = 0.5      # eta_lambda: dual step size
+    r2_n_cap: int = 0                # public cap on per-client, per-group counts. 0 = derive at
+                                     #   setup from the partition (largest per-client validation
+                                     #   group, rounded up to a multiple of 50); see the trainer.
+    r2_stat_dp: bool = True          # Gaussian noise on the released statistics (sigma_s, T1)
+    r2_stat_period: int = 1          # P: statistics are released only in rounds t with t % P == 0
+    r2_update_noise: float = 0.0     # sigma_u on the update sum (T1b ablation only)
+    fedfdp_lambda: float = 0.5       # FedFDP: weight of the per-node loss-deviation factor
+
     # ---- FU-Shapley incentive aggregation (FairShare-GNN) ----
     #   Server scores each client g_k against a target gradient built on the pooled
     #   validation set: g_target = g_task + fu_alpha * g_fair  (see src/trust/incentive.py).

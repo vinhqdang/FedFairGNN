@@ -70,6 +70,16 @@ def _weighted_bce(pred, y):
 _S_DEPENDENT_BACKBONES = frozenset({"TrustFedGNN", "FairSIN", "FaVGNN"})
 
 
+def _weighted_bce_nodes(pred, y):
+    """Per-node terms of :func:`_weighted_bce`; their mean is that loss."""
+    n = len(y)
+    npos = y.sum().clamp(min=1.0)
+    w_pos = n / (2.0 * npos)
+    w_neg = n / (2.0 * (n - npos).clamp(min=1.0))
+    return -(w_pos * y * torch.log(pred + 1e-7)
+             + w_neg * (1 - y) * torch.log(1 - pred + 1e-7))
+
+
 def _soft_dpd(pred, s):
     m0 = pred[s == 0].mean() if (s == 0).any() else pred.new_tensor(0.0)
     m1 = pred[s == 1].mean() if (s == 1).any() else pred.new_tensor(0.0)
@@ -114,7 +124,7 @@ class Client:
             self.noise_multiplier = calibrate_noise_multiplier(
                 config.dp_epsilon, total_steps, config.dp_delta)
             self.dp_sigma = self.noise_multiplier * config.dp_clip
-        elif self.dp_mode in ("gradient", "puffle"):
+        elif self.dp_mode in ("gradient", "puffle", "fedfdp"):
             # These two paths ARE the privacy mechanism. Running them with
             # dp_enabled=False used to clip to dp_clip and add nothing, i.e. a
             # silently non-private variant that is neither the published method
@@ -150,6 +160,16 @@ class Client:
         self._ftgd_skipped_projection_count = 0
         # Does this backbone read s in forward()? (Fix B / dp_statistic_s_blind.)
         self._model_uses_s = type(self.model).__name__ in _S_DEPENDENT_BACKBONES
+
+        # TrustFedGNN-R2: (lambda, direction) broadcast by the server each round,
+        # and the per-group count cap, set by the trainer from the partition.
+        self.fair_lagrange = config.fair_mode == "lagrangian"
+        self.lagrange = (0.0, 0)
+        self.r2_n_cap = config.r2_n_cap
+        # FedFDP (Ling et al.): server-broadcast Fbar, and the adaptive loss bound Cl.
+        self.fedfdp_fbar = 0.0
+        self._fedfdp_clip = 1.0
+        self._fedfdp_report = None
 
     # ----- weight I/O -----
     def get_flat(self) -> torch.Tensor:
@@ -229,12 +249,23 @@ class Client:
 
     # ----- training -----
     def train(self) -> None:
+        self._train_local()
+        if self.dp_mode == "fedfdp":
+            # The loss release is computed once per round, here, after training,
+            # and cached for meta(). This is the only place Cl is updated.
+            self._fedfdp_report = self._fedfdp_loss_report()
+
+    def _train_local(self) -> None:
         cfg = self.cfg
         opt = torch.optim.AdamW(self.model.parameters(), lr=cfg.local_lr,
                                 weight_decay=cfg.weight_decay)
         adv_opt = (torch.optim.Adam(self.model.adversary.parameters(), lr=cfg.local_lr)
                    if self.is_adv else None)
         self.model.train()
+        if (self.fair_lagrange or self.dp_mode == "fedfdp") and cfg.sampling:
+            raise NotImplementedError(
+                "fair_mode='lagrangian' and dp_mode='fedfdp' are implemented for "
+                "full-batch training only")
         if cfg.sampling:
             self._train_sampled(opt, adv_opt)
             return
@@ -256,8 +287,12 @@ class Client:
             return
 
         for _ in range(cfg.local_epochs):
-            if self.is_adv:
+            if self.fair_lagrange:
+                self._lagrange_step(opt, x, ei, s, y, m)
+            elif self.is_adv:
                 self._adv_step(opt, adv_opt, x, ei, s, y, m)
+            elif self.dp_mode == "fedfdp":
+                self._fedfdp_step(opt, x, ei, s, y, m)
             elif self.dp_mode == "ftgd":
                 self._ftgd_step(opt, x, ei, s, y, m)
             elif self.dp_mode == "puffle":
@@ -498,6 +533,84 @@ class Client:
         (task - self.cfg.fairness_weight * adv2).backward()
         opt.step()
 
+    def _lagrange_step(self, opt, x, ei, s, y, m):
+        """TrustFedGNN-R2 local step: weighted BCE plus the signed Lagrangian term
+        lambda * d * (m1 - m0) of spec Section 2. With lambda = 0 or d = 0 this is
+        plain weighted BCE. Training uses the task pathway (s is visible here)."""
+        lam, d = self.lagrange
+        opt.zero_grad()
+        pred = self.model(x, ei, s)[m]
+        loss = _weighted_bce(pred, y[m].float())
+        if lam > 0 and d != 0:
+            s_m = s[m]
+            m0 = pred[s_m == 0].mean() if (s_m == 0).any() else pred.sum() * 0.0
+            m1 = pred[s_m == 1].mean() if (s_m == 1).any() else pred.sum() * 0.0
+            loss = loss + lam * d * (m1 - m0)
+        loss.backward()
+        opt.step()
+        if self.is_fair:
+            self.model.clamp_beta()
+
+    def _fedfdp_step(self, opt, x, ei, s, y, m):
+        """FedFDP local step (Ling et al., arXiv:2402.16028, Alg. 2), with batch-level
+        clipping as documented in the design spec, Section 5. Each node's loss is
+        re-weighted by c_j = max(0, 1 + lambda * (l_j - Fbar)); Fbar is detached."""
+        opt.zero_grad()
+        pred = self.model(x, ei, s)[m]
+        l = _weighted_bce_nodes(pred, y[m].float())
+        c = torch.clamp(1.0 + self.cfg.fedfdp_lambda * (l - self.fedfdp_fbar).detach(), min=0.0)
+        (c * l).mean().backward()
+        self._privatise_grads()
+        opt.step()
+        if self.is_fair:
+            self.model.clamp_beta()
+
+    def _fedfdp_loss_report(self) -> float:
+        """Ftilde_i: the privatised mean of clipped per-node train losses, computed
+        with the updated model. Called once per round from train(); updates the
+        adaptive bound Cl for the next round."""
+        clip = self._fedfdp_clip
+        m = self.data.train_mask
+        with torch.no_grad():
+            self.model.eval()
+            pred = self.model(self.data.x, self.data.edge_index, self.data.sensitive_attr)[m]
+            l = _weighted_bce_nodes(pred, self._y[m].float())
+            f = torch.clamp(l, min=0.0, max=clip).mean()
+        noisy = float(f) + self.noise_multiplier * clip * float(torch.randn(()))
+        self._fedfdp_clip = max(1e-3, noisy)
+        return noisy
+
+    @torch.no_grad()
+    def group_stats(self) -> Dict[str, float]:
+        """S_{k,a}, N_{k,a} on the validation split with the received model.
+
+        The forward pass is s-blind (s is withheld, as in ``_release_pred``), so
+        flipping s on a validation node changes no prediction and only that
+        node's group membership. A group larger than ``r2_n_cap`` is cut to its
+        first ``r2_n_cap`` nodes by index, which keeps the subset deterministic.
+        ``r2_n_cap`` <= 0 means no cap.
+        """
+        self.model.eval()
+        mask = self.data.val_mask
+        x, ei, s = self.data.x, self.data.edge_index, self.data.sensitive_attr
+        if self._model_uses_s:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", message="FSERLayer.forward received sensitive_attr=None",
+                    category=RuntimeWarning)
+                pred = self.model(x, ei, None)
+        else:
+            pred = self.model(x, ei, s)
+        pred = pred[mask]
+        sv = s[mask]
+        cap = self.r2_n_cap if self.r2_n_cap > 0 else None   # 0 = no cap
+        out = {}
+        for a in (0, 1):
+            p_a = pred[sv == a][: cap]
+            out[f"S{a}"] = float(p_a.double().sum())
+            out[f"N{a}"] = float(p_a.numel())
+        return out
+
     # ----- evaluation -----
     @torch.no_grad()
     def evaluate(self, split="val") -> Dict[str, float]:
@@ -547,6 +660,8 @@ class Client:
                "dpd": dpd, "eod": 0.0 if bad else v["eod"],
                "eo": 0.0 if bad else v["eo"],
                "loss": 1.0 - auc, "diverged": float(bad)}
+        if self.dp_mode == "fedfdp" and self._fedfdp_report is not None:
+            out["loss"] = self._fedfdp_report
 
         # group1_rate is the client's exact realised sensitive-attribute
         # marginal, in the clear, with no privacy accounting whatsoever. Only

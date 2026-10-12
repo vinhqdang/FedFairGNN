@@ -8,6 +8,7 @@ utility and fairness. Full per-round history is returned for logging/plots.
 """
 from __future__ import annotations
 
+import math
 from typing import Dict, List
 
 import numpy as np
@@ -18,10 +19,15 @@ from ..data import (load_dataset, partition_graph, partition_stats,
                     carve_server_holdout)
 from ..models import build_model
 from ..utils.metrics import all_metrics
-from ..trust.privacy import PrivacyAccountant
+from ..trust.privacy import PrivacyAccountant, calibrate_noise_multiplier
 from .aggregation import aggregate
-from .attacks import poison_updates
+from .attacks import falsify_group_stats, poison_updates
 from .client import Client, flatten_state, load_flat_state, sampled_predict, _soft_dpd
+
+
+def _clip_to_norm(u: torch.Tensor, C: float) -> torch.Tensor:
+    """Protocol step 3 of R2: scale a submission down to norm C (no-op inside the ball)."""
+    return u * min(1.0, C / max(float(u.norm(2)), 1e-12))
 
 
 class FederatedTrainer:
@@ -63,6 +69,29 @@ class FederatedTrainer:
             if self.clients and self.clients[0].dp_sigma > 0 else None
         self.history: List[Dict] = []
         self._agg_state: Dict = {}   # persists stateful-aggregator state (e.g. fedgraphfair's lambda)
+
+        # TrustFedGNN-R2 setup. Public count cap: derived from the partition when
+        # r2_n_cap is 0 (largest per-client, per-group validation count, rounded up
+        # to a multiple of 50). The statistics noise is one Gaussian release per
+        # round with L2 sensitivity 2, so sigma_s = 2 z (spec T1).
+        self._r2_n_cap = 0
+        self._secagg_sigma_s = 0.0
+        self._secagg_gen = torch.Generator().manual_seed(config.seed)
+        if config.aggregator == "secagg_lagrangian":
+            if config.r2_n_cap > 0:
+                self._r2_n_cap = int(config.r2_n_cap)
+            else:
+                largest = max(int((d.sensitive_attr[d.val_mask] == a).sum())
+                              for d in self.clients_data for a in (0, 1))
+                self._r2_n_cap = int(math.ceil(largest / 50.0) * 50)
+            for c in self.clients:
+                c.r2_n_cap = self._r2_n_cap
+            if config.r2_stat_dp:
+                # One release per statistics round: ceil(R / P) of them.
+                releases = math.ceil(config.rounds / max(1, config.r2_stat_period))
+                z = calibrate_noise_multiplier(config.dp_epsilon, steps=releases,
+                                               delta=config.dp_delta)
+                self._secagg_sigma_s = 2.0 * z
 
     # ----- global evaluation on pooled test nodes -----
     @torch.no_grad()
@@ -203,9 +232,23 @@ class FederatedTrainer:
 
     # ----- one communication round -----
     def _round(self, t: int) -> Dict:
-        updates, metas = [], []
+        r2 = self.cfg.aggregator == "secagg_lagrangian"
+        # Off-period rounds (r2_stat_period > 1) release no statistics; lambda and
+        # the direction stay at the last broadcast values.
+        r2_release = r2 and t % max(1, self.cfg.r2_stat_period) == 0
+        fedfdp = self.cfg.dp_mode == "fedfdp"
+        lam_in = float(self._agg_state.get("r2_lambda", 0.0))
+        dir_in = int(self._agg_state.get("r2_dir", 0))
+        updates, metas, stats = [], [], []
         for c in self.clients:
             c.set_flat(self.global_flat)
+            if r2:
+                c.lagrange = (lam_in, dir_in)
+            if r2_release:
+                # Statistics are taken with the received model, before training.
+                stats.append(c.group_stats())
+            if fedfdp:
+                c.fedfdp_fbar = float(self._agg_state.get("fedfdp_fbar", 0.0))
             c.train()
             g_k = self.global_flat - c.get_flat()   # pseudo-gradient
             updates.append(g_k)
@@ -214,14 +257,31 @@ class FederatedTrainer:
         # releases per round in parallel, so we advance the (representative)
         # accountant once per round -- not once per client.
         if self.accountant:
-            self.accountant.step(self.cfg.local_epochs)
+            # FedFDP also releases one loss statistic per round (Client.train), which
+            # is a separate Gaussian release on the same data, so it is counted here.
+            self.accountant.step(self.cfg.local_epochs + (1 if fedfdp else 0))
 
-        if self.byzantine_ids and self.cfg.attack not in ("none", "label_flip"):
+        if self.byzantine_ids and self.cfg.attack not in ("none", "label_flip") \
+                and not self.cfg.attack.startswith("stat_falsify"):
             updates, metas = poison_updates(
                 self.cfg.attack, updates, metas, self.byzantine_ids,
                 self.cfg.attack_intensity,
                 ipm_epsilon=self.cfg.ipm_epsilon, alie_z=self.cfg.alie_z,
                                            meta_lie=getattr(self.cfg, 'meta_lie', None))
+
+        secagg = None
+        if r2:
+            C = self.cfg.r2_clip_norm
+            if r2_release and self.byzantine_ids and self.cfg.attack.startswith("stat_falsify"):
+                mode = "mid" if self.cfg.attack == "stat_falsify_mid" else "swap"
+                stats = falsify_group_stats(stats, self.byzantine_ids, self._r2_n_cap, mode=mode)
+            # Every client clips to C (protocol step 3). A norm-aware update attacker
+            # is rescaled to C the same way. Only a non-compliant client skips this,
+            # and the server's norm check rejects it.
+            updates = [_clip_to_norm(u, C) for u in updates]
+            secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, n_cap=self._r2_n_cap,
+                          sigma_s=self._secagg_sigma_s, sigma_u=self.cfg.r2_update_noise,
+                          generator=self._secagg_gen, release=r2_release)
 
         # FairShare-GNN: build the server target gradient on the pooled client
         # validation nodes (current global model), then let the FU-Shapley rule
@@ -267,7 +327,15 @@ class FederatedTrainer:
             fu_normalize=self.cfg.fu_normalize, fu_score=self.cfg.fu_score,
             fu_warmup=fu_warmup, fu_grad_clip=self.cfg.fu_grad_clip,
             fu_warmup_agg=self.cfg.fu_warmup_agg,
-            bfwa_persist_dual=self.cfg.bfwa_persist_dual)
+            bfwa_persist_dual=self.cfg.bfwa_persist_dual,
+            stats=stats if r2 else None, secagg=secagg)
+
+        if fedfdp:
+            # Fbar^{t+1} = sum_i p_i Ftilde_i with p_i = n_i / n (spec Section 5).
+            n_tot = sum(m["n"] for m in metas)
+            if n_tot > 0:
+                self._agg_state["fedfdp_fbar"] = float(
+                    sum(m["n"] * m["loss"] for m in metas) / n_tot)
 
         if self.cfg.server_calib and (t + 1) >= self.cfg.rounds * self.cfg.server_calib_start_frac:
             g0 = self._server_calibration_grad()
@@ -286,9 +354,14 @@ class FederatedTrainer:
                     # bfwa_weights' docstring in aggregation.py) -- neither was
                     # computed anywhere before that fix.
                     "bfwa_mu", "constraint_residual", "feasible",
-                    "constraint_residual_preclamp", "feasible_preclamp"):
+                    "constraint_residual_preclamp", "feasible_preclamp",
+                    # TrustFedGNN-R2 round log (secagg_lagrangian only)
+                    "lambda", "lambda_in", "direction", "dhat", "gap",
+                    "n_accepted", "n_rejected", "u_norm"):
             if key in info:
                 rec[key] = info[key]
+        if fedfdp:
+            rec["fedfdp_fbar"] = self._agg_state.get("fedfdp_fbar")
         # FTGD: how many local steps this round degraded to plain weighted-sum
         # training because ||g_fair|| fell below cfg.ftgd_min_fair_norm (see
         # Client._gradient_surgery). Client-local by construction; pooled here

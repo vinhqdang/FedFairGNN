@@ -16,6 +16,9 @@ Supported update-level attacks
     alie             "A Little Is Enough": mean(benign) - z * std(benign).
     fairness_poison  send a biased update but *report* DPD~=0 & high utility to
                      capture BFWA's fairness-based weighting (attack on ours).
+    stat_falsify     TrustFedGNN-R2: honest training, falsified validation
+                     statistics (see :func:`falsify_group_stats`). No update attack.
+    stat_falsify_mid same, claiming the pooled honest rate in both groups.
 
 Calibration of the two *stealth* attacks
 ----------------------------------------
@@ -183,7 +186,7 @@ def poison_updates(attack: str, updates: List[torch.Tensor], metas: List[dict],
         :func:`alie_z_from_counts`, which is the actual attack. Pass a float to
         pin z for an ablation that sweeps it manually.
     """
-    if attack in ("none", None) or not byzantine_ids:
+    if attack in ("none", None) or str(attack).startswith("stat_falsify") or not byzantine_ids:
         return updates, metas
 
     updates = [u.clone() for u in updates]
@@ -231,6 +234,43 @@ def poison_updates(attack: str, updates: List[torch.Tensor], metas: List[dict],
             pass
         updates[i] = g.view_as(updates[i])
     return updates, metas
+
+
+def falsify_group_stats(stats: List[Dict[str, float]], byzantine_ids: List[int],
+                        n_cap: float, mode: str = "swap") -> List[Dict[str, float]]:
+    """``stat_falsify``: omniscient statistics attack on the R2 channel.
+
+    Each Byzantine client claims N_{k,a} = n_cap in both groups and, for group a,
+    the honest global rate of the OPPOSITE group (S_{k,a} = n_cap * r_{1-a}^H).
+    Pulling the two aggregate rates toward each other shrinks the estimated gap,
+    so lambda falls. Every claim stays valid (0 <= S <= N <= n_cap). Honest
+    statistics are left untouched.
+
+    ``mode="mid"`` (``stat_falsify_mid``) (``stat_falsify_mid``): both groups claim the pooled honest rate
+    r_mix = (S^H_0 + S^H_1) / (N^H_0 + N^H_1). Each aggregate group rate is then a
+    convex combination of its honest rate and r_mix, so the gap shrinks toward 0
+    without changing sign.
+    """
+    byz = set(byzantine_ids)
+    hon = [st for i, st in enumerate(stats) if i not in byz]
+    rates = []
+    for a in (0, 1):
+        n_tot = sum(st[f"N{a}"] for st in hon)
+        s_tot = sum(st[f"S{a}"] for st in hon)
+        rates.append(s_tot / n_tot if n_tot > 0 else 0.5)
+    if mode == "mid":
+        n_all = sum(st["N0"] + st["N1"] for st in hon)
+        s_all = sum(st["S0"] + st["S1"] for st in hon)
+        r_mix = s_all / n_all if n_all > 0 else 0.5
+        claim = {"S0": n_cap * r_mix, "S1": n_cap * r_mix}
+    elif mode == "swap":
+        claim = {"S0": n_cap * rates[1], "S1": n_cap * rates[0]}
+    else:
+        raise ValueError(f"unknown falsification mode {mode!r}")
+    out = list(stats)
+    for i in byzantine_ids:
+        out[i] = {**claim, "N0": float(n_cap), "N1": float(n_cap)}
+    return out
 
 
 def flip_labels(y: torch.Tensor) -> torch.Tensor:

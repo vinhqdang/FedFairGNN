@@ -115,6 +115,31 @@ METHODS = {
     # the only difference; fu_val_source stays server_holdout because FLTrust
     # requires exactly that root split.
     "fltrust":          dict(model="trustfedgnn", aggregator="fltrust", dp_enabled=False, fu_alpha=0.0),
+
+    # --- TrustFedGNN-R2 (resubmission; docs/trustfedgnn_r2_design.md) ---
+    # Server sees only range-checked sums; fairness is one global Lagrange
+    # multiplier broadcast to clients. FTGD is removed, so dp_enabled=False and
+    # the only privacy mechanism is the noise on the released statistics.
+    "trustfedgnn-r2":      dict(model="trustfedgnn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False),
+    "trustfedgnn-r2-nofser": dict(model="gat", aggregator="secagg_lagrangian",
+                                  fair_mode="lagrangian", dp_enabled=False),
+    # Same as trustfedgnn-r2 with the dual step set to 0: isolates the Lagrangian effect.
+    "r2-clipmean":         dict(model="trustfedgnn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False, r2_lambda_step=0.0),
+    # FedFDP (Ling et al., arXiv:2402.16028): client-level performance fairness,
+    # not demographic parity (design spec Section 5).
+    "fedfdp":              dict(model="gcn", aggregator="fedavg", local_fairness=False,
+                                dp_enabled=True, dp_mode="fedfdp"),
+    # CLAMP: the R2 method under its current name. GAT backbone; GCN is a variant.
+    "clamp":               dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False),
+    "clamp-gcn":           dict(model="gcn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False),
+    "clamp-clipmean":      dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False, r2_lambda_step=0.0),
+    # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
+    "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
 }
 
 # Aggregators to sweep in the Byzantine study (backbone = ours).

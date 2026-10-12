@@ -27,7 +27,7 @@ Rules
 """
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import numpy as np
 
 import torch
@@ -179,6 +179,84 @@ def _write_mu(state: Dict, key: str, mu: float, persist: bool) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# TrustFedGNN-R2 server step (docs/trustfedgnn_r2_design.md, Section 2)
+# --------------------------------------------------------------------------- #
+_R2_TOL = 1e-6
+
+
+def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str, float]]],
+                      state: Dict, *, C: float, tau: float, eta_lambda: float,
+                      n_cap: float, sigma_s: float, sigma_u: float,
+                      generator: torch.Generator = None, release: bool = True,
+                      ) -> Tuple[torch.Tensor, Dict]:
+    """Server step of R2. It sees only sums over clients, and every submission is
+    range-checked first. Rejected submissions are excluded from every sum.
+
+    With ``release=False`` (an off-period round under ``r2_stat_period`` > 1) no
+    statistics are used: the validity check is on norms only, lambda and the
+    direction are left unchanged, and ``stats`` may be None.
+
+    Returns (g_agg, info), with g_agg the pseudo-gradient to subtract from the
+    global model. lambda and the direction are persisted in ``state``.
+    """
+    K = len(updates)
+    lam_in = float(state.get("r2_lambda", 0.0))
+    dir_in = int(state.get("r2_dir", 0))
+
+    accepted = []
+    for k, u in enumerate(updates):
+        ok = float(u.norm(2)) <= C * (1.0 + _R2_TOL)
+        if release:
+            st = stats[k]
+            for a in (0, 1):
+                S, N = st[f"S{a}"], st[f"N{a}"]
+                ok = ok and (0.0 <= S <= N + _R2_TOL) and (0.0 <= N <= n_cap)
+        if ok:
+            accepted.append(k)
+    K_acc = len(accepted)
+    info: Dict = {"weights": [1.0 / K_acc if k in accepted else 0.0 for k in range(K)],
+                  "n_accepted": K_acc, "n_rejected": K - K_acc,
+                  "lambda_in": lam_in}
+
+    # Everything rejected, or no statistics this round: the model, lambda and
+    # direction stay. A zero aggregate is returned when nothing was accepted.
+    if K_acc == 0 or not release:
+        info.update({"lambda": lam_in, "direction": dir_in, "dhat": None,
+                     "gap": None, "u_norm": 0.0})
+        if K_acc == 0:
+            return torch.zeros_like(updates[0].flatten()).view_as(updates[0]), info
+        U = torch.stack([updates[k].flatten() for k in accepted]).sum(0)
+        if sigma_u > 0:
+            U = U + torch.randn(U.shape, generator=generator, dtype=U.dtype) * sigma_u
+        info["u_norm"] = float(U.norm(2))
+        return (U / K_acc).view_as(updates[0]), info
+
+    U = torch.stack([updates[k].flatten() for k in accepted]).sum(0)
+    if sigma_u > 0:
+        U = U + torch.randn(U.shape, generator=generator, dtype=U.dtype) * sigma_u
+    sums = [sum(stats[k][f"S{a}"] for k in accepted) for a in (0, 1)] + \
+           [sum(stats[k][f"N{a}"] for k in accepted) for a in (0, 1)]
+    if sigma_s > 0:
+        noise = torch.randn(4, generator=generator, dtype=torch.float64) * sigma_s
+        sums = [v + float(n) for v, n in zip(sums, noise)]
+    S0, S1, N0, N1 = sums
+    r0 = min(max(S0 / max(N0, 1.0), 0.0), 1.0)
+    r1 = min(max(S1 / max(N1, 1.0), 0.0), 1.0)
+    gap = r1 - r0
+    dhat = abs(gap)
+
+    lam = max(0.0, lam_in + eta_lambda * (dhat - tau))
+    # Dead zone: a gap within tau/2 of zero is treated as no direction.
+    direction = int((gap > 0) - (gap < 0)) if dhat > tau / 2.0 else 0
+    state["r2_lambda"] = lam
+    state["r2_dir"] = direction
+
+    info.update({"lambda": lam, "direction": direction, "dhat": dhat, "gap": gap,
+                 "u_norm": float(U.norm(2))})
+    return (U / K_acc).view_as(updates[0]), info
+
+
+# --------------------------------------------------------------------------- #
 # Dispatcher
 # --------------------------------------------------------------------------- #
 def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
@@ -192,6 +270,8 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
               fu_score: str = "dot", fu_warmup: bool = False,
               fu_grad_clip: float = 0.0, fu_warmup_agg: str = "fedavg",
               bfwa_persist_dual: bool = True,
+              stats: List[Dict[str, float]] = None,
+              secagg: Dict = None,
               ) -> Tuple[torch.Tensor, Dict]:
     """Aggregate client pseudo-gradients under ``method``.
 
@@ -615,6 +695,18 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
                 info["phi_util"] = phi_util.tolist()
                 info["phi_fair"] = phi_fair.tolist()
 
+    elif method == "secagg_lagrangian":
+        # TrustFedGNN-R2. ``secagg`` carries C, eta_lambda, n_cap, sigma_s,
+        # sigma_u and the noise generator; tau comes from the ``tau`` argument.
+        if secagg is None:
+            raise ValueError("secagg_lagrangian needs secagg params")
+        if secagg.get("release", True) and stats is None:
+            raise ValueError("secagg_lagrangian needs per-client stats in a release round")
+        agg, r2_info = secagg_lagrangian(
+            updates, stats, state if state is not None else {}, tau=tau,
+            **secagg)
+        info.update(r2_info)
+
     else:
         raise ValueError(f"Unknown aggregator '{method}'")
 
@@ -625,4 +717,4 @@ ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
                   "robust_fu_shapley", "flame", "fltrust", "fltrust_ema"}
 FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn", "fairgfl", "fedgraphfair",
                 "popets_fairfed", "fu_shapley", "robust_fu_shapley"}
-ALL_METHODS = {"fedavg", "cgsv"} | FAIR_METHODS | ROBUST_METHODS
+ALL_METHODS = {"fedavg", "cgsv", "secagg_lagrangian"} | FAIR_METHODS | ROBUST_METHODS
