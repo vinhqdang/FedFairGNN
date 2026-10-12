@@ -1,0 +1,170 @@
+"""Method presets: map a short method name to ExperimentConfig overrides.
+
+A "method" is a (backbone, aggregator, training-mode) combination. This keeps
+the experiment matrix readable and every reported row traceable to an exact
+configuration. Non-private by default; the privacy study toggles dp_enabled.
+"""
+from __future__ import annotations
+
+# name -> config overrides
+METHODS = {
+    # --- non-fair backbones (FedAvg) ---
+    "fedavg-gcn":   dict(model="gcn", aggregator="fedavg", local_fairness=False, dp_enabled=False),
+    "fedavg-gat":   dict(model="gat", aggregator="fedavg", local_fairness=False, dp_enabled=False),
+
+    # --- fairness-aware FL aggregation baselines (GCN backbone) ---
+    "fairfed":      dict(model="gcn", aggregator="fairfed", local_fairness=True, dp_enabled=False),
+    "qffl":         dict(model="gcn", aggregator="qffl",    local_fairness=False, dp_enabled=False),
+    "fedfb":        dict(model="gcn", aggregator="fedavg",  local_fairness=True, dp_enabled=False),
+
+    # --- fair-GNN baselines (FedAvg) ---
+    "fairgnn":      dict(model="fairgnn", aggregator="fedavg", dp_enabled=False),
+    "fairsin":      dict(model="fairsin", aggregator="fedavg", local_fairness=False, dp_enabled=False),
+
+    # --- federated fair-GNN peer ---
+    # F2GNN's aggregation weight has a data-balance term built from each
+    # client's group1_rate (aggregation.py's "f2gnn" branch); report_group_rate
+    # defaults to False (the privacy-conscious choice for OUR method), which
+    # would silently flatten that term to a constant and degrade this baseline
+    # to its model-fairness term alone. F2GNN claims no DP protection of its
+    # own (dp_enabled=False here), so there is no privacy claim this weakens --
+    # set it explicitly so the baseline runs as designed.
+    "f2gnn":        dict(model="gat", aggregator="f2gnn", local_fairness=True, dp_enabled=False,
+                         report_group_rate=True),
+
+    # --- 2026 competitors ---
+    # FaVGNN (Wang & Jin, Information Fusion 2026): horizontal adaptation of the
+    # completion-driven adversarial fusion (hetero-feature fusion + adversary).
+    "favgnn":       dict(model="favgnn", aggregator="fedavg", dp_enabled=False),
+    # FDP-Fair (Xue & Yu, arXiv 2603.24392, 2026): DP training + demographic-
+    # parity post-processing (group-offset calibration).
+    "fdp-fair":     dict(model="gcn", aggregator="fedavg", local_fairness=False,
+                         dp_enabled=True, dp_mode="gradient", postproc_fair=True),
+
+    # --- 2025 competitors (uploaded PDFs, reimplemented; see docs/BASELINES_AND_SOURCES.md) ---
+    # FairGFL (Zhou et al., IEEE TPDS 2026; arXiv 2512.23235): overlap-aware
+    # aggregation reweighting.
+    "fairgfl":      dict(model="gcn", aggregator="fairgfl", local_fairness=False, dp_enabled=False),
+    # FedGraph-Fair (Khan, Information Sciences 2026): minimax/DRO dual-ascent
+    # reweighting toward high-loss clients (personalisation/graph-mixing dropped).
+    "fedgraphfair": dict(model="gcn", aggregator="fedgraphfair", local_fairness=False, dp_enabled=False),
+    # PUFFLE (Corbucci et al., ECML-PKDD 2024): auto-tuned fairness weight via
+    # a momentum controller tracking a target disparity, + DP-SGD.
+    "puffle":       dict(model="gcn", aggregator="fedavg", local_fairness=True,
+                         dp_enabled=True, dp_mode="puffle"),
+    # FedFACT (Zhang et al., NeurIPS 2025): two-level global+local group-
+    # fairness post-processing (closed-form mean-matching special case).
+    "fedfact":      dict(model="gcn", aggregator="fedavg", local_fairness=False,
+                         dp_enabled=False, fedfact_post=True),
+    # PoPETs'25 (Bendoukha et al.): FHE-friendly FairFed (statistical core only;
+    # the threshold-CKKS cryptography is not reimplemented).
+    "popets-fairfed": dict(model="gcn", aggregator="popets_fairfed", local_fairness=False, dp_enabled=False),
+
+    # --- privacy+fairness baseline (full-gradient DP-SGD) ---
+    "dp-fedavg":    dict(model="gcn", aggregator="fedavg", local_fairness=True,
+                         dp_enabled=True, dp_mode="gradient"),
+
+    # --- ours (and ablations) ---
+    # Method dict KEYS below ("fedfairgnn", "fedfairgnn-nodp") are preserved
+    # as-is even though the paper now calls the method TrustFedGNN: exp_name
+    # (= this key) is baked into every already-logged run_id in results/, so
+    # renaming the key would orphan hundreds of hours of completed runs
+    # (including the multi-hour ogbn-products study) rather than just
+    # relabelling them. Only the internal `model=` dispatch string and every
+    # user-facing display name (PRETTY dict, manuscript) were renamed.
+    "fedfairgnn":       dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd"),
+    "fedfairgnn-nodp":  dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, dp_mode="ftgd"),
+    # "ours-nofser" swaps the WHOLE backbone (model="gat"), which removes FSER
+    # *and* TrustFedGNN's BatchNorm/residual/skip-concat scaffold at once -- any
+    # gain it shows is attributed to FSER when part of it is architecture. Kept
+    # only because its exp_name is baked into already-logged results (see the
+    # note above); do not use it for a new FSER-attribution claim.
+    "ours-nofser":      dict(model="gat",         aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd"),
+    # The faithful w/o-FSER ablation: same backbone (BN, residual, skip-concat
+    # all unchanged), FSER's beta held at 0 and non-trainable (freeze_beta), so
+    # FSERLayer computes EXACTLY plain GAT attention (see
+    # tests/test_fser_init.py::test_frozen_zero_beta_is_exactly_plain_gat_attention)
+    # while every other architectural difference from the baselines is isolated
+    # out. Use this, not "ours-nofser", for any claim attributing a result to FSER.
+    "ours-nofser-true": dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=True, dp_mode="ftgd",
+                             beta_init=0.0, freeze_beta=True),
+    "ours-nobfwa":      dict(model="trustfedgnn", aggregator="fedavg", dp_enabled=False),
+    "ours-robust":      dict(model="trustfedgnn", aggregator="robust_fu_shapley", dp_enabled=True, dp_mode="ftgd"),
+    # + EquFL-style server-side fairness calibration (Yu et al. 2026) stacked
+    # on top of FSER+BFWA -- see docs/BASELINES_AND_SOURCES.md. New method
+    # key (not "fedfairgnn-nodp") so existing cached results are untouched;
+    # only kept as the reported configuration if it's a genuine improvement.
+    "trustfedgnn-plus": dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, server_calib=True),
+
+    # --- FairShare-GNN (R1): FU-Shapley server aggregation, no self-report ---
+    # Same FSER+FTGD client backbone as TrustFedGNN; only the server aggregation
+    # rule changes (metadata ignored for weights). See incentive_mechanism_
+    # proposal.md / implementation_plan_and_ac_review.md.
+    "fairshare":        dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False),
+    "fairshare-robust": dict(model="trustfedgnn", aggregator="robust_fu_shapley", dp_enabled=False),
+    # GTG-Shapley-style utility-only ablation = FairShare with fu_alpha=0 (drops
+    # the fairness target); a free baseline (B4 in recommended_related_work).
+    "gtg-shapley":      dict(model="trustfedgnn", aggregator="fu_shapley", dp_enabled=False, fu_alpha=0.0),
+    # CGSV (Xu et al., NeurIPS 2021): cosine-gradient SV on standard GCN backbone, no server D_val.
+    "cgsv":             dict(model="gcn", aggregator="cgsv", local_fairness=False, dp_enabled=False),
+    # FLTrust (Cao et al., NDSS 2021): server root-dataset update + ReLU(cosine)
+    # trust scores + norm rescaling. The closest structural relative of our
+    # aggregator -- also server-referenced, also metadata-independent -- so it
+    # isolates what the bi-objective target adds over a task-only reference.
+    # Same TrustFedGNN backbone as the "ours" arms so the aggregation rule is
+    # the only difference; fu_val_source stays server_holdout because FLTrust
+    # requires exactly that root split.
+    "fltrust":          dict(model="trustfedgnn", aggregator="fltrust", dp_enabled=False, fu_alpha=0.0),
+
+    # --- TrustFedGNN-R2 (resubmission; docs/trustfedgnn_r2_design.md) ---
+    # Server sees only range-checked sums; fairness is one global Lagrange
+    # multiplier broadcast to clients. FTGD is removed, so dp_enabled=False and
+    # the only privacy mechanism is the noise on the released statistics.
+    "trustfedgnn-r2":      dict(model="trustfedgnn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False),
+    "trustfedgnn-r2-nofser": dict(model="gat", aggregator="secagg_lagrangian",
+                                  fair_mode="lagrangian", dp_enabled=False),
+    # Same as trustfedgnn-r2 with the dual step set to 0: isolates the Lagrangian effect.
+    "r2-clipmean":         dict(model="trustfedgnn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False, r2_lambda_step=0.0),
+    # FedFDP (Ling et al., arXiv:2402.16028): client-level performance fairness,
+    # not demographic parity (design spec Section 5).
+    "fedfdp":              dict(model="gcn", aggregator="fedavg", local_fairness=False,
+                                dp_enabled=True, dp_mode="fedfdp"),
+    # CLAMP: the R2 method under its current name. GAT backbone; GCN is a variant.
+    "clamp":               dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False),
+    "clamp-gcn":           dict(model="gcn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False),
+    "clamp-clipmean":      dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False, r2_lambda_step=0.0),
+    # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
+    "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
+}
+
+# Aggregators to sweep in the Byzantine study (backbone = ours).
+#
+# "fedavg" and "bfwa" are the undefended controls that show the attack lands;
+# the rest are the defences. Kept in step with the library's own ROBUST_METHODS
+# set (src/federated/aggregation.py) by test_method_registry_invariants, so that
+# adding a defence there can no longer leave it silently out of the robustness
+# study -- which is how fu_shapley/robust_fu_shapley, the aggregators the paper
+# actually proposes, were missing from it.
+ROBUST_AGGREGATORS = [
+    "fedavg", "bfwa",                                        # undefended controls
+    "krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
+    # score-based gating: the proposed rule, its robust variant, and the
+    # cosine-similarity credit baseline it is argued against (CGSV).
+    "fu_shapley", "robust_fu_shapley", "cgsv",
+]
+
+FAIR_BASELINES = ["fedavg-gcn", "fedavg-gat", "fairgnn", "fairsin", "fairfed", "qffl", "f2gnn"]
+
+
+def apply_method(config, method: str):
+    if method not in METHODS:
+        raise ValueError(f"Unknown method '{method}'. Available: {list(METHODS)}")
+    for k, v in METHODS[method].items():
+        setattr(config, k, v)
+    config.exp_name = method
+    return config

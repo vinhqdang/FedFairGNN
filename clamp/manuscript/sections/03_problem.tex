@@ -1,0 +1,24 @@
+\section{Problem setting and threat model}\label{sec:problem}
+
+\paragraph{Federated node classification}
+$K$ clients each hold a subgraph $G_k=(V_k,E_k)$ with node features $X_k$, binary labels $y_v\in\{0,1\}$ and a binary sensitive attribute $s_v\in\{0,1\}$. Every client splits its labelled nodes into training, validation and test sets. A graph neural network $f_\theta$ maps each node to a predicted probability $p_\theta(v)\in(0,1)$. The sensitive attribute is \emph{not} a feature: it is removed from $X_k$ before training and the backbone never reads it. The server coordinates $T$ rounds of training of a single global model $\theta$.
+
+\paragraph{Fairness target}
+We use the soft demographic-parity gap of the global model on the union of the clients' nodes,
+\begin{equation}\label{eq:dpd}
+D(\theta)=\bigl|\,r_1(\theta)-r_0(\theta)\,\bigr|,\qquad r_a(\theta)=\frac{\sum_k\sum_{v\in V_k,\,s_v=a}p_\theta(v)}{\sum_k|\{v\in V_k:s_v=a\}|},
+\end{equation}
+and the goal is to train a model whose test-set gap stays below a budget $\tau$ chosen by the federation, at the smallest possible cost in utility:
+\begin{equation}\label{eq:problem}
+\min_\theta\; F(\theta)=\sum_k \tfrac{n_k}{n}F_k(\theta)\quad\text{s.t.}\quad D(\theta)\le\tau .
+\end{equation}
+The constraint is \emph{global}. Under non-IID partitions a client's local gap can differ in sign and magnitude from the global one, so neither local fairness regularisation nor averaging per-client gaps solves~\eqref{eq:problem}.
+
+\paragraph{What the server may see}
+The server is honest-but-curious about individual clients. It must not learn an individual client's update or an individual client's group statistics, and the released aggregate statistics must not reveal any individual node's sensitive attribute beyond a differential-privacy budget.
+
+\paragraph{Byzantine clients}
+Up to $f<K/2$ clients may be Byzantine. They know the protocol, the public constants and the current global state, and may coordinate. They may submit arbitrary model updates and arbitrary group statistics, with one restriction: a submission must pass the validity check of the secure-aggregation layer, which bounds update norms and requires the statistics to describe a possible validation set (Section~\ref{sec:method}). Submissions that fail the check are discarded. We consider two goals of the adversary: to degrade or steer the model (\emph{update attacks}), and to make the federation believe the model is fairer than it is (\emph{statistics attacks}), so that the fairness constraint is relaxed.
+
+\paragraph{Why existing designs do not meet this setting}
+Methods that weight clients by locally computed fairness or loss values~\citep{ezzeldin2023fairfed,li2020fair} need per-client reports, which the server can read and a Byzantine client can forge at will. Byzantine-robust rules such as the coordinate-wise median or Krum~\citep{yin2018byzantine,blanchard2017krum} need the individual updates and are therefore incompatible with secure aggregation. Private fair FL methods~\citep{corbucci2024puffle,ling2024feddp} protect the gradients but assume honest clients. \clamp{} is designed so that the server only ever needs \emph{sums}.

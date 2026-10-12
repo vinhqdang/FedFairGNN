@@ -1,0 +1,86 @@
+\documentclass[preprint,12pt]{elsarticle}
+
+\journal{Knowledge-Based Systems}
+
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{xcolor}
+\usepackage{bm}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\clamp}{\textsc{Clamp}}
+\newcommand{\ncap}{n_{\mathrm{cap}}}
+\newcommand{\Dhat}{\widehat{D}}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{CLAMP: Fairness-Constrained Federated Graph Learning with Secure Aggregation, Private Group Statistics and Bounded Byzantine Influence}
+
+\author[inst1]{Ngoc-Son-An Nguyen}
+\ead{annns25871@pgr.iuh.edu.vn}
+
+\author[inst2]{Quang-Vinh Dang\corref{cor1}}
+\ead{vinh.dq4@buv.edu.vn}
+\cortext[cor1]{Corresponding author. ORCID: 0000-0002-3877-8024}
+
+\affiliation[inst1]{organization={Industrial University of Ho Chi Minh City},
+            city={Ho Chi Minh City},
+            country={Vietnam}}
+
+\affiliation[inst2]{organization={British University Vietnam},
+            city={Hung Yen},
+            country={Vietnam}}
+
+\input{sections/00_abstract}
+
+\end{frontmatter}
+
+\input{sections/01_introduction}
+\input{sections/02_related}
+\input{sections/03_problem}
+\input{sections/04_method}
+\input{sections/05_guarantees}
+\input{sections/06_setup}
+\input{sections/07_results}
+\input{sections/08_discussion}
+\input{sections/09_conclusion}
+
+\section*{CRediT authorship contribution statement}
+\textbf{Ngoc-Son-An Nguyen:} Software, Investigation, Validation, Writing -- original draft.
+\textbf{Quang-Vinh Dang:} Conceptualization, Methodology, Formal analysis, Supervision, Writing -- review \& editing.
+
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+\section*{Data availability}
+All datasets are public benchmarks (German, Bail, Credit, Pokec-z). The code, configuration files and raw per-run results are available from the corresponding author's repository.
+
+\appendix
+\input{sections/10_appendix}
+
+\bibliographystyle{elsarticle-num}
+\bibliography{ref}
+
+\end{document}
