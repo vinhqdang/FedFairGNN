@@ -11,6 +11,10 @@ synthetic testbed for controlled bias studies.
     credit    30,000   Age  (>=25 vs <25)    no default next month credit risk
     bail      18,876   WHITE (race)          recidivism (RECID)     pretrial risk
     pokec_z   ~67k     region                working field         social
+    pokec_n   ~66k     region                working field         social
+    nba       403      country (binary)      SALARY (0/1; -1 unlabelled)  player pay
+    facebook  1,045    gender (cols 264/265) education type (col 220)     ego-net social
+    aminer_s  39,424   continent (majority vs rest)  research field (majority vs rest)  academic
     synthetic  cfg     injected group        injected fraud signal controlled
 
 Files are downloaded on first use from the public NIFTY / FairGNN mirrors and
@@ -309,6 +313,123 @@ def load_pokec_n(root="data", seed=42) -> Data:
     return _load_pokec("pokec_n", root, seed)
 
 
+# --------------------------------------------------------------------------- #
+# FairGNN / PyGDebias loaders (NBA, Facebook ego-net 107, AMiner-S)
+# --------------------------------------------------------------------------- #
+def _remap_edges(e: np.ndarray, ids: np.ndarray) -> torch.Tensor:
+    """Original node ids -> row indices, then undirected, no self-loops, unique."""
+    pos = pd.Series(np.arange(len(ids)), index=ids)
+    a = pos.reindex(e[:, 0]).values
+    b = pos.reindex(e[:, 1]).values
+    keep = ~(np.isnan(a) | np.isnan(b))
+    a, b = a[keep].astype(np.int64), b[keep].astype(np.int64)
+    ei = torch.tensor(np.stack([a, b]), dtype=torch.long)
+    ei = ei[:, ei[0] != ei[1]]
+    return torch.unique(torch.cat([ei, ei.flip(0)], dim=1), dim=1)
+
+
+def _split_on(mask_nodes: torch.Tensor, y: torch.Tensor, seed: int) -> tuple:
+    """_make_splits restricted to ``mask_nodes``; every other node is in no split."""
+    idx = torch.where(mask_nodes)[0]
+    tr, va, te = _make_splits(y[idx], seed)
+    n = y.shape[0]
+    out = []
+    for m in (tr, va, te):
+        full = torch.zeros(n, dtype=torch.bool)
+        full[idx[m]] = True
+        out.append(full)
+    return tuple(out)
+
+
+def load_nba(root="data", seed=42) -> Data:
+    """FairGNN NBA. Unlabelled players (SALARY = -1) stay in the graph but belong
+    to no split mask; their y is set to 0 and is never read by training or metrics."""
+    raw = os.path.join(root, "raw", "nba")
+    df = pd.read_csv(os.path.join(raw, "nba.csv"))
+    ids = df["user_id"].values.astype(np.int64)
+    y_raw = df["SALARY"].values.astype(np.float64)
+    labelled = torch.tensor(y_raw >= 0)
+    y = torch.tensor(np.where(y_raw >= 0, y_raw, 0.0), dtype=torch.float32)
+    s = torch.tensor((df["country"].values > 0).astype(np.int64))
+    feat = df.drop(columns=["user_id", "SALARY", "country"])
+    x = _standardise(feat.apply(pd.to_numeric, errors="coerce").fillna(0.0).values.astype(np.float32))
+    e = np.loadtxt(os.path.join(raw, "nba_relationship.txt"), dtype=np.int64)
+    ei = _remap_edges(e.reshape(-1, 2), ids)
+    train, val, test = _split_on(labelled, y, seed)
+    data = Data(x=x, edge_index=ei, y=y, sensitive_attr=s,
+                train_mask=train, val_mask=val, test_mask=test)
+    data.meta = DatasetMeta("nba", "country", "SALARY", "high salary")
+    return data
+
+
+def load_facebook(root="data", seed=42) -> Data:
+    """PyGDebias Facebook ego-net 107. Sensitive = gender (column 264 of the
+    feature matrix after the id column is dropped); label = column 220. Columns
+    264, 265 (both gender encodings) and 220 are removed from the features."""
+    raw = os.path.join(root, "raw", "facebook")
+    f = np.loadtxt(os.path.join(raw, "107.feat"), dtype=np.float64)
+    ids = f[:, 0].astype(np.int64)
+    m = f[:, 1:]
+    s = torch.tensor(m[:, 264].astype(np.int64))
+    y_t = torch.tensor(m[:, 220], dtype=torch.float32)
+    keep = [c for c in range(m.shape[1]) if c not in (220, 264, 265)]
+    x = _standardise(m[:, keep].astype(np.float32))
+    e = np.loadtxt(os.path.join(raw, "107.edges"), dtype=np.int64)
+    ei = _remap_edges(e.reshape(-1, 2), ids)
+    train, val, test = _make_splits(y_t, seed)
+    data = Data(x=x, edge_index=ei, y=y_t, sensitive_attr=s,
+                train_mask=train, val_mask=val, test_mask=test)
+    data.meta = DatasetMeta("facebook", "gender", "education_type", "education type 1")
+    return data
+
+
+_AMINER_SVD_DIM = 256
+
+
+def _aminer_features(raw: str) -> np.ndarray:
+    """Row i = node i. The dense matrix (39,424 x 5,693) is ~0.9 GB and makes every
+    GNN forward pass too expensive on the shared 4-core CPU, so it is reduced once
+    with TruncatedSVD (256 dims, random_state=0) and the result is cached."""
+    cache = os.path.join(raw, f"X_svd{_AMINER_SVD_DIM}.npy")
+    if os.path.exists(cache):
+        return np.load(cache)
+    import scipy.sparse as sp
+    from sklearn.decomposition import TruncatedSVD
+    npz = np.load(os.path.join(raw, "X_Small.npz"), allow_pickle=True)
+    M = sp.coo_matrix((npz["data"].astype(np.float32), (npz["row"], npz["col"])),
+                      shape=tuple(npz["shape"])).tocsr()
+    z = TruncatedSVD(n_components=_AMINER_SVD_DIM, random_state=0).fit_transform(M)
+    z = z.astype(np.float32)
+    np.save(cache, z)
+    return z
+
+
+def load_aminer_s(root="data", seed=42) -> Data:
+    """PyGDebias LCC_small (AMiner-S). Label = 1 for the most common research field,
+    0 otherwise. Sensitive = continent, binarised as majority value (s = 1) vs rest,
+    because the raw attribute has 7 values."""
+    raw = os.path.join(root, "raw", "aminer_s")
+    lab = np.loadtxt(os.path.join(raw, "labels_Small.txt"), delimiter="\t", dtype=np.float64)
+    sen = np.loadtxt(os.path.join(raw, "sens_Small.txt"), delimiter="\t", dtype=np.float64)
+    ids = lab[:, 0].astype(np.int64)
+    field = lab[:, 1]
+    values, counts = np.unique(field, return_counts=True)
+    y = torch.tensor((field == values[np.argmax(counts)]).astype(np.float32))
+    cont = sen[:, 1]
+    cvals, ccounts = np.unique(cont, return_counts=True)
+    s = torch.tensor((cont == cvals[np.argmax(ccounts)]).astype(np.int64))
+    z = _aminer_features(raw)
+    x = _standardise(z[ids])
+    e = np.loadtxt(os.path.join(raw, "edgelist_Small.txt"), delimiter="\t", dtype=np.int64)
+    ei = _remap_edges(e.reshape(-1, 2), ids)
+    train, val, test = _make_splits(y, seed)
+    data = Data(x=x, edge_index=ei, y=y, sensitive_attr=s,
+                train_mask=train, val_mask=val, test_mask=test)
+    data.meta = DatasetMeta("aminer_s", "continent", "research_field",
+                            "most common research field")
+    return data
+
+
 def load_ogbn_products(root="data", seed=42) -> Data:
     """ogbn-products (Hu et al., 2020): a 2.4M-node, 61M-edge Amazon co-purchase
     graph -- used here as a pure *scalability* stress-test (requires neighbor
@@ -385,6 +506,9 @@ _LOADERS = {
     "elliptic": load_elliptic,
     "pokec_z": load_pokec_z,
     "pokec_n": load_pokec_n,
+    "nba": load_nba,
+    "facebook": load_facebook,
+    "aminer_s": load_aminer_s,
     "ogbn_products": load_ogbn_products,
     "synthetic": load_synthetic,
 }
@@ -408,3 +532,23 @@ def dataset_summary(data: Data) -> dict:
         "group1_rate": float((s == 1).float().mean()),
         "base_rate_gap": float(y[s == 0].float().mean() - y[s == 1].float().mean()),
     }
+
+
+def _summary_table(names) -> str:
+    import time
+    rows = ["| dataset | nodes | undirected edges | features | P(y=1) | P(s=1) | load time (s) |",
+            "|---|---|---|---|---|---|---|"]
+    for name in names:
+        t = time.time()
+        d = load_dataset(name, root="data", seed=42)
+        dt = time.time() - t
+        lab = d.train_mask | d.val_mask | d.test_mask   # labelled nodes only
+        rows.append(f"| {name} | {d.num_nodes} | {d.edge_index.shape[1] // 2} | "
+                    f"{d.x.shape[1]} | {float(d.y[lab].float().mean()):.3f} | "
+                    f"{float((d.sensitive_attr == 1).float().mean()):.3f} | {dt:.1f} |")
+    return "\n".join(rows)
+
+
+if __name__ == "__main__":
+    import sys
+    print(_summary_table(sys.argv[1:] or ["nba", "facebook", "aminer_s", "pokec_n"]))

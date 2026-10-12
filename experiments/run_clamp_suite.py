@@ -54,7 +54,8 @@ E3_ROWS = [("fedavg-gat", {}, "fedavg-gat"),
 
 
 def _clamp_period(dataset: str) -> int:
-    return 10 if dataset == "german" else 1
+    # 10 for the small graphs (german, nba, facebook), 1 otherwise.
+    return 10 if dataset in ("german", "nba", "facebook") else 1
 
 
 def _job(group: str, method: str, dataset: str, seed: int, overrides: Dict) -> Dict:
