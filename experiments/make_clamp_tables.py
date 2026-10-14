@@ -19,7 +19,18 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from experiments.methods import METHODS
-from experiments.run_clamp_suite import E1_METHODS, E3_ATTACKS, E3_ROWS
+from experiments.run_clamp_suite import E1_METHODS, E3_ATTACKS, E3_ROWS, MAIN
+
+# Display names for the E1 table and the ablation tables.
+DISPLAY = {
+    "clamp-f": "CLAMP",
+    "clamp-gcn-f": "CLAMP-GCN",
+    "clamp-select": "CLAMP-Select (no controller)",
+    "clamp-clipmean": "ClipMean (no controller, last iterate)",
+    "clamp": "CLAMP (last iterate)",
+    "clamp-gcn": "CLAMP-GCN (last iterate)",
+    "clamp-p": "CLAMP-P (proportional direction)",
+}
 
 DATASETS = ["german", "bail", "credit", "pokec_z"]
 
@@ -44,7 +55,8 @@ def load_group(root: str, group: str) -> List[Dict]:
             stat_dp=cfg.get("r2_stat_dp", True), clip=cfg.get("r2_clip_norm", 1.0),
             step=cfg.get("r2_lambda_step", 0.5), noise=cfg.get("r2_update_noise", 0.0),
             auc=final.get("auc", math.nan), dpd=final.get("dpd", math.nan),
-            eod=final.get("eod", math.nan), cert=cert, hist=hist))
+            eod=final.get("eod", math.nan), cert=cert, hist=hist,
+            selected=final.get("selected_round")))
     return rows
 
 
@@ -135,22 +147,23 @@ def _missing(outdir: str, name: str, group: str) -> None:
 # E1: main comparison
 # --------------------------------------------------------------------------- #
 def table_e1(rows: List[Dict], outdir: str) -> None:
+    """Main comparison. The Wilcoxon/Holm baseline is the feasible-output CLAMP (MAIN)."""
     rows = [r for r in rows if r["method"] in E1_METHODS]
-    header = ["dataset", "method", "AUC", "DPD", "EOD", "p_AUC (vs clamp)",
-              "p_DPD (vs clamp)", "certificate"]
+    header = ["dataset", "method", "AUC", "DPD", "EOD", "selected round (mean)",
+              "p_AUC (vs CLAMP)", "p_DPD (vs CLAMP)", "certificate"]
     out = []
     for ds in DATASETS:
         dsr = [r for r in rows if r["dataset"] == ds]
         if not dsr:
             continue
         methods = [m for m in E1_METHODS if any(r["method"] == m for r in dsr)]
-        others = [m for m in methods if m != "clamp"]
+        others = [m for m in methods if m != MAIN]
         stats = {}
         for m in methods:
             stats[m] = {k: _ms([r[k] for r in dsr if r["method"] == m]) for k in ("auc", "dpd", "eod")}
-        p_auc = {m: _wilcoxon(_series(dsr, "auc", method=m), _series(dsr, "auc", method="clamp"))
+        p_auc = {m: _wilcoxon(_series(dsr, "auc", method=m), _series(dsr, "auc", method=MAIN))
                  for m in others}
-        p_dpd = {m: _wilcoxon(_series(dsr, "dpd", method=m), _series(dsr, "dpd", method="clamp"))
+        p_dpd = {m: _wilcoxon(_series(dsr, "dpd", method=m), _series(dsr, "dpd", method=MAIN))
                  for m in others}
         h_auc = dict(zip(others, holm([p_auc[m] for m in others])))
         h_dpd = dict(zip(others, holm([p_dpd[m] for m in others])))
@@ -158,23 +171,30 @@ def table_e1(rows: List[Dict], outdir: str) -> None:
             (stats[m][k][0] for m in methods if stats[m][k] is not None), default=None)
             for k in ("auc", "dpd", "eod")}
         for m in methods:
-            cert = [r["cert"] for r in dsr if r["method"] == m]
-            cert_ms = _ms(cert)
+            cert_ms = _ms([r["cert"] for r in dsr if r["method"] == m])
             cell = lambda k: (_fmt(stats[m][k]),
                               stats[m][k] is not None and best[k] is not None
                               and abs(stats[m][k][0] - best[k]) < 1e-12)
-            if m == "clamp":
+            if METHODS.get(m, {}).get("r2_output") == "feasible":
+                sel = [r["selected"] for r in dsr if r["method"] == m]
+                picked = [s for s in sel if s is not None]
+                sel_txt = (f"{np.mean(picked):.1f} ({len(picked)}/{len(sel)})" if picked
+                           else "fallback (no feasible round)")
+            else:
+                sel_txt = "--"
+            if m == MAIN:
                 pa, pd = "--", "--"
             else:
                 pa = f"{h_auc[m]:.3g}" if h_auc[m] == h_auc[m] else "--"
                 pd = f"{h_dpd[m]:.3g}" if h_dpd[m] == h_dpd[m] else "--"
-            out.append([(ds, False), (m, False), cell("auc"), cell("dpd"), cell("eod"),
-                        (pa, False), (pd, False),
+            out.append([(ds, False), (DISPLAY.get(m, m), False), cell("auc"), cell("dpd"),
+                        cell("eod"), (sel_txt, False), (pa, False), (pd, False),
                         (_fmt(cert_ms, 4) if cert_ms else "--", False)])
     if not out:
         return _missing(outdir, "e1_main", "e1")
     write_table(outdir, "e1_main", header, out,
                 "Main comparison (mean $\\pm$ sd over seeds). Best value per dataset in bold. "
+                "Selected round: mean over seeds with a feasible release, (feasible seeds / total). "
                 "p-values: Wilcoxon signed-rank vs CLAMP, paired by seed, Holm within dataset.")
 
 
@@ -210,6 +230,7 @@ def figure_e2(rows: List[Dict], outdir: str) -> None:
 
 
 def table_e2(rows: List[Dict], outdir: str) -> None:
+    rows = [r for r in rows if r["method"] == MAIN]
     if not rows:
         return _missing(outdir, "e2_tau", "e2")
     header = ["dataset", "tau", "AUC", "DPD", "EOD", "n"]
@@ -260,6 +281,7 @@ def table_e3(rows: List[Dict], outdir: str) -> None:
 # E4: statistics attacks and the T3 bound
 # --------------------------------------------------------------------------- #
 def table_e4(rows: List[Dict], outdir: str) -> None:
+    rows = [r for r in rows if r["method"] == MAIN]
     if not rows:
         return _missing(outdir, "e4_stat_attacks", "e4")
     header = ["dataset", "attack", "b", "max_t |dhat-D^H|", "max_t T3 bound",
@@ -313,14 +335,14 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
             for P in sorted({r["P"] for r in rows if r["dataset"] == ds}):
                 sel = [r for r in rows if r["dataset"] == ds and r["eps"] == eps
                        and r["P"] == P and r["stat_dp"]]
-                sel = [r for r in sel if r["method"] == "clamp"]
+                sel = [r for r in sel if r["method"] == MAIN]
                 if not sel:
                     continue
                 out.append([(ds, False), (f"{eps:g}", False), (str(P), False), ("on", False),
                             (_fmt(_ms([r["auc"] for r in sel])), False),
                             (_fmt(_ms([r["dpd"] for r in sel])), False), (str(len(sel)), False)])
         off = [r for r in rows if r["dataset"] == ds and not r["stat_dp"]
-               and r["method"] == "clamp"]
+               and r["method"] == MAIN]
         if off:
             out.append([(ds, False), ("off", False), (str(off[0]["P"]), False), ("off", False),
                         (_fmt(_ms([r["auc"] for r in off])), False),
@@ -344,19 +366,23 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
 def table_e6(rows: List[Dict], outdir: str) -> None:
     if not rows:
         return _missing(outdir, "e6_ablation", "e6")
-    header = ["dataset", "clip C", "step eta", "update noise", "AUC", "DPD", "EOD", "n"]
+    header = ["dataset", "method", "clip C", "step eta", "update noise", "AUC", "DPD", "EOD", "n"]
     out = []
     for ds in ["bail", "credit"]:
-        keys = sorted({(r["clip"], r["step"], r["noise"]) for r in rows if r["dataset"] == ds})
-        for c, s, n in keys:
-            sel = [r for r in rows if r["dataset"] == ds and (r["clip"], r["step"], r["noise"]) == (c, s, n)]
-            out.append([(ds, False), (f"{c:g}", False), (f"{s:g}", False), (f"{n:g}", False),
+        keys = sorted({(r["method"], r["clip"], r["step"], r["noise"]) for r in rows
+                       if r["dataset"] == ds})
+        for m, c, s, n in keys:
+            sel = [r for r in rows if r["dataset"] == ds and r["method"] == m
+                   and (r["clip"], r["step"], r["noise"]) == (c, s, n)]
+            out.append([(ds, False), (DISPLAY.get(m, m), False), (f"{c:g}", False),
+                        (f"{s:g}", False), (f"{n:g}", False),
                         (_fmt(_ms([r["auc"] for r in sel])), False),
                         (_fmt(_ms([r["dpd"] for r in sel])), False),
                         (_fmt(_ms([r["eod"] for r in sel])), False), (str(len(sel)), False)])
     write_table(outdir, "e6_ablation", header, out,
                 "CLAMP ablations, one factor at a time around clip 1, step 0.5, noise 0 "
-                "(mean $\\pm$ sd over seeds).")
+                "(mean $\\pm$ sd over seeds). The last two rows at the default setting are the "
+                "output-rule (last iterate) and direction-rule (proportional) ablations.")
 
 
 def main(argv=None):

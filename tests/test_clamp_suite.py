@@ -7,7 +7,7 @@ from experiments.run_clamp_suite import E1_METHODS, E3_ROWS, expand
 from experiments.run_experiment import build_config, run_id_for
 from src.federated.aggregation import ALL_METHODS
 
-EXPECTED = {"e1": 560, "e2": 90, "e3": 630, "e4": 81, "e5": 160, "e5b": 85, "e6": 42}
+EXPECTED = {"e1": 680, "e2": 90, "e3": 630, "e4": 81, "e5": 160, "e5b": 85, "e6": 54}
 
 
 def test_job_counts_per_group():
