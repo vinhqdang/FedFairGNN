@@ -65,6 +65,19 @@ the difference of two rates in $[0,1]$ is at most $1$ in absolute value, and $x\
 
 The bound depends only on public quantities and on the honest validation mass, so it can be evaluated for every dataset (Table~\ref{tab:t3}). It is tight for a single round: an adversary that reports $N^B_a=f\ncap$ with an extreme rate attains it. It is small when honest validation sets are large relative to $f\ncap$ and weak on small graphs; we report both. Since there are no per-client weights, a Byzantine client cannot gain influence over time by building reputation.
 
+\begin{proposition}[Fairness of the returned model]\label{prop:output}
+Let $\hat\theta$ be the model returned by the output rule, selected at release round $t^\star$, and let $D^H(\hat\theta)$ be the gap of $\hat\theta$ on the honest clients' validation nodes. Under the conditions of Theorem~\ref{thm:stats}, with probability at least $1-\beta$,
+\begin{equation}\label{eq:output}
+D^H(\hat\theta)\le\tau+\sum_{a\in\{0,1\}}\Bigl[b_a+\frac{2e}{N^H_a-e}\Bigr].
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By construction $\Dhat^{t^\star}\le\tau$, and $\Dhat^{t^\star}$ was computed on $\hat\theta$. Theorem~\ref{thm:stats} applied at round $t^\star$ bounds $|\Dhat^{t^\star}-D^H(\hat\theta)|$ by the bracketed sum with probability at least $1-\beta$.
+\end{proof}
+
+The guarantee concerns the validation gap of the honest clients, not the test gap; the difference between the two is a generalisation gap that no protocol-level argument controls, and we measure it in Section~\ref{sec:results}. When no release round is feasible the rule falls back to the last model and the proposition does not apply; we report how often this happens.
+
 \subsection{A certificate for the fairness constraint}
 
 \begin{proposition}[Constraint-violation certificate]\label{prop:cert}

@@ -43,6 +43,9 @@ d^{t+1}&=\begin{cases}\mathrm{sign}(g)&\text{if }|g|>\tau/2,\\0&\text{otherwise.
 \end{align}
 Equation~\eqref{eq:lambda} is projected dual ascent with a constant step $\eta$: the multiplier grows while the estimated gap exceeds the budget and decays otherwise. The dead zone in~\eqref{eq:direction} stops the fairness push once the gap is well inside the budget, and it limits the ability of an adversary to flip the direction (Theorem~\ref{thm:stats}).
 
+\paragraph{Output rule}
+The signed penalty pushes the group rates toward each other with a force that does not shrink as the gap closes, so the gap tends to oscillate around the budget and the last iterate lands at an arbitrary point of the oscillation. \clamp{} therefore does not return the last model. In every release round the server stores the model $\theta^t$ on which the released statistics were computed whenever its released estimate satisfies $\Dhat^t\le\tau$, and at the end it returns the most recently stored model (or the last model if no release round was feasible). The rule uses only released quantities, so it is post-processing and costs no privacy (Theorem~\ref{thm:dp}); Proposition~\ref{prop:output} states what it guarantees.
+
 \paragraph{Release period}
 On small graphs the statistics noise can dominate the gap estimate. \clamp{} therefore releases statistics, and updates $(\lambda,d)$, only every $P$ rounds; in the other rounds clients keep the last broadcast $(\lambda,d)$ and the server aggregates updates only. Privacy is then accounted over $\lceil T/P\rceil$ releases (Theorem~\ref{thm:dp}).
 
@@ -61,8 +64,9 @@ On small graphs the statistics noise can dominate the gap estimate. \clamp{} the
 \IF{$K'=0$} \STATE \textbf{return} $(\theta^t,\lambda^t,d^t)$ \ENDIF
 \STATE $\theta^{t+1}\leftarrow\theta^t-U/K'$
 \IF{$t \bmod P=0$}
-  \STATE compute $g,\Dhat$ by Eq.~\eqref{eq:rates}; update $\lambda^{t+1}$ by Eq.~\eqref{eq:lambda} and $d^{t+1}$ by Eq.~\eqref{eq:direction}
+  \STATE compute $g,\Dhat$ by Eq.~\eqref{eq:rates}; update $\lambda^{t+1}$ by Eq.~\eqref{eq:lambda} and $d^{t+1}$ by Eq.~\eqref{eq:direction}\STATE \textbf{if} $\Dhat\le\tau$ \textbf{then} store $\hat\theta\leftarrow\theta^t$ \COMMENT{output rule}
 \ELSE \STATE $(\lambda^{t+1},d^{t+1})\leftarrow(\lambda^t,d^t)$ \ENDIF
+\STATE \textbf{after round $T$:} return the stored $\hat\theta$ (or $\theta^{T}$ if none was stored)
 \end{algorithmic}
 \end{algorithm}
 
