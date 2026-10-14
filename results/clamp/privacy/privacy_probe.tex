@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Attribute probe on the final global model: AUC of predicting $s$ from penultimate test embeddings (mean $\pm$ sd over seeds).}
+\begin{tabular}{lll}
+\toprule
+method & bail & german \\
+\midrule
+fedavg-gat & 0.536 ± 0.012 & 0.868 ± 0.053 \\
+clamp-clipmean & 0.544 ± 0.011 & 0.865 ± 0.062 \\
+clamp & 0.544 ± 0.011 & 0.861 ± 0.056 \\
+\bottomrule
+\end{tabular}
+\label{tab:privacy_probe}
+\end{table}
