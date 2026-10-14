@@ -448,3 +448,93 @@ def test_fedfdp_meta_is_cached_and_does_not_move_clip():
     a = client.meta()["loss"]
     b = client.meta()["loss"]
     assert a == b and client._fedfdp_clip == clip
+
+
+# --------------------------------------------------------------------------- #
+# Design options: continuous direction and feasible-iterate output (opt-in)
+# --------------------------------------------------------------------------- #
+def test_prop_direction_is_proportional_and_saturates():
+    tau = 0.1
+    cases = {0.05: 0.5, -0.05: -0.5, 0.3: 1.0, -0.3: -1.0, 0.0: 0.0}
+    for gap, want in cases.items():
+        r0 = 0.3
+        s = [_stats(100 * r0, 100, 100 * (r0 + gap), 100)]
+        _, info = secagg_lagrangian([torch.zeros(3)], s, {},
+                                    **_secagg(tau=tau, direction_rule="prop"))
+        assert info["direction"] == pytest.approx(want, abs=1e-9), gap
+
+
+def test_unknown_direction_rule_is_rejected():
+    s = [_stats(30, 100, 60, 100)]
+    with pytest.raises(ValueError):
+        secagg_lagrangian([torch.zeros(3)], s, {}, **_secagg(direction_rule="bogus"))
+
+
+def test_invalid_design_options_are_rejected_by_the_trainer():
+    with pytest.raises(ValueError):
+        FederatedTrainer(_cfg("trustfedgnn-r2", r2_direction="bogus"))
+    with pytest.raises(ValueError):
+        FederatedTrainer(_cfg("trustfedgnn-r2", r2_output="bogus"))
+
+
+def _scripted_secagg(dhats):
+    """Stand-in for secagg_lagrangian: a fixed Dhat per release, and a constant
+    aggregate 0.1 per round so every round's model is distinct."""
+    calls = {"i": 0}
+
+    def stub(updates, stats, state, *, C, tau, eta_lambda, n_cap, sigma_s, sigma_u,
+             generator=None, release=True, direction_rule="sign"):
+        d = dhats[calls["i"]]
+        calls["i"] += 1
+        K = len(updates)
+        g = torch.full_like(updates[0].flatten(), 0.1).view_as(updates[0])
+        info = {"weights": [1.0 / K] * K, "n_accepted": K, "n_rejected": 0,
+                "lambda": 0.0, "lambda_in": 0.0, "direction": 0, "dhat": d,
+                "gap": d, "u_norm": 1.0}
+        return g, info
+    return stub
+
+
+def test_feasible_output_selects_last_feasible_round(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=4, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg([0.5, 0.01, 0.4, 0.02]))
+    trainer = FederatedTrainer(cfg)
+    g0 = trainer.global_flat.clone()
+    res = trainer.run()
+    # Feasible rounds are 2 and 4. Round 4 wins; its statistics were computed on theta^3.
+    assert res["final"]["selected_round"] == 4
+    assert torch.allclose(trainer._feasible_flat, g0 - 0.3, atol=1e-6)
+    assert len(res["history"]) == 4
+    last = trainer.global_flat.clone()
+    trainer.global_flat = trainer._feasible_flat
+    expected = trainer.evaluate_global()
+    trainer.global_flat = last
+    assert res["final"]["auc"] == pytest.approx(expected["auc"])
+
+
+def test_feasible_output_falls_back_to_last_model_when_none_feasible(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=3, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg([0.5, 0.4, 0.3]))
+    trainer = FederatedTrainer(cfg)
+    res = trainer.run()
+    assert res["final"]["selected_round"] is None
+    assert res["final"]["auc"] == pytest.approx(trainer.evaluate_global()["auc"])
+
+
+def test_default_output_has_no_selection_key():
+    trainer = FederatedTrainer(_cfg("trustfedgnn-r2", rounds=1))
+    assert "selected_round" not in trainer.run()["final"]
+
+
+def test_clamp_design_variants_are_registered():
+    expect = {"clamp-p": ("prop", "last"), "clamp-f": ("sign", "feasible"),
+              "clamp-pf": ("prop", "feasible")}
+    for name, (direction, output) in expect.items():
+        cfg = ExperimentConfig()
+        apply_method(cfg, name)
+        assert cfg.r2_direction == direction and cfg.r2_output == output
+        assert cfg.aggregator == "secagg_lagrangian" and cfg.model == "gat"

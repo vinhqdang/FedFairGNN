@@ -138,6 +138,14 @@ METHODS = {
                                 fair_mode="lagrangian", dp_enabled=False),
     "clamp-clipmean":      dict(model="gat", aggregator="secagg_lagrangian",
                                 fair_mode="lagrangian", dp_enabled=False, r2_lambda_step=0.0),
+    # CLAMP variants: continuous direction and/or feasible-iterate output (opt-in).
+    "clamp-p":             dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False, r2_direction="prop"),
+    "clamp-f":             dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False, r2_output="feasible"),
+    "clamp-pf":            dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_direction="prop", r2_output="feasible"),
     # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
     "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
 }

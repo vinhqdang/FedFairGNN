@@ -188,6 +188,7 @@ def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str
                       state: Dict, *, C: float, tau: float, eta_lambda: float,
                       n_cap: float, sigma_s: float, sigma_u: float,
                       generator: torch.Generator = None, release: bool = True,
+                      direction_rule: str = "sign",
                       ) -> Tuple[torch.Tensor, Dict]:
     """Server step of R2. It sees only sums over clients, and every submission is
     range-checked first. Rejected submissions are excluded from every sum.
@@ -201,7 +202,7 @@ def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str
     """
     K = len(updates)
     lam_in = float(state.get("r2_lambda", 0.0))
-    dir_in = int(state.get("r2_dir", 0))
+    dir_in = state.get("r2_dir", 0)
 
     accepted = []
     for k, u in enumerate(updates):
@@ -246,8 +247,14 @@ def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str
     dhat = abs(gap)
 
     lam = max(0.0, lam_in + eta_lambda * (dhat - tau))
-    # Dead zone: a gap within tau/2 of zero is treated as no direction.
-    direction = int((gap > 0) - (gap < 0)) if dhat > tau / 2.0 else 0
+    if direction_rule == "sign":
+        # Dead zone: a gap within tau/2 of zero is treated as no direction.
+        direction = int((gap > 0) - (gap < 0)) if dhat > tau / 2.0 else 0
+    elif direction_rule == "prop":
+        # Continuous direction: proportional to the gap near the target, saturating at +-1.
+        direction = float(min(1.0, max(-1.0, gap / tau))) if tau > 0 else float((gap > 0) - (gap < 0))
+    else:
+        raise ValueError(f"unknown r2 direction rule {direction_rule!r}")
     state["r2_lambda"] = lam
     state["r2_dir"] = direction
 
