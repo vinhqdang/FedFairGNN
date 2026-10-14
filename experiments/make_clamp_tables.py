@@ -297,30 +297,45 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
 # --------------------------------------------------------------------------- #
 # E5: privacy
 # --------------------------------------------------------------------------- #
-def table_e5(rows: List[Dict], outdir: str) -> None:
+def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[float] = None,
+             datasets: Optional[List[str]] = None) -> None:
+    """E5 (privacy sweep). ``group`` = e5b reuses it at a binding fairness budget ``tau``,
+    and adds the unconstrained clamp-clipmean reference as its own row."""
+    name = "e5_privacy" if group == "e5" else f"{group}_privacy"
+    if tau is not None:
+        rows = [r for r in rows if r["tau"] == tau]
     if not rows:
-        return _missing(outdir, "e5_privacy", "e5")
+        return _missing(outdir, name, group)
     header = ["dataset", "epsilon", "P", "stat DP", "AUC", "DPD", "n"]
     out = []
-    for ds in ["german", "bail"]:
+    for ds in (datasets or ["german", "bail"]):
         for eps in sorted({r["eps"] for r in rows if r["dataset"] == ds}):
             for P in sorted({r["P"] for r in rows if r["dataset"] == ds}):
                 sel = [r for r in rows if r["dataset"] == ds and r["eps"] == eps
                        and r["P"] == P and r["stat_dp"]]
+                sel = [r for r in sel if r["method"] == "clamp"]
                 if not sel:
                     continue
                 out.append([(ds, False), (f"{eps:g}", False), (str(P), False), ("on", False),
                             (_fmt(_ms([r["auc"] for r in sel])), False),
                             (_fmt(_ms([r["dpd"] for r in sel])), False), (str(len(sel)), False)])
-        off = [r for r in rows if r["dataset"] == ds and not r["stat_dp"]]
+        off = [r for r in rows if r["dataset"] == ds and not r["stat_dp"]
+               and r["method"] == "clamp"]
         if off:
             out.append([(ds, False), ("off", False), (str(off[0]["P"]), False), ("off", False),
                         (_fmt(_ms([r["auc"] for r in off])), False),
                         (_fmt(_ms([r["dpd"] for r in off])), False),
                         (str(len(off)), False)])
-    write_table(outdir, "e5_privacy", header, out,
+        ref = [r for r in rows if r["dataset"] == ds and r["method"] == "clamp-clipmean"]
+        if ref and group == "e5b":
+            out.append([(ds, False), ("unconstrained", False), (str(ref[0]["P"]), False),
+                        ("clamp-clipmean", False),
+                        (_fmt(_ms([r["auc"] for r in ref])), False),
+                        (_fmt(_ms([r["dpd"] for r in ref])), False), (str(len(ref)), False)])
+    write_table(outdir, name, header, out,
                 "Privacy: utility and fairness versus statistics budget epsilon and release "
-                "period P (mean $\\pm$ sd over seeds).")
+                "period P (mean $\\pm$ sd over seeds)"
+                + (f", fairness budget tau={tau:g}." if tau is not None else "."))
 
 
 # --------------------------------------------------------------------------- #
@@ -349,12 +364,13 @@ def main(argv=None):
     p.add_argument("--root", default=os.path.join("results", "clamp"))
     args = p.parse_args(argv)
     outdir = os.path.join(args.root, "tables")
-    data = {g: load_group(args.root, g) for g in ["e1", "e2", "e3", "e4", "e5", "e6"]}
+    data = {g: load_group(args.root, g) for g in ["e1", "e2", "e3", "e4", "e5", "e5b", "e6"]}
     table_e1(data["e1"], outdir)
     table_e2(data["e2"], outdir)
     table_e3(data["e3"], outdir)
     table_e4(data["e4"], outdir)
     table_e5(data["e5"], outdir)
+    table_e5(data["e5b"], outdir, group="e5b", tau=0.005, datasets=["bail"])
     table_e6(data["e6"], outdir)
 
 

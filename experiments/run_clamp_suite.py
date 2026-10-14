@@ -37,6 +37,8 @@ GROUPS = {
     "e3": dict(seeds=range(3), datasets=["bail", "pokec_z"]),
     "e4": dict(seeds=range(3), datasets=["bail", "pokec_z", "credit"]),
     "e5": dict(seeds=range(5), datasets=["german", "bail"]),
+    # e5 at a binding fairness budget (tau = 0.005; the 0.03 budget never binds on bail).
+    "e5b": dict(seeds=range(5), datasets=["bail"]),
     "e6": dict(seeds=range(3), datasets=["bail", "credit"]),
 }
 
@@ -111,6 +113,17 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                         add("clamp", dataset, seed, {"dp_epsilon": eps, "r2_stat_period": P})
                 add("clamp", dataset, seed, {"r2_stat_dp": False,
                                              "r2_stat_period": _clamp_period(dataset)})
+            elif group == "e5b":
+                tau = 0.005
+                for eps in [1.0, 2.0, 4.0, 8.0, 16.0]:
+                    for P in [1, 5, 10]:
+                        add("clamp", dataset, seed, {"fairness_budget": tau, "dp_epsilon": eps,
+                                                     "r2_stat_period": P})
+                add("clamp", dataset, seed, {"fairness_budget": tau, "r2_stat_dp": False,
+                                             "r2_stat_period": _clamp_period(dataset)})
+                # Unconstrained reference: no Lagrangian term, so tau does not enter.
+                add("clamp-clipmean", dataset, seed, {"fairness_budget": tau,
+                                                      "r2_stat_period": _clamp_period(dataset)})
             elif group == "e6":
                 # One factor at a time around the default (clip 1.0, step 0.5, noise 0).
                 triples = [(1.0, 0.5, 0.0), (0.5, 0.5, 0.0), (2.0, 0.5, 0.0),
