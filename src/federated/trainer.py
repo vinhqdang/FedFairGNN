@@ -49,7 +49,8 @@ def _honest_diagnostics(stats: List[Dict[str, float]], byzantine_ids: List[int],
     f = len(byz)
     b = [f * n_cap / (N[a] + f * n_cap) if f > 0 else 0.0 for a in (0, 1)]
     gap = r[1] - r[0]
-    return {"gap_honest": gap, "dhat_honest": abs(gap), "t3_bound": b[0] + b[1]}
+    return {"gap_honest": gap, "dhat_honest": abs(gap), "t3_bound": b[0] + b[1],
+            "n_cap": n_cap}
 
 
 def _clip_to_norm(u: torch.Tensor, C: float) -> torch.Tensor:

@@ -222,7 +222,7 @@ def write_table(outdir: str, name: str, header, rows, caption: str,
            " & ".join(header) + r" \\", r"\midrule"] + body + [r"\bottomrule", r"\end{tabular}"]
     if resize:
         tab = [r"\resizebox{\textwidth}{!}{%"] + tab + ["}"]
-    lines = [r"\begin{table}[t]", r"\centering", f"\\{size}",
+    lines = [r"\begin{table}[tbp]", r"\centering", f"\\{size}",
              f"\\caption{{{caption}}}", f"\\label{{tab:{name}}}"] + tab + [r"\end{table}", ""]
     with open(os.path.join(outdir, f"{name}.tex"), "w") as f:
         f.write("\n".join(lines))
@@ -368,7 +368,7 @@ def write_e1_compact(rows: List[Dict], outdir: str) -> None:
                "bolded. $^\\dagger$: Holm-adjusted Wilcoxon signed-rank $p<0.05$ against CLAMP, "
                "paired by seed.")
     body = "\n".join([
-        r"\begin{table}[t]", r"\centering", r"\scriptsize", r"\setlength{\tabcolsep}{1.5pt}",
+        r"\begin{table}[tbp]", r"\centering", r"\scriptsize", r"\setlength{\tabcolsep}{1.5pt}",
         f"\\caption{{{caption}}}", r"\label{tab:e1_main_compact}",
         panel(DATASETS[:4]), r"\vspace{4pt}", panel(DATASETS[4:]),
         r"\end{table}", ""])
@@ -525,7 +525,8 @@ def table_e3(rows: List[Dict], outdir: str) -> None:
 
 E3_AGG = [("fedavg-gat", "FedAvg", False), ("fedavg-gat[median]", "Median", True),
           ("fedavg-gat[trimmed_mean]", "Trimmed mean", True),
-          ("fedavg-gat[krum]", "Krum", True), ("clamp-f", "CLAMP", False)]
+          ("fedavg-gat[krum]", "Krum", True), ("clamp-f", "CLAMP", False),
+          ("clamp-clipmean", "ClipMean", False)]
 E3_ATTACK_ROWS = [("none", "None"), ("sign_flip", "Sign-flip"), ("scaling", "Scaling"),
                   ("alie", "ALIE"), ("ipm", "IPM"), ("fairness_poison", "Fairness-poison")]
 
@@ -536,76 +537,71 @@ def _e3_sel(rows, ds, attack, f, label):
 
 
 def write_e3_compact(rows: List[Dict], outdir: str) -> None:
-    """Paper table: attack x aggregator, f=0 (no attack) and f=2, f=4, mean only, two
-    stacked panels by dataset. Best AUC per attack block and f in bold."""
-    rows = [r for r in rows if r["method"] in ("fedavg-gat", "clamp-f")]
+    """Two floats, one per dataset: attack x aggregator, f=0 (no attack, None row only),
+    f=2 and f=4, mean$\\pm$sd in small type. Best AUC per attack and f in bold."""
+    rows = [r for r in rows if r["method"] in ("fedavg-gat", "clamp-f", "clamp-clipmean")]
     if not rows:
-        return _missing(outdir, "e3_compact", "e3")
+        return _missing(outdir, "e3_compact_bail", "e3")
     os.makedirs(outdir, exist_ok=True)
     groups = [(0, "$f=0$"), (2, "$f=2$"), (4, "$f=4$")]
+    short = {"clamp-clipmean": "ClipMean"}
 
-    def mean_of(ds, attack, f, label, metric):
-        ms = _ms([r[metric] for r in _e3_sel(rows, ds, attack, f, label)])
-        return None if ms is None else ms[0]
+    def summ(ds, attack, f, label, metric):
+        return _ms([r[metric] for r in _e3_sel(rows, ds, attack, f, label)])
 
-    def panel(ds):
-        lines = [r"\begin{tabular}{ll" + "cc" * len(groups) + "}", r"\toprule",
+    def float_for(ds, name, label_tex, dname):
+        lines = [r"\begin{table}[tbp]", r"\centering", r"\scriptsize",
+                 r"\setlength{\tabcolsep}{2pt}",
+                 f"\\caption{{Update attacks on {dname}: mean$\\pm$sd over 3 seeds, $K=10$ "
+                 "clients. AUC (two decimals) and DPD (three decimals) at $f=0$ (no attack, None "
+                 "row only), $f=2$ and $f=4$ Byzantine clients. Best AUC per attack and $f$ in "
+                 "bold. $^\\dagger$: median, trimmed mean and Krum inspect individual client "
+                 "updates and cannot run under secure aggregation. ClipMean: clipped mean with "
+                 "no fairness controller, last iterate.}",
+                 f"\\label{{{label_tex}}}",
+                 "\\begin{tabular}{ll" + "cc" * len(groups) + "}", r"\toprule",
                  " & & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{{g}}}" for _, g in groups)
                  + r" \\",
                  " & & " + " & ".join("AUC & DPD" for _ in groups) + r" \\", r"\midrule"]
         for attack, aname in E3_ATTACK_ROWS:
             fs = [0] if attack == "none" else [2, 4]
-            # best AUC per (attack, f) across aggregators
             best = {}
             for f in (0, 2, 4):
-                vals = [mean_of(ds, attack, f, lab, "auc") for lab, _, _ in E3_AGG]
-                vals = [v for v in vals if v is not None]
+                vals = [summ(ds, attack, f, lab, "auc") for lab, _, _ in E3_AGG]
+                vals = [v[0] for v in vals if v is not None]
                 best[f] = max(vals) if vals else None
             for k, (lab, disp, dag) in enumerate(E3_AGG):
-                name = disp + ("$^\\dagger$" if dag else "")
+                name_cell = short.get(lab, disp) + ("$^\\dagger$" if dag else "")
                 cells = []
                 for f, _ in groups:
                     if f not in fs:
                         cells += ["--", "--"]
                         continue
-                    a = mean_of(ds, attack, f, lab, "auc")
-                    d = mean_of(ds, attack, f, lab, "dpd")
+                    a = summ(ds, attack, f, lab, "auc")
+                    d = summ(ds, attack, f, lab, "dpd")
                     if a is None:
                         cells += ["--", "--"]
                         continue
-                    atxt = f"{a:.2f}"
-                    if best[f] is not None and abs(a - best[f]) < 1e-12:
+                    atxt = pm(a, "auc")
+                    if best[f] is not None and abs(a[0] - best[f]) < 1e-12:
                         atxt = f"\\textbf{{{atxt}}}"
-                    cells += [atxt, f"{d:.3f}"]
+                    cells += [atxt, pm(d, "dpd")]
                 lead = (f"\\multirow{{{len(E3_AGG)}}}{{*}}{{{aname}}}" if k == 0 else "")
-                lines.append(f"{lead} & {name} & " + " & ".join(cells) + r" \\")
-            lines.append(r"\midrule")
-        lines[-1] = r"\bottomrule"
-        lines += [r"\end{tabular}"]
-        return "\n".join(lines)
+                lines.append(f"{lead} & {name_cell} & " + " & ".join(cells) + r" \\")
+            if attack != E3_ATTACK_ROWS[-1][0]:
+                lines.append(r"\midrule")
+        lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+        with open(os.path.join(outdir, f"{name}.tex"), "w") as fh:
+            fh.write("\n".join(lines))
+        print(f"wrote {name}.tex")
 
-    caption = ("Update attacks, mean over 3 seeds, K=10 clients. Columns give AUC (two decimals) "
-               "and DPD (three decimals) at $f=0$ (no attack, shown on the None row only), "
-               "$f=2$ and $f=4$ Byzantine clients. Best AUC per attack and $f$ in bold. "
-               "$^\\dagger$: median, trimmed mean and Krum inspect individual client updates and "
-               "cannot run under secure aggregation. Standard deviations are in the full table "
-               "(Appendix).")
-    panels = [panel(d) for d in ["bail", "pokec_z"]]
-    body = "\n".join([r"\begin{table}[t]", r"\centering", r"\footnotesize",
-                      r"\setlength{\tabcolsep}{3pt}",
-                      f"\\caption{{{caption}}}", r"\label{tab:e3}",
-                      f"\\textbf{{{DS_NAME['bail']}}}\\\\[2pt]", panels[0],
-                      r"\vspace{6pt}",
-                      f"\\textbf{{{DS_NAME['pokec_z']}}}\\\\[2pt]", panels[1],
-                      r"\end{table}", ""])
-    with open(os.path.join(outdir, "e3_compact.tex"), "w") as f:
-        f.write(body)
-    print("wrote e3_compact.tex")
+    float_for("bail", "e3_compact_bail", "tab:e3_bail", "Bail")
+    float_for("pokec_z", "e3_compact_pokec", "tab:e3_pokec", "Pokec-z")
 
 
 def write_e3_appendix(rows: List[Dict], outdir: str) -> None:
     """Full E3: every f, mean and sd, both datasets, as a longtable."""
-    rows = [r for r in rows if r["method"] in ("fedavg-gat", "clamp-f")]
+    rows = [r for r in rows if r["method"] in ("fedavg-gat", "clamp-f", "clamp-clipmean")]
     if not rows:
         return _missing(outdir, "e3_full_appendix", "e3")
     os.makedirs(outdir, exist_ok=True)
@@ -739,10 +735,12 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
                           and h.get("dhat_honest") is not None]
                     if not rr:
                         continue
-                    nh, cap = _honest_setup(r["cfg"], r["byz"])
+                    nh, cap_public = _honest_setup(r["cfg"], r["byz"])
+                    # The run's own cap if it logged one, else the public cap. Either way
+                    # this is the cap the attack ran with, so the bound is consistent.
+                    cap = next((h["n_cap"] for h in rr if h.get("n_cap") is not None),
+                               cap_public)
                     f = len(r["byz"])
-                    # b-term with the public cap (the logged t3_bound used the earlier,
-                    # sensitive-dependent group-based cap; see public_n_cap).
                     bterm = sum(f * cap / (nh[a] + f * cap) for a in (0, 1)) if f else 0.0
                     sig = _sigma_s(r["cfg"])
                     noise = sum(_noise_term(sig, nh[a]) for a in (0, 1))
@@ -772,7 +770,9 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
                 "largest Theorem 3 bound (honest-mass term plus statistics-noise term, "
                 f"$\\beta={BETA:g}$) over the release rounds; Viol.: release rounds with the "
                 f"deviation above the bound. Each row covers {per_row}; $f$ is the number of "
-                "falsifying clients out of $K=10$. AUC and DPD: mean$\\pm$sd over seeds.",
+                "falsifying clients out of $K=10$. The bound uses the public cap (the cap the "
+                "attack ran with), so it is computable without any group-level count. "
+                "AUC and DPD: mean$\\pm$sd over seeds.",
                 colspec="llc" + "c" * 5, size="footnotesize")
 
 
@@ -808,7 +808,7 @@ def write_stacked(outdir: str, name: str, out_rows, dss, caption: str) -> None:
             lines.append(" & ".join(cells) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}"]
         panels.append("\n".join(lines))
-    body = "\n".join([r"\begin{table}[t]", r"\centering", r"\footnotesize",
+    body = "\n".join([r"\begin{table}[tbp]", r"\centering", r"\footnotesize",
                       r"\setlength{\tabcolsep}{3pt}",
                       f"\\caption{{{caption}}}", f"\\label{{tab:{name}}}",
                       panels[0], r"\vspace{4pt}", panels[1], r"\end{table}", ""])

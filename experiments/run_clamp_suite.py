@@ -54,6 +54,8 @@ E3_ATTACKS = ["sign_flip", "scaling", "alie", "ipm", "fairness_poison"]
 # with the server aggregator replaced.
 E3_ROWS = [("fedavg-gat", {}, "fedavg-gat"),
            (MAIN, {}, MAIN),
+           # clipped mean (eta = 0, last iterate): the no-controller reference.
+           ("clamp-clipmean", {}, "clamp-clipmean"),
            ("fedavg-gat", {"aggregator": "median"}, "fedavg-gat[median]"),
            ("fedavg-gat", {"aggregator": "trimmed_mean"}, "fedavg-gat[trimmed_mean]"),
            ("fedavg-gat", {"aggregator": "krum"}, "fedavg-gat[krum]")]
