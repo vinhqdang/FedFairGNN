@@ -1,25 +1,30 @@
 \section{Experimental setup}\label{sec:setup}
 
 \paragraph{Datasets}
-We use four standard benchmarks for fair node classification (Table~\ref{tab:data}). \emph{German} (credit risk; sensitive attribute: gender) and \emph{Credit} (credit default; age) are similarity graphs over individuals, \emph{Bail} (bail decisions; race) links defendants with similar records, and \emph{Pokec-z} (a social network; region) is the regional subset of Pokec used in~\citep{dai2021say}. The sensitive attribute is removed from the node features. Each run draws a stratified 50/25/25 train/validation/test split and partitions the nodes over $K=5$ clients with a Dirichlet($\alpha=0.3$) split over labels, which produces strongly non-IID clients. Each client keeps the subgraph induced by its nodes, so cross-client edges are lost (between 21\% and 38\% of the edges survive, Table~\ref{tab:data}). The split, the partition and the model initialisation all depend on the seed.
+We use eight public benchmarks for fair node classification (Table~\ref{tab:data}), all with a genuine binary sensitive attribute. \emph{German} (credit risk; gender) and \emph{Credit} (credit default; age) are similarity graphs over individuals, and \emph{Bail} (bail decisions; race) links defendants with similar records~\citep{agarwal2021towards}. \emph{Pokec-z} and \emph{Pokec-n} (region) are the two regional subsets of the Pokec social network used in~\citep{dai2021say}, and \emph{NBA} (nationality) links basketball players~\citep{dai2021say}. \emph{Facebook} (gender) is ego network 107 of the Facebook social circles data~\citep{mcauley2012learning}, and \emph{AMiner-S} is a co-authorship network whose sensitive attribute is the continent of the author's affiliation; we take both from the PyGDebias collection~\citep{dong2023fairness}. For AMiner-S the attribute has seven values, which we binarise as the most frequent continent against the rest, and we reduce the 5{,}693 bag-of-words features to 256 dimensions with truncated SVD (fixed random state) to keep full-batch training tractable; the label is the most frequent research field against the rest, as in PyGDebias. The sensitive attribute is removed from the node features in every dataset. Each run draws a stratified 50/25/25 train/validation/test split of the labelled nodes and partitions the nodes over $K=5$ clients with a Dirichlet($\alpha=0.3$) split over labels, which produces strongly non-IID clients. Each client keeps the subgraph induced by its nodes, so cross-client edges are lost (Table~\ref{tab:data}). The split, the partition and the model initialisation all depend on the seed.
 
 \begin{table}[t]
 \centering
-\caption{Datasets after preprocessing. Edges are undirected. ``Kept'' is the fraction of edges inside a client after the $K=5$ Dirichlet partition (seed 0). $\ncap$ is the public cap on a client's per-group validation count.}\label{tab:data}
+\small
+\caption{Datasets after preprocessing. Edges are undirected. ``Kept'' is the fraction of edges inside a client after the $K=5$ Dirichlet partition, and $\ncap$ the public cap on a client's per-group validation count (both for seed 0). $P(y{=}1)$ is over labelled nodes.}\label{tab:data}
 \begin{tabular}{lrrrcccr}
 \toprule
 Dataset & Nodes & Edges & Features & $P(y{=}1)$ & $P(s{=}1)$ & Kept & $\ncap$ \\
 \midrule
-German  & 1{,}000  & 21{,}742    & 26  & 0.700 & 0.310 & 0.21 & 50 \\
-Bail    & 18{,}876 & 311{,}870   & 16  & 0.376 & 0.506 & 0.38 & 1{,}000 \\
-Credit  & 30{,}000 & 1{,}421{,}858 & 12  & 0.779 & 0.090 & 0.34 & 2{,}750 \\
-Pokec-z & 67{,}796 & 617{,}958   & 276 & 0.081 & 0.352 & 0.29 & 4{,}050 \\
+German   & 1{,}000  & 21{,}742      & 26  & 0.700 & 0.310 & 0.21 & 50 \\
+Bail     & 18{,}876 & 311{,}870     & 16  & 0.376 & 0.506 & 0.38 & 1{,}150 \\
+Credit   & 30{,}000 & 1{,}421{,}858 & 12  & 0.779 & 0.090 & 0.34 & 3{,}450 \\
+Pokec-z  & 67{,}796 & 617{,}958     & 276 & 0.081 & 0.352 & 0.29 & 4{,}250 \\
+Pokec-n  & 66{,}569 & 517{,}047     & 265 & 0.064 & 0.289 & 0.29 & 4{,}300 \\
+AMiner-S & 39{,}424 & 52{,}460      & 256 & 0.197 & 0.403 & 0.45 & 3{,}350 \\
+NBA      & 403      & 10{,}621      & 95  & 0.508 & 0.266 & 0.33 & 50 \\
+Facebook & 1{,}045  & 26{,}749      & 573 & 0.787 & 0.342 & 0.31 & 100 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Protocol constants}
-All methods train for $T=100$ rounds with $E=3$ full-batch local epochs, AdamW with learning rate $0.01$ and weight decay $10^{-5}$, two-layer backbones with 64 hidden units (GAT: 4 heads) and dropout $0.3$. For \clamp{} we use $C=1$, $\eta=0.5$, fairness budget $\tau=0.03$, statistics privacy $\varepsilon=8$ at $\delta=10^{-5}$ for the attribute-level guarantee of Theorem~\ref{thm:dp}, and release period $P=1$, except $P=10$ on German, whose validation groups are too small for per-round releases (Section~\ref{sec:privacy}). We set $\ncap$ to the largest per-client validation group size rounded up to a multiple of 50. In our experiments this cap is computed from the partition. In deployment it would be fixed from public dataset sizes before training, and Theorem~\ref{thm:dp} assumes it is public. \clamp{} uses a GAT backbone; \clamp{}-GCN swaps in GCN.
+All methods train for $T=100$ rounds with $E=3$ full-batch local epochs, AdamW with learning rate $0.01$ and weight decay $10^{-5}$, two-layer backbones with 64 hidden units (GAT: 4 heads) and dropout $0.3$. For \clamp{} we use $C=1$, $\eta=0.5$, fairness budget $\tau=0.03$, statistics privacy $\varepsilon=8$ at $\delta=10^{-5}$ for the attribute-level guarantee of Theorem~\ref{thm:dp}, and release period $P=1$, except $P=10$ on the three small graphs (German, NBA, Facebook), whose validation groups are too small for per-round releases (Section~\ref{sec:privacy}). \clamp{} returns the model selected by the output rule of Section~\ref{sec:method}. We set $\ncap$ to the largest per-client validation group size rounded up to a multiple of 50. In our experiments this cap is computed from the partition. In deployment it would be fixed from public dataset sizes before training, and Theorem~\ref{thm:dp} assumes it is public. \clamp{} uses a GAT backbone; \clamp{}-GCN swaps in GCN.
 
 \paragraph{Baselines}
 We compare with: FedAvg with GCN and GAT backbones~\citep{mcmahan2017communication}; the fair GNNs FairGNN~\citep{dai2021say} and FairSIN~\citep{yang2024fairsin} trained with FedAvg; the fair FL methods FairFed~\citep{ezzeldin2023fairfed} and FedFACT~\citep{fedfact2025} (closed-form group mean-matching post-processing); the federated graph methods F$^2$GNN~\citep{f2gnn2023}, FairGFL~\citep{fairgfl2026} (its aggregation rule) and FedGraph-Fair~\citep{fedgraphfair2026} (its distributionally robust reweighting, without personalisation); and the private fair methods PUFFLE~\citep{corbucci2024puffle} and FedFDP~\citep{ling2024feddp}, both at gradient privacy $\varepsilon=8$. For FedFDP we clip at the batch level rather than per sample, as in our DP-FedAvg implementation, because per-node gradients are not independent in a message-passing GNN. FedFDP optimises fairness of performance across clients, not group fairness, so it is not expected to reduce the demographic-parity gap. \clamp{}-ClipMean is \clamp{} with $\eta=0$: the same clipped secure aggregation without the fairness controller. It isolates the effect of the multiplier.
