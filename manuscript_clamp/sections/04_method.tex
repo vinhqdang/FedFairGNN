@@ -10,7 +10,7 @@ Client $k$ evaluates the received model on its validation nodes and reports, for
 \begin{equation}\label{eq:stats}
 N_{k,a}=\bigl|\{v\in\mathcal{V}^{\mathrm{val}}_k:s_v=a\}\bigr|,\qquad S_{k,a}=\sum_{v\in\mathcal{V}^{\mathrm{val}}_k,\;s_v=a}p_{\theta^t}(v).
 \end{equation}
-Because $s$ is not an input of the backbone, flipping one node's attribute changes no prediction; it only moves that node's prediction and count from one group to the other. A public constant $\ncap$ bounds $N_{k,a}$; it is fixed per dataset before training (Section~\ref{sec:setup}). A client whose group is larger than $\ncap$ reports a fixed subset chosen once, so every report satisfies $0\le S_{k,a}\le N_{k,a}\le\ncap$.
+Because $s$ is not an input of the backbone, flipping one node's attribute changes no prediction; it only moves that node's prediction and count from one group to the other. A public constant $\ncap$ bounds $N_{k,a}$; it is the largest per-client validation-set size, rounded up, and is fixed before training (Section~\ref{sec:guarantees}). No group can exceed it, so every honest report satisfies $0\le S_{k,a}\le N_{k,a}\le\ncap$ without truncation.
 
 \paragraph{Lagrangian local objective}
 Starting from $\theta^t$, the client runs $E$ local epochs on its training nodes with

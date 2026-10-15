@@ -1,0 +1,5 @@
+- Federated GNN fairness control where the server sees only validated sums
+- One broadcast Lagrange multiplier enforces a global demographic-parity budget
+- Group statistics are computed s-blind and privatised with Gaussian noise
+- Proven scope: attribute-level DP, per-round Byzantine bounds, returned-model gap
+- Eight datasets: budget met where it binds; failure modes reported openly

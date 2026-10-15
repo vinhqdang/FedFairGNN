@@ -10,8 +10,9 @@ D(\theta)=\bigl|\,r_1(\theta)-r_0(\theta)\,\bigr|,\qquad r_a(\theta)=\frac{\sum_
 \end{equation}
 and the goal is to train a model whose test-set gap stays below a budget $\tau$ chosen by the federation, at the smallest possible cost in utility:
 \begin{equation}\label{eq:problem}
-\min_\theta\; F(\theta)=\sum_k \tfrac{n_k}{n}F_k(\theta)\quad\text{s.t.}\quad D(\theta)\le\tau .
+\min_\theta\; F(\theta)=\tfrac{1}{K}\textstyle\sum_k F_k(\theta)\quad\text{s.t.}\quad D(\theta)\le\tau ,
 \end{equation}
+where $F_k$ is the class-weighted cross-entropy of client $k$ on its training nodes; clients are weighted equally, matching the uniform average of the protocol.
 The constraint is \emph{global}. Under non-IID partitions a client's local gap can differ in sign and magnitude from the global one, so neither local fairness regularisation nor averaging per-client gaps solves~\eqref{eq:problem}.
 
 \paragraph{What the server may see}

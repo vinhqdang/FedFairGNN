@@ -6,25 +6,25 @@ We use eight public benchmarks for fair node classification (Table~\ref{tab:data
 \begin{table}[t]
 \centering
 \small
-\caption{Datasets after preprocessing. Edges are undirected. ``Kept'' is the fraction of edges inside a client after the $K=5$ Dirichlet partition, and $\ncap$ the public cap on a client's per-group validation count (both for seed 0). $P(y{=}1)$ is over labelled nodes.}\label{tab:data}
-\begin{tabular}{lrrrcccr}
+\caption{Datasets after preprocessing. Edges are undirected. ``Kept'' is the fraction of edges inside a client after the $K=5$ Dirichlet partition. ``Group cap'' is the attribute-dependent cap (largest per-client validation group size) used in the main experiments; $\ncap$ is the public, attribute-independent cap of Section~\ref{sec:guarantees} (largest per-client validation-set size), used in the statistics-attack study. Both are rounded up to a multiple of 50 and given for seed 0. $P(y{=}1)$ is over labelled nodes.}\label{tab:data}
+\begin{tabular}{lrrrcccrr}
 \toprule
-Dataset & Nodes & Edges & Features & $P(y{=}1)$ & $P(s{=}1)$ & Kept & $\ncap$ \\
+Dataset & Nodes & Edges & Features & $P(y{=}1)$ & $P(s{=}1)$ & Kept & Group cap & $\ncap$ \\
 \midrule
-German   & 1{,}000  & 21{,}742      & 26  & 0.700 & 0.310 & 0.21 & 50 \\
-Bail     & 18{,}876 & 311{,}870     & 16  & 0.376 & 0.506 & 0.38 & 1{,}150 \\
-Credit   & 30{,}000 & 1{,}421{,}858 & 12  & 0.779 & 0.090 & 0.34 & 3{,}450 \\
-Pokec-z  & 67{,}796 & 617{,}958     & 276 & 0.081 & 0.352 & 0.29 & 4{,}250 \\
-Pokec-n  & 66{,}569 & 517{,}047     & 265 & 0.064 & 0.289 & 0.29 & 4{,}300 \\
-AMiner-S & 39{,}424 & 52{,}460      & 256 & 0.197 & 0.403 & 0.45 & 3{,}350 \\
-NBA      & 403      & 10{,}621      & 95  & 0.508 & 0.266 & 0.33 & 50 \\
-Facebook & 1{,}045  & 26{,}749      & 573 & 0.787 & 0.342 & 0.31 & 100 \\
+German   & 1{,}000  & 21{,}742      & 26  & 0.700 & 0.310 & 0.21 & 50 & 100 \\
+Bail     & 18{,}876 & 311{,}870     & 16  & 0.376 & 0.506 & 0.38 & 1{,}150 & 2{,}100 \\
+Credit   & 30{,}000 & 1{,}421{,}858 & 12  & 0.779 & 0.090 & 0.34 & 3{,}450 & 3{,}800 \\
+Pokec-z  & 67{,}796 & 617{,}958     & 276 & 0.081 & 0.352 & 0.29 & 4{,}250 & 6{,}500 \\
+Pokec-n  & 66{,}569 & 517{,}047     & 265 & 0.064 & 0.289 & 0.29 & 4{,}300 & 6{,}050 \\
+AMiner-S & 39{,}424 & 52{,}460      & 256 & 0.197 & 0.403 & 0.45 & 3{,}350 & 5{,}600 \\
+NBA      & 403      & 10{,}621      & 95  & 0.508 & 0.266 & 0.33 & 50 & 50 \\
+Facebook & 1{,}045  & 26{,}749      & 573 & 0.787 & 0.342 & 0.31 & 100 & 150 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Protocol constants}
-All methods train for $T=100$ rounds with $E=3$ full-batch local epochs, AdamW with learning rate $0.01$ and weight decay $10^{-5}$, two-layer backbones with 64 hidden units (GAT: 4 heads) and dropout $0.3$. For \clamp{} we use $C=1$, $\eta=0.5$, fairness budget $\tau=0.03$, statistics privacy $\varepsilon=8$ at $\delta=10^{-5}$ for Theorem~\ref{thm:dp}, and release period $P=1$. On the three small graphs (German, NBA, Facebook) we use $P=10$; this choice was made before the experiments, on the expectation that per-round noise would dominate there, and the privacy sweep in the supplementary material shows that it is not better than $P=1$ on German for most budgets. These constants were fixed before the main experiments and were not tuned per dataset. The output rule uses a warm-up of $W=\lceil0.2T\rceil=20$ rounds. We added the warm-up after observing, in a first analysis of the results, that without it the rule sometimes returned the barely trained round-1 model. Because the per-round test metrics are logged, the rule with warm-up was applied exactly to all runs; it changed 49 of the runs, which are listed in the released results. $\ncap$ must be public (Section~\ref{sec:guarantees}). In our experiments it was computed per group: the largest per-client validation group size, rounded up to a multiple of 50 (Table~\ref{tab:data}). This is smaller than the public, attribute-independent cap of Section~\ref{sec:guarantees}, the largest per-client validation-set size. It does not affect honest runs, because no report is truncated under either cap, but it makes the statistics attacks of Section~\ref{sec:statattack} weaker than an adversary under the public cap could make them. \clamp{} uses a GAT backbone, and \clamp{}-GCN swaps in GCN.
+All methods train for $T=100$ rounds with $E=3$ full-batch local epochs, AdamW with learning rate $0.01$ and weight decay $10^{-5}$, two-layer backbones with 64 hidden units (GAT: 4 heads) and dropout $0.3$. For \clamp{} we use $C=1$, $\eta=0.5$, fairness budget $\tau=0.03$, statistics privacy $\varepsilon=8$ at $\delta=10^{-5}$ for Theorem~\ref{thm:dp}, and release period $P=1$. On the three small graphs (German, NBA, Facebook) we use $P=10$; this choice was made before the experiments, on the expectation that per-round noise would dominate there, and the privacy sweep in the supplementary material shows that it is not better than $P=1$ on German for most budgets. These constants were fixed before the main experiments and were not tuned per dataset. The output rule itself was added after a first analysis showed that the last iterate oscillates around the budget (the ``last iterate'' rows of Table~\ref{tab:e1_main_compact} report the original method), and it uses a warm-up of $W=\lceil0.2T\rceil=20$ rounds. We added the warm-up after observing that without it the rule sometimes returned the barely trained round-1 model. Because the per-round test metrics are logged, the rule with warm-up was applied exactly to all runs; it changed 49 of the runs, which are listed in the released results. $\ncap$ must be public (Section~\ref{sec:guarantees}). The main experiments computed the cap per group, as the largest per-client validation group size (``group cap'' in Table~\ref{tab:data}), which depends on the attribute. This does not affect honest runs, because no report is truncated under either cap; the only place where the cap matters is the statistics-attack study, which we therefore run with the public cap $\ncap$. \clamp{} uses a GAT backbone, and \clamp{}-GCN swaps in GCN.
 
 \paragraph{Baselines}
 We compare with eleven baselines.
