@@ -1,106 +1,106 @@
 Dataset,Attack,Aggregator,f,AUC,DPD
-Bail,None,FedAvg-GAT,0,0.75±0.01,0.012±0.001
-Bail,None,CLAMP,0,0.74±0.01,0.012±0.001
-Bail,None,FedAvg-GAT (median),0,0.72±0.01,0.007±0.000
-Bail,None,FedAvg-GAT (trimmed mean),0,0.74±0.02,0.014±0.002
-Bail,None,FedAvg-GAT (krum),0,0.72±0.02,0.002±0.001
-Bail,Sign-flip,FedAvg-GAT,1,0.54±0.13,0.029±0.020
-Bail,Sign-flip,FedAvg-GAT,2,0.39±0.00,0.019±0.017
-Bail,Sign-flip,FedAvg-GAT,3,0.38±0.01,0.033±0.022
-Bail,Sign-flip,FedAvg-GAT,4,0.40±0.00,0.032±0.003
-Bail,Sign-flip,CLAMP,1,0.72±0.01,0.009±0.005
-Bail,Sign-flip,CLAMP,2,0.67±0.01,0.013±0.011
-Bail,Sign-flip,CLAMP,3,0.66±0.02,0.010±0.014
-Bail,Sign-flip,CLAMP,4,0.64±0.01,0.017±0.012
-Bail,Sign-flip,FedAvg-GAT (median),1,0.71±0.01,0.008±0.005
-Bail,Sign-flip,FedAvg-GAT (median),2,0.66±0.01,0.011±0.008
-Bail,Sign-flip,FedAvg-GAT (median),3,0.65±0.02,0.009±0.007
-Bail,Sign-flip,FedAvg-GAT (median),4,0.61±0.01,0.011±0.008
-Bail,Sign-flip,FedAvg-GAT (trimmed mean),1,0.72±0.01,0.010±0.005
-Bail,Sign-flip,FedAvg-GAT (trimmed mean),2,0.68±0.01,0.013±0.001
-Bail,Sign-flip,FedAvg-GAT (trimmed mean),3,0.66±0.00,0.007±0.005
-Bail,Sign-flip,FedAvg-GAT (trimmed mean),4,0.63±0.00,0.025±0.015
-Bail,Sign-flip,FedAvg-GAT (krum),1,0.72±0.01,0.007±0.002
-Bail,Sign-flip,FedAvg-GAT (krum),2,0.69±0.02,0.004±0.003
-Bail,Sign-flip,FedAvg-GAT (krum),3,0.70±0.01,0.007±0.009
-Bail,Sign-flip,FedAvg-GAT (krum),4,0.70±0.00,0.012±0.005
-Bail,Scaling,FedAvg-GAT,1,0.71±0.01,0.002±0.000
-Bail,Scaling,FedAvg-GAT,2,0.50±0.05,0.013±0.006
-Bail,Scaling,FedAvg-GAT,3,0.46±0.03,0.002±0.000
-Bail,Scaling,FedAvg-GAT,4,0.49±0.03,0.002±0.000
-Bail,Scaling,CLAMP,1,0.74±0.01,0.011±0.001
-Bail,Scaling,CLAMP,2,0.74±0.01,0.011±0.001
-Bail,Scaling,CLAMP,3,0.74±0.01,0.012±0.001
-Bail,Scaling,CLAMP,4,0.74±0.01,0.012±0.001
-Bail,Scaling,FedAvg-GAT (median),1,0.72±0.01,0.010±0.001
-Bail,Scaling,FedAvg-GAT (median),2,0.72±0.01,0.011±0.000
-Bail,Scaling,FedAvg-GAT (median),3,0.72±0.01,0.007±0.001
-Bail,Scaling,FedAvg-GAT (median),4,0.72±0.01,0.006±0.007
-Bail,Scaling,FedAvg-GAT (trimmed mean),1,0.75±0.01,0.013±0.001
-Bail,Scaling,FedAvg-GAT (trimmed mean),2,0.74±0.00,0.015±0.005
-Bail,Scaling,FedAvg-GAT (trimmed mean),3,0.74±0.01,0.009±0.002
-Bail,Scaling,FedAvg-GAT (trimmed mean),4,0.74±0.01,0.009±0.000
-Bail,Scaling,FedAvg-GAT (krum),1,0.72±0.02,0.007±0.002
-Bail,Scaling,FedAvg-GAT (krum),2,0.69±0.01,0.003±0.004
-Bail,Scaling,FedAvg-GAT (krum),3,0.70±0.02,0.002±0.001
-Bail,Scaling,FedAvg-GAT (krum),4,0.70±0.00,0.012±0.005
+Bail,None,FedAvg-GAT,0,0.76±0.01,0.011±0.002
+Bail,None,CLAMP,0,0.75±0.02,0.011±0.002
+Bail,None,FedAvg-GAT (median),0,0.73±0.01,0.007±0.000
+Bail,None,FedAvg-GAT (trimmed mean),0,0.75±0.02,0.013±0.002
+Bail,None,FedAvg-GAT (krum),0,0.72±0.02,0.003±0.001
+Bail,Sign-flip,FedAvg-GAT,1,0.54±0.09,0.024±0.017
+Bail,Sign-flip,FedAvg-GAT,2,0.38±0.03,0.020±0.012
+Bail,Sign-flip,FedAvg-GAT,3,0.37±0.02,0.033±0.016
+Bail,Sign-flip,FedAvg-GAT,4,0.39±0.03,0.032±0.002
+Bail,Sign-flip,CLAMP,1,0.73±0.02,0.010±0.003
+Bail,Sign-flip,CLAMP,2,0.69±0.04,0.010±0.009
+Bail,Sign-flip,CLAMP,3,0.68±0.04,0.009±0.010
+Bail,Sign-flip,CLAMP,4,0.66±0.03,0.014±0.009
+Bail,Sign-flip,FedAvg-GAT (median),1,0.72±0.01,0.009±0.004
+Bail,Sign-flip,FedAvg-GAT (median),2,0.68±0.04,0.011±0.006
+Bail,Sign-flip,FedAvg-GAT (median),3,0.67±0.04,0.007±0.006
+Bail,Sign-flip,FedAvg-GAT (median),4,0.63±0.04,0.012±0.006
+Bail,Sign-flip,FedAvg-GAT (trimmed mean),1,0.73±0.02,0.011±0.004
+Bail,Sign-flip,FedAvg-GAT (trimmed mean),2,0.70±0.04,0.012±0.001
+Bail,Sign-flip,FedAvg-GAT (trimmed mean),3,0.68±0.04,0.009±0.006
+Bail,Sign-flip,FedAvg-GAT (trimmed mean),4,0.65±0.03,0.023±0.011
+Bail,Sign-flip,FedAvg-GAT (krum),1,0.71±0.01,0.009±0.004
+Bail,Sign-flip,FedAvg-GAT (krum),2,0.70±0.03,0.007±0.004
+Bail,Sign-flip,FedAvg-GAT (krum),3,0.71±0.01,0.009±0.007
+Bail,Sign-flip,FedAvg-GAT (krum),4,0.71±0.02,0.010±0.004
+Bail,Scaling,FedAvg-GAT,1,0.70±0.01,0.002±0.000
+Bail,Scaling,FedAvg-GAT,2,0.49±0.04,0.011±0.005
+Bail,Scaling,FedAvg-GAT,3,0.49±0.07,0.002±0.001
+Bail,Scaling,FedAvg-GAT,4,0.54±0.07,0.002±0.001
+Bail,Scaling,CLAMP,1,0.75±0.02,0.010±0.002
+Bail,Scaling,CLAMP,2,0.75±0.02,0.010±0.002
+Bail,Scaling,CLAMP,3,0.75±0.02,0.010±0.002
+Bail,Scaling,CLAMP,4,0.75±0.02,0.011±0.002
+Bail,Scaling,FedAvg-GAT (median),1,0.73±0.01,0.009±0.002
+Bail,Scaling,FedAvg-GAT (median),2,0.73±0.03,0.010±0.003
+Bail,Scaling,FedAvg-GAT (median),3,0.74±0.03,0.006±0.002
+Bail,Scaling,FedAvg-GAT (median),4,0.73±0.02,0.005±0.005
+Bail,Scaling,FedAvg-GAT (trimmed mean),1,0.76±0.02,0.012±0.001
+Bail,Scaling,FedAvg-GAT (trimmed mean),2,0.75±0.01,0.012±0.007
+Bail,Scaling,FedAvg-GAT (trimmed mean),3,0.75±0.01,0.007±0.003
+Bail,Scaling,FedAvg-GAT (trimmed mean),4,0.75±0.01,0.008±0.002
+Bail,Scaling,FedAvg-GAT (krum),1,0.71±0.01,0.009±0.004
+Bail,Scaling,FedAvg-GAT (krum),2,0.71±0.02,0.006±0.005
+Bail,Scaling,FedAvg-GAT (krum),3,0.70±0.02,0.005±0.006
+Bail,Scaling,FedAvg-GAT (krum),4,0.71±0.02,0.010±0.004
 Bail,ALIE,FedAvg-GAT,1,0.75±0.01,0.014±0.000
-Bail,ALIE,FedAvg-GAT,2,0.71±0.00,0.012±0.001
-Bail,ALIE,FedAvg-GAT,3,0.72±0.01,0.008±0.001
-Bail,ALIE,FedAvg-GAT,4,0.71±0.00,0.009±0.002
-Bail,ALIE,CLAMP,1,0.73±0.01,0.012±0.003
-Bail,ALIE,CLAMP,2,0.70±0.01,0.008±0.000
-Bail,ALIE,CLAMP,3,0.72±0.01,0.007±0.000
-Bail,ALIE,CLAMP,4,0.70±0.00,0.007±0.002
-Bail,ALIE,FedAvg-GAT (median),1,0.74±0.01,0.010±0.000
-Bail,ALIE,FedAvg-GAT (median),2,0.70±0.00,0.008±0.002
-Bail,ALIE,FedAvg-GAT (median),3,0.71±0.01,0.008±0.001
-Bail,ALIE,FedAvg-GAT (median),4,0.68±0.01,0.002±0.002
-Bail,ALIE,FedAvg-GAT (trimmed mean),1,0.74±0.01,0.013±0.001
-Bail,ALIE,FedAvg-GAT (trimmed mean),2,0.71±0.01,0.009±0.002
-Bail,ALIE,FedAvg-GAT (trimmed mean),3,0.71±0.02,0.009±0.002
-Bail,ALIE,FedAvg-GAT (trimmed mean),4,0.68±0.01,0.002±0.002
-Bail,ALIE,FedAvg-GAT (krum),1,0.72±0.01,0.011±0.005
-Bail,ALIE,FedAvg-GAT (krum),2,0.71±0.01,0.009±0.001
-Bail,ALIE,FedAvg-GAT (krum),3,0.71±0.01,0.008±0.001
-Bail,ALIE,FedAvg-GAT (krum),4,0.68±0.01,0.002±0.003
-Bail,IPM,FedAvg-GAT,1,0.75±0.01,0.012±0.001
-Bail,IPM,FedAvg-GAT,2,0.71±0.00,0.010±0.001
-Bail,IPM,FedAvg-GAT,3,0.71±0.00,0.008±0.001
-Bail,IPM,FedAvg-GAT,4,0.71±0.00,0.008±0.001
-Bail,IPM,CLAMP,1,0.73±0.01,0.010±0.003
-Bail,IPM,CLAMP,2,0.70±0.00,0.007±0.001
-Bail,IPM,CLAMP,3,0.71±0.01,0.006±0.003
-Bail,IPM,CLAMP,4,0.70±0.01,0.004±0.002
-Bail,IPM,FedAvg-GAT (median),1,0.73±0.01,0.009±0.001
-Bail,IPM,FedAvg-GAT (median),2,0.70±0.00,0.006±0.000
-Bail,IPM,FedAvg-GAT (median),3,0.68±0.02,0.003±0.000
-Bail,IPM,FedAvg-GAT (median),4,0.60±0.01,0.008±0.002
-Bail,IPM,FedAvg-GAT (trimmed mean),1,0.73±0.01,0.013±0.001
-Bail,IPM,FedAvg-GAT (trimmed mean),2,0.71±0.01,0.009±0.001
-Bail,IPM,FedAvg-GAT (trimmed mean),3,0.71±0.00,0.005±0.003
-Bail,IPM,FedAvg-GAT (trimmed mean),4,0.66±0.00,0.003±0.000
-Bail,IPM,FedAvg-GAT (krum),1,0.57±0.00,0.020±0.013
-Bail,IPM,FedAvg-GAT (krum),2,0.48±0.02,0.007±0.004
-Bail,IPM,FedAvg-GAT (krum),3,0.43±0.03,0.025±0.018
-Bail,IPM,FedAvg-GAT (krum),4,0.39±0.04,0.021±0.008
+Bail,ALIE,FedAvg-GAT,2,0.73±0.03,0.012±0.001
+Bail,ALIE,FedAvg-GAT,3,0.73±0.02,0.007±0.002
+Bail,ALIE,FedAvg-GAT,4,0.72±0.02,0.008±0.002
+Bail,ALIE,CLAMP,1,0.74±0.02,0.012±0.002
+Bail,ALIE,CLAMP,2,0.72±0.03,0.008±0.000
+Bail,ALIE,CLAMP,3,0.73±0.02,0.007±0.000
+Bail,ALIE,CLAMP,4,0.72±0.03,0.008±0.002
+Bail,ALIE,FedAvg-GAT (median),1,0.75±0.02,0.009±0.001
+Bail,ALIE,FedAvg-GAT (median),2,0.72±0.03,0.007±0.003
+Bail,ALIE,FedAvg-GAT (median),3,0.73±0.03,0.007±0.002
+Bail,ALIE,FedAvg-GAT (median),4,0.70±0.03,0.002±0.002
+Bail,ALIE,FedAvg-GAT (trimmed mean),1,0.75±0.02,0.013±0.001
+Bail,ALIE,FedAvg-GAT (trimmed mean),2,0.73±0.03,0.009±0.002
+Bail,ALIE,FedAvg-GAT (trimmed mean),3,0.73±0.03,0.007±0.003
+Bail,ALIE,FedAvg-GAT (trimmed mean),4,0.70±0.03,0.002±0.001
+Bail,ALIE,FedAvg-GAT (krum),1,0.73±0.02,0.012±0.004
+Bail,ALIE,FedAvg-GAT (krum),2,0.73±0.03,0.008±0.001
+Bail,ALIE,FedAvg-GAT (krum),3,0.72±0.03,0.007±0.003
+Bail,ALIE,FedAvg-GAT (krum),4,0.70±0.03,0.002±0.002
+Bail,IPM,FedAvg-GAT,1,0.75±0.01,0.011±0.001
+Bail,IPM,FedAvg-GAT,2,0.72±0.02,0.010±0.001
+Bail,IPM,FedAvg-GAT,3,0.72±0.02,0.009±0.002
+Bail,IPM,FedAvg-GAT,4,0.71±0.02,0.009±0.002
+Bail,IPM,CLAMP,1,0.74±0.02,0.010±0.002
+Bail,IPM,CLAMP,2,0.72±0.03,0.007±0.001
+Bail,IPM,CLAMP,3,0.72±0.02,0.006±0.002
+Bail,IPM,CLAMP,4,0.71±0.02,0.005±0.002
+Bail,IPM,FedAvg-GAT (median),1,0.74±0.02,0.007±0.003
+Bail,IPM,FedAvg-GAT (median),2,0.71±0.03,0.005±0.002
+Bail,IPM,FedAvg-GAT (median),3,0.70±0.03,0.004±0.001
+Bail,IPM,FedAvg-GAT (median),4,0.63±0.05,0.007±0.002
+Bail,IPM,FedAvg-GAT (trimmed mean),1,0.74±0.02,0.013±0.001
+Bail,IPM,FedAvg-GAT (trimmed mean),2,0.72±0.03,0.009±0.001
+Bail,IPM,FedAvg-GAT (trimmed mean),3,0.72±0.02,0.006±0.002
+Bail,IPM,FedAvg-GAT (trimmed mean),4,0.67±0.03,0.005±0.002
+Bail,IPM,FedAvg-GAT (krum),1,0.57±0.00,0.014±0.014
+Bail,IPM,FedAvg-GAT (krum),2,0.47±0.02,0.005±0.005
+Bail,IPM,FedAvg-GAT (krum),3,0.42±0.03,0.022±0.014
+Bail,IPM,FedAvg-GAT (krum),4,0.38±0.03,0.022±0.006
 Bail,Fairness-poison,FedAvg-GAT,1,0.75±0.01,0.008±0.002
-Bail,Fairness-poison,FedAvg-GAT,2,0.71±0.00,0.020±0.010
-Bail,Fairness-poison,FedAvg-GAT,3,0.70±0.01,0.021±0.002
-Bail,Fairness-poison,FedAvg-GAT,4,0.69±0.01,0.025±0.004
-Bail,Fairness-poison,CLAMP,1,0.73±0.01,0.011±0.002
-Bail,Fairness-poison,CLAMP,2,0.71±0.00,0.009±0.010
-Bail,Fairness-poison,CLAMP,3,0.71±0.01,0.012±0.010
-Bail,Fairness-poison,CLAMP,4,0.70±0.00,0.013±0.000
-Bail,Fairness-poison,FedAvg-GAT (median),1,0.71±0.01,0.008±0.007
-Bail,Fairness-poison,FedAvg-GAT (median),2,0.70±0.01,0.008±0.008
-Bail,Fairness-poison,FedAvg-GAT (median),3,0.70±0.01,0.012±0.010
-Bail,Fairness-poison,FedAvg-GAT (median),4,0.69±0.00,0.007±0.000
-Bail,Fairness-poison,FedAvg-GAT (trimmed mean),1,0.73±0.01,0.013±0.003
-Bail,Fairness-poison,FedAvg-GAT (trimmed mean),2,0.72±0.01,0.009±0.012
-Bail,Fairness-poison,FedAvg-GAT (trimmed mean),3,0.71±0.00,0.016±0.009
-Bail,Fairness-poison,FedAvg-GAT (trimmed mean),4,0.71±0.00,0.012±0.000
-Bail,Fairness-poison,FedAvg-GAT (krum),1,0.73±0.01,0.003±0.000
-Bail,Fairness-poison,FedAvg-GAT (krum),2,0.70±0.00,0.009±0.001
-Bail,Fairness-poison,FedAvg-GAT (krum),3,0.69±0.01,0.003±0.003
-Bail,Fairness-poison,FedAvg-GAT (krum),4,0.72±0.00,0.001±0.000
+Bail,Fairness-poison,FedAvg-GAT,2,0.72±0.02,0.014±0.011
+Bail,Fairness-poison,FedAvg-GAT,3,0.71±0.03,0.018±0.005
+Bail,Fairness-poison,FedAvg-GAT,4,0.70±0.03,0.021±0.008
+Bail,Fairness-poison,CLAMP,1,0.74±0.02,0.012±0.003
+Bail,Fairness-poison,CLAMP,2,0.72±0.03,0.011±0.008
+Bail,Fairness-poison,CLAMP,3,0.72±0.02,0.009±0.009
+Bail,Fairness-poison,CLAMP,4,0.72±0.02,0.014±0.001
+Bail,Fairness-poison,FedAvg-GAT (median),1,0.72±0.02,0.008±0.005
+Bail,Fairness-poison,FedAvg-GAT (median),2,0.72±0.03,0.009±0.006
+Bail,Fairness-poison,FedAvg-GAT (median),3,0.72±0.03,0.010±0.009
+Bail,Fairness-poison,FedAvg-GAT (median),4,0.71±0.04,0.013±0.008
+Bail,Fairness-poison,FedAvg-GAT (trimmed mean),1,0.74±0.02,0.014±0.003
+Bail,Fairness-poison,FedAvg-GAT (trimmed mean),2,0.73±0.03,0.010±0.009
+Bail,Fairness-poison,FedAvg-GAT (trimmed mean),3,0.73±0.02,0.012±0.009
+Bail,Fairness-poison,FedAvg-GAT (trimmed mean),4,0.72±0.02,0.014±0.003
+Bail,Fairness-poison,FedAvg-GAT (krum),1,0.72±0.01,0.005±0.004
+Bail,Fairness-poison,FedAvg-GAT (krum),2,0.71±0.01,0.009±0.001
+Bail,Fairness-poison,FedAvg-GAT (krum),3,0.71±0.02,0.005±0.004
+Bail,Fairness-poison,FedAvg-GAT (krum),4,0.71±0.00,0.009±0.007
