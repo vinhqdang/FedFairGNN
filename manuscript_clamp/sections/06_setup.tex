@@ -3,9 +3,10 @@
 \paragraph{Datasets}
 We use eight public benchmarks for fair node classification (Table~\ref{tab:data}), all with a genuine binary sensitive attribute. \emph{German} (credit risk; gender) and \emph{Credit} (credit default; age) are similarity graphs over individuals, and \emph{Bail} (bail decisions; race) links defendants with similar records~\citep{agarwal2021towards}. \emph{Pokec-z} and \emph{Pokec-n} (region) are the two regional subsets of the Pokec social network used in~\citep{dai2021say}, and \emph{NBA} (nationality) links basketball players~\citep{dai2021say}. \emph{Facebook} (gender) is ego network 107 of the Facebook social circles data~\citep{mcauley2012learning}, and \emph{AMiner-S} is a co-authorship network whose sensitive attribute is the continent of the author's affiliation; we take both from the PyGDebias collection~\citep{dong2023fairness}. For AMiner-S the attribute has seven values, which we binarise as the most frequent continent against the rest, and we reduce the 5{,}693 bag-of-words features to 256 dimensions with truncated SVD (fixed random state) to keep full-batch training tractable; the label is the most frequent research field against the rest, as in PyGDebias. The sensitive attribute is removed from the node features in every dataset. Each run draws a stratified 50/25/25 train/validation/test split of the labelled nodes and partitions the nodes over $K=5$ clients with a Dirichlet($\alpha=0.3$) split over labels, which produces strongly non-IID clients. Each client keeps the subgraph induced by its nodes, so cross-client edges are lost (Table~\ref{tab:data}). The split, the partition and the model initialisation all depend on the seed.
 
-\begin{table}[t]
+\begin{table}[tbp]
 \centering
-\small
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \caption{Datasets after preprocessing. Edges are undirected. ``Kept'' is the fraction of edges inside a client after the $K=5$ Dirichlet partition. ``Group cap'' is the attribute-dependent cap (largest per-client validation group size) used in the main experiments; $\ncap$ is the public, attribute-independent cap of Section~\ref{sec:guarantees} (largest per-client validation-set size), used in the statistics-attack study. Both are rounded up to a multiple of 50 and given for seed 0. $P(y{=}1)$ is over labelled nodes.}\label{tab:data}
 \begin{tabular}{lrrrcccrr}
 \toprule
