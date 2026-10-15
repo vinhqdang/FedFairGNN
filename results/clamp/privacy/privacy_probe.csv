@@ -1,4 +1,4 @@
-method,bail,german
-"fedavg-gat","0.536 ± 0.012","0.868 ± 0.053"
-"clamp-clipmean","0.544 ± 0.011","0.865 ± 0.062"
-"clamp","0.544 ± 0.011","0.861 ± 0.056"
+Method,German AUC,Bail AUC
+FedAvg-GAT,0.87±0.05,0.54±0.01
+"ClipMean (no controller, last iterate)",0.86±0.06,0.54±0.01
+CLAMP (last iterate),0.86±0.06,0.54±0.01

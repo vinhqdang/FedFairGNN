@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{CLAMP ablations, one factor at a time around $C=1$, $\eta=0.5$, $\sigma_u=0$, mean$\pm$sd over seeds. The last two rows at the default setting are the output-rule (last iterate) and direction-rule (proportional) ablations.}
+\label{tab:e6_ablation}
+\begin{tabular}{lcccccc}
+\toprule
+Dataset & Method & $C$ & $\eta$ & $\sigma_u$ & AUC & DPD \\
+\midrule
+Bail & CLAMP (last iterate) & 1 & 0.5 & 0 & 0.78$\pm$0.05 & 0.023$\pm$0.004 \\
+Bail & CLAMP & 0.5 & 0.5 & 0 & 0.78$\pm$0.04 & 0.019$\pm$0.004 \\
+Bail & CLAMP & 1 & 0.1 & 0 & 0.78$\pm$0.04 & 0.023$\pm$0.004 \\
+Bail & CLAMP & 1 & 0.5 & 0 & 0.78$\pm$0.04 & 0.023$\pm$0.004 \\
+Bail & CLAMP & 1 & 0.5 & 0.01 & 0.78$\pm$0.05 & 0.024$\pm$0.004 \\
+Bail & CLAMP & 1 & 0.5 & 0.05 & 0.78$\pm$0.05 & 0.022$\pm$0.004 \\
+Bail & CLAMP & 1 & 2 & 0 & 0.78$\pm$0.05 & 0.023$\pm$0.004 \\
+Bail & CLAMP & 2 & 0.5 & 0 & 0.78$\pm$0.04 & 0.024$\pm$0.004 \\
+Bail & CLAMP-P (proportional direction) & 1 & 0.5 & 0 & 0.78$\pm$0.05 & 0.024$\pm$0.003 \\
+Credit & CLAMP & 0.5 & 0.5 & 0 & 0.77$\pm$0.00 & 0.011$\pm$0.000 \\
+Credit & CLAMP & 1 & 0.1 & 0 & 0.77$\pm$0.00 & 0.033$\pm$0.000 \\
+Credit & CLAMP & 1 & 0.5 & 0 & 0.77$\pm$0.00 & 0.003$\pm$0.000 \\
+Credit & CLAMP & 1 & 2 & 0 & 0.76$\pm$0.00 & 0.021$\pm$0.000 \\
+Credit & CLAMP & 2 & 0.5 & 0 & 0.75$\pm$0.00 & 0.050$\pm$0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

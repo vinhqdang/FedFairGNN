@@ -1,24 +1,18 @@
 \begin{table}[t]
 \centering
-\small
-\caption{Differencing attack on the statistics channel: balanced accuracy of the likelihood-ratio test (mean $\pm$ sd over seeds) against the $(\varepsilon,\delta)$-DP bound.}
-\begin{tabular}{llllll}
+\footnotesize
+\caption{Differencing attack on the statistics channel: balanced accuracy of the likelihood-ratio test over random validation targets, mean$\pm$sd over seeds. Single: one noisy release. All: the $R$ releases of an unchanged vector ($R=10$ for German, $R=100$ for Bail), the worst case the theorem accounts for. Bound: $(e^{\varepsilon}+\delta)/(1+e^{\varepsilon})$. Monte Carlo and closed-form values agree to within 0.005.}
+\label{tab:privacy_attack}
+\begin{tabular}{lccccc}
 \toprule
-dataset & epsilon & bound & single (MC) & single (analytic) & composed R (MC) \\
+$\varepsilon$ & Bound & German single & German all & Bail single & Bail all \\
 \midrule
-bail & 1 & 0.731 & 0.504 ± 0.001 & 0.504 ± 0.000 & 0.537 ± 0.001 \\
-bail & 2 & 0.881 & 0.507 ± 0.001 & 0.507 ± 0.000 & 0.570 ± 0.001 \\
-bail & 4 & 0.982 & 0.513 ± 0.001 & 0.513 ± 0.000 & 0.629 ± 0.001 \\
-bail & 8 & 1.000 & 0.524 ± 0.001 & 0.524 ± 0.000 & 0.726 ± 0.001 \\
-bail & 16 & 1.000 & 0.541 ± 0.001 & 0.542 ± 0.000 & 0.854 ± 0.001 \\
-bail & inf & 1.000 & 1.000 ± 0.000 & 1.000 ± 0.000 & 1.000 ± 0.000 \\
-german & 1 & 0.731 & 0.513 ± 0.003 & 0.513 ± 0.000 & 0.542 ± 0.003 \\
-german & 2 & 0.881 & 0.525 ± 0.003 & 0.525 ± 0.000 & 0.579 ± 0.004 \\
-german & 4 & 0.982 & 0.547 ± 0.003 & 0.547 ± 0.001 & 0.644 ± 0.004 \\
-german & 8 & 1.000 & 0.584 ± 0.004 & 0.584 ± 0.002 & 0.747 ± 0.004 \\
-german & 16 & 1.000 & 0.645 ± 0.004 & 0.646 ± 0.003 & 0.878 ± 0.003 \\
-german & inf & 1.000 & 1.000 ± 0.000 & 1.000 ± 0.000 & 1.000 ± 0.000 \\
+1 & 0.731 & 0.513$\pm$0.003 & 0.542$\pm$0.003 & 0.504$\pm$0.001 & 0.537$\pm$0.001 \\
+2 & 0.881 & 0.525$\pm$0.003 & 0.579$\pm$0.004 & 0.507$\pm$0.001 & 0.570$\pm$0.001 \\
+4 & 0.982 & 0.547$\pm$0.003 & 0.644$\pm$0.004 & 0.513$\pm$0.001 & 0.629$\pm$0.001 \\
+8 & 1.000 & 0.584$\pm$0.004 & 0.747$\pm$0.004 & 0.524$\pm$0.001 & 0.726$\pm$0.001 \\
+16 & 1.000 & 0.645$\pm$0.004 & 0.878$\pm$0.003 & 0.541$\pm$0.001 & 0.854$\pm$0.001 \\
+$\infty$ & 1.000 & 1.000$\pm$0.000 & 1.000$\pm$0.000 & 1.000$\pm$0.000 & 1.000$\pm$0.000 \\
 \bottomrule
 \end{tabular}
-\label{tab:privacy_attack}
 \end{table}

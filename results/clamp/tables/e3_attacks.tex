@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Update attacks: utility and fairness against the number $f$ of Byzantine clients out of $K=10$; mean$\pm$sd over seeds.}
+\label{tab:e3_attacks}
+\begin{tabular}{lccccc}
+\toprule
+Dataset & Attack & Aggregator & $f$ & AUC & DPD \\
+\midrule
+Bail & None & FedAvg-GAT & 0 & 0.76$\pm$0.00 & 0.011$\pm$0.000 \\
+Bail & None & FedAvg-GAT (median) & 0 & 0.73$\pm$0.00 & 0.007$\pm$0.000 \\
+Bail & None & FedAvg-GAT (trimmed mean) & 0 & 0.75$\pm$0.00 & 0.016$\pm$0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

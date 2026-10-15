@@ -1,0 +1,4 @@
+Dataset,Attack,Aggregator,f,AUC,DPD
+Bail,None,FedAvg-GAT,0,0.76±0.00,0.011±0.000
+Bail,None,FedAvg-GAT (median),0,0.73±0.00,0.007±0.000
+Bail,None,FedAvg-GAT (trimmed mean),0,0.75±0.00,0.016±0.000
