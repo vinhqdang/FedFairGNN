@@ -9,6 +9,7 @@ Dataset & Attack & Aggregator & $f$ & AUC & DPD \\
 \midrule
 Bail & None & FedAvg-GAT & 0 & 0.76$\pm$0.01 & 0.011$\pm$0.002 \\
 Bail & None & CLAMP & 0 & 0.75$\pm$0.02 & 0.011$\pm$0.002 \\
+Bail & None & ClipMean (no controller, last iterate) & 0 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
 Bail & None & FedAvg-GAT (median) & 0 & 0.73$\pm$0.01 & 0.007$\pm$0.000 \\
 Bail & None & FedAvg-GAT (trimmed mean) & 0 & 0.75$\pm$0.02 & 0.013$\pm$0.002 \\
 Bail & None & FedAvg-GAT (krum) & 0 & 0.72$\pm$0.02 & 0.003$\pm$0.001 \\
@@ -20,6 +21,10 @@ Bail & Sign-flip & CLAMP & 1 & 0.73$\pm$0.02 & 0.010$\pm$0.003 \\
 Bail & Sign-flip & CLAMP & 2 & 0.69$\pm$0.04 & 0.010$\pm$0.009 \\
 Bail & Sign-flip & CLAMP & 3 & 0.68$\pm$0.04 & 0.009$\pm$0.010 \\
 Bail & Sign-flip & CLAMP & 4 & 0.66$\pm$0.03 & 0.014$\pm$0.009 \\
+Bail & Sign-flip & ClipMean (no controller, last iterate) & 1 & 0.73$\pm$0.01 & 0.009$\pm$0.004 \\
+Bail & Sign-flip & ClipMean (no controller, last iterate) & 2 & 0.69$\pm$0.04 & 0.010$\pm$0.009 \\
+Bail & Sign-flip & ClipMean (no controller, last iterate) & 3 & 0.68$\pm$0.04 & 0.009$\pm$0.008 \\
+Bail & Sign-flip & ClipMean (no controller, last iterate) & 4 & 0.66$\pm$0.04 & 0.013$\pm$0.010 \\
 Bail & Sign-flip & FedAvg-GAT (median) & 1 & 0.72$\pm$0.01 & 0.009$\pm$0.004 \\
 Bail & Sign-flip & FedAvg-GAT (median) & 2 & 0.68$\pm$0.04 & 0.011$\pm$0.006 \\
 Bail & Sign-flip & FedAvg-GAT (median) & 3 & 0.67$\pm$0.04 & 0.007$\pm$0.006 \\
@@ -40,6 +45,10 @@ Bail & Scaling & CLAMP & 1 & 0.75$\pm$0.02 & 0.010$\pm$0.002 \\
 Bail & Scaling & CLAMP & 2 & 0.75$\pm$0.02 & 0.010$\pm$0.002 \\
 Bail & Scaling & CLAMP & 3 & 0.75$\pm$0.02 & 0.010$\pm$0.002 \\
 Bail & Scaling & CLAMP & 4 & 0.75$\pm$0.02 & 0.011$\pm$0.002 \\
+Bail & Scaling & ClipMean (no controller, last iterate) & 1 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Scaling & ClipMean (no controller, last iterate) & 2 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Scaling & ClipMean (no controller, last iterate) & 3 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Scaling & ClipMean (no controller, last iterate) & 4 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
 Bail & Scaling & FedAvg-GAT (median) & 1 & 0.73$\pm$0.01 & 0.009$\pm$0.002 \\
 Bail & Scaling & FedAvg-GAT (median) & 2 & 0.73$\pm$0.03 & 0.010$\pm$0.003 \\
 Bail & Scaling & FedAvg-GAT (median) & 3 & 0.74$\pm$0.03 & 0.006$\pm$0.002 \\
@@ -60,6 +69,10 @@ Bail & ALIE & CLAMP & 1 & 0.74$\pm$0.02 & 0.012$\pm$0.002 \\
 Bail & ALIE & CLAMP & 2 & 0.72$\pm$0.03 & 0.008$\pm$0.000 \\
 Bail & ALIE & CLAMP & 3 & 0.73$\pm$0.02 & 0.007$\pm$0.000 \\
 Bail & ALIE & CLAMP & 4 & 0.72$\pm$0.03 & 0.008$\pm$0.002 \\
+Bail & ALIE & ClipMean (no controller, last iterate) & 1 & 0.74$\pm$0.02 & 0.011$\pm$0.004 \\
+Bail & ALIE & ClipMean (no controller, last iterate) & 2 & 0.72$\pm$0.03 & 0.007$\pm$0.002 \\
+Bail & ALIE & ClipMean (no controller, last iterate) & 3 & 0.73$\pm$0.03 & 0.006$\pm$0.002 \\
+Bail & ALIE & ClipMean (no controller, last iterate) & 4 & 0.72$\pm$0.03 & 0.006$\pm$0.001 \\
 Bail & ALIE & FedAvg-GAT (median) & 1 & 0.75$\pm$0.02 & 0.009$\pm$0.001 \\
 Bail & ALIE & FedAvg-GAT (median) & 2 & 0.72$\pm$0.03 & 0.007$\pm$0.003 \\
 Bail & ALIE & FedAvg-GAT (median) & 3 & 0.73$\pm$0.03 & 0.007$\pm$0.002 \\
@@ -80,6 +93,10 @@ Bail & IPM & CLAMP & 1 & 0.74$\pm$0.02 & 0.010$\pm$0.002 \\
 Bail & IPM & CLAMP & 2 & 0.72$\pm$0.03 & 0.007$\pm$0.001 \\
 Bail & IPM & CLAMP & 3 & 0.72$\pm$0.02 & 0.006$\pm$0.002 \\
 Bail & IPM & CLAMP & 4 & 0.71$\pm$0.02 & 0.005$\pm$0.002 \\
+Bail & IPM & ClipMean (no controller, last iterate) & 1 & 0.74$\pm$0.02 & 0.010$\pm$0.003 \\
+Bail & IPM & ClipMean (no controller, last iterate) & 2 & 0.72$\pm$0.03 & 0.006$\pm$0.002 \\
+Bail & IPM & ClipMean (no controller, last iterate) & 3 & 0.72$\pm$0.02 & 0.006$\pm$0.002 \\
+Bail & IPM & ClipMean (no controller, last iterate) & 4 & 0.71$\pm$0.02 & 0.005$\pm$0.001 \\
 Bail & IPM & FedAvg-GAT (median) & 1 & 0.74$\pm$0.02 & 0.007$\pm$0.003 \\
 Bail & IPM & FedAvg-GAT (median) & 2 & 0.71$\pm$0.03 & 0.005$\pm$0.002 \\
 Bail & IPM & FedAvg-GAT (median) & 3 & 0.70$\pm$0.03 & 0.004$\pm$0.001 \\
@@ -100,6 +117,10 @@ Bail & Fairness-poison & CLAMP & 1 & 0.74$\pm$0.02 & 0.012$\pm$0.003 \\
 Bail & Fairness-poison & CLAMP & 2 & 0.72$\pm$0.03 & 0.011$\pm$0.008 \\
 Bail & Fairness-poison & CLAMP & 3 & 0.72$\pm$0.02 & 0.009$\pm$0.009 \\
 Bail & Fairness-poison & CLAMP & 4 & 0.72$\pm$0.02 & 0.014$\pm$0.001 \\
+Bail & Fairness-poison & ClipMean (no controller, last iterate) & 1 & 0.74$\pm$0.02 & 0.011$\pm$0.002 \\
+Bail & Fairness-poison & ClipMean (no controller, last iterate) & 2 & 0.72$\pm$0.03 & 0.010$\pm$0.008 \\
+Bail & Fairness-poison & ClipMean (no controller, last iterate) & 3 & 0.72$\pm$0.02 & 0.016$\pm$0.009 \\
+Bail & Fairness-poison & ClipMean (no controller, last iterate) & 4 & 0.71$\pm$0.02 & 0.023$\pm$0.009 \\
 Bail & Fairness-poison & FedAvg-GAT (median) & 1 & 0.72$\pm$0.02 & 0.008$\pm$0.005 \\
 Bail & Fairness-poison & FedAvg-GAT (median) & 2 & 0.72$\pm$0.03 & 0.009$\pm$0.006 \\
 Bail & Fairness-poison & FedAvg-GAT (median) & 3 & 0.72$\pm$0.03 & 0.010$\pm$0.009 \\
@@ -114,6 +135,7 @@ Bail & Fairness-poison & FedAvg-GAT (krum) & 3 & 0.71$\pm$0.02 & 0.005$\pm$0.004
 Bail & Fairness-poison & FedAvg-GAT (krum) & 4 & 0.71$\pm$0.00 & 0.009$\pm$0.007 \\
 Pokec-z & None & FedAvg-GAT & 0 & 0.75$\pm$0.01 & 0.035$\pm$0.010 \\
 Pokec-z & None & CLAMP & 0 & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+Pokec-z & None & ClipMean (no controller, last iterate) & 0 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
 Pokec-z & None & FedAvg-GAT (median) & 0 & 0.75$\pm$0.01 & 0.033$\pm$0.009 \\
 Pokec-z & None & FedAvg-GAT (trimmed mean) & 0 & 0.74$\pm$0.01 & 0.035$\pm$0.007 \\
 Pokec-z & None & FedAvg-GAT (krum) & 0 & 0.74$\pm$0.02 & 0.033$\pm$0.014 \\
@@ -125,6 +147,10 @@ Pokec-z & Sign-flip & CLAMP & 1 & 0.76$\pm$0.01 & 0.025$\pm$0.016 \\
 Pokec-z & Sign-flip & CLAMP & 2 & 0.75$\pm$0.02 & 0.022$\pm$0.013 \\
 Pokec-z & Sign-flip & CLAMP & 3 & 0.74$\pm$0.03 & 0.020$\pm$0.012 \\
 Pokec-z & Sign-flip & CLAMP & 4 & 0.71$\pm$0.05 & 0.017$\pm$0.013 \\
+Pokec-z & Sign-flip & ClipMean (no controller, last iterate) & 1 & 0.76$\pm$0.00 & 0.051$\pm$0.000 \\
+Pokec-z & Sign-flip & ClipMean (no controller, last iterate) & 2 & 0.73$\pm$0.00 & 0.048$\pm$0.000 \\
+Pokec-z & Sign-flip & ClipMean (no controller, last iterate) & 3 & 0.72$\pm$0.00 & 0.040$\pm$0.000 \\
+Pokec-z & Sign-flip & ClipMean (no controller, last iterate) & 4 & 0.68$\pm$0.00 & 0.029$\pm$0.000 \\
 Pokec-z & Sign-flip & FedAvg-GAT (median) & 1 & 0.74$\pm$0.01 & 0.032$\pm$0.007 \\
 Pokec-z & Sign-flip & FedAvg-GAT (median) & 2 & 0.74$\pm$0.01 & 0.034$\pm$0.010 \\
 Pokec-z & Sign-flip & FedAvg-GAT (median) & 3 & 0.72$\pm$0.03 & 0.020$\pm$0.005 \\
@@ -145,6 +171,10 @@ Pokec-z & Scaling & CLAMP & 1 & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
 Pokec-z & Scaling & CLAMP & 2 & 0.76$\pm$0.00 & 0.027$\pm$0.017 \\
 Pokec-z & Scaling & CLAMP & 3 & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
 Pokec-z & Scaling & CLAMP & 4 & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+Pokec-z & Scaling & ClipMean (no controller, last iterate) & 1 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
+Pokec-z & Scaling & ClipMean (no controller, last iterate) & 2 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
+Pokec-z & Scaling & ClipMean (no controller, last iterate) & 3 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
+Pokec-z & Scaling & ClipMean (no controller, last iterate) & 4 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
 Pokec-z & Scaling & FedAvg-GAT (median) & 1 & 0.75$\pm$0.00 & 0.037$\pm$0.011 \\
 Pokec-z & Scaling & FedAvg-GAT (median) & 2 & 0.76$\pm$0.01 & 0.033$\pm$0.003 \\
 Pokec-z & Scaling & FedAvg-GAT (median) & 3 & 0.75$\pm$0.02 & 0.035$\pm$0.012 \\
@@ -165,6 +195,9 @@ Pokec-z & ALIE & CLAMP & 1 & 0.76$\pm$0.00 & 0.026$\pm$0.015 \\
 Pokec-z & ALIE & CLAMP & 2 & 0.76$\pm$0.01 & 0.024$\pm$0.018 \\
 Pokec-z & ALIE & CLAMP & 3 & 0.75$\pm$0.01 & 0.030$\pm$0.009 \\
 Pokec-z & ALIE & CLAMP & 4 & 0.75$\pm$0.01 & 0.027$\pm$0.008 \\
+Pokec-z & ALIE & ClipMean (no controller, last iterate) & 1 & 0.76$\pm$0.00 & 0.054$\pm$0.000 \\
+Pokec-z & ALIE & ClipMean (no controller, last iterate) & 2 & 0.75$\pm$0.00 & 0.050$\pm$0.000 \\
+Pokec-z & ALIE & ClipMean (no controller, last iterate) & 3 & 0.75$\pm$0.00 & 0.044$\pm$0.000 \\
 Pokec-z & ALIE & FedAvg-GAT (median) & 1 & 0.75$\pm$0.00 & 0.034$\pm$0.015 \\
 Pokec-z & ALIE & FedAvg-GAT (median) & 2 & 0.74$\pm$0.01 & 0.032$\pm$0.013 \\
 Pokec-z & ALIE & FedAvg-GAT (median) & 3 & 0.75$\pm$0.01 & 0.031$\pm$0.006 \\
