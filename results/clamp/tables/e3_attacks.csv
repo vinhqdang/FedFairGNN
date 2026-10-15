@@ -104,95 +104,108 @@ Bail,Fairness-poison,FedAvg-GAT (krum),1,0.72±0.01,0.005±0.004
 Bail,Fairness-poison,FedAvg-GAT (krum),2,0.71±0.01,0.009±0.001
 Bail,Fairness-poison,FedAvg-GAT (krum),3,0.71±0.02,0.005±0.004
 Bail,Fairness-poison,FedAvg-GAT (krum),4,0.71±0.00,0.009±0.007
-Pokec-z,None,FedAvg-GAT,0,0.75±0.00,0.046±0.000
-Pokec-z,None,CLAMP,0,0.76±0.00,0.038±0.000
-Pokec-z,None,FedAvg-GAT (median),0,0.75±0.00,0.041±0.000
-Pokec-z,None,FedAvg-GAT (trimmed mean),0,0.75±0.00,0.042±0.000
-Pokec-z,None,FedAvg-GAT (krum),0,0.74±0.00,0.049±0.000
-Pokec-z,Sign-flip,FedAvg-GAT,1,0.71±0.00,0.048±0.000
-Pokec-z,Sign-flip,FedAvg-GAT,2,0.49±0.00,0.003±0.000
-Pokec-z,Sign-flip,FedAvg-GAT,3,0.49±0.00,0.001±0.000
-Pokec-z,Sign-flip,FedAvg-GAT,4,0.49±0.00,0.003±0.000
-Pokec-z,Sign-flip,CLAMP,1,0.76±0.00,0.036±0.000
-Pokec-z,Sign-flip,CLAMP,2,0.74±0.00,0.036±0.000
-Pokec-z,Sign-flip,CLAMP,3,0.72±0.00,0.034±0.000
-Pokec-z,Sign-flip,CLAMP,4,0.68±0.00,0.031±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (median),1,0.74±0.00,0.039±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (median),2,0.75±0.00,0.043±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (median),3,0.70±0.00,0.024±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (median),4,0.66±0.00,0.019±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),1,0.74±0.00,0.050±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),2,0.70±0.00,0.034±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),3,0.72±0.00,0.057±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),4,0.69±0.00,0.045±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (krum),1,0.73±0.00,0.048±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (krum),2,0.72±0.00,0.034±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (krum),3,0.72±0.00,0.030±0.000
-Pokec-z,Sign-flip,FedAvg-GAT (krum),4,0.73±0.00,0.042±0.000
-Pokec-z,Scaling,FedAvg-GAT,1,0.74±0.00,0.048±0.000
-Pokec-z,Scaling,FedAvg-GAT,2,0.65±0.00,0.045±0.000
-Pokec-z,Scaling,FedAvg-GAT,3,0.65±0.00,0.045±0.000
-Pokec-z,Scaling,FedAvg-GAT,4,0.62±0.00,0.044±0.000
-Pokec-z,Scaling,CLAMP,1,0.76±0.00,0.038±0.000
-Pokec-z,Scaling,CLAMP,2,0.76±0.00,0.038±0.000
-Pokec-z,Scaling,CLAMP,3,0.76±0.00,0.038±0.000
-Pokec-z,Scaling,CLAMP,4,0.76±0.00,0.038±0.000
-Pokec-z,Scaling,FedAvg-GAT (median),1,0.75±0.00,0.049±0.000
-Pokec-z,Scaling,FedAvg-GAT (median),2,0.74±0.00,0.036±0.000
-Pokec-z,Scaling,FedAvg-GAT (median),3,0.75±0.00,0.046±0.000
-Pokec-z,Scaling,FedAvg-GAT (median),4,0.76±0.00,0.050±0.000
-Pokec-z,Scaling,FedAvg-GAT (trimmed mean),1,0.75±0.00,0.039±0.000
-Pokec-z,Scaling,FedAvg-GAT (trimmed mean),2,0.71±0.00,0.031±0.000
-Pokec-z,Scaling,FedAvg-GAT (trimmed mean),3,0.75±0.00,0.043±0.000
-Pokec-z,Scaling,FedAvg-GAT (trimmed mean),4,0.75±0.00,0.040±0.000
-Pokec-z,Scaling,FedAvg-GAT (krum),1,0.75±0.00,0.049±0.000
-Pokec-z,Scaling,FedAvg-GAT (krum),2,0.72±0.00,0.038±0.000
-Pokec-z,Scaling,FedAvg-GAT (krum),3,0.72±0.00,0.027±0.000
-Pokec-z,Scaling,FedAvg-GAT (krum),4,0.70±0.00,0.031±0.000
-Pokec-z,ALIE,FedAvg-GAT,1,0.74±0.00,0.047±0.000
-Pokec-z,ALIE,FedAvg-GAT,2,0.74±0.00,0.041±0.000
-Pokec-z,ALIE,FedAvg-GAT,3,0.72±0.00,0.041±0.000
-Pokec-z,ALIE,FedAvg-GAT,4,0.74±0.00,0.035±0.000
-Pokec-z,ALIE,CLAMP,1,0.76±0.00,0.039±0.000
-Pokec-z,ALIE,CLAMP,2,0.75±0.00,0.039±0.000
-Pokec-z,ALIE,CLAMP,3,0.75±0.00,0.037±0.000
-Pokec-z,ALIE,CLAMP,4,0.75±0.00,0.033±0.000
-Pokec-z,ALIE,FedAvg-GAT (median),1,0.76±0.00,0.050±0.000
-Pokec-z,ALIE,FedAvg-GAT (median),2,0.73±0.00,0.047±0.000
-Pokec-z,ALIE,FedAvg-GAT (median),3,0.75±0.00,0.038±0.000
-Pokec-z,ALIE,FedAvg-GAT (median),4,0.74±0.00,0.040±0.000
-Pokec-z,ALIE,FedAvg-GAT (trimmed mean),1,0.74±0.00,0.047±0.000
-Pokec-z,ALIE,FedAvg-GAT (trimmed mean),2,0.72±0.00,0.051±0.000
-Pokec-z,ALIE,FedAvg-GAT (trimmed mean),3,0.73±0.00,0.045±0.000
-Pokec-z,ALIE,FedAvg-GAT (trimmed mean),4,0.73±0.00,0.016±0.000
-Pokec-z,ALIE,FedAvg-GAT (krum),1,0.74±0.00,0.055±0.000
-Pokec-z,ALIE,FedAvg-GAT (krum),2,0.74±0.00,0.046±0.000
-Pokec-z,ALIE,FedAvg-GAT (krum),3,0.74±0.00,0.043±0.000
-Pokec-z,ALIE,FedAvg-GAT (krum),4,0.73±0.00,0.013±0.000
-Pokec-z,IPM,FedAvg-GAT,1,0.74±0.00,0.050±0.000
-Pokec-z,IPM,FedAvg-GAT,2,0.75±0.00,0.051±0.000
-Pokec-z,IPM,FedAvg-GAT,3,0.74±0.00,0.033±0.000
-Pokec-z,IPM,FedAvg-GAT,4,0.75±0.00,0.038±0.000
-Pokec-z,IPM,CLAMP,1,0.77±0.00,0.039±0.000
-Pokec-z,IPM,CLAMP,2,0.77±0.00,0.039±0.000
-Pokec-z,IPM,CLAMP,3,0.78±0.00,0.040±0.000
-Pokec-z,IPM,CLAMP,4,0.75±0.00,0.031±0.000
-Pokec-z,IPM,FedAvg-GAT (median),1,0.75±0.00,0.043±0.000
-Pokec-z,IPM,FedAvg-GAT (median),2,0.76±0.00,0.051±0.000
-Pokec-z,IPM,FedAvg-GAT (median),3,0.77±0.00,0.040±0.000
-Pokec-z,IPM,FedAvg-GAT (median),4,0.73±0.00,0.011±0.000
-Pokec-z,IPM,FedAvg-GAT (trimmed mean),1,0.75±0.00,0.047±0.000
-Pokec-z,IPM,FedAvg-GAT (trimmed mean),2,0.74±0.00,0.051±0.000
-Pokec-z,IPM,FedAvg-GAT (trimmed mean),3,0.76±0.00,0.051±0.000
-Pokec-z,IPM,FedAvg-GAT (trimmed mean),4,0.76±0.00,0.028±0.000
-Pokec-z,IPM,FedAvg-GAT (krum),1,0.60±0.00,0.013±0.000
-Pokec-z,IPM,FedAvg-GAT (krum),2,0.32±0.00,0.022±0.000
-Pokec-z,IPM,FedAvg-GAT (krum),3,0.34±0.00,0.006±0.000
-Pokec-z,IPM,FedAvg-GAT (krum),4,0.40±0.00,0.003±0.000
-Pokec-z,Fairness-poison,FedAvg-GAT,1,0.74±0.00,0.058±0.000
-Pokec-z,Fairness-poison,FedAvg-GAT,2,0.73±0.00,0.145±0.000
-Pokec-z,Fairness-poison,CLAMP,1,0.76±0.00,0.038±0.000
-Pokec-z,Fairness-poison,CLAMP,2,0.74±0.00,0.035±0.000
-Pokec-z,Fairness-poison,FedAvg-GAT (median),1,0.76±0.00,0.060±0.000
-Pokec-z,Fairness-poison,FedAvg-GAT (trimmed mean),1,0.74±0.00,0.058±0.000
-Pokec-z,Fairness-poison,FedAvg-GAT (krum),1,0.73±0.00,0.036±0.000
+Pokec-z,None,FedAvg-GAT,0,0.75±0.01,0.035±0.010
+Pokec-z,None,CLAMP,0,0.76±0.00,0.028±0.016
+Pokec-z,None,FedAvg-GAT (median),0,0.75±0.01,0.033±0.009
+Pokec-z,None,FedAvg-GAT (trimmed mean),0,0.74±0.01,0.035±0.007
+Pokec-z,None,FedAvg-GAT (krum),0,0.74±0.02,0.033±0.014
+Pokec-z,Sign-flip,FedAvg-GAT,1,0.61±0.15,0.028±0.021
+Pokec-z,Sign-flip,FedAvg-GAT,2,0.50±0.01,0.001±0.002
+Pokec-z,Sign-flip,FedAvg-GAT,3,0.50±0.01,0.000±0.001
+Pokec-z,Sign-flip,FedAvg-GAT,4,0.49±0.01,0.001±0.001
+Pokec-z,Sign-flip,CLAMP,1,0.76±0.01,0.025±0.016
+Pokec-z,Sign-flip,CLAMP,2,0.75±0.02,0.022±0.013
+Pokec-z,Sign-flip,CLAMP,3,0.74±0.03,0.020±0.012
+Pokec-z,Sign-flip,CLAMP,4,0.71±0.05,0.017±0.013
+Pokec-z,Sign-flip,FedAvg-GAT (median),1,0.74±0.01,0.032±0.007
+Pokec-z,Sign-flip,FedAvg-GAT (median),2,0.74±0.01,0.034±0.010
+Pokec-z,Sign-flip,FedAvg-GAT (median),3,0.72±0.03,0.020±0.005
+Pokec-z,Sign-flip,FedAvg-GAT (median),4,0.65±0.06,0.015±0.009
+Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),1,0.73±0.01,0.031±0.018
+Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),2,0.73±0.03,0.019±0.015
+Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),3,0.71±0.04,0.023±0.030
+Pokec-z,Sign-flip,FedAvg-GAT (trimmed mean),4,0.68±0.08,0.022±0.022
+Pokec-z,Sign-flip,FedAvg-GAT (krum),1,0.74±0.01,0.034±0.013
+Pokec-z,Sign-flip,FedAvg-GAT (krum),2,0.74±0.02,0.029±0.007
+Pokec-z,Sign-flip,FedAvg-GAT (krum),3,0.72±0.02,0.023±0.007
+Pokec-z,Sign-flip,FedAvg-GAT (krum),4,0.72±0.01,0.033±0.009
+Pokec-z,Scaling,FedAvg-GAT,1,0.72±0.01,0.033±0.025
+Pokec-z,Scaling,FedAvg-GAT,2,0.64±0.01,0.029±0.025
+Pokec-z,Scaling,FedAvg-GAT,3,0.65±0.01,0.034±0.010
+Pokec-z,Scaling,FedAvg-GAT,4,0.57±0.13,0.031±0.025
+Pokec-z,Scaling,CLAMP,1,0.76±0.00,0.028±0.016
+Pokec-z,Scaling,CLAMP,2,0.76±0.00,0.027±0.017
+Pokec-z,Scaling,CLAMP,3,0.76±0.00,0.028±0.016
+Pokec-z,Scaling,CLAMP,4,0.76±0.00,0.028±0.016
+Pokec-z,Scaling,FedAvg-GAT (median),1,0.75±0.00,0.037±0.011
+Pokec-z,Scaling,FedAvg-GAT (median),2,0.76±0.01,0.033±0.003
+Pokec-z,Scaling,FedAvg-GAT (median),3,0.75±0.02,0.035±0.012
+Pokec-z,Scaling,FedAvg-GAT (median),4,0.76±0.01,0.036±0.014
+Pokec-z,Scaling,FedAvg-GAT (trimmed mean),1,0.74±0.01,0.031±0.007
+Pokec-z,Scaling,FedAvg-GAT (trimmed mean),2,0.71±0.01,0.030±0.007
+Pokec-z,Scaling,FedAvg-GAT (trimmed mean),3,0.73±0.02,0.032±0.011
+Pokec-z,Scaling,FedAvg-GAT (trimmed mean),4,0.74±0.02,0.038±0.011
+Pokec-z,Scaling,FedAvg-GAT (krum),1,0.75±0.02,0.036±0.013
+Pokec-z,Scaling,FedAvg-GAT (krum),2,0.73±0.01,0.034±0.004
+Pokec-z,Scaling,FedAvg-GAT (krum),3,0.72±0.02,0.026±0.001
+Pokec-z,Scaling,FedAvg-GAT (krum),4,0.71±0.03,0.031±0.003
+Pokec-z,ALIE,FedAvg-GAT,1,0.75±0.01,0.038±0.008
+Pokec-z,ALIE,FedAvg-GAT,2,0.74±0.00,0.032±0.012
+Pokec-z,ALIE,FedAvg-GAT,3,0.74±0.01,0.032±0.008
+Pokec-z,ALIE,FedAvg-GAT,4,0.75±0.02,0.031±0.009
+Pokec-z,ALIE,CLAMP,1,0.76±0.00,0.026±0.015
+Pokec-z,ALIE,CLAMP,2,0.76±0.01,0.024±0.018
+Pokec-z,ALIE,CLAMP,3,0.75±0.01,0.030±0.009
+Pokec-z,ALIE,CLAMP,4,0.75±0.01,0.027±0.008
+Pokec-z,ALIE,FedAvg-GAT (median),1,0.75±0.00,0.034±0.015
+Pokec-z,ALIE,FedAvg-GAT (median),2,0.74±0.01,0.032±0.013
+Pokec-z,ALIE,FedAvg-GAT (median),3,0.75±0.01,0.031±0.006
+Pokec-z,ALIE,FedAvg-GAT (median),4,0.72±0.01,0.029±0.010
+Pokec-z,ALIE,FedAvg-GAT (trimmed mean),1,0.74±0.01,0.035±0.010
+Pokec-z,ALIE,FedAvg-GAT (trimmed mean),2,0.72±0.01,0.035±0.015
+Pokec-z,ALIE,FedAvg-GAT (trimmed mean),3,0.75±0.02,0.034±0.012
+Pokec-z,ALIE,FedAvg-GAT (trimmed mean),4,0.73±0.02,0.024±0.008
+Pokec-z,ALIE,FedAvg-GAT (krum),1,0.74±0.01,0.040±0.013
+Pokec-z,ALIE,FedAvg-GAT (krum),2,0.74±0.01,0.034±0.010
+Pokec-z,ALIE,FedAvg-GAT (krum),3,0.75±0.01,0.034±0.008
+Pokec-z,ALIE,FedAvg-GAT (krum),4,0.74±0.01,0.017±0.012
+Pokec-z,IPM,FedAvg-GAT,1,0.75±0.01,0.037±0.011
+Pokec-z,IPM,FedAvg-GAT,2,0.76±0.01,0.039±0.010
+Pokec-z,IPM,FedAvg-GAT,3,0.76±0.02,0.032±0.001
+Pokec-z,IPM,FedAvg-GAT,4,0.75±0.01,0.035±0.004
+Pokec-z,IPM,CLAMP,1,0.77±0.00,0.028±0.015
+Pokec-z,IPM,CLAMP,2,0.77±0.00,0.028±0.014
+Pokec-z,IPM,CLAMP,3,0.78±0.00,0.030±0.011
+Pokec-z,IPM,CLAMP,4,0.76±0.02,0.026±0.005
+Pokec-z,IPM,FedAvg-GAT (median),1,0.76±0.00,0.037±0.008
+Pokec-z,IPM,FedAvg-GAT (median),2,0.76±0.00,0.040±0.011
+Pokec-z,IPM,FedAvg-GAT (median),3,0.77±0.01,0.035±0.008
+Pokec-z,IPM,FedAvg-GAT (median),4,0.75±0.03,0.014±0.008
+Pokec-z,IPM,FedAvg-GAT (trimmed mean),1,0.75±0.00,0.037±0.009
+Pokec-z,IPM,FedAvg-GAT (trimmed mean),2,0.75±0.00,0.039±0.010
+Pokec-z,IPM,FedAvg-GAT (trimmed mean),3,0.76±0.01,0.043±0.007
+Pokec-z,IPM,FedAvg-GAT (trimmed mean),4,0.77±0.01,0.027±0.004
+Pokec-z,IPM,FedAvg-GAT (krum),1,0.69±0.08,0.017±0.003
+Pokec-z,IPM,FedAvg-GAT (krum),2,0.40±0.13,0.009±0.011
+Pokec-z,IPM,FedAvg-GAT (krum),3,0.35±0.04,0.004±0.002
+Pokec-z,IPM,FedAvg-GAT (krum),4,0.37±0.06,0.009±0.010
+Pokec-z,Fairness-poison,FedAvg-GAT,1,0.75±0.00,0.062±0.015
+Pokec-z,Fairness-poison,FedAvg-GAT,2,0.71±0.03,0.124±0.027
+Pokec-z,Fairness-poison,FedAvg-GAT,3,0.70±0.02,0.137±0.057
+Pokec-z,Fairness-poison,FedAvg-GAT,4,0.69±0.03,0.137±0.068
+Pokec-z,Fairness-poison,CLAMP,1,0.76±0.00,0.025±0.016
+Pokec-z,Fairness-poison,CLAMP,2,0.72±0.02,0.037±0.006
+Pokec-z,Fairness-poison,CLAMP,3,0.71±0.03,0.049±0.018
+Pokec-z,Fairness-poison,CLAMP,4,0.71±0.03,0.047±0.042
+Pokec-z,Fairness-poison,FedAvg-GAT (median),1,0.74±0.02,0.046±0.027
+Pokec-z,Fairness-poison,FedAvg-GAT (median),2,0.72±0.00,0.108±0.025
+Pokec-z,Fairness-poison,FedAvg-GAT (median),3,0.72±0.01,0.148±0.036
+Pokec-z,Fairness-poison,FedAvg-GAT (median),4,0.72±0.02,0.111±0.031
+Pokec-z,Fairness-poison,FedAvg-GAT (trimmed mean),1,0.73±0.01,0.047±0.033
+Pokec-z,Fairness-poison,FedAvg-GAT (trimmed mean),2,0.70±0.01,0.146±0.036
+Pokec-z,Fairness-poison,FedAvg-GAT (trimmed mean),3,0.69±0.01,0.186±0.042
+Pokec-z,Fairness-poison,FedAvg-GAT (trimmed mean),4,0.71±0.01,0.201±0.061
+Pokec-z,Fairness-poison,FedAvg-GAT (krum),1,0.74±0.01,0.035±0.002
+Pokec-z,Fairness-poison,FedAvg-GAT (krum),2,0.72±0.02,0.034±0.011
+Pokec-z,Fairness-poison,FedAvg-GAT (krum),3,0.73±0.03,0.035±0.012
+Pokec-z,Fairness-poison,FedAvg-GAT (krum),4,0.71±0.04,0.086±0.099
