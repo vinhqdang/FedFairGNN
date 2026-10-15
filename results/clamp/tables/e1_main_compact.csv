@@ -5,15 +5,15 @@ German,F2GNN,0.73±0.02,0.042±0.030
 German,FairGFL,0.74±0.05,0.081±0.070
 German,FedGraph-Fair,0.66±0.09,0.080±0.051
 German,FedFACT,0.72±0.04,0.078±0.064
-German,PUFFLE,0.49±0.08†,0.011±0.007
+German,PUFFLE,0.49±0.08†,0.011±0.007†
 German,FedFDP,0.53±0.09†,0.014±0.021
 German,FairGNN,0.57±0.06†,0.111±0.082
 German,FairSIN,0.72±0.05,0.092±0.062
 German,"ClipMean (no controller, last iterate)",0.73±0.06,0.088±0.069
 German,CLAMP (last iterate),0.73±0.07,0.050±0.046
-German,CLAMP-Select (no controller),0.71±0.09,0.072±0.071
-German,CLAMP,0.71±0.08,0.052±0.047
-German,CLAMP-GCN,0.71±0.11,0.063±0.046
+German,CLAMP-Select (no controller),0.73±0.06,0.077±0.066
+German,CLAMP,0.72±0.06,0.058±0.044
+German,CLAMP-GCN,0.73±0.05,0.065±0.044
 Bail,FedAvg-GAT,0.80±0.04,0.019±0.011
 Bail,FairFed,0.80±0.03,0.012±0.007
 Bail,F2GNN,0.78±0.03,0.012±0.008
@@ -39,9 +39,9 @@ Credit,PUFFLE,0.46±0.13†,0.016±0.008
 Credit,FedFDP,0.54±0.11†,0.017±0.009
 Credit,FairGNN,0.67±0.09†,0.100±0.055
 Credit,FairSIN,0.75±0.00,0.070±0.012†
-Credit,"ClipMean (no controller, last iterate)",0.77±0.01,0.071±0.009†
+Credit,"ClipMean (no controller, last iterate)",0.77±0.01†,0.071±0.009†
 Credit,CLAMP (last iterate),0.76±0.01,0.055±0.046
-Credit,CLAMP-Select (no controller),0.72±0.15,0.055±0.021
+Credit,CLAMP-Select (no controller),0.77±0.01†,0.067±0.010†
 Credit,CLAMP,0.76±0.01,0.018±0.015
 Credit,CLAMP-GCN,0.75±0.01,0.014±0.013
 Pokec-z,FedAvg-GAT,0.74±0.02,0.031±0.013
@@ -56,7 +56,7 @@ Pokec-z,FairGNN,0.54±0.08†,0.005±0.013
 Pokec-z,FairSIN,0.66±0.05†,0.026±0.010
 Pokec-z,"ClipMean (no controller, last iterate)",0.75±0.02,0.042±0.011†
 Pokec-z,CLAMP (last iterate),0.75±0.02,0.027±0.004
-Pokec-z,CLAMP-Select (no controller),0.77±0.03,0.028±0.005
+Pokec-z,CLAMP-Select (no controller),0.75±0.02,0.041±0.010†
 Pokec-z,CLAMP,0.75±0.02,0.026±0.004
 Pokec-z,CLAMP-GCN,0.72±0.02†,0.028±0.006
 Pokec-n,FedAvg-GAT,0.75±0.02,0.034±0.017
@@ -71,7 +71,7 @@ Pokec-n,FairGNN,0.50±0.00†,0.000±0.000†
 Pokec-n,FairSIN,0.64±0.06†,0.043±0.014
 Pokec-n,"ClipMean (no controller, last iterate)",0.75±0.02,0.052±0.016†
 Pokec-n,CLAMP (last iterate),0.75±0.02,0.028±0.012
-Pokec-n,CLAMP-Select (no controller),0.76±0.03,0.030±0.007
+Pokec-n,CLAMP-Select (no controller),0.75±0.02,0.052±0.015†
 Pokec-n,CLAMP,0.76±0.02,0.028±0.012
 Pokec-n,CLAMP-GCN,0.71±0.02†,0.027±0.008
 AMiner-S,FedAvg-GAT,0.94±0.00,0.007±0.004†
@@ -110,12 +110,12 @@ Facebook,F2GNN,0.76±0.05,0.069±0.040
 Facebook,FairGFL,0.75±0.05,0.080±0.040
 Facebook,FedGraph-Fair,0.74±0.05,0.094±0.037
 Facebook,FedFACT,0.74±0.05,0.055±0.042
-Facebook,PUFFLE,0.53±0.10†,0.009±0.006
-Facebook,FedFDP,0.54±0.08,0.013±0.009
-Facebook,FairGNN,0.51±0.05,0.024±0.041
+Facebook,PUFFLE,0.53±0.10†,0.009±0.006†
+Facebook,FedFDP,0.54±0.08†,0.013±0.009
+Facebook,FairGNN,0.51±0.05†,0.024±0.041
 Facebook,FairSIN,0.74±0.05,0.070±0.033
 Facebook,"ClipMean (no controller, last iterate)",0.77±0.06,0.086±0.043
 Facebook,CLAMP (last iterate),0.77±0.06,0.082±0.043
-Facebook,CLAMP-Select (no controller),0.75±0.09,0.078±0.038
-Facebook,CLAMP,0.75±0.09,0.067±0.037
-Facebook,CLAMP-GCN,0.72±0.13,0.070±0.038
+Facebook,CLAMP-Select (no controller),0.76±0.06,0.082±0.032
+Facebook,CLAMP,0.76±0.06,0.069±0.034
+Facebook,CLAMP-GCN,0.76±0.04,0.078±0.030
