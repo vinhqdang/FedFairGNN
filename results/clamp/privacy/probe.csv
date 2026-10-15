@@ -17,3 +17,15 @@ bail,1,clamp,0.5316450014363688
 bail,2,fedavg-gat,0.5262927259940274
 bail,2,clamp-clipmean,0.549341290006961
 bail,2,clamp,0.549341290006961
+german,0,raw-features,0.8726557773744706
+german,0,untrained-gat,0.8895946763460375
+german,1,raw-features,0.7936791890280264
+german,1,untrained-gat,0.8825283243887896
+german,2,raw-features,0.8950506857483602
+german,2,untrained-gat,0.9433512224209899
+bail,0,raw-features,0.6207066441441441
+bail,0,untrained-gat,0.5686466520729914
+bail,1,raw-features,0.5875233409939672
+bail,1,untrained-gat,0.5444958345303075
+bail,2,raw-features,0.6071733622405694
+bail,2,untrained-gat,0.5477389642100544
