@@ -1,7 +1,7 @@
 \begin{table}[tbp]
 \centering
 \footnotesize
-\caption{Statistics attacks. $|\widehat{D}-D^H|_{\max}$: largest deviation of the server's estimate from the honest-only gap over the release rounds; Bound: largest Theorem 3 bound (honest-mass term plus statistics-noise term, $\beta=0.05$) over the release rounds; Viol.: release rounds with the deviation above the bound. Each row covers 300 release rounds (3 seeds of 100 rounds); $f$ is the number of falsifying clients out of $K=10$. The bound uses the public cap (the cap the attack ran with), so it is computable without any group-level count. AUC and DPD: mean$\pm$sd over seeds.}
+\caption{Statistics attacks. $|\widehat{D}-D^H|_{\max}$: largest deviation of the server's estimate from the honest-only gap over the release rounds; Bound: largest Theorem 3 bound (honest-mass term plus statistics-noise term, $\beta=0.05$) over the release rounds; Viol.: release rounds with the deviation above the bound. Each row covers varying numbers of release rounds and seeds; $f$ is the number of falsifying clients out of $K=10$. The bound uses the public cap (the cap the attack ran with), so it is computable without any group-level count. AUC and DPD: mean$\pm$sd over seeds.}
 \label{tab:e4_stat_attacks}
 \begin{tabular}{llcccccc}
 \toprule
@@ -16,24 +16,15 @@ Bail & mid & 1 & 0.012 & 0.769 & 0 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
 Bail & mid & 2 & 0.010 & 1.273 & 0 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
 Bail & mid & 3 & 0.009 & 1.526 & 0 & 0.74$\pm$0.02 & 0.010$\pm$0.003 \\
 Bail & mid & 4 & 0.007 & 1.688 & 0 & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
-Pokec-z & none & 0 & 0.006 & 0.021 & 0 & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
-Pokec-z & swap & 1 & 0.030 & 0.738 & 0 & 0.77$\pm$0.00 & 0.045$\pm$0.008 \\
-Pokec-z & swap & 2 & 0.043 & 1.219 & 0 & 0.76$\pm$0.00 & 0.045$\pm$0.008 \\
-Pokec-z & swap & 3 & 0.034 & 1.448 & 0 & 0.77$\pm$0.00 & 0.045$\pm$0.008 \\
-Pokec-z & swap & 4 & 0.028 & 1.592 & 0 & 0.77$\pm$0.00 & 0.045$\pm$0.008 \\
-Pokec-z & mid & 1 & 0.017 & 0.738 & 0 & 0.76$\pm$0.00 & 0.043$\pm$0.010 \\
-Pokec-z & mid & 2 & 0.027 & 1.219 & 0 & 0.77$\pm$0.00 & 0.046$\pm$0.008 \\
-Pokec-z & mid & 3 & 0.033 & 1.448 & 0 & 0.76$\pm$0.00 & 0.045$\pm$0.008 \\
-Pokec-z & mid & 4 & 0.038 & 1.592 & 0 & 0.77$\pm$0.00 & 0.045$\pm$0.008 \\
-Credit & none & 0 & 0.051 & 0.141 & 0 & 0.76$\pm$0.01 & 0.011$\pm$0.004 \\
-Credit & swap & 1 & 0.065 & 1.115 & 0 & 0.76$\pm$0.01 & 0.064$\pm$0.008 \\
-Credit & swap & 2 & 0.058 & 1.421 & 0 & 0.76$\pm$0.01 & 0.065$\pm$0.008 \\
-Credit & swap & 3 & 0.047 & 1.617 & 0 & 0.76$\pm$0.01 & 0.064$\pm$0.007 \\
-Credit & swap & 4 & 0.092 & 1.830 & 0 & 0.72$\pm$0.09 & 0.198$\pm$0.228 \\
-Credit & mid & 1 & 0.057 & 1.115 & 0 & 0.76$\pm$0.01 & 0.065$\pm$0.008 \\
-Credit & mid & 2 & 0.059 & 1.421 & 0 & 0.76$\pm$0.01 & 0.064$\pm$0.008 \\
-Credit & mid & 3 & 0.062 & 1.617 & 0 & 0.76$\pm$0.01 & 0.064$\pm$0.008 \\
-Credit & mid & 4 & 0.063 & 1.830 & 0 & 0.76$\pm$0.00 & 0.064$\pm$0.008 \\
+Pokec-z & none & 0 & 0.006 & 0.021 & 0 & 0.76$\pm$0.00 & 0.037$\pm$0.002 \\
+Pokec-z & swap & 1 & 0.031 & 0.682 & 0 & 0.76$\pm$0.00 & 0.048$\pm$0.007 \\
+Pokec-z & swap & 2 & 0.038 & 1.138 & 0 & 0.76$\pm$0.00 & 0.049$\pm$0.007 \\
+Pokec-z & swap & 3 & 0.037 & 1.258 & 0 & 0.76$\pm$0.00 & 0.054$\pm$0.000 \\
+Pokec-z & swap & 4 & 0.031 & 1.427 & 0 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
+Pokec-z & mid & 1 & 0.018 & 0.593 & 0 & 0.76$\pm$0.00 & 0.053$\pm$0.000 \\
+Pokec-z & mid & 2 & 0.026 & 1.005 & 0 & 0.76$\pm$0.00 & 0.054$\pm$0.000 \\
+Pokec-z & mid & 3 & 0.032 & 1.258 & 0 & 0.76$\pm$0.00 & 0.054$\pm$0.000 \\
+Pokec-z & mid & 4 & 0.038 & 1.427 & 0 & 0.76$\pm$0.00 & 0.054$\pm$0.000 \\
 \bottomrule
 \end{tabular}
 \end{table}
