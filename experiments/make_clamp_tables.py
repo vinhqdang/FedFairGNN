@@ -57,7 +57,8 @@ BETA = 0.05              # failure probability of the statistics-noise bound
 _REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Decimal places: two for AUC, three for DPD/EOD (paper convention).
-DIG = {"auc": 2, "dpd": 3, "eod": 3}
+DIG = {"auc": 2, "auc3": 3, "dpd": 3, "eod": 3, "acc": 3}
+DEGENERATE_AUC = 0.60   # methods with mean AUC below this on a dataset are not bolded
 
 
 # --------------------------------------------------------------------------- #
@@ -117,6 +118,7 @@ def load_group(root: str, group: str) -> List[Dict]:
             stat_dp=cfg.get("r2_stat_dp", True), clip=cfg.get("r2_clip_norm", 1.0),
             step=cfg.get("r2_lambda_step", 0.5), noise=cfg.get("r2_update_noise", 0.0),
             auc=final.get("auc", math.nan), dpd=final.get("dpd", math.nan),
+            dpd_hard=final.get("dpd_hard", math.nan),
             eod=final.get("eod", math.nan), cert=cert, hist=hist,
             selected=sel, cfg=cfg,
             byz=rec.get("byzantine_ids", [])))
@@ -304,11 +306,16 @@ def write_e1_compact(rows: List[Dict], outdir: str) -> None:
         return _missing(outdir, "e1_main_compact", "e1")
     os.makedirs(outdir, exist_ok=True)
 
+    def degenerate(ds, m):
+        st = stats.get(ds, {}).get(m)
+        return st is None or st["auc"] is None or st["auc"][0] < DEGENERATE_AUC
+
     best = {}
     for ds in stats:
         for k in ("auc", "dpd"):
             vals = [stats[ds][m][k][0] for m in COMPACT_METHODS
-                    if m in stats[ds] and stats[ds][m][k] is not None]
+                    if m in stats[ds] and stats[ds][m][k] is not None
+                    and not degenerate(ds, m)]
             if vals:
                 best[(ds, k)] = max(vals) if k == "auc" else min(vals)
 
@@ -317,7 +324,7 @@ def write_e1_compact(rows: List[Dict], outdir: str) -> None:
         if st is None or st[k] is None:
             return "--"
         txt = pm(st[k], k)
-        if abs(st[k][0] - best.get((ds, k), math.inf)) < 1e-12:
+        if not degenerate(ds, m) and abs(st[k][0] - best.get((ds, k), math.inf)) < 1e-12:
             txt = f"\\textbf{{{txt}}}"
         p = st["p_auc" if k == "auc" else "p_dpd"]
         if m != MAIN and p == p and p < 0.05:
@@ -357,7 +364,8 @@ def write_e1_compact(rows: List[Dict], outdir: str) -> None:
             w.writerow([plain(c[0]) for c in r])
 
     caption = ("Main results: test AUC and DPD, mean$\\pm$sd over seeds. Best per column in "
-               "bold. $^\\dagger$: Holm-adjusted Wilcoxon signed-rank $p<0.05$ against CLAMP, "
+               "bold; methods with mean AUC below 0.60 on a dataset (degenerate) are not "
+               "bolded. $^\\dagger$: Holm-adjusted Wilcoxon signed-rank $p<0.05$ against CLAMP, "
                "paired by seed.")
     body = "\n".join([
         r"\begin{table}[t]", r"\centering", r"\scriptsize", r"\setlength{\tabcolsep}{1.5pt}",
@@ -367,6 +375,63 @@ def write_e1_compact(rows: List[Dict], outdir: str) -> None:
     with open(os.path.join(outdir, "e1_main_compact.tex"), "w") as f:
         f.write(body)
     print("wrote e1_main_compact.tex")
+
+
+BACKBONE = {"gcn": "GCN", "gat": "GAT"}
+
+
+def backbone(method: str) -> str:
+    return BACKBONE.get(METHODS.get(method, {}).get("model", ""), "own")
+
+
+def write_e1_appendix(rows: List[Dict], outdir: str) -> None:
+    """All datasets and all main-comparison methods, with hard DPD and the backbone.
+    A longtable (the appendix table runs over several pages)."""
+    rows = [r for r in rows if r["method"] in E1_METHODS]
+    if not rows:
+        return _missing(outdir, "e1_full_appendix", "e1")
+    os.makedirs(outdir, exist_ok=True)
+    header = ["Dataset", "Method", "Backbone", "AUC", "DPD (soft)", "DPD (hard)", "EOD",
+              "Cert.", f"DPD $\\le {TAU_REPORT:g}$"]
+    body, csv_rows = [], []
+    for ds in DATASETS:
+        for m in E1_METHODS:
+            sel = [r for r in rows if r["dataset"] == ds and r["method"] == m]
+            cells = ["--"] * 6
+            if sel:
+                cells = [pm(_ms([r["auc"] for r in sel]), "auc"),
+                         pm(_ms([r["dpd"] for r in sel]), "dpd"),
+                         pm(_ms([r["dpd_hard"] for r in sel]), "dpd"),
+                         pm(_ms([r["eod"] for r in sel]), "eod")]
+                cert = _ms([r["cert"] for r in sel]) if m.startswith("clamp") else None
+                cells.append("--" if cert is None else f"{cert[0]:.4f}")
+                ok = sum(1 for r in sel if r["dpd"] <= TAU_REPORT + 1e-12)
+                cells.append(f"{ok}/{len(sel)}")
+            line = [DS_NAME[ds], DISPLAY.get(m, m), backbone(m)] + cells
+            body.append(line)
+            csv_rows.append([plain(c) for c in line])
+    with open(os.path.join(outdir, "e1_full_appendix.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([plain(h) for h in header])
+        w.writerows(csv_rows)
+    caption = ("Full main comparison, mean$\\pm$sd over seeds, for all datasets and methods. "
+               "DPD (soft) is the demographic-parity gap of the scores; DPD (hard) uses a 0.5 "
+               "threshold. Cert.: $\\lambda^{R}/(\\eta R)$ for the CLAMP variants. "
+               "Backbone: GCN or GAT as in the method definition, own: the baseline's own "
+               "architecture. Degenerate runs (AUC near chance) are included.")
+    spec = "lll" + "c" * 6
+    lines = [f"\\begin{{longtable}}{{{spec}}}",
+             f"\\caption{{{caption}}}\\label{{tab:e1_full}}\\\\",
+             r"\toprule", " & ".join(header) + r" \\", r"\midrule", r"\endfirsthead",
+             r"\toprule", " & ".join(header) + r" \\", r"\midrule", r"\endhead",
+             r"\midrule", r"\multicolumn{9}{r}{\textit{continued on next page}} \\", r"\endfoot",
+             r"\bottomrule", r"\endlastfoot"]
+    for line in body:
+        lines.append(" & ".join(line) + r" \\")
+    lines += [r"\end{longtable}", ""]
+    with open(os.path.join(outdir, "e1_full_appendix.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print(f"wrote e1_full_appendix.csv / .tex ({len(body)} rows)")
 
 
 # --------------------------------------------------------------------------- #
@@ -410,7 +475,7 @@ def table_e2(rows: List[Dict], outdir: str) -> None:
         for tau in sorted({r["tau"] for r in rows if r["dataset"] == ds}):
             sel = [r for r in rows if r["dataset"] == ds and r["tau"] == tau]
             out.append([(DS_NAME[ds], False), (f"{tau:g}", False),
-                        (pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                        (pm(_ms([r["auc"] for r in sel]), "auc3"), False),
                         (pm(_ms([r["dpd"] for r in sel]), "dpd"), False),
                         (pm(_ms([r["eod"] for r in sel]), "eod"), False),
                         (str(len(sel)), False)])
@@ -463,6 +528,16 @@ def table_e3(rows: List[Dict], outdir: str) -> None:
 _PART_CACHE: Dict = {}
 
 
+def _honest_setup(cfg: Dict, byz: List[int]):
+    """(N^H_0, N^H_1), and the public cap of the trainer (largest client validation
+    size over all clients, rounded up to a multiple of 50; see public_n_cap)."""
+    counts, max_val = _partition_counts(cfg)
+    honest = [k for k in range(len(counts)) if k not in set(byz)]
+    nh = counts[honest].sum(0).astype(float)
+    cap = int(math.ceil(max_val / 50.0) * 50)
+    return nh, cap
+
+
 def _honest_counts(cfg: Dict, byz: List[int]) -> np.ndarray:
     """N^H_a = validation counts per group, summed over the honest clients.
 
@@ -471,6 +546,12 @@ def _honest_counts(cfg: Dict, byz: List[int]) -> np.ndarray:
     being read from the round logs, which do not record them. The trainer's per-client
     cap r2_n_cap is derived from the same counts, so it never cuts an honest group.
     """
+    return _honest_setup(cfg, byz)[0]
+
+
+def _partition_counts(cfg: Dict):
+    """Per-client (N_{k,0}, N_{k,1}) on the validation split, and the largest client
+    validation size, for the partition the trainer uses (cached)."""
     from src.data import load_dataset, partition_graph
     if cfg.get("fu_val_source", "pooled") != "pooled":
         raise NotImplementedError("honest counts assume the pooled validation split")
@@ -481,11 +562,11 @@ def _honest_counts(cfg: Dict, byz: List[int]) -> np.ndarray:
         parts = partition_graph(data, cfg["num_clients"], method=cfg["partition"],
                                 alpha=cfg["dirichlet_alpha"], by=cfg["partition_by"],
                                 seed=cfg["seed"])
-        _PART_CACHE[key] = np.array(
+        counts = np.array(
             [[int((d.sensitive_attr[d.val_mask] == a).sum()) for a in (0, 1)] for d in parts])
-    counts = _PART_CACHE[key]
-    honest = [k for k in range(len(counts)) if k not in set(byz)]
-    return counts[honest].sum(0).astype(float)
+        max_val = max(int(d.val_mask.sum()) for d in parts)
+        _PART_CACHE[key] = (counts, max_val)
+    return _PART_CACHE[key]
 
 
 _SIGMA_CACHE: Dict = {}
@@ -536,11 +617,15 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
                           and h.get("dhat_honest") is not None]
                     if not rr:
                         continue
-                    nh = _honest_counts(r["cfg"], r["byz"])
+                    nh, cap = _honest_setup(r["cfg"], r["byz"])
+                    f = len(r["byz"])
+                    # b-term with the public cap (the logged t3_bound used the earlier,
+                    # sensitive-dependent group-based cap; see public_n_cap).
+                    bterm = sum(f * cap / (nh[a] + f * cap) for a in (0, 1)) if f else 0.0
                     sig = _sigma_s(r["cfg"])
                     noise = sum(_noise_term(sig, nh[a]) for a in (0, 1))
                     d = [abs(h["dhat"] - h["dhat_honest"]) for h in rr]
-                    full = [h["t3_bound"] + noise for h in rr]
+                    full = [bterm + noise for h in rr]
                     devs.append(max(d)); bounds.append(max(full))
                     viol += sum(1 for x, y in zip(d, full) if x > y + 1e-12)
                     checked += len(rr)
@@ -572,6 +657,44 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
 # --------------------------------------------------------------------------- #
 # E5 and E5b: privacy sweeps
 # --------------------------------------------------------------------------- #
+def write_stacked(outdir: str, name: str, out_rows, dss, caption: str) -> None:
+    """One table, stacked panels of two datasets each. Rows are (eps, P, then three
+    cells per dataset: AUC, DPD, fallback)."""
+    os.makedirs(outdir, exist_ok=True)
+    with open(os.path.join(outdir, f"{name}.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        head = ["epsilon", "P"]
+        for d in dss:
+            head += [f"{DS_NAME[d]} AUC", f"{DS_NAME[d]} DPD", f"{DS_NAME[d]} fallback"]
+        w.writerow(head)
+        for r in out_rows:
+            w.writerow([plain(c[0]) for c in r])
+    panels = []
+    for k in range(0, len(dss), 2):
+        chunk = dss[k:k + 2]
+        cols = 2 + 3 * len(chunk)
+        head = ["$\\varepsilon$", "$P$"]
+        for d in chunk:
+            head += [f"{DS_NAME[d]} AUC", f"{DS_NAME[d]} DPD", "fallback"]
+        lines = [f"\\begin{{tabular}}{{{'cc' + 'ccc' * len(chunk)}}}", r"\toprule",
+                 " & ".join(head) + r" \\", r"\midrule"]
+        for r in out_rows:
+            cells = [r[0][0], r[1][0]]
+            base = 2 + 3 * k  # column offset of this panel's first dataset
+            for j in range(3 * len(chunk)):
+                cells.append(r[base + j][0])
+            lines.append(" & ".join(cells) + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        panels.append("\n".join(lines))
+    body = "\n".join([r"\begin{table}[t]", r"\centering", r"\footnotesize",
+                      r"\setlength{\tabcolsep}{3pt}",
+                      f"\\caption{{{caption}}}", f"\\label{{tab:{name}}}",
+                      panels[0], r"\vspace{4pt}", panels[1], r"\end{table}", ""])
+    with open(os.path.join(outdir, f"{name}.tex"), "w") as f:
+        f.write(body)
+    print(f"wrote {name}.csv / {name}.tex (stacked, {len(out_rows)} rows)")
+
+
 def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[float] = None,
              datasets: Optional[List[str]] = None, name: Optional[str] = None,
              default_p: str = "P=10 for German, P=1 for Bail") -> None:
@@ -620,14 +743,21 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
                      (pm(_ms([r["dpd"] for r in sel]), "dpd"), False), ("--", False)]
         out.append(line)
     budget = (f", fairness budget $\\tau={tau:g}$" if tau is not None else "")
+    n_seeds = len({r["seed"] for r in rows if r["method"] == MAIN and r["dataset"] in dss})
+    seeds_txt = f"{n_seeds} seeds"
     caption = ("Privacy: utility and fairness against the statistics budget $\\varepsilon$ and "
                "release period $P$" + budget + ". $\\varepsilon=\\infty$: statistics noise "
-               f"off, default period ({default_p}). mean$\\pm$sd over seeds. Fallback: number of "
+               f"off, default period ({default_p}). mean$\\pm$sd over {seeds_txt}. "
+               "Fallback: number of "
                "seeds with no eligible feasible release after the warm-up, so the last model "
                "is reported.")
     if group == "e5b":
         caption += " The ClipMean row is the unconstrained reference (no Lagrangian term)."
-    write_table(outdir, name, header, out, caption, size="footnotesize", tabsep="3pt")
+    if len(dss) <= 2:
+        write_table(outdir, name, header, out, caption, size="footnotesize", tabsep="3pt")
+        return
+    # More than two datasets: stacked tabulars of two datasets each (same rows), one table.
+    write_stacked(outdir, name, out, dss, caption)
 
 
 # --------------------------------------------------------------------------- #
@@ -696,8 +826,9 @@ def write_privacy_tables(attack_rows: List[Dict], probe_rows: List[Dict], out_di
         pdss = [d for d in ["german", "bail"] if any(r["dataset"] == d for r in probe_rows)]
         header = ["Method"] + [f"{DS_NAME[d]} AUC" for d in pdss]
         out = []
-        for m in ["fedavg-gat", "clamp-clipmean", "clamp"]:
-            line = [(DISPLAY.get(m, m), False)]
+        names = {"raw-features": "Control: raw features", "untrained-gat": "Control: untrained GAT"}
+        for m in ["fedavg-gat", "clamp-clipmean", "clamp", "raw-features", "untrained-gat"]:
+            line = [(DISPLAY.get(m, names.get(m, m)), False)]
             for d in pdss:
                 sel = [r["auc"] for r in probe_rows if r["method"] == m and r["dataset"] == d]
                 line.append((pm(_ms(sel), "auc"), False))
@@ -768,13 +899,14 @@ def main(argv=None):
     report_warmup(args.root, outdir)
     table_e1(data["e1"], outdir)
     write_e1_compact(data["e1"], outdir)
+    write_e1_appendix(data["e1"], outdir)
     table_e2(data["e2"], outdir)
     table_e3(data["e3"], outdir)
     table_e4(data["e4"], outdir)
-    table_e5(data["e5"], outdir, datasets=["german", "bail"], name="e5_privacy")
-    table_e5(data["e5"], outdir, datasets=["credit"], name="e5_credit",
-             default_p="P=1")
-    table_e5(data["e5b"], outdir, group="e5b", tau=0.005, datasets=["bail"])
+    table_e5(data["e5"], outdir, datasets=["german", "bail", "nba", "facebook"],
+             name="e5_privacy", default_p="P=10 for German, NBA and Facebook, P=1 for Bail")
+    table_e5(data["e5"], outdir, datasets=["credit"], name="e5_credit", default_p="P=1")
+    table_e5(data["e5b"], outdir, group="e5b", tau=0.005, datasets=["bail"], default_p="P=1")
     table_e6(data["e6"], outdir)
     privacy = os.path.join(args.root, "privacy")
     if os.path.exists(os.path.join(privacy, "attack.csv")):

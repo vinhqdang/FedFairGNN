@@ -25,6 +25,18 @@ from .attacks import falsify_group_stats, poison_updates
 from .client import Client, flatten_state, load_flat_state, sampled_predict, _soft_dpd
 
 
+def public_n_cap(clients_data) -> int:
+    """Public cap on per-client, per-group validation counts (r2_n_cap = 0).
+
+    The largest per-client validation size, rounded up to a multiple of 50. It
+    counts nodes without reading s, so it is independent of the sensitive attribute
+    and can be published. Every group count is at most the client's validation size,
+    so the cap never cuts a group.
+    """
+    largest = max(int(d.val_mask.sum()) for d in clients_data)
+    return int(math.ceil(largest / 50.0) * 50)
+
+
 def _honest_diagnostics(stats: List[Dict[str, float]], byzantine_ids: List[int],
                         n_cap: float) -> Dict[str, float]:
     """Honest-only gap D^H and the T3 bound sum_a b_a, from the statistics before
@@ -86,9 +98,8 @@ class FederatedTrainer:
         self._agg_state: Dict = {}   # persists stateful-aggregator state (e.g. fedgraphfair's lambda)
 
         # TrustFedGNN-R2 setup. Public count cap: derived from the partition when
-        # r2_n_cap is 0 (largest per-client, per-group validation count, rounded up
-        # to a multiple of 50). The statistics noise is one Gaussian release per
-        # round with L2 sensitivity 2, so sigma_s = 2 z (spec T1).
+        # r2_n_cap is 0 (see public_n_cap). The statistics noise is one Gaussian
+        # release per round with L2 sensitivity 2, so sigma_s = 2 z (spec T1).
         self._r2_n_cap = 0
         self._feasible_flat = None      # theta^t of the last release round with Dhat <= tau
         self._feasible_round = None
@@ -104,9 +115,7 @@ class FederatedTrainer:
             if config.r2_n_cap > 0:
                 self._r2_n_cap = int(config.r2_n_cap)
             else:
-                largest = max(int((d.sensitive_attr[d.val_mask] == a).sum())
-                              for d in self.clients_data for a in (0, 1))
-                self._r2_n_cap = int(math.ceil(largest / 50.0) * 50)
+                self._r2_n_cap = public_n_cap(self.clients_data)
             for c in self.clients:
                 c.r2_n_cap = self._r2_n_cap
             if config.r2_stat_dp:

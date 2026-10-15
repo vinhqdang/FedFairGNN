@@ -286,8 +286,7 @@ def test_group_stats_cut_to_first_n_cap_nodes():
 
 def test_r2_n_cap_is_derived_from_partition():
     trainer = FederatedTrainer(_cfg("trustfedgnn-r2"))
-    largest = max(int((d.sensitive_attr[d.val_mask] == a).sum())
-                  for d in trainer.clients_data for a in (0, 1))
+    largest = max(int(d.val_mask.sum()) for d in trainer.clients_data)
     assert trainer._r2_n_cap == math.ceil(largest / 50) * 50
     assert all(c.r2_n_cap == trainer._r2_n_cap for c in trainer.clients)
 
@@ -573,3 +572,14 @@ def test_warmup_selects_the_feasible_round_after_warmup(monkeypatch):
     assert res["final"]["selected_round"] == 25
     # theta^24 = g0 - 24 * 0.1 is the model the round-25 statistics were computed on.
     assert res["final"]["auc"] == pytest.approx(float((g0 - 2.4).double().sum()), rel=1e-5)
+
+
+def test_public_n_cap_is_invariant_to_flipping_s():
+    from src.federated.trainer import public_n_cap
+    trainer = FederatedTrainer(_cfg("trustfedgnn-r2"))
+    before = public_n_cap(trainer.clients_data)
+    for d in trainer.clients_data:
+        v = int(d.val_mask.nonzero()[0])
+        d.sensitive_attr[v] = 1 - d.sensitive_attr[v]
+    assert public_n_cap(trainer.clients_data) == before
+    assert before % 50 == 0 and before >= max(int(d.val_mask.sum()) for d in trainer.clients_data)
