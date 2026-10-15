@@ -7,7 +7,7 @@ from experiments.run_clamp_suite import E1_METHODS, E3_ROWS, expand
 from experiments.run_experiment import build_config, run_id_for
 from src.federated.aggregation import ALL_METHODS
 
-EXPECTED = {"e1": 560, "e2": 90, "e3": 630, "e4": 81, "e5": 160, "e6": 42}
+EXPECTED = {"e1": 680, "e2": 90, "e3": 756, "e4": 81, "e5": 160, "e5b": 85, "e6": 54}
 
 
 def test_job_counts_per_group():
@@ -55,7 +55,7 @@ def test_common_settings_applied_to_every_job():
             ov = j["overrides"]
             assert ov["rounds"] == 100 and ov["dirichlet_alpha"] == 0.3
             assert ov["partition"] == "dirichlet"
-            if group != "e5":  # e5 sweeps dp_epsilon on purpose
+            if group not in ("e5", "e5b"):  # e5/e5b sweep dp_epsilon on purpose
                 assert ov["dp_epsilon"] == 8.0
 
 

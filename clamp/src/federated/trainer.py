@@ -25,6 +25,18 @@ from .attacks import falsify_group_stats, poison_updates
 from .client import Client, flatten_state, load_flat_state, sampled_predict, _soft_dpd
 
 
+def public_n_cap(clients_data) -> int:
+    """Public cap on per-client, per-group validation counts (r2_n_cap = 0).
+
+    The largest per-client validation size, rounded up to a multiple of 50. It
+    counts nodes without reading s, so it is independent of the sensitive attribute
+    and can be published. Every group count is at most the client's validation size,
+    so the cap never cuts a group.
+    """
+    largest = max(int(d.val_mask.sum()) for d in clients_data)
+    return int(math.ceil(largest / 50.0) * 50)
+
+
 def _honest_diagnostics(stats: List[Dict[str, float]], byzantine_ids: List[int],
                         n_cap: float) -> Dict[str, float]:
     """Honest-only gap D^H and the T3 bound sum_a b_a, from the statistics before
@@ -37,7 +49,8 @@ def _honest_diagnostics(stats: List[Dict[str, float]], byzantine_ids: List[int],
     f = len(byz)
     b = [f * n_cap / (N[a] + f * n_cap) if f > 0 else 0.0 for a in (0, 1)]
     gap = r[1] - r[0]
-    return {"gap_honest": gap, "dhat_honest": abs(gap), "t3_bound": b[0] + b[1]}
+    return {"gap_honest": gap, "dhat_honest": abs(gap), "t3_bound": b[0] + b[1],
+            "n_cap": n_cap}
 
 
 def _clip_to_norm(u: torch.Tensor, C: float) -> torch.Tensor:
@@ -86,19 +99,24 @@ class FederatedTrainer:
         self._agg_state: Dict = {}   # persists stateful-aggregator state (e.g. fedgraphfair's lambda)
 
         # TrustFedGNN-R2 setup. Public count cap: derived from the partition when
-        # r2_n_cap is 0 (largest per-client, per-group validation count, rounded up
-        # to a multiple of 50). The statistics noise is one Gaussian release per
-        # round with L2 sensitivity 2, so sigma_s = 2 z (spec T1).
+        # r2_n_cap is 0 (see public_n_cap). The statistics noise is one Gaussian
+        # release per round with L2 sensitivity 2, so sigma_s = 2 z (spec T1).
         self._r2_n_cap = 0
+        self._feasible_flat = None      # theta^t of the last release round with Dhat <= tau
+        self._feasible_round = None
+        # Warm-up for the feasible rule: round 1 is untrained and trivially feasible.
+        self._select_warmup = math.ceil(round(config.r2_select_warmup * config.rounds, 9))
         self._secagg_sigma_s = 0.0
+        if config.r2_direction not in ("sign", "prop"):
+            raise ValueError(f"r2_direction must be 'sign' or 'prop', got {config.r2_direction!r}")
+        if config.r2_output not in ("last", "feasible"):
+            raise ValueError(f"r2_output must be 'last' or 'feasible', got {config.r2_output!r}")
         self._secagg_gen = torch.Generator().manual_seed(config.seed)
         if config.aggregator == "secagg_lagrangian":
             if config.r2_n_cap > 0:
                 self._r2_n_cap = int(config.r2_n_cap)
             else:
-                largest = max(int((d.sensitive_attr[d.val_mask] == a).sum())
-                              for d in self.clients_data for a in (0, 1))
-                self._r2_n_cap = int(math.ceil(largest / 50.0) * 50)
+                self._r2_n_cap = public_n_cap(self.clients_data)
             for c in self.clients:
                 c.r2_n_cap = self._r2_n_cap
             if config.r2_stat_dp:
@@ -251,9 +269,11 @@ class FederatedTrainer:
         # Off-period rounds (r2_stat_period > 1) release no statistics; lambda and
         # the direction stay at the last broadcast values.
         r2_release = r2 and t % max(1, self.cfg.r2_stat_period) == 0
+        pre_flat = (self.global_flat.clone()
+                    if r2_release and self.cfg.r2_output == "feasible" else None)
         fedfdp = self.cfg.dp_mode == "fedfdp"
         lam_in = float(self._agg_state.get("r2_lambda", 0.0))
-        dir_in = int(self._agg_state.get("r2_dir", 0))
+        dir_in = float(self._agg_state.get("r2_dir", 0))
         updates, metas, stats = [], [], []
         for c in self.clients:
             c.set_flat(self.global_flat)
@@ -299,7 +319,8 @@ class FederatedTrainer:
             updates = [_clip_to_norm(u, C) for u in updates]
             secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, n_cap=self._r2_n_cap,
                           sigma_s=self._secagg_sigma_s, sigma_u=self.cfg.r2_update_noise,
-                          generator=self._secagg_gen, release=r2_release)
+                          generator=self._secagg_gen, release=r2_release,
+                          direction_rule=self.cfg.r2_direction)
 
         # FairShare-GNN: build the server target gradient on the pooled client
         # validation nodes (current global model), then let the FU-Shapley rule
@@ -360,6 +381,13 @@ class FederatedTrainer:
             if g0 is not None:
                 g_agg = g_agg + self.cfg.server_calib_gamma * g0
 
+        if pre_flat is not None and info.get("dhat") is not None \
+                and info["dhat"] <= self.cfg.fairness_budget \
+                and t + 1 >= self._select_warmup:
+            # Server-side selection on the released Dhat: keep theta^t (the model the
+            # statistics were computed on) and its round number.
+            self._feasible_flat = pre_flat
+            self._feasible_round = t + 1
         self.global_flat = self.global_flat - g_agg
 
         rec = {"round": t + 1, **{f"g_{k}": v for k, v in self.evaluate_global().items()}}
@@ -392,6 +420,26 @@ class FederatedTrainer:
             rec["ftgd_skipped_projection_total"] = sum(skips)
         return rec
 
+    def _final_metrics(self) -> Dict:
+        """Final evaluation. With r2_output="feasible" this scores the model of the
+        most recent release round whose released Dhat was <= tau (server-side
+        post-processing of released outputs, no extra privacy cost); if no release
+        round was feasible, the last model is used and selected_round is None."""
+        if self.cfg.aggregator != "secagg_lagrangian" or self.cfg.r2_output != "feasible":
+            return self.evaluate_global()
+        if self._feasible_flat is None:
+            final = self.evaluate_global()
+            final["selected_round"] = None
+            return final
+        last = self.global_flat
+        self.global_flat = self._feasible_flat
+        try:
+            final = self.evaluate_global()
+        finally:
+            self.global_flat = last
+        final["selected_round"] = self._feasible_round
+        return final
+
     def run(self, verbose=False) -> Dict:
         for t in range(self.cfg.rounds):
             rec = self._round(t)
@@ -399,7 +447,7 @@ class FederatedTrainer:
             if verbose and (t % max(1, self.cfg.rounds // 10) == 0 or t == self.cfg.rounds - 1):
                 print(f"  round {rec['round']:3d}  AUC={rec.get('g_auc',0):.3f} "
                       f"DPD={rec.get('g_dpd',0):.3f} EOD={rec.get('g_eod',0):.3f}")
-        final = self.evaluate_global()
+        final = self._final_metrics()
         if self.accountant:
             final["epsilon"] = self.accountant.epsilon()
             final["delta"] = self.cfg.dp_delta

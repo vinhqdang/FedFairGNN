@@ -19,6 +19,7 @@
 
 Usage:
     python -m experiments.clamp_privacy --datasets german,bail --seeds 0-2 --workers 4
+    python -m experiments.clamp_privacy --render-only --out results/clamp/privacy
 """
 from __future__ import annotations
 
@@ -123,32 +124,10 @@ def attack_balanced_accuracy(inputs: List[tuple], sigma: float, releases: int,
 # --------------------------------------------------------------------------- #
 # (b) Attribute probe
 # --------------------------------------------------------------------------- #
-@torch.no_grad()
-def probe_auc(trainer, seed: int) -> float:
-    """AUC of a logistic regression that predicts s from penultimate test-node
-    embeddings of the final global model. Fit on a random 50%, scored on the rest."""
+def _probe_fit(X: np.ndarray, S: np.ndarray, seed: int) -> float:
+    """Logistic regression for s on a random 50% of the rows, AUC on the other 50%."""
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import roc_auc_score
-    from src.federated.client import load_flat_state
-
-    model = trainer.ref_model
-    load_flat_state(model, trainer.global_flat.to(trainer.device))
-    model.eval()
-    feats = []
-    hook = model.classifier.register_forward_pre_hook(lambda m, inp: feats.append(inp[0]))
-    X, S = [], []
-    try:
-        for d in trainer.clients_data:
-            d = d.to(trainer.device)
-            if int(d.test_mask.sum()) == 0:
-                continue
-            feats.clear()
-            model(d.x, d.edge_index, d.sensitive_attr)
-            X.append(feats[-1][d.test_mask].cpu().numpy())
-            S.append(d.sensitive_attr[d.test_mask].cpu().numpy())
-    finally:
-        hook.remove()
-    X, S = np.concatenate(X), np.concatenate(S)
     rng = np.random.default_rng(seed)
     perm = rng.permutation(len(S))
     half = len(S) // 2
@@ -159,6 +138,97 @@ def probe_auc(trainer, seed: int) -> float:
     clf = LogisticRegression(max_iter=1000)
     clf.fit((X[tr] - mu) / sd, S[tr])
     return float(roc_auc_score(S[te], clf.predict_proba((X[te] - mu) / sd)[:, 1]))
+
+
+def _test_pool(trainer, features_fn):
+    """Stack per-client test-node features (features_fn(d) -> [n, k]) and attributes."""
+    X, S = [], []
+    for d in trainer.clients_data:
+        if int(d.test_mask.sum()) == 0:
+            continue
+        X.append(features_fn(d.to(trainer.device))[d.test_mask.to(trainer.device)].cpu().numpy())
+        S.append(d.sensitive_attr[d.test_mask].cpu().numpy())
+    return np.concatenate(X), np.concatenate(S)
+
+
+@torch.no_grad()
+def probe_auc(trainer, seed: int) -> float:
+    """AUC of a logistic regression that predicts s from penultimate test-node
+    embeddings of the final global model. Fit on a random 50%, scored on the rest."""
+    from src.federated.client import load_flat_state
+
+    model = trainer.ref_model
+    load_flat_state(model, trainer.global_flat.to(trainer.device))
+    model.eval()
+    feats = []
+    hook = model.classifier.register_forward_pre_hook(lambda m, inp: feats.append(inp[0]))
+
+    def emb(d):
+        feats.clear()
+        model(d.x, d.edge_index, d.sensitive_attr)
+        return feats[-1]
+    try:
+        X, S = _test_pool(trainer, emb)
+    finally:
+        hook.remove()
+    return _probe_fit(X, S, seed)
+
+
+@torch.no_grad()
+def control_probes(trainer, seed: int) -> Dict[str, float]:
+    """Two controls with no training. raw-features: the probe on the node features x.
+    untrained-gat: the probe on the penultimate embeddings of a freshly initialised GAT
+    (same architecture as the trained model, seeded)."""
+    from src.models import build_model
+    from src.federated.client import load_flat_state
+    raw_X, raw_S = _test_pool(trainer, lambda d: d.x)
+    out = {"raw-features": _probe_fit(raw_X, raw_S, seed)}
+
+    torch.manual_seed(seed)
+    model = build_model("gat", trainer.in_channels, trainer.cfg).to(trainer.device)
+    model.eval()
+    feats = []
+    hook = model.classifier.register_forward_pre_hook(lambda m, inp: feats.append(inp[0]))
+
+    def emb(d):
+        feats.clear()
+        model(d.x, d.edge_index, d.sensitive_attr)
+        return feats[-1]
+    try:
+        X, S = _test_pool(trainer, emb)
+    finally:
+        hook.remove()
+    out["untrained-gat"] = _probe_fit(X, S, seed)
+    return out
+
+
+def write_control_probes(datasets, seeds, out_dir: str) -> None:
+    """Add the two control rows (per dataset and seed) to probe.csv, replacing old ones."""
+    import csv
+    from experiments.run_clamp_suite import _job
+    from experiments.run_experiment import build_config
+    from src.federated.trainer import FederatedTrainer
+    path = os.path.join(out_dir, "probe.csv")
+    kept = []
+    if os.path.exists(path):
+        with open(path) as f:
+            kept = [r for r in csv.DictReader(f) if r["method"] not in ("raw-features", "untrained-gat")]
+    new = []
+    for ds in datasets:
+        for seed in seeds:
+            job = _job("privacy", "clamp", ds, seed, {})
+            cfg = build_config("clamp", ds, seed, **job["overrides"])
+            trainer = FederatedTrainer(cfg)   # partition only; nothing is trained here
+            for method, auc in control_probes(trainer, seed).items():
+                new.append({"dataset": ds, "seed": seed, "method": method, "auc": auc})
+                print(f"control {method} {ds} s{seed}: AUC {auc:.4f}", flush=True)
+    rows = [{"dataset": r["dataset"], "seed": int(r["seed"]), "method": r["method"],
+             "auc": float(r["auc"])} for r in kept] + new
+    os.makedirs(out_dir, exist_ok=True)
+    with open(path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["dataset", "seed", "method", "auc"])
+        w.writeheader()
+        w.writerows(rows)
 
 
 # --------------------------------------------------------------------------- #
@@ -214,13 +284,13 @@ def _parse_seeds(text: str) -> List[int]:
 
 
 def _write_outputs(rows_attack: List[Dict], rows_probe: List[Dict], out_dir: str) -> None:
+    """Per-seed CSVs (attack.csv, probe.csv), then the LaTeX tables from them."""
     import csv
-    from experiments.make_clamp_tables import _ms, _fmt, write_table
+    from experiments.make_clamp_tables import write_privacy_tables
     os.makedirs(out_dir, exist_ok=True)
     if rows_attack:
-        keys = list(rows_attack[0].keys())
         with open(os.path.join(out_dir, "attack.csv"), "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=keys)
+            w = csv.DictWriter(f, fieldnames=list(rows_attack[0].keys()))
             w.writeheader()
             w.writerows(rows_attack)
     if rows_probe:
@@ -228,37 +298,7 @@ def _write_outputs(rows_attack: List[Dict], rows_probe: List[Dict], out_dir: str
             w = csv.DictWriter(f, fieldnames=list(rows_probe[0].keys()))
             w.writeheader()
             w.writerows(rows_probe)
-
-    datasets = sorted({r["dataset"] for r in rows_attack})
-    if rows_attack:
-        header = ["dataset", "epsilon", "bound", "single (MC)", "single (analytic)",
-                  "composed R (MC)"]
-        out = []
-        for ds in datasets:
-            for eps in EPS_GRID:
-                sel = [r for r in rows_attack if r["dataset"] == ds and r["eps"] == eps]
-                if not sel:
-                    continue
-                cell = lambda k: (_fmt(_ms([r[k] for r in sel])), False)
-                out.append([(ds, False), (f"{eps:g}", False), (f"{sel[0]['bound']:.3f}", False),
-                            cell("acc_single_mc"), cell("acc_single_analytic"),
-                            cell("acc_composed_mc")])
-        write_table(out_dir, "privacy_attack", header, out,
-                    "Differencing attack on the statistics channel: balanced accuracy of the "
-                    "likelihood-ratio test (mean $\\pm$ sd over seeds) against the "
-                    "$(\\varepsilon,\\delta)$-DP bound.")
-    if rows_probe:
-        header = ["method"] + datasets
-        out = []
-        for m in PROBE_METHODS:
-            row = [(m, False)]
-            for ds in datasets:
-                sel = [r["auc"] for r in rows_probe if r["method"] == m and r["dataset"] == ds]
-                row.append((_fmt(_ms(sel)), False))
-            out.append(row)
-        write_table(out_dir, "privacy_probe", header, out,
-                    "Attribute probe on the final global model: AUC of predicting $s$ from "
-                    "penultimate test embeddings (mean $\\pm$ sd over seeds).")
+    write_privacy_tables(rows_attack, rows_probe, out_dir)
 
 
 def main(argv=None):
@@ -270,7 +310,20 @@ def main(argv=None):
     p.add_argument("--targets", type=int, default=2000)
     p.add_argument("--trials", type=int, default=200, help="even number of noise draws per target")
     p.add_argument("--out", default=OUT_DIR)
+    p.add_argument("--controls-only", action="store_true",
+                   help="add the raw-feature and untrained-GAT probe controls (no training)")
+    p.add_argument("--render-only", action="store_true",
+                   help="re-render the privacy tables from the existing attack.csv / probe.csv")
     args = p.parse_args(argv)
+    if args.controls_only:
+        write_control_probes(args.datasets.split(","), _parse_seeds(args.seeds), args.out)
+        from experiments.make_clamp_tables import render_privacy_from_csv
+        render_privacy_from_csv(args.out)
+        return
+    if args.render_only:
+        from experiments.make_clamp_tables import render_privacy_from_csv
+        render_privacy_from_csv(args.out)
+        return
 
     jobs = []
     for ds in args.datasets.split(","):

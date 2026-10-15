@@ -84,6 +84,9 @@ class ExperimentConfig:
                                      #   group, rounded up to a multiple of 50); see the trainer.
     r2_stat_dp: bool = True          # Gaussian noise on the released statistics (sigma_s, T1)
     r2_stat_period: int = 1          # P: statistics are released only in rounds t with t % P == 0
+    r2_direction: str = "sign"       # sign (dead-zone sign of the gap) | prop (clip(g / tau, -1, 1))
+    r2_output: str = "last"          # last (final iterate) | feasible (last model with released Dhat <= tau)
+    r2_select_warmup: float = 0.2    # feasible selection only uses rounds >= ceil(this * rounds)
     r2_update_noise: float = 0.0     # sigma_u on the update sum (T1b ablation only)
     fedfdp_lambda: float = 0.5       # FedFDP: weight of the per-node loss-deviation factor
 

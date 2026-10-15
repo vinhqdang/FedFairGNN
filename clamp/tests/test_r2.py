@@ -286,8 +286,7 @@ def test_group_stats_cut_to_first_n_cap_nodes():
 
 def test_r2_n_cap_is_derived_from_partition():
     trainer = FederatedTrainer(_cfg("trustfedgnn-r2"))
-    largest = max(int((d.sensitive_attr[d.val_mask] == a).sum())
-                  for d in trainer.clients_data for a in (0, 1))
+    largest = max(int(d.val_mask.sum()) for d in trainer.clients_data)
     assert trainer._r2_n_cap == math.ceil(largest / 50) * 50
     assert all(c.r2_n_cap == trainer._r2_n_cap for c in trainer.clients)
 
@@ -448,3 +447,139 @@ def test_fedfdp_meta_is_cached_and_does_not_move_clip():
     a = client.meta()["loss"]
     b = client.meta()["loss"]
     assert a == b and client._fedfdp_clip == clip
+
+
+# --------------------------------------------------------------------------- #
+# Design options: continuous direction and feasible-iterate output (opt-in)
+# --------------------------------------------------------------------------- #
+def test_prop_direction_is_proportional_and_saturates():
+    tau = 0.1
+    cases = {0.05: 0.5, -0.05: -0.5, 0.3: 1.0, -0.3: -1.0, 0.0: 0.0}
+    for gap, want in cases.items():
+        r0 = 0.3
+        s = [_stats(100 * r0, 100, 100 * (r0 + gap), 100)]
+        _, info = secagg_lagrangian([torch.zeros(3)], s, {},
+                                    **_secagg(tau=tau, direction_rule="prop"))
+        assert info["direction"] == pytest.approx(want, abs=1e-9), gap
+
+
+def test_unknown_direction_rule_is_rejected():
+    s = [_stats(30, 100, 60, 100)]
+    with pytest.raises(ValueError):
+        secagg_lagrangian([torch.zeros(3)], s, {}, **_secagg(direction_rule="bogus"))
+
+
+def test_invalid_design_options_are_rejected_by_the_trainer():
+    with pytest.raises(ValueError):
+        FederatedTrainer(_cfg("trustfedgnn-r2", r2_direction="bogus"))
+    with pytest.raises(ValueError):
+        FederatedTrainer(_cfg("trustfedgnn-r2", r2_output="bogus"))
+
+
+def _scripted_secagg(dhats):
+    """Stand-in for secagg_lagrangian: a fixed Dhat per release, and a constant
+    aggregate 0.1 per round so every round's model is distinct."""
+    calls = {"i": 0}
+
+    def stub(updates, stats, state, *, C, tau, eta_lambda, n_cap, sigma_s, sigma_u,
+             generator=None, release=True, direction_rule="sign"):
+        d = dhats[calls["i"]]
+        calls["i"] += 1
+        K = len(updates)
+        g = torch.full_like(updates[0].flatten(), 0.1).view_as(updates[0])
+        info = {"weights": [1.0 / K] * K, "n_accepted": K, "n_rejected": 0,
+                "lambda": 0.0, "lambda_in": 0.0, "direction": 0, "dhat": d,
+                "gap": d, "u_norm": 1.0}
+        return g, info
+    return stub
+
+
+def test_feasible_output_selects_last_feasible_round(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=4, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg([0.5, 0.01, 0.4, 0.02]))
+    trainer = FederatedTrainer(cfg)
+    g0 = trainer.global_flat.clone()
+    res = trainer.run()
+    # Feasible rounds are 2 and 4. Round 4 wins; its statistics were computed on theta^3.
+    assert res["final"]["selected_round"] == 4
+    assert torch.allclose(trainer._feasible_flat, g0 - 0.3, atol=1e-6)
+    assert len(res["history"]) == 4
+    last = trainer.global_flat.clone()
+    trainer.global_flat = trainer._feasible_flat
+    expected = trainer.evaluate_global()
+    trainer.global_flat = last
+    assert res["final"]["auc"] == pytest.approx(expected["auc"])
+
+
+def test_feasible_output_falls_back_to_last_model_when_none_feasible(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=3, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg([0.5, 0.4, 0.3]))
+    trainer = FederatedTrainer(cfg)
+    res = trainer.run()
+    assert res["final"]["selected_round"] is None
+    assert res["final"]["auc"] == pytest.approx(trainer.evaluate_global()["auc"])
+
+
+def test_default_output_has_no_selection_key():
+    trainer = FederatedTrainer(_cfg("trustfedgnn-r2", rounds=1))
+    assert "selected_round" not in trainer.run()["final"]
+
+
+def test_clamp_design_variants_are_registered():
+    expect = {"clamp-p": ("prop", "last"), "clamp-f": ("sign", "feasible"),
+              "clamp-pf": ("prop", "feasible")}
+    for name, (direction, output) in expect.items():
+        cfg = ExperimentConfig()
+        apply_method(cfg, name)
+        assert cfg.r2_direction == direction and cfg.r2_output == output
+        assert cfg.aggregator == "secagg_lagrangian" and cfg.model == "gat"
+
+
+def _stub_eval(trainer):
+    """Cheap stand-in for evaluate_global: its AUC is the sum of the evaluated model,
+    so the test can tell which model was scored."""
+    trainer.evaluate_global = lambda: {"auc": float(trainer.global_flat.double().sum()),
+                                       "dpd": 0.0, "eod": 0.0}
+
+
+def test_warmup_round_1_only_feasible_falls_back_to_last_model(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=30, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    dhats = [0.01] + [0.5] * 29          # only round 1 is feasible
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg(dhats))
+    trainer = FederatedTrainer(cfg)
+    _stub_eval(trainer)
+    res = trainer.run()
+    assert res["final"]["selected_round"] is None
+    assert res["final"]["auc"] == pytest.approx(float(trainer.global_flat.double().sum()))
+
+
+def test_warmup_selects_the_feasible_round_after_warmup(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=30, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    dhats = [0.01] + [0.5] * 23 + [0.01] + [0.5] * 5   # feasible at rounds 1 and 25
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg(dhats))
+    trainer = FederatedTrainer(cfg)
+    g0 = trainer.global_flat.clone()
+    _stub_eval(trainer)
+    res = trainer.run()
+    assert res["final"]["selected_round"] == 25
+    # theta^24 = g0 - 24 * 0.1 is the model the round-25 statistics were computed on.
+    assert res["final"]["auc"] == pytest.approx(float((g0 - 2.4).double().sum()), rel=1e-5)
+
+
+def test_public_n_cap_is_invariant_to_flipping_s():
+    from src.federated.trainer import public_n_cap
+    trainer = FederatedTrainer(_cfg("trustfedgnn-r2"))
+    before = public_n_cap(trainer.clients_data)
+    for d in trainer.clients_data:
+        v = int(d.val_mask.nonzero()[0])
+        d.sensitive_attr[v] = 1 - d.sensitive_attr[v]
+    assert public_n_cap(trainer.clients_data) == before
+    assert before % 50 == 0 and before >= max(int(d.val_mask.sum()) for d in trainer.clients_data)

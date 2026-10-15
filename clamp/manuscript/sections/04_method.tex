@@ -10,7 +10,7 @@ Client $k$ evaluates the received model on its validation nodes and reports, for
 \begin{equation}\label{eq:stats}
 N_{k,a}=\bigl|\{v\in\mathcal{V}^{\mathrm{val}}_k:s_v=a\}\bigr|,\qquad S_{k,a}=\sum_{v\in\mathcal{V}^{\mathrm{val}}_k,\;s_v=a}p_{\theta^t}(v).
 \end{equation}
-Because $s$ is not an input of the backbone, flipping one node's attribute changes no prediction; it only moves that node's prediction and count from one group to the other. A public constant $\ncap$ bounds $N_{k,a}$; it is fixed per dataset before training (Section~\ref{sec:setup}). A client whose group is larger than $\ncap$ reports a fixed subset chosen once, so every report satisfies $0\le S_{k,a}\le N_{k,a}\le\ncap$.
+Because $s$ is not an input of the backbone, flipping one node's attribute changes no prediction; it only moves that node's prediction and count from one group to the other. A public constant $\ncap$ bounds $N_{k,a}$; it is the largest per-client validation-set size, rounded up, and is fixed before training (Section~\ref{sec:guarantees}). No group can exceed it, so every honest report satisfies $0\le S_{k,a}\le N_{k,a}\le\ncap$ without truncation.
 
 \paragraph{Lagrangian local objective}
 Starting from $\theta^t$, the client runs $E$ local epochs on its training nodes with
@@ -41,7 +41,10 @@ r_a&=\mathrm{clip}\bigl(S_a/\max(N_a,1),\,0,\,1\bigr),\qquad g=r_1-r_0,\qquad \D
 \lambda^{t+1}&=\max\bigl(0,\;\lambda^t+\eta\,(\Dhat-\tau)\bigr),\label{eq:lambda}\\
 d^{t+1}&=\begin{cases}\mathrm{sign}(g)&\text{if }|g|>\tau/2,\\0&\text{otherwise.}\end{cases}\label{eq:direction}
 \end{align}
-Equation~\eqref{eq:lambda} is projected dual ascent with a constant step $\eta$: the multiplier grows while the estimated gap exceeds the budget and decays otherwise. The dead zone in~\eqref{eq:direction} stops the fairness push once the gap is well inside the budget, and it limits the ability of an adversary to flip the direction (Theorem~\ref{thm:stats}).
+Equation~\eqref{eq:lambda} is projected dual ascent with a constant step $\eta$: the multiplier grows while the estimated gap exceeds the budget and decays otherwise. The dead zone in~\eqref{eq:direction} stops the fairness push once the gap is well inside the budget, which avoids chattering around zero.
+
+\paragraph{Output rule}
+The signed penalty pushes the group rates toward each other with a force that does not shrink as the gap closes, so the gap tends to oscillate around the budget and the last iterate lands at an arbitrary point of the oscillation. \clamp{} therefore does not return the last model. In every release round after a warm-up of $W$ rounds the server stores the model $\theta^t$ on which the released statistics were computed whenever its released estimate satisfies $\Dhat^t\le\tau$, and at the end it returns the most recently stored model, or the last model if no eligible round was feasible. The warm-up excludes the first rounds, whose barely trained models predict almost the same probability for every node and are therefore trivially fair; we use $W=\lceil0.2T\rceil$. The rule uses only released quantities, so it is post-processing and costs no privacy (Theorem~\ref{thm:dp}); Proposition~\ref{prop:output} states what it guarantees.
 
 \paragraph{Release period}
 On small graphs the statistics noise can dominate the gap estimate. \clamp{} therefore releases statistics, and updates $(\lambda,d)$, only every $P$ rounds; in the other rounds clients keep the last broadcast $(\lambda,d)$ and the server aggregates updates only. Privacy is then accounted over $\lceil T/P\rceil$ releases (Theorem~\ref{thm:dp}).
@@ -61,10 +64,11 @@ On small graphs the statistics noise can dominate the gap estimate. \clamp{} the
 \IF{$K'=0$} \STATE \textbf{return} $(\theta^t,\lambda^t,d^t)$ \ENDIF
 \STATE $\theta^{t+1}\leftarrow\theta^t-U/K'$
 \IF{$t \bmod P=0$}
-  \STATE compute $g,\Dhat$ by Eq.~\eqref{eq:rates}; update $\lambda^{t+1}$ by Eq.~\eqref{eq:lambda} and $d^{t+1}$ by Eq.~\eqref{eq:direction}
+  \STATE compute $g,\Dhat$ by Eq.~\eqref{eq:rates}; update $\lambda^{t+1}$ by Eq.~\eqref{eq:lambda} and $d^{t+1}$ by Eq.~\eqref{eq:direction}\STATE \textbf{if} $t+1\ge W$ \textbf{and} $\Dhat\le\tau$ \textbf{then} store $\hat\theta\leftarrow\theta^t$ \COMMENT{output rule}
 \ELSE \STATE $(\lambda^{t+1},d^{t+1})\leftarrow(\lambda^t,d^t)$ \ENDIF
+\STATE \textbf{after round $T$:} return the stored $\hat\theta$ (or $\theta^{T}$ if none was stored)
 \end{algorithmic}
 \end{algorithm}
 
 \paragraph{Cost}
-Relative to FedAvg, each client sends four extra scalars per release round and computes one extra forward pass on its validation nodes. The server's work is unchanged apart from four scalar sums. There is no per-client computation on the server, so the protocol scales with $K$ exactly as FedAvg does.
+Relative to FedAvg, each client sends four extra scalars per release round and computes one extra forward pass on its validation nodes. The server's work is unchanged apart from four scalar sums. There is no per-client computation on the server, so apart from the cryptographic layer the protocol scales with $K$ exactly as FedAvg does. The cryptographic layer is not free: zero-knowledge norm proofs over $d$-dimensional updates dominate the cost of verifiable secure aggregation in systems such as RoFL~\citep{lycklama2023rofl}, and we do not benchmark it.

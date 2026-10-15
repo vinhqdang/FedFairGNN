@@ -1,0 +1,17 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\caption{Attribute probe on the final global model: AUC of predicting the sensitive attribute from penultimate test-node embeddings, mean$\pm$sd over seeds.}
+\label{tab:privacy_probe}
+\begin{tabular}{lcc}
+\toprule
+Method & German AUC & Bail AUC \\
+\midrule
+FedAvg-GAT & 0.87$\pm$0.05 & 0.54$\pm$0.01 \\
+ClipMean (no controller, last iterate) & 0.86$\pm$0.06 & 0.54$\pm$0.01 \\
+CLAMP (last iterate) & 0.86$\pm$0.06 & 0.54$\pm$0.01 \\
+Control: raw features & 0.85$\pm$0.05 & 0.61$\pm$0.02 \\
+Control: untrained GAT & 0.91$\pm$0.03 & 0.55$\pm$0.01 \\
+\bottomrule
+\end{tabular}
+\end{table}

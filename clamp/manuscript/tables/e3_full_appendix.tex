@@ -1,0 +1,270 @@
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{llclcc}
+\caption{Full update-attack results, mean$\pm$sd over 3 seeds, K=10 clients, for every number $f$ of Byzantine clients. $^\dagger$: median, trimmed mean and Krum inspect individual client updates and cannot run under secure aggregation.}\label{tab:e3_full}\\
+\toprule
+Dataset & Attack & $f$ & Aggregator & AUC & DPD \\
+\midrule
+\endfirsthead
+\toprule
+Dataset & Attack & $f$ & Aggregator & AUC & DPD \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\textit{continued on next page}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Bail & None & 0 & FedAvg & 0.76$\pm$0.01 & 0.011$\pm$0.002 \\
+Bail & None & 0 & Median$^\dagger$ & 0.73$\pm$0.01 & 0.007$\pm$0.000 \\
+Bail & None & 0 & Trimmed mean$^\dagger$ & 0.75$\pm$0.02 & 0.013$\pm$0.002 \\
+Bail & None & 0 & Krum$^\dagger$ & 0.72$\pm$0.02 & 0.003$\pm$0.001 \\
+Bail & None & 0 & CLAMP & 0.75$\pm$0.02 & 0.011$\pm$0.002 \\
+Bail & None & 0 & ClipMean & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Sign-flip & 1 & FedAvg & 0.54$\pm$0.09 & 0.024$\pm$0.017 \\
+Bail & Sign-flip & 1 & Median$^\dagger$ & 0.72$\pm$0.01 & 0.009$\pm$0.004 \\
+Bail & Sign-flip & 1 & Trimmed mean$^\dagger$ & 0.73$\pm$0.02 & 0.011$\pm$0.004 \\
+Bail & Sign-flip & 1 & Krum$^\dagger$ & 0.71$\pm$0.01 & 0.009$\pm$0.004 \\
+Bail & Sign-flip & 1 & CLAMP & 0.73$\pm$0.02 & 0.010$\pm$0.003 \\
+Bail & Sign-flip & 1 & ClipMean & 0.73$\pm$0.01 & 0.009$\pm$0.004 \\
+Bail & Sign-flip & 2 & FedAvg & 0.38$\pm$0.03 & 0.020$\pm$0.012 \\
+Bail & Sign-flip & 2 & Median$^\dagger$ & 0.68$\pm$0.04 & 0.011$\pm$0.006 \\
+Bail & Sign-flip & 2 & Trimmed mean$^\dagger$ & 0.70$\pm$0.04 & 0.012$\pm$0.001 \\
+Bail & Sign-flip & 2 & Krum$^\dagger$ & 0.70$\pm$0.03 & 0.007$\pm$0.004 \\
+Bail & Sign-flip & 2 & CLAMP & 0.69$\pm$0.04 & 0.010$\pm$0.009 \\
+Bail & Sign-flip & 2 & ClipMean & 0.69$\pm$0.04 & 0.010$\pm$0.009 \\
+Bail & Sign-flip & 3 & FedAvg & 0.37$\pm$0.02 & 0.033$\pm$0.016 \\
+Bail & Sign-flip & 3 & Median$^\dagger$ & 0.67$\pm$0.04 & 0.007$\pm$0.006 \\
+Bail & Sign-flip & 3 & Trimmed mean$^\dagger$ & 0.68$\pm$0.04 & 0.009$\pm$0.006 \\
+Bail & Sign-flip & 3 & Krum$^\dagger$ & 0.71$\pm$0.01 & 0.009$\pm$0.007 \\
+Bail & Sign-flip & 3 & CLAMP & 0.68$\pm$0.04 & 0.009$\pm$0.010 \\
+Bail & Sign-flip & 3 & ClipMean & 0.68$\pm$0.04 & 0.009$\pm$0.008 \\
+Bail & Sign-flip & 4 & FedAvg & 0.39$\pm$0.03 & 0.032$\pm$0.002 \\
+Bail & Sign-flip & 4 & Median$^\dagger$ & 0.63$\pm$0.04 & 0.012$\pm$0.006 \\
+Bail & Sign-flip & 4 & Trimmed mean$^\dagger$ & 0.65$\pm$0.03 & 0.023$\pm$0.011 \\
+Bail & Sign-flip & 4 & Krum$^\dagger$ & 0.71$\pm$0.02 & 0.010$\pm$0.004 \\
+Bail & Sign-flip & 4 & CLAMP & 0.66$\pm$0.03 & 0.014$\pm$0.009 \\
+Bail & Sign-flip & 4 & ClipMean & 0.66$\pm$0.04 & 0.013$\pm$0.010 \\
+Bail & Scaling & 1 & FedAvg & 0.70$\pm$0.01 & 0.002$\pm$0.000 \\
+Bail & Scaling & 1 & Median$^\dagger$ & 0.73$\pm$0.01 & 0.009$\pm$0.002 \\
+Bail & Scaling & 1 & Trimmed mean$^\dagger$ & 0.76$\pm$0.02 & 0.012$\pm$0.001 \\
+Bail & Scaling & 1 & Krum$^\dagger$ & 0.71$\pm$0.01 & 0.009$\pm$0.004 \\
+Bail & Scaling & 1 & CLAMP & 0.75$\pm$0.02 & 0.010$\pm$0.002 \\
+Bail & Scaling & 1 & ClipMean & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Scaling & 2 & FedAvg & 0.49$\pm$0.04 & 0.011$\pm$0.005 \\
+Bail & Scaling & 2 & Median$^\dagger$ & 0.73$\pm$0.03 & 0.010$\pm$0.003 \\
+Bail & Scaling & 2 & Trimmed mean$^\dagger$ & 0.75$\pm$0.01 & 0.012$\pm$0.007 \\
+Bail & Scaling & 2 & Krum$^\dagger$ & 0.71$\pm$0.02 & 0.006$\pm$0.005 \\
+Bail & Scaling & 2 & CLAMP & 0.75$\pm$0.02 & 0.010$\pm$0.002 \\
+Bail & Scaling & 2 & ClipMean & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Scaling & 3 & FedAvg & 0.49$\pm$0.07 & 0.002$\pm$0.001 \\
+Bail & Scaling & 3 & Median$^\dagger$ & 0.74$\pm$0.03 & 0.006$\pm$0.002 \\
+Bail & Scaling & 3 & Trimmed mean$^\dagger$ & 0.75$\pm$0.01 & 0.007$\pm$0.003 \\
+Bail & Scaling & 3 & Krum$^\dagger$ & 0.70$\pm$0.02 & 0.005$\pm$0.006 \\
+Bail & Scaling & 3 & CLAMP & 0.75$\pm$0.02 & 0.010$\pm$0.002 \\
+Bail & Scaling & 3 & ClipMean & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & Scaling & 4 & FedAvg & 0.54$\pm$0.07 & 0.002$\pm$0.001 \\
+Bail & Scaling & 4 & Median$^\dagger$ & 0.73$\pm$0.02 & 0.005$\pm$0.005 \\
+Bail & Scaling & 4 & Trimmed mean$^\dagger$ & 0.75$\pm$0.01 & 0.008$\pm$0.002 \\
+Bail & Scaling & 4 & Krum$^\dagger$ & 0.71$\pm$0.02 & 0.010$\pm$0.004 \\
+Bail & Scaling & 4 & CLAMP & 0.75$\pm$0.02 & 0.011$\pm$0.002 \\
+Bail & Scaling & 4 & ClipMean & 0.75$\pm$0.02 & 0.009$\pm$0.003 \\
+Bail & ALIE & 1 & FedAvg & 0.75$\pm$0.01 & 0.014$\pm$0.000 \\
+Bail & ALIE & 1 & Median$^\dagger$ & 0.75$\pm$0.02 & 0.009$\pm$0.001 \\
+Bail & ALIE & 1 & Trimmed mean$^\dagger$ & 0.75$\pm$0.02 & 0.013$\pm$0.001 \\
+Bail & ALIE & 1 & Krum$^\dagger$ & 0.73$\pm$0.02 & 0.012$\pm$0.004 \\
+Bail & ALIE & 1 & CLAMP & 0.74$\pm$0.02 & 0.012$\pm$0.002 \\
+Bail & ALIE & 1 & ClipMean & 0.74$\pm$0.02 & 0.011$\pm$0.004 \\
+Bail & ALIE & 2 & FedAvg & 0.73$\pm$0.03 & 0.012$\pm$0.001 \\
+Bail & ALIE & 2 & Median$^\dagger$ & 0.72$\pm$0.03 & 0.007$\pm$0.003 \\
+Bail & ALIE & 2 & Trimmed mean$^\dagger$ & 0.73$\pm$0.03 & 0.009$\pm$0.002 \\
+Bail & ALIE & 2 & Krum$^\dagger$ & 0.73$\pm$0.03 & 0.008$\pm$0.001 \\
+Bail & ALIE & 2 & CLAMP & 0.72$\pm$0.03 & 0.008$\pm$0.000 \\
+Bail & ALIE & 2 & ClipMean & 0.72$\pm$0.03 & 0.007$\pm$0.002 \\
+Bail & ALIE & 3 & FedAvg & 0.73$\pm$0.02 & 0.007$\pm$0.002 \\
+Bail & ALIE & 3 & Median$^\dagger$ & 0.73$\pm$0.03 & 0.007$\pm$0.002 \\
+Bail & ALIE & 3 & Trimmed mean$^\dagger$ & 0.73$\pm$0.03 & 0.007$\pm$0.003 \\
+Bail & ALIE & 3 & Krum$^\dagger$ & 0.72$\pm$0.03 & 0.007$\pm$0.003 \\
+Bail & ALIE & 3 & CLAMP & 0.73$\pm$0.02 & 0.007$\pm$0.000 \\
+Bail & ALIE & 3 & ClipMean & 0.73$\pm$0.03 & 0.006$\pm$0.002 \\
+Bail & ALIE & 4 & FedAvg & 0.72$\pm$0.02 & 0.008$\pm$0.002 \\
+Bail & ALIE & 4 & Median$^\dagger$ & 0.70$\pm$0.03 & 0.002$\pm$0.002 \\
+Bail & ALIE & 4 & Trimmed mean$^\dagger$ & 0.70$\pm$0.03 & 0.002$\pm$0.001 \\
+Bail & ALIE & 4 & Krum$^\dagger$ & 0.70$\pm$0.03 & 0.002$\pm$0.002 \\
+Bail & ALIE & 4 & CLAMP & 0.72$\pm$0.03 & 0.008$\pm$0.002 \\
+Bail & ALIE & 4 & ClipMean & 0.72$\pm$0.03 & 0.006$\pm$0.001 \\
+Bail & IPM & 1 & FedAvg & 0.75$\pm$0.01 & 0.011$\pm$0.001 \\
+Bail & IPM & 1 & Median$^\dagger$ & 0.74$\pm$0.02 & 0.007$\pm$0.003 \\
+Bail & IPM & 1 & Trimmed mean$^\dagger$ & 0.74$\pm$0.02 & 0.013$\pm$0.001 \\
+Bail & IPM & 1 & Krum$^\dagger$ & 0.57$\pm$0.00 & 0.014$\pm$0.014 \\
+Bail & IPM & 1 & CLAMP & 0.74$\pm$0.02 & 0.010$\pm$0.002 \\
+Bail & IPM & 1 & ClipMean & 0.74$\pm$0.02 & 0.010$\pm$0.003 \\
+Bail & IPM & 2 & FedAvg & 0.72$\pm$0.02 & 0.010$\pm$0.001 \\
+Bail & IPM & 2 & Median$^\dagger$ & 0.71$\pm$0.03 & 0.005$\pm$0.002 \\
+Bail & IPM & 2 & Trimmed mean$^\dagger$ & 0.72$\pm$0.03 & 0.009$\pm$0.001 \\
+Bail & IPM & 2 & Krum$^\dagger$ & 0.47$\pm$0.02 & 0.005$\pm$0.005 \\
+Bail & IPM & 2 & CLAMP & 0.72$\pm$0.03 & 0.007$\pm$0.001 \\
+Bail & IPM & 2 & ClipMean & 0.72$\pm$0.03 & 0.006$\pm$0.002 \\
+Bail & IPM & 3 & FedAvg & 0.72$\pm$0.02 & 0.009$\pm$0.002 \\
+Bail & IPM & 3 & Median$^\dagger$ & 0.70$\pm$0.03 & 0.004$\pm$0.001 \\
+Bail & IPM & 3 & Trimmed mean$^\dagger$ & 0.72$\pm$0.02 & 0.006$\pm$0.002 \\
+Bail & IPM & 3 & Krum$^\dagger$ & 0.42$\pm$0.03 & 0.022$\pm$0.014 \\
+Bail & IPM & 3 & CLAMP & 0.72$\pm$0.02 & 0.006$\pm$0.002 \\
+Bail & IPM & 3 & ClipMean & 0.72$\pm$0.02 & 0.006$\pm$0.002 \\
+Bail & IPM & 4 & FedAvg & 0.71$\pm$0.02 & 0.009$\pm$0.002 \\
+Bail & IPM & 4 & Median$^\dagger$ & 0.63$\pm$0.05 & 0.007$\pm$0.002 \\
+Bail & IPM & 4 & Trimmed mean$^\dagger$ & 0.67$\pm$0.03 & 0.005$\pm$0.002 \\
+Bail & IPM & 4 & Krum$^\dagger$ & 0.38$\pm$0.03 & 0.022$\pm$0.006 \\
+Bail & IPM & 4 & CLAMP & 0.71$\pm$0.02 & 0.005$\pm$0.002 \\
+Bail & IPM & 4 & ClipMean & 0.71$\pm$0.02 & 0.005$\pm$0.001 \\
+Bail & Fairness-poison & 1 & FedAvg & 0.75$\pm$0.01 & 0.008$\pm$0.002 \\
+Bail & Fairness-poison & 1 & Median$^\dagger$ & 0.72$\pm$0.02 & 0.008$\pm$0.005 \\
+Bail & Fairness-poison & 1 & Trimmed mean$^\dagger$ & 0.74$\pm$0.02 & 0.014$\pm$0.003 \\
+Bail & Fairness-poison & 1 & Krum$^\dagger$ & 0.72$\pm$0.01 & 0.005$\pm$0.004 \\
+Bail & Fairness-poison & 1 & CLAMP & 0.74$\pm$0.02 & 0.012$\pm$0.003 \\
+Bail & Fairness-poison & 1 & ClipMean & 0.74$\pm$0.02 & 0.011$\pm$0.002 \\
+Bail & Fairness-poison & 2 & FedAvg & 0.72$\pm$0.02 & 0.014$\pm$0.011 \\
+Bail & Fairness-poison & 2 & Median$^\dagger$ & 0.72$\pm$0.03 & 0.009$\pm$0.006 \\
+Bail & Fairness-poison & 2 & Trimmed mean$^\dagger$ & 0.73$\pm$0.03 & 0.010$\pm$0.009 \\
+Bail & Fairness-poison & 2 & Krum$^\dagger$ & 0.71$\pm$0.01 & 0.009$\pm$0.001 \\
+Bail & Fairness-poison & 2 & CLAMP & 0.72$\pm$0.03 & 0.011$\pm$0.008 \\
+Bail & Fairness-poison & 2 & ClipMean & 0.72$\pm$0.03 & 0.010$\pm$0.008 \\
+Bail & Fairness-poison & 3 & FedAvg & 0.71$\pm$0.03 & 0.018$\pm$0.005 \\
+Bail & Fairness-poison & 3 & Median$^\dagger$ & 0.72$\pm$0.03 & 0.010$\pm$0.009 \\
+Bail & Fairness-poison & 3 & Trimmed mean$^\dagger$ & 0.73$\pm$0.02 & 0.012$\pm$0.009 \\
+Bail & Fairness-poison & 3 & Krum$^\dagger$ & 0.71$\pm$0.02 & 0.005$\pm$0.004 \\
+Bail & Fairness-poison & 3 & CLAMP & 0.72$\pm$0.02 & 0.009$\pm$0.009 \\
+Bail & Fairness-poison & 3 & ClipMean & 0.72$\pm$0.02 & 0.016$\pm$0.009 \\
+Bail & Fairness-poison & 4 & FedAvg & 0.70$\pm$0.03 & 0.021$\pm$0.008 \\
+Bail & Fairness-poison & 4 & Median$^\dagger$ & 0.71$\pm$0.04 & 0.013$\pm$0.008 \\
+Bail & Fairness-poison & 4 & Trimmed mean$^\dagger$ & 0.72$\pm$0.02 & 0.014$\pm$0.003 \\
+Bail & Fairness-poison & 4 & Krum$^\dagger$ & 0.71$\pm$0.00 & 0.009$\pm$0.007 \\
+Bail & Fairness-poison & 4 & CLAMP & 0.72$\pm$0.02 & 0.014$\pm$0.001 \\
+Bail & Fairness-poison & 4 & ClipMean & 0.71$\pm$0.02 & 0.023$\pm$0.009 \\
+Pokec-z & None & 0 & FedAvg & 0.75$\pm$0.01 & 0.035$\pm$0.010 \\
+Pokec-z & None & 0 & Median$^\dagger$ & 0.75$\pm$0.01 & 0.033$\pm$0.009 \\
+Pokec-z & None & 0 & Trimmed mean$^\dagger$ & 0.74$\pm$0.01 & 0.035$\pm$0.007 \\
+Pokec-z & None & 0 & Krum$^\dagger$ & 0.74$\pm$0.02 & 0.033$\pm$0.014 \\
+Pokec-z & None & 0 & CLAMP & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+Pokec-z & None & 0 & ClipMean & 0.76$\pm$0.00 & 0.045$\pm$0.007 \\
+Pokec-z & Sign-flip & 1 & FedAvg & 0.61$\pm$0.15 & 0.028$\pm$0.021 \\
+Pokec-z & Sign-flip & 1 & Median$^\dagger$ & 0.74$\pm$0.01 & 0.032$\pm$0.007 \\
+Pokec-z & Sign-flip & 1 & Trimmed mean$^\dagger$ & 0.73$\pm$0.01 & 0.031$\pm$0.018 \\
+Pokec-z & Sign-flip & 1 & Krum$^\dagger$ & 0.74$\pm$0.01 & 0.034$\pm$0.013 \\
+Pokec-z & Sign-flip & 1 & CLAMP & 0.76$\pm$0.01 & 0.025$\pm$0.016 \\
+Pokec-z & Sign-flip & 1 & ClipMean & 0.76$\pm$0.01 & 0.041$\pm$0.009 \\
+Pokec-z & Sign-flip & 2 & FedAvg & 0.50$\pm$0.01 & 0.001$\pm$0.002 \\
+Pokec-z & Sign-flip & 2 & Median$^\dagger$ & 0.74$\pm$0.01 & 0.034$\pm$0.010 \\
+Pokec-z & Sign-flip & 2 & Trimmed mean$^\dagger$ & 0.73$\pm$0.03 & 0.019$\pm$0.015 \\
+Pokec-z & Sign-flip & 2 & Krum$^\dagger$ & 0.74$\pm$0.02 & 0.029$\pm$0.007 \\
+Pokec-z & Sign-flip & 2 & CLAMP & 0.75$\pm$0.02 & 0.022$\pm$0.013 \\
+Pokec-z & Sign-flip & 2 & ClipMean & 0.75$\pm$0.02 & 0.032$\pm$0.014 \\
+Pokec-z & Sign-flip & 3 & FedAvg & 0.50$\pm$0.01 & 0.000$\pm$0.001 \\
+Pokec-z & Sign-flip & 3 & Median$^\dagger$ & 0.72$\pm$0.03 & 0.020$\pm$0.005 \\
+Pokec-z & Sign-flip & 3 & Trimmed mean$^\dagger$ & 0.71$\pm$0.04 & 0.023$\pm$0.030 \\
+Pokec-z & Sign-flip & 3 & Krum$^\dagger$ & 0.72$\pm$0.02 & 0.023$\pm$0.007 \\
+Pokec-z & Sign-flip & 3 & CLAMP & 0.74$\pm$0.03 & 0.020$\pm$0.012 \\
+Pokec-z & Sign-flip & 3 & ClipMean & 0.74$\pm$0.03 & 0.023$\pm$0.015 \\
+Pokec-z & Sign-flip & 4 & FedAvg & 0.49$\pm$0.01 & 0.001$\pm$0.001 \\
+Pokec-z & Sign-flip & 4 & Median$^\dagger$ & 0.65$\pm$0.06 & 0.015$\pm$0.009 \\
+Pokec-z & Sign-flip & 4 & Trimmed mean$^\dagger$ & 0.68$\pm$0.08 & 0.022$\pm$0.022 \\
+Pokec-z & Sign-flip & 4 & Krum$^\dagger$ & 0.72$\pm$0.01 & 0.033$\pm$0.009 \\
+Pokec-z & Sign-flip & 4 & CLAMP & 0.71$\pm$0.05 & 0.017$\pm$0.013 \\
+Pokec-z & Sign-flip & 4 & ClipMean & 0.71$\pm$0.05 & 0.016$\pm$0.011 \\
+Pokec-z & Scaling & 1 & FedAvg & 0.72$\pm$0.01 & 0.033$\pm$0.025 \\
+Pokec-z & Scaling & 1 & Median$^\dagger$ & 0.75$\pm$0.00 & 0.037$\pm$0.011 \\
+Pokec-z & Scaling & 1 & Trimmed mean$^\dagger$ & 0.74$\pm$0.01 & 0.031$\pm$0.007 \\
+Pokec-z & Scaling & 1 & Krum$^\dagger$ & 0.75$\pm$0.02 & 0.036$\pm$0.013 \\
+Pokec-z & Scaling & 1 & CLAMP & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+Pokec-z & Scaling & 1 & ClipMean & 0.76$\pm$0.00 & 0.045$\pm$0.008 \\
+Pokec-z & Scaling & 2 & FedAvg & 0.64$\pm$0.01 & 0.029$\pm$0.025 \\
+Pokec-z & Scaling & 2 & Median$^\dagger$ & 0.76$\pm$0.01 & 0.033$\pm$0.003 \\
+Pokec-z & Scaling & 2 & Trimmed mean$^\dagger$ & 0.71$\pm$0.01 & 0.030$\pm$0.007 \\
+Pokec-z & Scaling & 2 & Krum$^\dagger$ & 0.73$\pm$0.01 & 0.034$\pm$0.004 \\
+Pokec-z & Scaling & 2 & CLAMP & 0.76$\pm$0.00 & 0.027$\pm$0.017 \\
+Pokec-z & Scaling & 2 & ClipMean & 0.76$\pm$0.00 & 0.045$\pm$0.007 \\
+Pokec-z & Scaling & 3 & FedAvg & 0.65$\pm$0.01 & 0.034$\pm$0.010 \\
+Pokec-z & Scaling & 3 & Median$^\dagger$ & 0.75$\pm$0.02 & 0.035$\pm$0.012 \\
+Pokec-z & Scaling & 3 & Trimmed mean$^\dagger$ & 0.73$\pm$0.02 & 0.032$\pm$0.011 \\
+Pokec-z & Scaling & 3 & Krum$^\dagger$ & 0.72$\pm$0.02 & 0.026$\pm$0.001 \\
+Pokec-z & Scaling & 3 & CLAMP & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+Pokec-z & Scaling & 3 & ClipMean & 0.76$\pm$0.00 & 0.046$\pm$0.007 \\
+Pokec-z & Scaling & 4 & FedAvg & 0.57$\pm$0.13 & 0.031$\pm$0.025 \\
+Pokec-z & Scaling & 4 & Median$^\dagger$ & 0.76$\pm$0.01 & 0.036$\pm$0.014 \\
+Pokec-z & Scaling & 4 & Trimmed mean$^\dagger$ & 0.74$\pm$0.02 & 0.038$\pm$0.011 \\
+Pokec-z & Scaling & 4 & Krum$^\dagger$ & 0.71$\pm$0.03 & 0.031$\pm$0.003 \\
+Pokec-z & Scaling & 4 & CLAMP & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+Pokec-z & Scaling & 4 & ClipMean & 0.76$\pm$0.00 & 0.045$\pm$0.007 \\
+Pokec-z & ALIE & 1 & FedAvg & 0.75$\pm$0.01 & 0.038$\pm$0.008 \\
+Pokec-z & ALIE & 1 & Median$^\dagger$ & 0.75$\pm$0.00 & 0.034$\pm$0.015 \\
+Pokec-z & ALIE & 1 & Trimmed mean$^\dagger$ & 0.74$\pm$0.01 & 0.035$\pm$0.010 \\
+Pokec-z & ALIE & 1 & Krum$^\dagger$ & 0.74$\pm$0.01 & 0.040$\pm$0.013 \\
+Pokec-z & ALIE & 1 & CLAMP & 0.76$\pm$0.00 & 0.026$\pm$0.015 \\
+Pokec-z & ALIE & 1 & ClipMean & 0.76$\pm$0.00 & 0.044$\pm$0.009 \\
+Pokec-z & ALIE & 2 & FedAvg & 0.74$\pm$0.00 & 0.032$\pm$0.012 \\
+Pokec-z & ALIE & 2 & Median$^\dagger$ & 0.74$\pm$0.01 & 0.032$\pm$0.013 \\
+Pokec-z & ALIE & 2 & Trimmed mean$^\dagger$ & 0.72$\pm$0.01 & 0.035$\pm$0.015 \\
+Pokec-z & ALIE & 2 & Krum$^\dagger$ & 0.74$\pm$0.01 & 0.034$\pm$0.010 \\
+Pokec-z & ALIE & 2 & CLAMP & 0.76$\pm$0.01 & 0.024$\pm$0.018 \\
+Pokec-z & ALIE & 2 & ClipMean & 0.75$\pm$0.00 & 0.039$\pm$0.010 \\
+Pokec-z & ALIE & 3 & FedAvg & 0.74$\pm$0.01 & 0.032$\pm$0.008 \\
+Pokec-z & ALIE & 3 & Median$^\dagger$ & 0.75$\pm$0.01 & 0.031$\pm$0.006 \\
+Pokec-z & ALIE & 3 & Trimmed mean$^\dagger$ & 0.75$\pm$0.02 & 0.034$\pm$0.012 \\
+Pokec-z & ALIE & 3 & Krum$^\dagger$ & 0.75$\pm$0.01 & 0.034$\pm$0.008 \\
+Pokec-z & ALIE & 3 & CLAMP & 0.75$\pm$0.01 & 0.030$\pm$0.009 \\
+Pokec-z & ALIE & 3 & ClipMean & 0.76$\pm$0.00 & 0.037$\pm$0.007 \\
+Pokec-z & ALIE & 4 & FedAvg & 0.75$\pm$0.02 & 0.031$\pm$0.009 \\
+Pokec-z & ALIE & 4 & Median$^\dagger$ & 0.72$\pm$0.01 & 0.029$\pm$0.010 \\
+Pokec-z & ALIE & 4 & Trimmed mean$^\dagger$ & 0.73$\pm$0.02 & 0.024$\pm$0.008 \\
+Pokec-z & ALIE & 4 & Krum$^\dagger$ & 0.74$\pm$0.01 & 0.017$\pm$0.012 \\
+Pokec-z & ALIE & 4 & CLAMP & 0.75$\pm$0.01 & 0.027$\pm$0.008 \\
+Pokec-z & ALIE & 4 & ClipMean & 0.75$\pm$0.01 & 0.038$\pm$0.007 \\
+Pokec-z & IPM & 1 & FedAvg & 0.75$\pm$0.01 & 0.037$\pm$0.011 \\
+Pokec-z & IPM & 1 & Median$^\dagger$ & 0.76$\pm$0.00 & 0.037$\pm$0.008 \\
+Pokec-z & IPM & 1 & Trimmed mean$^\dagger$ & 0.75$\pm$0.00 & 0.037$\pm$0.009 \\
+Pokec-z & IPM & 1 & Krum$^\dagger$ & 0.69$\pm$0.08 & 0.017$\pm$0.003 \\
+Pokec-z & IPM & 1 & CLAMP & 0.77$\pm$0.00 & 0.028$\pm$0.015 \\
+Pokec-z & IPM & 1 & ClipMean & 0.77$\pm$0.00 & 0.045$\pm$0.008 \\
+Pokec-z & IPM & 2 & FedAvg & 0.76$\pm$0.01 & 0.039$\pm$0.010 \\
+Pokec-z & IPM & 2 & Median$^\dagger$ & 0.76$\pm$0.00 & 0.040$\pm$0.011 \\
+Pokec-z & IPM & 2 & Trimmed mean$^\dagger$ & 0.75$\pm$0.00 & 0.039$\pm$0.010 \\
+Pokec-z & IPM & 2 & Krum$^\dagger$ & 0.40$\pm$0.13 & 0.009$\pm$0.011 \\
+Pokec-z & IPM & 2 & CLAMP & 0.77$\pm$0.00 & 0.028$\pm$0.014 \\
+Pokec-z & IPM & 2 & ClipMean & 0.77$\pm$0.00 & 0.046$\pm$0.009 \\
+Pokec-z & IPM & 3 & FedAvg & 0.76$\pm$0.02 & 0.032$\pm$0.001 \\
+Pokec-z & IPM & 3 & Median$^\dagger$ & 0.77$\pm$0.01 & 0.035$\pm$0.008 \\
+Pokec-z & IPM & 3 & Trimmed mean$^\dagger$ & 0.76$\pm$0.01 & 0.043$\pm$0.007 \\
+Pokec-z & IPM & 3 & Krum$^\dagger$ & 0.35$\pm$0.04 & 0.004$\pm$0.002 \\
+Pokec-z & IPM & 3 & CLAMP & 0.78$\pm$0.00 & 0.030$\pm$0.011 \\
+Pokec-z & IPM & 3 & ClipMean & 0.78$\pm$0.00 & 0.045$\pm$0.008 \\
+Pokec-z & IPM & 4 & FedAvg & 0.75$\pm$0.01 & 0.035$\pm$0.004 \\
+Pokec-z & IPM & 4 & Median$^\dagger$ & 0.75$\pm$0.03 & 0.014$\pm$0.008 \\
+Pokec-z & IPM & 4 & Trimmed mean$^\dagger$ & 0.77$\pm$0.01 & 0.027$\pm$0.004 \\
+Pokec-z & IPM & 4 & Krum$^\dagger$ & 0.37$\pm$0.06 & 0.009$\pm$0.010 \\
+Pokec-z & IPM & 4 & CLAMP & 0.76$\pm$0.02 & 0.026$\pm$0.005 \\
+Pokec-z & IPM & 4 & ClipMean & 0.76$\pm$0.02 & 0.026$\pm$0.005 \\
+Pokec-z & Fairness-poison & 1 & FedAvg & 0.75$\pm$0.00 & 0.062$\pm$0.015 \\
+Pokec-z & Fairness-poison & 1 & Median$^\dagger$ & 0.74$\pm$0.02 & 0.046$\pm$0.027 \\
+Pokec-z & Fairness-poison & 1 & Trimmed mean$^\dagger$ & 0.73$\pm$0.01 & 0.047$\pm$0.033 \\
+Pokec-z & Fairness-poison & 1 & Krum$^\dagger$ & 0.74$\pm$0.01 & 0.035$\pm$0.002 \\
+Pokec-z & Fairness-poison & 1 & CLAMP & 0.76$\pm$0.00 & 0.025$\pm$0.016 \\
+Pokec-z & Fairness-poison & 1 & ClipMean & 0.76$\pm$0.00 & 0.065$\pm$0.005 \\
+Pokec-z & Fairness-poison & 2 & FedAvg & 0.71$\pm$0.03 & 0.124$\pm$0.027 \\
+Pokec-z & Fairness-poison & 2 & Median$^\dagger$ & 0.72$\pm$0.00 & 0.108$\pm$0.025 \\
+Pokec-z & Fairness-poison & 2 & Trimmed mean$^\dagger$ & 0.70$\pm$0.01 & 0.146$\pm$0.036 \\
+Pokec-z & Fairness-poison & 2 & Krum$^\dagger$ & 0.72$\pm$0.02 & 0.034$\pm$0.011 \\
+Pokec-z & Fairness-poison & 2 & CLAMP & 0.72$\pm$0.02 & 0.037$\pm$0.006 \\
+Pokec-z & Fairness-poison & 2 & ClipMean & 0.75$\pm$0.00 & 0.137$\pm$0.017 \\
+Pokec-z & Fairness-poison & 3 & FedAvg & 0.70$\pm$0.02 & 0.137$\pm$0.057 \\
+Pokec-z & Fairness-poison & 3 & Median$^\dagger$ & 0.72$\pm$0.01 & 0.148$\pm$0.036 \\
+Pokec-z & Fairness-poison & 3 & Trimmed mean$^\dagger$ & 0.69$\pm$0.01 & 0.186$\pm$0.042 \\
+Pokec-z & Fairness-poison & 3 & Krum$^\dagger$ & 0.73$\pm$0.03 & 0.035$\pm$0.012 \\
+Pokec-z & Fairness-poison & 3 & CLAMP & 0.71$\pm$0.03 & 0.049$\pm$0.018 \\
+Pokec-z & Fairness-poison & 3 & ClipMean & 0.74$\pm$0.01 & 0.172$\pm$0.021 \\
+Pokec-z & Fairness-poison & 4 & FedAvg & 0.69$\pm$0.03 & 0.137$\pm$0.068 \\
+Pokec-z & Fairness-poison & 4 & Median$^\dagger$ & 0.72$\pm$0.02 & 0.111$\pm$0.031 \\
+Pokec-z & Fairness-poison & 4 & Trimmed mean$^\dagger$ & 0.71$\pm$0.01 & 0.201$\pm$0.061 \\
+Pokec-z & Fairness-poison & 4 & Krum$^\dagger$ & 0.71$\pm$0.04 & 0.086$\pm$0.099 \\
+Pokec-z & Fairness-poison & 4 & CLAMP & 0.71$\pm$0.03 & 0.047$\pm$0.042 \\
+Pokec-z & Fairness-poison & 4 & ClipMean & 0.73$\pm$0.00 & 0.125$\pm$0.103 \\
+\end{longtable}

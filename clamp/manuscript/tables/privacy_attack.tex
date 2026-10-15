@@ -1,0 +1,18 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\caption{Differencing attack on the statistics channel: balanced accuracy of the likelihood-ratio test over random validation targets, mean$\pm$sd over seeds. Single: one noisy release. All: the $R$ releases of an unchanged vector ($R=10$ for German, $R=100$ for Bail), the worst case the theorem accounts for. Bound: $(e^{\varepsilon}+\delta)/(1+e^{\varepsilon})$. Monte Carlo and closed-form values agree to within 0.005.}
+\label{tab:privacy_attack}
+\begin{tabular}{lccccc}
+\toprule
+$\varepsilon$ & Bound & German single & German all & Bail single & Bail all \\
+\midrule
+1 & 0.731 & 0.513$\pm$0.003 & 0.542$\pm$0.003 & 0.504$\pm$0.001 & 0.537$\pm$0.001 \\
+2 & 0.881 & 0.525$\pm$0.003 & 0.579$\pm$0.004 & 0.507$\pm$0.001 & 0.570$\pm$0.001 \\
+4 & 0.982 & 0.547$\pm$0.003 & 0.644$\pm$0.004 & 0.513$\pm$0.001 & 0.629$\pm$0.001 \\
+8 & 1.000 & 0.584$\pm$0.004 & 0.747$\pm$0.004 & 0.524$\pm$0.001 & 0.726$\pm$0.001 \\
+16 & 1.000 & 0.645$\pm$0.004 & 0.878$\pm$0.003 & 0.541$\pm$0.001 & 0.854$\pm$0.001 \\
+$\infty$ & 1.000 & 1.000$\pm$0.000 & 1.000$\pm$0.000 & 1.000$\pm$0.000 & 1.000$\pm$0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

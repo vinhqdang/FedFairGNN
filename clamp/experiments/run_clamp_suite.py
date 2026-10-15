@@ -37,17 +37,25 @@ GROUPS = {
     "e3": dict(seeds=range(3), datasets=["bail", "pokec_z"]),
     "e4": dict(seeds=range(3), datasets=["bail", "pokec_z", "credit"]),
     "e5": dict(seeds=range(5), datasets=["german", "bail"]),
+    # e5 at a binding fairness budget (tau = 0.005; the 0.03 budget never binds on bail).
+    "e5b": dict(seeds=range(5), datasets=["bail"]),
     "e6": dict(seeds=range(3), datasets=["bail", "credit"]),
 }
 
+# CLAMP's main method is clamp-f (sign direction, feasible-iterate output). The
+# last-iterate methods (clamp, clamp-gcn, clamp-clipmean) are kept as ablations.
+MAIN = "clamp-f"
 E1_METHODS = ["fedavg-gcn", "fedavg-gat", "fairfed", "fairgnn", "fairsin", "f2gnn",
               "fairgfl", "fedgraphfair", "puffle", "fedfact", "fedfdp",
-              "clamp-clipmean", "clamp", "clamp-gcn"]
+              "clamp-clipmean", "clamp", "clamp-gcn",
+              "clamp-f", "clamp-gcn-f", "clamp-select"]
 E3_ATTACKS = ["sign_flip", "scaling", "alie", "ipm", "fairness_poison"]
 # (method, extra overrides, label). The median/trimmed_mean/krum rows are FedAvg-GAT
 # with the server aggregator replaced.
 E3_ROWS = [("fedavg-gat", {}, "fedavg-gat"),
-           ("clamp", {}, "clamp"),
+           (MAIN, {}, MAIN),
+           # clipped mean (eta = 0, last iterate): the no-controller reference.
+           ("clamp-clipmean", {}, "clamp-clipmean"),
            ("fedavg-gat", {"aggregator": "median"}, "fedavg-gat[median]"),
            ("fedavg-gat", {"aggregator": "trimmed_mean"}, "fedavg-gat[trimmed_mean]"),
            ("fedavg-gat", {"aggregator": "krum"}, "fedavg-gat[krum]")]
@@ -88,7 +96,7 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                     add(m, dataset, seed, {})
             elif group == "e2":
                 for tau in [0.005, 0.01, 0.02, 0.03, 0.05, 0.1]:
-                    add("clamp", dataset, seed, {"fairness_budget": tau})
+                    add(MAIN, dataset, seed, {"fairness_budget": tau})
             elif group == "e3":
                 for m, extra, _ in E3_ROWS:
                     add(m, dataset, seed, {"num_clients": 10, **extra, "attack": "none",
@@ -99,26 +107,42 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                             add(m, dataset, seed, {"num_clients": 10, **extra,
                                                    "attack": attack, "num_byzantine": b})
             elif group == "e4":
-                add("clamp", dataset, seed, {"num_clients": 10, "attack": "none",
+                add(MAIN, dataset, seed, {"num_clients": 10, "attack": "none",
                                              "num_byzantine": 0})
                 for attack in ["stat_falsify", "stat_falsify_mid"]:
                     for b in [1, 2, 3, 4]:
-                        add("clamp", dataset, seed, {"num_clients": 10, "attack": attack,
+                        add(MAIN, dataset, seed, {"num_clients": 10, "attack": attack,
                                                      "num_byzantine": b})
             elif group == "e5":
                 for eps in [1.0, 2.0, 4.0, 8.0, 16.0]:
                     for P in [1, 5, 10]:
-                        add("clamp", dataset, seed, {"dp_epsilon": eps, "r2_stat_period": P})
-                add("clamp", dataset, seed, {"r2_stat_dp": False,
+                        add(MAIN, dataset, seed, {"dp_epsilon": eps, "r2_stat_period": P})
+                add(MAIN, dataset, seed, {"r2_stat_dp": False,
                                              "r2_stat_period": _clamp_period(dataset)})
+            elif group == "e5b":
+                tau = 0.005
+                for eps in [1.0, 2.0, 4.0, 8.0, 16.0]:
+                    for P in [1, 5, 10]:
+                        add(MAIN, dataset, seed, {"fairness_budget": tau, "dp_epsilon": eps,
+                                                     "r2_stat_period": P})
+                add(MAIN, dataset, seed, {"fairness_budget": tau, "r2_stat_dp": False,
+                                             "r2_stat_period": _clamp_period(dataset)})
+                # Unconstrained reference: no Lagrangian term, so tau does not enter.
+                add("clamp-clipmean", dataset, seed, {"fairness_budget": tau,
+                                                      "r2_stat_period": _clamp_period(dataset)})
             elif group == "e6":
                 # One factor at a time around the default (clip 1.0, step 0.5, noise 0).
                 triples = [(1.0, 0.5, 0.0), (0.5, 0.5, 0.0), (2.0, 0.5, 0.0),
                            (1.0, 0.1, 0.0), (1.0, 2.0, 0.0),
                            (1.0, 0.5, 0.01), (1.0, 0.5, 0.05)]
                 for c, lam, noise in triples:
-                    add("clamp", dataset, seed, {"r2_clip_norm": c, "r2_lambda_step": lam,
-                                                 "r2_update_noise": noise})
+                    add(MAIN, dataset, seed, {"r2_clip_norm": c, "r2_lambda_step": lam,
+                                              "r2_update_noise": noise})
+                # Output-rule and direction-rule ablations at the default triple.
+                add("clamp", dataset, seed, {"r2_clip_norm": 1.0, "r2_lambda_step": 0.5,
+                                             "r2_update_noise": 0.0})
+                add("clamp-p", dataset, seed, {"r2_clip_norm": 1.0, "r2_lambda_step": 0.5,
+                                               "r2_update_noise": 0.0})
             else:
                 raise ValueError(f"unknown group {group!r}")
     return jobs
