@@ -76,7 +76,7 @@ D^H(\hat\theta)\le\tau+\sum_{a\in\{0,1\}}\Bigl[b_a+\frac{2e}{N^H_a-e}\Bigr].
 By construction $\Dhat^{t^\star}\le\tau$, and $\Dhat^{t^\star}$ was computed on $\hat\theta$. Theorem~\ref{thm:stats} applied at round $t^\star$ bounds $|\Dhat^{t^\star}-D^H(\hat\theta)|$ by the bracketed sum with probability at least $1-\beta$.
 \end{proof}
 
-The guarantee concerns the validation gap of the honest clients, not the test gap; the difference between the two is a generalisation gap that no protocol-level argument controls, and we measure it in Section~\ref{sec:results}. When no release round is feasible the rule falls back to the last model and the proposition does not apply; we report how often this happens.
+The guarantee concerns the validation gap of the honest clients, not the test gap; the difference between the two is a generalisation gap that no protocol-level argument controls, and we measure it in Section~\ref{sec:results}. When no eligible release round is feasible the rule falls back to the last model and the proposition does not apply; we report how often this happens.
 
 \subsection{A certificate for the fairness constraint}
 

@@ -538,3 +538,38 @@ def test_clamp_design_variants_are_registered():
         apply_method(cfg, name)
         assert cfg.r2_direction == direction and cfg.r2_output == output
         assert cfg.aggregator == "secagg_lagrangian" and cfg.model == "gat"
+
+
+def _stub_eval(trainer):
+    """Cheap stand-in for evaluate_global: its AUC is the sum of the evaluated model,
+    so the test can tell which model was scored."""
+    trainer.evaluate_global = lambda: {"auc": float(trainer.global_flat.double().sum()),
+                                       "dpd": 0.0, "eod": 0.0}
+
+
+def test_warmup_round_1_only_feasible_falls_back_to_last_model(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=30, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    dhats = [0.01] + [0.5] * 29          # only round 1 is feasible
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg(dhats))
+    trainer = FederatedTrainer(cfg)
+    _stub_eval(trainer)
+    res = trainer.run()
+    assert res["final"]["selected_round"] is None
+    assert res["final"]["auc"] == pytest.approx(float(trainer.global_flat.double().sum()))
+
+
+def test_warmup_selects_the_feasible_round_after_warmup(monkeypatch):
+    import src.federated.aggregation as agg_mod
+    cfg = _cfg("trustfedgnn-r2", rounds=30, r2_output="feasible")
+    cfg.fairness_budget = 0.03
+    dhats = [0.01] + [0.5] * 23 + [0.01] + [0.5] * 5   # feasible at rounds 1 and 25
+    monkeypatch.setattr(agg_mod, "secagg_lagrangian", _scripted_secagg(dhats))
+    trainer = FederatedTrainer(cfg)
+    g0 = trainer.global_flat.clone()
+    _stub_eval(trainer)
+    res = trainer.run()
+    assert res["final"]["selected_round"] == 25
+    # theta^24 = g0 - 24 * 0.1 is the model the round-25 statistics were computed on.
+    assert res["final"]["auc"] == pytest.approx(float((g0 - 2.4).double().sum()), rel=1e-5)

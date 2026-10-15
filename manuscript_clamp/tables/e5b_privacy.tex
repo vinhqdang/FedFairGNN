@@ -1,29 +1,29 @@
 \begin{table}[t]
 \centering
-\small
-\caption{Privacy: utility and fairness versus statistics budget epsilon and release period P (mean $\pm$ sd over seeds), fairness budget tau=0.005.}
-\begin{tabular}{lllllll}
+\footnotesize
+\caption{Privacy: utility and fairness against the statistics budget $\varepsilon$ and release period $P$, fairness budget $\tau=0.005$. $\varepsilon=\infty$: statistics noise off, default period (P=10 for German, P=1 for Bail). mean$\pm$sd over seeds. The ClipMean row is the unconstrained reference (no Lagrangian term).}
+\label{tab:e5b_privacy}
+\begin{tabular}{lccc}
 \toprule
-dataset & epsilon & P & stat DP & AUC & DPD & n \\
+$\varepsilon$ & $P$ & Bail AUC & Bail DPD \\
 \midrule
-bail & 1 & 1 & on & 0.786 ± 0.034 & 0.017 ± 0.006 & 4 \\
-bail & 1 & 5 & on & 0.781 ± 0.035 & 0.021 ± 0.005 & 4 \\
-bail & 1 & 10 & on & 0.775 ± 0.048 & 0.019 ± 0.003 & 4 \\
-bail & 2 & 1 & on & 0.784 ± 0.038 & 0.021 ± 0.007 & 4 \\
-bail & 2 & 5 & on & 0.781 ± 0.035 & 0.020 ± 0.005 & 4 \\
-bail & 2 & 10 & on & 0.769 ± 0.047 & 0.016 ± 0.002 & 4 \\
-bail & 4 & 1 & on & 0.786 ± 0.038 & 0.023 ± 0.002 & 4 \\
-bail & 4 & 5 & on & 0.785 ± 0.039 & 0.021 ± 0.004 & 4 \\
-bail & 4 & 10 & on & 0.769 ± 0.047 & 0.017 ± 0.006 & 4 \\
-bail & 8 & 1 & on & 0.786 ± 0.039 & 0.021 ± 0.004 & 4 \\
-bail & 8 & 5 & on & 0.764 ± 0.038 & 0.015 ± 0.007 & 4 \\
-bail & 8 & 10 & on & 0.756 ± 0.043 & 0.013 ± 0.006 & 3 \\
-bail & 16 & 1 & on & 0.777 ± 0.044 & 0.021 ± 0.005 & 3 \\
-bail & 16 & 5 & on & 0.765 ± 0.044 & 0.016 ± 0.008 & 3 \\
-bail & 16 & 10 & on & 0.752 ± 0.036 & 0.012 ± 0.007 & 3 \\
-bail & off & 1 & off & 0.756 ± 0.038 & 0.013 ± 0.007 & 3 \\
-bail & unconstrained & 1 & clamp-clipmean & 0.785 ± 0.033 & 0.019 ± 0.009 & 5 \\
+1 & 1 & 0.78$\pm$0.03 & 0.015$\pm$0.007 \\
+1 & 5 & 0.78$\pm$0.03 & 0.018$\pm$0.008 \\
+1 & 10 & 0.77$\pm$0.04 & 0.016$\pm$0.007 \\
+2 & 1 & 0.78$\pm$0.03 & 0.018$\pm$0.008 \\
+2 & 5 & 0.78$\pm$0.03 & 0.017$\pm$0.008 \\
+2 & 10 & 0.77$\pm$0.04 & 0.013$\pm$0.005 \\
+4 & 1 & 0.78$\pm$0.03 & 0.019$\pm$0.007 \\
+4 & 5 & 0.78$\pm$0.04 & 0.021$\pm$0.004 \\
+4 & 10 & 0.77$\pm$0.05 & 0.017$\pm$0.006 \\
+8 & 1 & 0.79$\pm$0.04 & 0.021$\pm$0.004 \\
+8 & 5 & 0.78$\pm$0.04 & 0.021$\pm$0.004 \\
+8 & 10 & 0.77$\pm$0.03 & 0.016$\pm$0.007 \\
+16 & 1 & 0.79$\pm$0.04 & 0.021$\pm$0.004 \\
+16 & 5 & 0.78$\pm$0.04 & 0.020$\pm$0.006 \\
+16 & 10 & 0.78$\pm$0.04 & 0.018$\pm$0.007 \\
+$\infty$ & -- & 0.78$\pm$0.04 & 0.017$\pm$0.006 \\
+ClipMean & -- & 0.78$\pm$0.03 & 0.019$\pm$0.009 \\
 \bottomrule
 \end{tabular}
-\label{tab:e5b_privacy}
 \end{table}

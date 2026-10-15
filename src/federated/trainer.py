@@ -92,6 +92,8 @@ class FederatedTrainer:
         self._r2_n_cap = 0
         self._feasible_flat = None      # theta^t of the last release round with Dhat <= tau
         self._feasible_round = None
+        # Warm-up for the feasible rule: round 1 is untrained and trivially feasible.
+        self._select_warmup = math.ceil(round(config.r2_select_warmup * config.rounds, 9))
         self._secagg_sigma_s = 0.0
         if config.r2_direction not in ("sign", "prop"):
             raise ValueError(f"r2_direction must be 'sign' or 'prop', got {config.r2_direction!r}")
@@ -370,7 +372,8 @@ class FederatedTrainer:
                 g_agg = g_agg + self.cfg.server_calib_gamma * g0
 
         if pre_flat is not None and info.get("dhat") is not None \
-                and info["dhat"] <= self.cfg.fairness_budget:
+                and info["dhat"] <= self.cfg.fairness_budget \
+                and t + 1 >= self._select_warmup:
             # Server-side selection on the released Dhat: keep theta^t (the model the
             # statistics were computed on) and its round number.
             self._feasible_flat = pre_flat

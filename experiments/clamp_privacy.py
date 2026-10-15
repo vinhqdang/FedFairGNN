@@ -19,6 +19,7 @@
 
 Usage:
     python -m experiments.clamp_privacy --datasets german,bail --seeds 0-2 --workers 4
+    python -m experiments.clamp_privacy --render-only --out results/clamp/privacy
 """
 from __future__ import annotations
 
@@ -214,13 +215,13 @@ def _parse_seeds(text: str) -> List[int]:
 
 
 def _write_outputs(rows_attack: List[Dict], rows_probe: List[Dict], out_dir: str) -> None:
+    """Per-seed CSVs (attack.csv, probe.csv), then the LaTeX tables from them."""
     import csv
-    from experiments.make_clamp_tables import _ms, _fmt, write_table
+    from experiments.make_clamp_tables import write_privacy_tables
     os.makedirs(out_dir, exist_ok=True)
     if rows_attack:
-        keys = list(rows_attack[0].keys())
         with open(os.path.join(out_dir, "attack.csv"), "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=keys)
+            w = csv.DictWriter(f, fieldnames=list(rows_attack[0].keys()))
             w.writeheader()
             w.writerows(rows_attack)
     if rows_probe:
@@ -228,37 +229,7 @@ def _write_outputs(rows_attack: List[Dict], rows_probe: List[Dict], out_dir: str
             w = csv.DictWriter(f, fieldnames=list(rows_probe[0].keys()))
             w.writeheader()
             w.writerows(rows_probe)
-
-    datasets = sorted({r["dataset"] for r in rows_attack})
-    if rows_attack:
-        header = ["dataset", "epsilon", "bound", "single (MC)", "single (analytic)",
-                  "composed R (MC)"]
-        out = []
-        for ds in datasets:
-            for eps in EPS_GRID:
-                sel = [r for r in rows_attack if r["dataset"] == ds and r["eps"] == eps]
-                if not sel:
-                    continue
-                cell = lambda k: (_fmt(_ms([r[k] for r in sel])), False)
-                out.append([(ds, False), (f"{eps:g}", False), (f"{sel[0]['bound']:.3f}", False),
-                            cell("acc_single_mc"), cell("acc_single_analytic"),
-                            cell("acc_composed_mc")])
-        write_table(out_dir, "privacy_attack", header, out,
-                    "Differencing attack on the statistics channel: balanced accuracy of the "
-                    "likelihood-ratio test (mean $\\pm$ sd over seeds) against the "
-                    "$(\\varepsilon,\\delta)$-DP bound.")
-    if rows_probe:
-        header = ["method"] + datasets
-        out = []
-        for m in PROBE_METHODS:
-            row = [(m, False)]
-            for ds in datasets:
-                sel = [r["auc"] for r in rows_probe if r["method"] == m and r["dataset"] == ds]
-                row.append((_fmt(_ms(sel)), False))
-            out.append(row)
-        write_table(out_dir, "privacy_probe", header, out,
-                    "Attribute probe on the final global model: AUC of predicting $s$ from "
-                    "penultimate test embeddings (mean $\\pm$ sd over seeds).")
+    write_privacy_tables(rows_attack, rows_probe, out_dir)
 
 
 def main(argv=None):
@@ -270,7 +241,13 @@ def main(argv=None):
     p.add_argument("--targets", type=int, default=2000)
     p.add_argument("--trials", type=int, default=200, help="even number of noise draws per target")
     p.add_argument("--out", default=OUT_DIR)
+    p.add_argument("--render-only", action="store_true",
+                   help="re-render the privacy tables from the existing attack.csv / probe.csv")
     args = p.parse_args(argv)
+    if args.render_only:
+        from experiments.make_clamp_tables import render_privacy_from_csv
+        render_privacy_from_csv(args.out)
+        return
 
     jobs = []
     for ds in args.datasets.split(","):

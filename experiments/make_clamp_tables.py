@@ -1,7 +1,10 @@
 """Tables and figures for the CLAMP paper, from results/clamp/<group>/runs/*.json.
 
-Writes CSV and LaTeX (booktabs) tables, plus the tau-Pareto figure, into
-results/clamp/tables/. A missing group produces a note instead of a failure.
+Each table is written twice: a CSV (plain text, for inspection) and a LaTeX
+fragment (booktabs, no unicode, math in $...$) under results/clamp/tables/. The
+privacy tables are written by experiments/clamp_privacy.py from its own CSVs
+(render path: ``python -m experiments.clamp_privacy --render-only``). A missing
+group produces a placeholder instead of a failure.
 
 Usage:
     python -m experiments.make_clamp_tables [--root results/clamp]
@@ -9,11 +12,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import csv
 import glob
 import json
 import math
 import os
-from collections import defaultdict
+import re
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -21,7 +25,9 @@ import numpy as np
 from experiments.methods import METHODS
 from experiments.run_clamp_suite import E1_METHODS, E3_ATTACKS, E3_ROWS, MAIN
 
-# Display names for the E1 table and the ablation tables.
+# --------------------------------------------------------------------------- #
+# Names and constants
+# --------------------------------------------------------------------------- #
 DISPLAY = {
     "clamp-f": "CLAMP",
     "clamp-gcn-f": "CLAMP-GCN",
@@ -43,19 +49,63 @@ COMPACT_METHODS = ["fedavg-gat", "fairfed", "f2gnn", "fairgfl", "fedgraphfair", 
 DATASETS = ["german", "bail", "credit", "pokec_z", "pokec_n", "aminer_s", "nba", "facebook"]
 DS_NAME = {"german": "German", "bail": "Bail", "credit": "Credit", "pokec_z": "Pokec-z",
            "pokec_n": "Pokec-n", "aminer_s": "AMiner-S", "nba": "NBA", "facebook": "Facebook"}
+ATTACK_NAME = {"none": "none", "stat_falsify": "swap", "stat_falsify_mid": "mid"}
+UPDATE_ATTACK_NAME = {"sign_flip": "Sign-flip", "scaling": "Scaling", "alie": "ALIE",
+                      "ipm": "IPM", "fairness_poison": "Fairness-poison", "none": "None"}
 TAU_REPORT = 0.03        # budget used for the "DPD <= tau (seeds)" count
+BETA = 0.05              # failure probability of the statistics-noise bound
 _REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Decimal places: two for AUC, three for DPD/EOD (paper convention).
+DIG = {"auc": 2, "dpd": 3, "eod": 3}
 
 
 # --------------------------------------------------------------------------- #
 # Loading
 # --------------------------------------------------------------------------- #
+W_FRAC = 0.2   # r2_select_warmup default; the warm-up rule is applied post hoc to old runs
+
+
+def select_warmup_round(rounds: int, frac: float = W_FRAC) -> int:
+    """W = ceil(frac * T), rounded first so that 0.2 * 100 gives 20, not 21."""
+    return math.ceil(round(frac * rounds, 9))
+
+
+def apply_warmup(final: Dict, hist: List[Dict], cfg: Dict):
+    """Post-hoc warm-up rule for feasible-output runs made before the warm-up existed.
+
+    The old rule could select round 1 (untrained, trivially feasible). The new rule only
+    accepts rounds >= W, so a selection below W is replaced by the last model, whose
+    metrics are history[-1] (g_* keys, the same evaluation as final). Exact for the
+    selection; the metric values agree with final to about 1e-6 (see the run report).
+    Returns (final_metrics, selected_round, changed).
+    """
+    sel = final.get("selected_round")
+    if cfg.get("r2_output") != "feasible" or sel is None:
+        return final, sel, False
+    if sel >= select_warmup_round(cfg["rounds"]):
+        return final, sel, False
+    last = hist[-1]
+    new = dict(final)
+    for k in ("auc", "dpd", "eod"):
+        new[k] = last["g_" + k]
+    return new, None, True
+
+
 def load_group(root: str, group: str) -> List[Dict]:
     rows = []
     for path in glob.glob(os.path.join(root, group, "runs", "*.json")):
         with open(path) as f:
             rec = json.load(f)
         cfg, final, hist = rec["config"], rec.get("final", {}), rec.get("history", [])
+        final_old = final
+        final, sel, changed = apply_warmup(final, hist, cfg)
+        if changed:
+            CHANGED.append(dict(group=group, method=cfg["exp_name"], dataset=cfg["dataset"],
+                                attack=cfg["attack"], b=cfg["num_byzantine"],
+                                seed=cfg["seed"], old_sel=final_old.get("selected_round"),
+                                old_auc=final_old["auc"], old_dpd=final_old["dpd"],
+                                new_auc=final["auc"], new_dpd=final["dpd"]))
         eta = cfg.get("r2_lambda_step")
         lam_T = next((h["lambda"] for h in reversed(hist) if h.get("lambda") is not None), None)
         # CLAMP certificate: lambda^T / (eta T), T = number of rounds.
@@ -68,9 +118,12 @@ def load_group(root: str, group: str) -> List[Dict]:
             step=cfg.get("r2_lambda_step", 0.5), noise=cfg.get("r2_update_noise", 0.0),
             auc=final.get("auc", math.nan), dpd=final.get("dpd", math.nan),
             eod=final.get("eod", math.nan), cert=cert, hist=hist,
-            selected=final.get("selected_round"), cfg=cfg,
+            selected=sel, cfg=cfg,
             byz=rec.get("byzantine_ids", [])))
     return rows
+
+
+CHANGED: List[Dict] = []   # runs whose feasible selection the warm-up rule changed
 
 
 def _series(rows, metric, **match) -> Dict[int, float]:
@@ -116,37 +169,27 @@ def _wilcoxon(x: Dict[int, float], y: Dict[int, float]) -> float:
 
 
 # --------------------------------------------------------------------------- #
-# Writers
+# LaTeX-safe formatting
 # --------------------------------------------------------------------------- #
-def _tex_escape(s: str) -> str:
-    return s.replace("_", r"\_").replace("%", r"\%").replace("&", r"\&")
-
-
-def write_table(outdir: str, name: str, header: List[str], rows: List[List[tuple]],
-                caption: str) -> None:
-    """rows: list of rows; each cell is (text, bold)."""
-    os.makedirs(outdir, exist_ok=True)
-    with open(os.path.join(outdir, f"{name}.csv"), "w") as f:
-        f.write(",".join(header) + "\n")
-        for r in rows:
-            f.write(",".join('"' + c[0] + '"' for c in r) + "\n")
-    cols = "l" * len(header)
-    lines = [r"\begin{table}[t]", r"\centering", r"\small", f"\\caption{{{caption}}}",
-             f"\\begin{{tabular}}{{{cols}}}", r"\toprule",
-             " & ".join(_tex_escape(h) for h in header) + r" \\", r"\midrule"]
-    for r in rows:
-        cells = [(f"\\textbf{{{_tex_escape(t)}}}" if b else _tex_escape(t)) for t, b in r]
-        lines.append(" & ".join(cells) + r" \\")
-    lines += [r"\bottomrule", r"\end{tabular}", f"\\label{{tab:{name}}}", r"\end{table}", ""]
-    with open(os.path.join(outdir, f"{name}.tex"), "w") as f:
-        f.write("\n".join(lines))
-    print(f"wrote {name}.csv / {name}.tex ({len(rows)} rows)")
-
-
-def _fmt(ms, digits=3) -> str:
+def pm(ms, metric: str = "auc") -> str:
+    """mean$\\pm$sd, with the paper's decimals for the metric."""
     if ms is None:
         return "--"
-    return f"{ms[0]:.{digits}f} ± {ms[1]:.{digits}f}"
+    d = DIG.get(metric, 3)
+    return f"{ms[0]:.{d}f}$\\pm${ms[1]:.{d}f}"
+
+
+def num(v, d=3) -> str:
+    return "--" if v is None or not np.isfinite(v) else f"{v:.{d}f}"
+
+
+def plain(s: str) -> str:
+    """LaTeX cell -> plain text for the CSV."""
+    s = re.sub(r"\\textbf\{(.*?)\}", r"\1", s)
+    s = s.replace("$\\pm$", "±").replace("$^\\dagger$", "†").replace("\\_", "_")
+    s = s.replace("$\\infty$", "inf").replace("$\\varepsilon$", "epsilon")
+    s = re.sub(r"\\[a-zA-Z]+", "", s)          # \widehat, \max, \mathrm, ...
+    return s.replace("{", "").replace("}", "").replace("$", "").strip()
 
 
 def _missing(outdir: str, name: str, group: str) -> None:
@@ -156,11 +199,38 @@ def _missing(outdir: str, name: str, group: str) -> None:
     print(f"{name}: no results for group {group}; wrote a placeholder")
 
 
+def write_table(outdir: str, name: str, header, rows, caption: str,
+                colspec: Optional[str] = None, size: str = "small",
+                resize: bool = False) -> None:
+    """header: list of LaTeX strings (CSV uses their plain form).
+    rows: list of rows, each cell (latex_text, bold). colspec defaults to l then c."""
+    os.makedirs(outdir, exist_ok=True)
+    with open(os.path.join(outdir, f"{name}.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([plain(h) for h in header])
+        for r in rows:
+            w.writerow([plain(c[0]) for c in r])
+    spec = colspec or ("l" + "c" * (len(header) - 1))
+    body = []
+    for r in rows:
+        cells = [(f"\\textbf{{{t}}}" if b else t) for t, b in r]
+        body.append(" & ".join(cells) + r" \\")
+    tab = [f"\\begin{{tabular}}{{{spec}}}", r"\toprule",
+           " & ".join(header) + r" \\", r"\midrule"] + body + [r"\bottomrule", r"\end{tabular}"]
+    if resize:
+        tab = [r"\resizebox{\textwidth}{!}{%"] + tab + ["}"]
+    lines = [r"\begin{table}[t]", r"\centering", f"\\{size}",
+             f"\\caption{{{caption}}}", f"\\label{{tab:{name}}}"] + tab + [r"\end{table}", ""]
+    with open(os.path.join(outdir, f"{name}.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print(f"wrote {name}.csv / {name}.tex ({len(rows)} rows)")
+
+
 # --------------------------------------------------------------------------- #
 # E1: main comparison
 # --------------------------------------------------------------------------- #
 def _e1_stats(rows: List[Dict]) -> Dict:
-    """Per dataset: per-method mean/std, seed count with DPD <= TAU_REPORT, and the
+    """Per dataset: per-method summaries, seed count with DPD <= TAU_REPORT, and the
     Holm-adjusted Wilcoxon p-values of each method against MAIN (AUC and DPD)."""
     res = {}
     for ds in DATASETS:
@@ -189,102 +259,110 @@ def _e1_stats(rows: List[Dict]) -> Dict:
 
 
 def table_e1(rows: List[Dict], outdir: str) -> None:
-    """Main comparison. The Wilcoxon/Holm baseline is the feasible-output CLAMP (MAIN)."""
+    """Full main comparison (not in the manuscript; the compact table is)."""
     rows = [r for r in rows if r["method"] in E1_METHODS]
     stats = _e1_stats(rows)
-    header = ["dataset", "method", "AUC", "DPD", "EOD", "selected round (mean)",
-              "p_AUC (vs CLAMP)", "p_DPD (vs CLAMP)", "certificate",
-              f"DPD <= {TAU_REPORT:g} (seeds)"]
+    if not stats:
+        return _missing(outdir, "e1_main", "e1")
+    header = ["Dataset", "Method", "AUC", "DPD", "EOD", "Sel. round", "$p_{\\mathrm{AUC}}$",
+              "$p_{\\mathrm{DPD}}$", "Cert.", f"DPD $\\le {TAU_REPORT:g}$"]
     out = []
     for ds, per in stats.items():
         best = {k: (max if k == "auc" else min)(
             (per[m][k][0] for m in per if per[m][k] is not None), default=None)
             for k in ("auc", "dpd", "eod")}
         for m, st in per.items():
-            cell = lambda k: (_fmt(st[k]), st[k] is not None and best[k] is not None
+            cell = lambda k: (pm(st[k], k), st[k] is not None and best[k] is not None
                               and abs(st[k][0] - best[k]) < 1e-12)
             if METHODS.get(m, {}).get("r2_output") == "feasible":
                 picked = [s for s in st["selected"] if s is not None]
                 sel_txt = (f"{np.mean(picked):.1f} ({len(picked)}/{len(st['selected'])})"
-                           if picked else "fallback (no feasible round)")
+                           if picked else "fallback")
             else:
                 sel_txt = "--"
-            pa = "--" if m == MAIN else (f"{st['p_auc']:.3g}" if st["p_auc"] == st["p_auc"] else "--")
-            pd = "--" if m == MAIN else (f"{st['p_dpd']:.3g}" if st["p_dpd"] == st["p_dpd"] else "--")
+            pa = "--" if m == MAIN else num(st["p_auc"], 3)
+            pd = "--" if m == MAIN else num(st["p_dpd"], 3)
+            cert = "--" if st["cert"] is None else f"{st['cert'][0]:.4f}"
             out.append([(DS_NAME[ds], False), (DISPLAY.get(m, m), False), cell("auc"),
                         cell("dpd"), cell("eod"), (sel_txt, False), (pa, False), (pd, False),
-                        (_fmt(st["cert"], 4) if st["cert"] else "--", False),
-                        (f"{st['tau_ok']}/{st['n']}", False)])
-    if not out:
-        return _missing(outdir, "e1_main", "e1")
+                        (cert, False), (f"{st['tau_ok']}/{st['n']}", False)])
     write_table(outdir, "e1_main", header, out,
-                "Main comparison (mean $\\pm$ sd over seeds). Best value per dataset in bold. "
-                "Selected round: mean over seeds with a feasible release, (feasible seeds / total). "
-                "p-values: Wilcoxon signed-rank vs CLAMP, paired by seed, Holm within dataset.")
+                "Main comparison, mean$\\pm$sd over seeds. Best value per dataset in bold. "
+                "Sel.\\ round: mean over seeds with a feasible release (feasible/total); "
+                "fallback: no feasible release. $p$: Wilcoxon signed-rank against CLAMP, "
+                "paired by seed, Holm-adjusted within dataset.",
+                colspec="ll" + "c" * 8, size="footnotesize", resize=True)
 
 
 def write_e1_compact(rows: List[Dict], outdir: str) -> None:
-    """Paper version: two side-by-side panels of four datasets, AUC and DPD per dataset,
-    a dagger where the Holm-adjusted Wilcoxon p-value against CLAMP is below 0.05."""
+    """Paper table: two stacked panels of four datasets, AUC and DPD per dataset, dagger
+    where the Holm-adjusted Wilcoxon p-value against CLAMP is below 0.05."""
     rows = [r for r in rows if r["method"] in E1_METHODS]
     stats = _e1_stats(rows)
     if not stats:
         return _missing(outdir, "e1_main_compact", "e1")
     os.makedirs(outdir, exist_ok=True)
 
-    def val(ds, m, k):
+    best = {}
+    for ds in stats:
+        for k in ("auc", "dpd"):
+            vals = [stats[ds][m][k][0] for m in COMPACT_METHODS
+                    if m in stats[ds] and stats[ds][m][k] is not None]
+            if vals:
+                best[(ds, k)] = max(vals) if k == "auc" else min(vals)
+
+    def cell(ds, m, k):
         st = stats.get(ds, {}).get(m)
         if st is None or st[k] is None:
-            return None
-        return st[k]
-
-    def cell(ds, m, k, best):
-        v = val(ds, m, k)
-        if v is None:
             return "--"
-        mean, sd, _ = v
-        txt = f"{mean:.2f}$\\pm${sd:.2f}"
-        if best.get((ds, k)) is not None and abs(mean - best[(ds, k)]) < 1e-12:
+        txt = pm(st[k], k)
+        if abs(st[k][0] - best.get((ds, k), math.inf)) < 1e-12:
             txt = f"\\textbf{{{txt}}}"
-        p = stats[ds][m]["p_auc" if k == "auc" else "p_dpd"] if m in stats[ds] else math.nan
+        p = st["p_auc" if k == "auc" else "p_dpd"]
         if m != MAIN and p == p and p < 0.05:
             txt += "$^\\dagger$"
         return txt
 
-    best = {}
-    for ds in DATASETS:
-        for k in ("auc", "dpd"):
-            vals = [val(ds, m, k)[0] for m in COMPACT_METHODS if val(ds, m, k) is not None]
-            if vals:
-                best[(ds, k)] = max(vals) if k == "auc" else min(vals)
-
     def panel(dss):
-        lines = [r"\begin{tabular}{l" + " cc" * len(dss) + "}", r"\toprule",
+        spec = "p{2.4cm}" + " cc" * len(dss)
+        lines = [f"\\begin{{tabular}}{{{spec}}}", r"\toprule",
                  " & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{{DS_NAME[d]}}}" for d in dss)
-                 + r" \\", " & " + " & ".join("AUC & DPD" for _ in dss) + r" \\",
-                 r"\midrule"]
+                 + r" \\",
+                 " & " + " & ".join("AUC & DPD" for _ in dss) + r" \\", r"\midrule"]
         for m in COMPACT_METHODS:
             name = DISPLAY.get(m, m)
             if m == MAIN:
                 name = f"\\textbf{{{name}}}"
             cells = []
             for d in dss:
-                cells += [cell(d, m, "auc", best), cell(d, m, "dpd", best)]
-            lines.append(name + " & " + " & ".join(cells) + r" \\")
-        lines += [r"\bottomrule", r"\end{tabular}"]
+                cells += [cell(d, m, "auc"), cell(d, m, "dpd")]
+            lines.append(f"\\raggedright {name} & " + " & ".join(cells) + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}}"]
+        lines[0] = r"\resizebox{\textwidth}{!}{%" + "\n" + lines[0]
         return "\n".join(lines)
 
+    # CSV: the same numbers in plain text, one row per method and dataset.
+    header = ["Dataset", "Method", "AUC", "DPD"]
+    csv_rows = []
+    for ds in DATASETS:
+        for m in COMPACT_METHODS:
+            if m in stats.get(ds, {}):
+                csv_rows.append([(DS_NAME[ds], False), (DISPLAY.get(m, m), False),
+                                 (cell(ds, m, "auc"), False), (cell(ds, m, "dpd"), False)])
+    with open(os.path.join(outdir, "e1_main_compact.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([plain(h) for h in header])
+        for r in csv_rows:
+            w.writerow([plain(c[0]) for c in r])
+
+    caption = ("Main results: test AUC and DPD, mean$\\pm$sd over seeds. Best per column in "
+               "bold. $^\\dagger$: Holm-adjusted Wilcoxon signed-rank $p<0.05$ against CLAMP, "
+               "paired by seed.")
     body = "\n".join([
-        r"\begin{table*}[t]", r"\centering", r"\scriptsize",
-        r"\caption{Main results: test AUC and DPD (mean $\pm$ sd over seeds). Best per column in "
-        r"bold. $^\dagger$: Holm-adjusted Wilcoxon signed-rank $p<0.05$ against CLAMP, paired "
-        r"by seed.}",
-        r"\setlength{\tabcolsep}{2pt}",
-        r"\begin{minipage}[t]{0.49\textwidth}", r"\centering", panel(DATASETS[:4]),
-        r"\end{minipage}\hfill",
-        r"\begin{minipage}[t]{0.49\textwidth}", r"\centering", panel(DATASETS[4:]),
-        r"\end{minipage}",
-        r"\label{tab:e1_main_compact}", r"\end{table*}", ""])
+        r"\begin{table}[t]", r"\centering", r"\scriptsize", r"\setlength{\tabcolsep}{1.5pt}",
+        f"\\caption{{{caption}}}", r"\label{tab:e1_main_compact}",
+        panel(DATASETS[:4]), r"\vspace{4pt}", panel(DATASETS[4:]),
+        r"\end{table}", ""])
     with open(os.path.join(outdir, "e1_main_compact.tex"), "w") as f:
         f.write(body)
     print("wrote e1_main_compact.tex")
@@ -310,7 +388,7 @@ def figure_e2(rows: List[Dict], outdir: str) -> None:
         ax.plot([0, lim], [0, lim], "k--", lw=0.8, label="y = x")
         ax.set_xlabel(r"fairness budget $\tau$")
         ax.set_ylabel("test DPD")
-        ax.set_title(ds)
+        ax.set_title(DS_NAME.get(ds, ds))
         ax.grid(alpha=0.3)
     if dss:
         axes[0][0].legend(frameon=False)
@@ -325,17 +403,18 @@ def table_e2(rows: List[Dict], outdir: str) -> None:
     rows = [r for r in rows if r["method"] == MAIN]
     if not rows:
         return _missing(outdir, "e2_tau", "e2")
-    header = ["dataset", "tau", "AUC", "DPD", "EOD", "n"]
+    header = ["Dataset", "$\\tau$", "AUC", "DPD", "EOD", "Seeds"]
     out = []
     for ds in ["bail", "credit", "pokec_z"]:
         for tau in sorted({r["tau"] for r in rows if r["dataset"] == ds}):
             sel = [r for r in rows if r["dataset"] == ds and r["tau"] == tau]
-            cells = [_ms([r[k] for r in sel]) for k in ("auc", "dpd", "eod")]
-            out.append([(ds, False), (f"{tau:g}", False), (_fmt(cells[0]), False),
-                        (_fmt(cells[1]), False), (_fmt(cells[2]), False),
+            out.append([(DS_NAME[ds], False), (f"{tau:g}", False),
+                        (pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                        (pm(_ms([r["dpd"] for r in sel]), "dpd"), False),
+                        (pm(_ms([r["eod"] for r in sel]), "eod"), False),
                         (str(len(sel)), False)])
     write_table(outdir, "e2_tau", header, out,
-                "Fairness budget sweep for CLAMP (mean $\\pm$ sd over seeds).")
+                "Fairness budget sweep for CLAMP, mean$\\pm$sd over seeds.")
     figure_e2(rows, outdir)
 
 
@@ -347,10 +426,17 @@ def _label(r: Dict) -> str:
     return r["method"] if r["aggregator"] == own else f"{r['method']}[{r['aggregator']}]"
 
 
+def _agg_display(label: str) -> str:
+    if "[" not in label:
+        return DISPLAY.get(label, label)
+    base, agg = label.split("[", 1)
+    return f"{DISPLAY.get(base, base)} ({agg.rstrip(']').replace('_', ' ')})"
+
+
 def table_e3(rows: List[Dict], outdir: str) -> None:
     if not rows:
         return _missing(outdir, "e3_attacks", "e3")
-    header = ["dataset", "attack", "aggregator", "b", "AUC", "DPD"]
+    header = ["Dataset", "Attack", "Aggregator", "$f$", "AUC", "DPD"]
     out = []
     labels = [lab for _, _, lab in E3_ROWS]
     for ds in ["bail", "pokec_z"]:
@@ -361,16 +447,17 @@ def table_e3(rows: List[Dict], outdir: str) -> None:
                            and r["b"] == b and _label(r) == lab]
                     if not sel:
                         continue
-                    out.append([(ds, False), (attack, False), (lab, False), (str(b), False),
-                                (_fmt(_ms([r["auc"] for r in sel])), False),
-                                (_fmt(_ms([r["dpd"] for r in sel])), False)])
+                    out.append([(DS_NAME[ds], False), (UPDATE_ATTACK_NAME[attack], False),
+                                (_agg_display(lab), False), (str(b), False),
+                                (pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                                (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)])
     write_table(outdir, "e3_attacks", header, out,
-                "Update attacks: utility and fairness versus number of Byzantine clients "
-                "(K = 10, mean $\\pm$ sd over seeds).")
+                "Update attacks: utility and fairness against the number $f$ of Byzantine "
+                "clients out of $K=10$; mean$\\pm$sd over seeds.")
 
 
 # --------------------------------------------------------------------------- #
-# E4: statistics attacks and the T3 bound
+# E4: statistics attacks against the Theorem 3 bound
 # --------------------------------------------------------------------------- #
 _PART_CACHE: Dict = {}
 
@@ -416,7 +503,7 @@ def _sigma_s(cfg: Dict) -> float:
     return _SIGMA_CACHE[key]
 
 
-def _noise_term(sigma_s: float, n_h: float, beta: float = 0.05) -> float:
+def _noise_term(sigma_s: float, n_h: float, beta: float = BETA) -> float:
     """Per-group noise contribution 2e / (N^H_a - e), with e = sigma_s sqrt(2 ln(8/beta)),
     so that |S/N - S^H/N^H| from the statistics noise is covered with probability 1-beta."""
     if sigma_s <= 0:
@@ -426,15 +513,15 @@ def _noise_term(sigma_s: float, n_h: float, beta: float = 0.05) -> float:
 
 
 def table_e4(rows: List[Dict], outdir: str) -> None:
-    """Deviation of the server estimate from the honest-only gap, against the full
+    """Deviation of the server's estimate from the honest-only gap, against the full
     Theorem 3 bound: b_0 + b_1 (the logged t3_bound) plus the statistics-noise terms.
-    The b = 0 row therefore reports the noise term alone."""
+    The f = 0 row therefore reports the noise term alone."""
     rows = [r for r in rows if r["method"] == MAIN]
     if not rows:
         return _missing(outdir, "e4_stat_attacks", "e4")
-    header = ["dataset", "attack", "b", "runs", "rounds checked", "max_t |dhat-D^H|",
-              "max_t bound (b-term + noise)", "rounds violating bound", "AUC", "DPD"]
-    out = []
+    header = ["Dataset", "Attack", "$f$", "$|\\widehat{D}-D^H|_{\\max}$", "Bound", "Viol.",
+              "AUC", "DPD"]
+    out, checked_all, runs_all = [], set(), set()
     for ds in ["bail", "pokec_z", "credit"]:
         for attack in ["none", "stat_falsify", "stat_falsify_mid"]:
             for b in ([0] if attack == "none" else [1, 2, 3, 4]):
@@ -456,61 +543,83 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
                     devs.append(max(d)); bounds.append(max(full))
                     viol += sum(1 for x, y in zip(d, full) if x > y + 1e-12)
                     checked += len(rr)
-                out.append([(ds, False), (attack, False), (str(b), False),
-                            (str(len(sel)), False), (str(checked), False),
-                            (f"{np.mean(devs):.3f}" if devs else "--", False),
-                            (f"{np.mean(bounds):.3f}" if bounds else "--", False),
+                checked_all.add(checked)
+                runs_all.add(len(sel))
+                out.append([(DS_NAME[ds], False), (ATTACK_NAME[attack], False), (str(b), False),
+                            (num(np.mean(devs)) if devs else "--", False),
+                            (num(np.mean(bounds)) if bounds else "--", False),
                             (str(viol), False),
-                            (_fmt(_ms([r["auc"] for r in sel])), False),
-                            (_fmt(_ms([r["dpd"] for r in sel])), False)])
+                            (pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                            (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)])
+    if not out:
+        return _missing(outdir, "e4_stat_attacks", "e4")
+    if len(checked_all) == 1 and len(runs_all) == 1:
+        per_row = (f"{max(checked_all)} release rounds ({max(runs_all)} seeds "
+                   f"of {max(checked_all) // max(runs_all)} rounds)")
+    else:
+        per_row = "varying numbers of release rounds and seeds"
     write_table(outdir, "e4_stat_attacks", header, out,
-                "Statistics attacks: deviation of the server's estimate from the honest-only "
-                "gap, against the Theorem 3 bound plus the statistics-noise term (beta = 0.05). "
-                "Violation counts are over all checked rounds and seeds.")
+                "Statistics attacks. $|\\widehat{D}-D^H|_{\\max}$: largest deviation of the "
+                "server's estimate from the honest-only gap over the release rounds; Bound: "
+                "largest Theorem 3 bound (honest-mass term plus statistics-noise term, "
+                f"$\\beta={BETA:g}$) over the release rounds; Viol.: release rounds with the "
+                f"deviation above the bound. Each row covers {per_row}; $f$ is the number of "
+                "falsifying clients out of $K=10$. AUC and DPD: mean$\\pm$sd over seeds.",
+                colspec="llc" + "c" * 5, size="footnotesize")
 
 
 # --------------------------------------------------------------------------- #
-# E5: privacy
+# E5 and E5b: privacy sweeps
 # --------------------------------------------------------------------------- #
 def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[float] = None,
              datasets: Optional[List[str]] = None) -> None:
-    """E5 (privacy sweep). ``group`` = e5b reuses it at a binding fairness budget ``tau``,
-    and adds the unconstrained clamp-clipmean reference as its own row."""
+    """Rows are (epsilon, P); columns AUC and DPD per dataset. The statistics-noise-off
+    run is merged in as epsilon = infinity. For e5b, the unconstrained ClipMean
+    reference is a final row."""
     name = "e5_privacy" if group == "e5" else f"{group}_privacy"
+    dss = datasets or ["german", "bail"]
     if tau is not None:
         rows = [r for r in rows if r["tau"] == tau]
+    rows = [r for r in rows if r["method"] == MAIN or r["method"] == "clamp-clipmean"]
     if not rows:
         return _missing(outdir, name, group)
-    header = ["dataset", "epsilon", "P", "stat DP", "AUC", "DPD", "n"]
+    header = ["$\\varepsilon$", "$P$"]
+    for ds in dss:
+        header += [f"{DS_NAME[ds]} AUC", f"{DS_NAME[ds]} DPD"]
+    keys = sorted({(r["eps"], r["P"]) for r in rows
+                   if r["method"] == MAIN and r["stat_dp"]})
     out = []
-    for ds in (datasets or ["german", "bail"]):
-        for eps in sorted({r["eps"] for r in rows if r["dataset"] == ds}):
-            for P in sorted({r["P"] for r in rows if r["dataset"] == ds}):
-                sel = [r for r in rows if r["dataset"] == ds and r["eps"] == eps
-                       and r["P"] == P and r["stat_dp"]]
-                sel = [r for r in sel if r["method"] == MAIN]
-                if not sel:
-                    continue
-                out.append([(ds, False), (f"{eps:g}", False), (str(P), False), ("on", False),
-                            (_fmt(_ms([r["auc"] for r in sel])), False),
-                            (_fmt(_ms([r["dpd"] for r in sel])), False), (str(len(sel)), False)])
-        off = [r for r in rows if r["dataset"] == ds and not r["stat_dp"]
-               and r["method"] == MAIN]
-        if off:
-            out.append([(ds, False), ("off", False), (str(off[0]["P"]), False), ("off", False),
-                        (_fmt(_ms([r["auc"] for r in off])), False),
-                        (_fmt(_ms([r["dpd"] for r in off])), False),
-                        (str(len(off)), False)])
-        ref = [r for r in rows if r["dataset"] == ds and r["method"] == "clamp-clipmean"]
-        if ref and group == "e5b":
-            out.append([(ds, False), ("unconstrained", False), (str(ref[0]["P"]), False),
-                        ("clamp-clipmean", False),
-                        (_fmt(_ms([r["auc"] for r in ref])), False),
-                        (_fmt(_ms([r["dpd"] for r in ref])), False), (str(len(ref)), False)])
-    write_table(outdir, name, header, out,
-                "Privacy: utility and fairness versus statistics budget epsilon and release "
-                "period P (mean $\\pm$ sd over seeds)"
-                + (f", fairness budget tau={tau:g}." if tau is not None else "."))
+    for eps, P in keys:
+        line = [(f"{eps:g}", False), (str(P), False)]
+        for ds in dss:
+            sel = [r for r in rows if r["dataset"] == ds and r["method"] == MAIN
+                   and r["stat_dp"] and r["eps"] == eps and r["P"] == P]
+            line += [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)]
+        out.append(line)
+    off = [r for r in rows if r["method"] == MAIN and not r["stat_dp"]]
+    if off:
+        line = [("$\\infty$", False), ("--", False)]
+        for ds in dss:
+            sel = [r for r in off if r["dataset"] == ds]
+            line += [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)]
+        out.append(line)
+    ref = [r for r in rows if r["method"] == "clamp-clipmean"]
+    if ref and group == "e5b":
+        line = [("ClipMean", False), ("--", False)]
+        for ds in dss:
+            sel = [r for r in ref if r["dataset"] == ds]
+            line += [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)]
+        out.append(line)
+    budget = (f", fairness budget $\\tau={tau:g}$" if tau is not None else "")
+    caption = ("Privacy: utility and fairness against the statistics budget $\\varepsilon$ and "
+               "release period $P$" + budget + ". $\\varepsilon=\\infty$: statistics noise "
+               "off, default period (P=10 for German, P=1 for Bail). mean$\\pm$sd over seeds.")
+    if group == "e5b":
+        caption += " The ClipMean row is the unconstrained reference (no Lagrangian term)."
+    write_table(outdir, name, header, out, caption, size="footnotesize")
 
 
 # --------------------------------------------------------------------------- #
@@ -519,7 +628,7 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
 def table_e6(rows: List[Dict], outdir: str) -> None:
     if not rows:
         return _missing(outdir, "e6_ablation", "e6")
-    header = ["dataset", "method", "clip C", "step eta", "update noise", "AUC", "DPD", "EOD", "n"]
+    header = ["Dataset", "Method", "$C$", "$\\eta$", "$\\sigma_u$", "AUC", "DPD"]
     out = []
     for ds in ["bail", "credit"]:
         keys = sorted({(r["method"], r["clip"], r["step"], r["noise"]) for r in rows
@@ -527,23 +636,127 @@ def table_e6(rows: List[Dict], outdir: str) -> None:
         for m, c, s, n in keys:
             sel = [r for r in rows if r["dataset"] == ds and r["method"] == m
                    and (r["clip"], r["step"], r["noise"]) == (c, s, n)]
-            out.append([(ds, False), (DISPLAY.get(m, m), False), (f"{c:g}", False),
+            out.append([(DS_NAME[ds], False), (DISPLAY.get(m, m), False), (f"{c:g}", False),
                         (f"{s:g}", False), (f"{n:g}", False),
-                        (_fmt(_ms([r["auc"] for r in sel])), False),
-                        (_fmt(_ms([r["dpd"] for r in sel])), False),
-                        (_fmt(_ms([r["eod"] for r in sel])), False), (str(len(sel)), False)])
+                        (pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                        (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)])
     write_table(outdir, "e6_ablation", header, out,
-                "CLAMP ablations, one factor at a time around clip 1, step 0.5, noise 0 "
-                "(mean $\\pm$ sd over seeds). The last two rows at the default setting are the "
-                "output-rule (last iterate) and direction-rule (proportional) ablations.")
+                "CLAMP ablations, one factor at a time around $C=1$, $\\eta=0.5$, "
+                "$\\sigma_u=0$, mean$\\pm$sd over seeds. The last two rows at the default "
+                "setting are the output-rule (last iterate) and direction-rule "
+                "(proportional) ablations.", size="footnotesize")
+
+
+# --------------------------------------------------------------------------- #
+# Privacy tables (also called by experiments/clamp_privacy.py)
+# --------------------------------------------------------------------------- #
+def write_privacy_tables(attack_rows: List[Dict], probe_rows: List[Dict], out_dir: str) -> None:
+    """attack_rows: per-seed records with eps, bound, R, and the four accuracies.
+    probe_rows: per-seed records with dataset, method, auc."""
+    os.makedirs(out_dir, exist_ok=True)
+    dss = [d for d in ["german", "bail"] if any(r["dataset"] == d for r in attack_rows)]
+    if attack_rows and dss:
+        eps_list = sorted({r["eps"] for r in attack_rows})
+        header = ["$\\varepsilon$", "Bound"]
+        for d in dss:
+            header += [f"{DS_NAME[d]} single", f"{DS_NAME[d]} all"]
+        out = []
+        for e in eps_list:
+            bound = next(r["bound"] for r in attack_rows if r["eps"] == e)
+            line = [("$\\infty$" if math.isinf(e) else f"{e:g}", False), (num(bound), False)]
+            for d in dss:
+                sel = [r for r in attack_rows if r["dataset"] == d and r["eps"] == e]
+                line += [(pm(_ms([r["acc_single_mc"] for r in sel]), "acc"), False),
+                         (pm(_ms([r["acc_composed_mc"] for r in sel]), "acc"), False)]
+            out.append(line)
+        R = {d: sorted({r["R"] for r in attack_rows if r["dataset"] == d}) for d in dss}
+        gaps = [abs(r[k] - r[ka]) for r in attack_rows
+                for k, ka in (("acc_single_mc", "acc_single_analytic"),
+                              ("acc_composed_mc", "acc_composed_analytic"))]
+        Rtxt = ", ".join(f"$R={R[d][0]}$ for {DS_NAME[d]}" for d in dss if R[d])
+        agree = math.ceil(max(gaps) * 1000) / 1000   # smallest 0.001 multiple covering the gap
+        write_table(out_dir, "privacy_attack", header, out,
+                    "Differencing attack on the statistics channel: balanced accuracy of the "
+                    "likelihood-ratio test over random validation targets, mean$\\pm$sd over "
+                    "seeds. Single: one noisy release. All: the $R$ releases of an unchanged "
+                    f"vector ({Rtxt}), the worst case the theorem accounts for. Bound: "
+                    "$(e^{\\varepsilon}+\\delta)/(1+e^{\\varepsilon})$. Monte Carlo and "
+                    f"closed-form values agree to within {agree:.3f}.",
+                    size="footnotesize")
+    if probe_rows:
+        pdss = [d for d in ["german", "bail"] if any(r["dataset"] == d for r in probe_rows)]
+        header = ["Method"] + [f"{DS_NAME[d]} AUC" for d in pdss]
+        out = []
+        for m in ["fedavg-gat", "clamp-clipmean", "clamp"]:
+            line = [(DISPLAY.get(m, m), False)]
+            for d in pdss:
+                sel = [r["auc"] for r in probe_rows if r["method"] == m and r["dataset"] == d]
+                line.append((pm(_ms(sel), "auc"), False))
+            out.append(line)
+        write_table(out_dir, "privacy_probe", header, out,
+                    "Attribute probe on the final global model: AUC of predicting the sensitive "
+                    "attribute from penultimate test-node embeddings, mean$\\pm$sd over seeds.",
+                    size="footnotesize")
+
+
+def render_privacy_from_csv(out_dir: str) -> None:
+    """Re-render the privacy tables from attack.csv and probe.csv (no re-run)."""
+    def _read(path):
+        with open(path) as f:
+            rd = csv.DictReader(f)
+            return list(rd)
+
+    attack = []
+    for r in _read(os.path.join(out_dir, "attack.csv")):
+        row = {"dataset": r["dataset"], "seed": int(r["seed"]), "eps": float(r["eps"]),
+               "R": int(r["R"]), "bound": float(r["bound"]),
+               "acc_single_mc": float(r["acc_single_mc"]),
+               "acc_single_analytic": float(r["acc_single_analytic"]),
+               "acc_composed_mc": float(r["acc_composed_mc"]),
+               "acc_composed_analytic": float(r["acc_composed_analytic"]),
+               "P": int(r["P"]), "sigma": float(r["sigma"]), "n_targets": int(r["n_targets"])}
+        attack.append(row)
+    probe = []
+    p_path = os.path.join(out_dir, "probe.csv")
+    if os.path.exists(p_path):
+        for r in _read(p_path):
+            probe.append({"dataset": r["dataset"], "seed": int(r["seed"]),
+                          "method": r["method"], "auc": float(r["auc"])})
+    write_privacy_tables(attack, probe, out_dir)
+
+
+# --------------------------------------------------------------------------- #
+# Driver
+# --------------------------------------------------------------------------- #
+def report_warmup(root: str, outdir: str) -> None:
+    """Count and list the runs whose feasible selection the warm-up rule changed."""
+    counts: Dict[str, int] = {}
+    for c in CHANGED:
+        counts[c["group"]] = counts.get(c["group"], 0) + 1
+    print("warm-up rule (W = ceil(0.2 T)) changed these runs:")
+    for g in ["e1", "e2", "e3", "e4", "e5", "e5b", "e6"]:
+        print(f"  {g}: {counts.get(g, 0)} runs")
+    os.makedirs(outdir, exist_ok=True)
+    with open(os.path.join(outdir, "warmup_changes.csv"), "w", newline="") as f:
+        if not CHANGED:
+            f.write("note\nno runs changed\n")
+            return
+        w = csv.DictWriter(f, fieldnames=list(CHANGED[0].keys()))
+        w.writeheader()
+        w.writerows(CHANGED)
+    for c in CHANGED:
+        print(f"  {c['group']} {c['method']} {c['dataset']} {c['attack']} b{c['b']} s{c['seed']}: "
+              f"sel {c['old_sel']} -> None; AUC {c['old_auc']:.4f} -> {c['new_auc']:.4f}; "
+              f"DPD {c['old_dpd']:.4f} -> {c['new_dpd']:.4f}")
 
 
 def main(argv=None):
     p = argparse.ArgumentParser()
-    p.add_argument("--root", default=os.path.join("results", "clamp"))
+    p.add_argument("--root", default=os.path.join(_REPO, "results", "clamp"))
     args = p.parse_args(argv)
     outdir = os.path.join(args.root, "tables")
     data = {g: load_group(args.root, g) for g in ["e1", "e2", "e3", "e4", "e5", "e5b", "e6"]}
+    report_warmup(args.root, outdir)
     table_e1(data["e1"], outdir)
     write_e1_compact(data["e1"], outdir)
     table_e2(data["e2"], outdir)
@@ -552,6 +765,9 @@ def main(argv=None):
     table_e5(data["e5"], outdir)
     table_e5(data["e5b"], outdir, group="e5b", tau=0.005, datasets=["bail"])
     table_e6(data["e6"], outdir)
+    privacy = os.path.join(args.root, "privacy")
+    if os.path.exists(os.path.join(privacy, "attack.csv")):
+        render_privacy_from_csv(privacy)
 
 
 if __name__ == "__main__":

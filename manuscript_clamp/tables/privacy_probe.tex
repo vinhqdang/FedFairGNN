@@ -1,15 +1,15 @@
 \begin{table}[t]
 \centering
-\small
-\caption{Attribute probe on the final global model: AUC of predicting $s$ from penultimate test embeddings (mean $\pm$ sd over seeds).}
-\begin{tabular}{lll}
+\footnotesize
+\caption{Attribute probe on the final global model: AUC of predicting the sensitive attribute from penultimate test-node embeddings, mean$\pm$sd over seeds.}
+\label{tab:privacy_probe}
+\begin{tabular}{lcc}
 \toprule
-method & bail & german \\
+Method & German AUC & Bail AUC \\
 \midrule
-fedavg-gat & 0.536 ± 0.012 & 0.868 ± 0.053 \\
-clamp-clipmean & 0.544 ± 0.011 & 0.865 ± 0.062 \\
-clamp & 0.544 ± 0.011 & 0.861 ± 0.056 \\
+FedAvg-GAT & 0.87$\pm$0.05 & 0.54$\pm$0.01 \\
+ClipMean (no controller, last iterate) & 0.86$\pm$0.06 & 0.54$\pm$0.01 \\
+CLAMP (last iterate) & 0.86$\pm$0.06 & 0.54$\pm$0.01 \\
 \bottomrule
 \end{tabular}
-\label{tab:privacy_probe}
 \end{table}
