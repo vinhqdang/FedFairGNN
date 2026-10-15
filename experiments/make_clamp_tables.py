@@ -419,8 +419,9 @@ def write_e1_appendix(rows: List[Dict], outdir: str) -> None:
                "threshold. Cert.: $\\lambda^{R}/(\\eta R)$ for the CLAMP variants. "
                "Backbone: GCN or GAT as in the method definition, own: the baseline's own "
                "architecture. Degenerate runs (AUC near chance) are included.")
-    spec = "lll" + "c" * 6
-    lines = [f"\\begin{{longtable}}{{{spec}}}",
+    spec = "lp{2.2cm}l" + "c" * 6
+    lines = [r"\scriptsize", r"\setlength{\tabcolsep}{1pt}",
+             f"\\begin{{longtable}}{{{spec}}}",
              f"\\caption{{{caption}}}\\label{{tab:e1_full}}\\\\",
              r"\toprule", " & ".join(header) + r" \\", r"\midrule", r"\endfirsthead",
              r"\toprule", " & ".join(header) + r" \\", r"\midrule", r"\endhead",
@@ -520,6 +521,127 @@ def table_e3(rows: List[Dict], outdir: str) -> None:
     write_table(outdir, "e3_attacks", header, out,
                 "Update attacks: utility and fairness against the number $f$ of Byzantine "
                 "clients out of $K=10$; mean$\\pm$sd over seeds.")
+
+
+E3_AGG = [("fedavg-gat", "FedAvg", False), ("fedavg-gat[median]", "Median", True),
+          ("fedavg-gat[trimmed_mean]", "Trimmed mean", True),
+          ("fedavg-gat[krum]", "Krum", True), ("clamp-f", "CLAMP", False)]
+E3_ATTACK_ROWS = [("none", "None"), ("sign_flip", "Sign-flip"), ("scaling", "Scaling"),
+                  ("alie", "ALIE"), ("ipm", "IPM"), ("fairness_poison", "Fairness-poison")]
+
+
+def _e3_sel(rows, ds, attack, f, label):
+    return [r for r in rows if r["dataset"] == ds and r["attack"] == attack
+            and r["b"] == f and _label(r) == label]
+
+
+def write_e3_compact(rows: List[Dict], outdir: str) -> None:
+    """Paper table: attack x aggregator, f=0 (no attack) and f=2, f=4, mean only, two
+    stacked panels by dataset. Best AUC per attack block and f in bold."""
+    rows = [r for r in rows if r["method"] in ("fedavg-gat", "clamp-f")]
+    if not rows:
+        return _missing(outdir, "e3_compact", "e3")
+    os.makedirs(outdir, exist_ok=True)
+    groups = [(0, "$f=0$"), (2, "$f=2$"), (4, "$f=4$")]
+
+    def mean_of(ds, attack, f, label, metric):
+        ms = _ms([r[metric] for r in _e3_sel(rows, ds, attack, f, label)])
+        return None if ms is None else ms[0]
+
+    def panel(ds):
+        lines = [r"\begin{tabular}{ll" + "cc" * len(groups) + "}", r"\toprule",
+                 " & & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{{g}}}" for _, g in groups)
+                 + r" \\",
+                 " & & " + " & ".join("AUC & DPD" for _ in groups) + r" \\", r"\midrule"]
+        for attack, aname in E3_ATTACK_ROWS:
+            fs = [0] if attack == "none" else [2, 4]
+            # best AUC per (attack, f) across aggregators
+            best = {}
+            for f in (0, 2, 4):
+                vals = [mean_of(ds, attack, f, lab, "auc") for lab, _, _ in E3_AGG]
+                vals = [v for v in vals if v is not None]
+                best[f] = max(vals) if vals else None
+            for k, (lab, disp, dag) in enumerate(E3_AGG):
+                name = disp + ("$^\\dagger$" if dag else "")
+                cells = []
+                for f, _ in groups:
+                    if f not in fs:
+                        cells += ["--", "--"]
+                        continue
+                    a = mean_of(ds, attack, f, lab, "auc")
+                    d = mean_of(ds, attack, f, lab, "dpd")
+                    if a is None:
+                        cells += ["--", "--"]
+                        continue
+                    atxt = f"{a:.2f}"
+                    if best[f] is not None and abs(a - best[f]) < 1e-12:
+                        atxt = f"\\textbf{{{atxt}}}"
+                    cells += [atxt, f"{d:.3f}"]
+                lead = (f"\\multirow{{{len(E3_AGG)}}}{{*}}{{{aname}}}" if k == 0 else "")
+                lines.append(f"{lead} & {name} & " + " & ".join(cells) + r" \\")
+            lines.append(r"\midrule")
+        lines[-1] = r"\bottomrule"
+        lines += [r"\end{tabular}"]
+        return "\n".join(lines)
+
+    caption = ("Update attacks, mean over 3 seeds, K=10 clients. Columns give AUC (two decimals) "
+               "and DPD (three decimals) at $f=0$ (no attack, shown on the None row only), "
+               "$f=2$ and $f=4$ Byzantine clients. Best AUC per attack and $f$ in bold. "
+               "$^\\dagger$: median, trimmed mean and Krum inspect individual client updates and "
+               "cannot run under secure aggregation. Standard deviations are in the full table "
+               "(Appendix).")
+    panels = [panel(d) for d in ["bail", "pokec_z"]]
+    body = "\n".join([r"\begin{table}[t]", r"\centering", r"\footnotesize",
+                      r"\setlength{\tabcolsep}{3pt}",
+                      f"\\caption{{{caption}}}", r"\label{tab:e3}",
+                      f"\\textbf{{{DS_NAME['bail']}}}\\\\[2pt]", panels[0],
+                      r"\vspace{6pt}",
+                      f"\\textbf{{{DS_NAME['pokec_z']}}}\\\\[2pt]", panels[1],
+                      r"\end{table}", ""])
+    with open(os.path.join(outdir, "e3_compact.tex"), "w") as f:
+        f.write(body)
+    print("wrote e3_compact.tex")
+
+
+def write_e3_appendix(rows: List[Dict], outdir: str) -> None:
+    """Full E3: every f, mean and sd, both datasets, as a longtable."""
+    rows = [r for r in rows if r["method"] in ("fedavg-gat", "clamp-f")]
+    if not rows:
+        return _missing(outdir, "e3_full_appendix", "e3")
+    os.makedirs(outdir, exist_ok=True)
+    header = ["Dataset", "Attack", "$f$", "Aggregator", "AUC", "DPD"]
+    body = []
+    for ds in ["bail", "pokec_z"]:
+        for attack, aname in E3_ATTACK_ROWS:
+            fs = [0] if attack == "none" else [1, 2, 3, 4]
+            for f in fs:
+                for lab, disp, dag in E3_AGG:
+                    sel = _e3_sel(rows, ds, attack, f, lab)
+                    if not sel:
+                        continue
+                    body.append([DS_NAME[ds], aname, str(f),
+                                 disp + ("$^\\dagger$" if dag else ""),
+                                 pm(_ms([r["auc"] for r in sel]), "auc"),
+                                 pm(_ms([r["dpd"] for r in sel]), "dpd")])
+    with open(os.path.join(outdir, "e3_full_appendix.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([plain(h) for h in header])
+        w.writerows([[plain(c) for c in r] for r in body])
+    caption = ("Full update-attack results, mean$\\pm$sd over 3 seeds, K=10 clients, for every "
+               "number $f$ of Byzantine clients. $^\\dagger$: median, trimmed mean and Krum "
+               "inspect individual client updates and cannot run under secure aggregation.")
+    lines = [r"\footnotesize", r"\setlength{\tabcolsep}{3pt}", "\\begin{longtable}{llclcc}",
+             f"\\caption{{{caption}}}\\label{{tab:e3_full}}\\\\",
+             r"\toprule", " & ".join(header) + r" \\", r"\midrule", r"\endfirsthead",
+             r"\toprule", " & ".join(header) + r" \\", r"\midrule", r"\endhead",
+             r"\midrule", r"\multicolumn{6}{r}{\textit{continued on next page}} \\", r"\endfoot",
+             r"\bottomrule", r"\endlastfoot"]
+    for r in body:
+        lines.append(" & ".join(r) + r" \\")
+    lines += [r"\end{longtable}", ""]
+    with open(os.path.join(outdir, "e3_full_appendix.tex"), "w") as f:
+        f.write("\n".join(lines))
+    print(f"wrote e3_full_appendix.csv / .tex ({len(body)} rows)")
 
 
 # --------------------------------------------------------------------------- #
@@ -902,6 +1024,8 @@ def main(argv=None):
     write_e1_appendix(data["e1"], outdir)
     table_e2(data["e2"], outdir)
     table_e3(data["e3"], outdir)
+    write_e3_compact(data["e3"], outdir)
+    write_e3_appendix(data["e3"], outdir)
     table_e4(data["e4"], outdir)
     table_e5(data["e5"], outdir, datasets=["german", "bail", "nba", "facebook"],
              name="e5_privacy", default_p="P=10 for German, NBA and Facebook, P=1 for Bail")
