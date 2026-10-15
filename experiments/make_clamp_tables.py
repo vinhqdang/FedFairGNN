@@ -201,7 +201,7 @@ def _missing(outdir: str, name: str, group: str) -> None:
 
 def write_table(outdir: str, name: str, header, rows, caption: str,
                 colspec: Optional[str] = None, size: str = "small",
-                resize: bool = False) -> None:
+                resize: bool = False, tabsep: Optional[str] = None) -> None:
     """header: list of LaTeX strings (CSV uses their plain form).
     rows: list of rows, each cell (latex_text, bold). colspec defaults to l then c."""
     os.makedirs(outdir, exist_ok=True)
@@ -215,7 +215,8 @@ def write_table(outdir: str, name: str, header, rows, caption: str,
     for r in rows:
         cells = [(f"\\textbf{{{t}}}" if b else t) for t, b in r]
         body.append(" & ".join(cells) + r" \\")
-    tab = [f"\\begin{{tabular}}{{{spec}}}", r"\toprule",
+    sep = [f"\\setlength{{\\tabcolsep}}{{{tabsep}}}"] if tabsep else []
+    tab = sep + [f"\\begin{{tabular}}{{{spec}}}", r"\toprule",
            " & ".join(header) + r" \\", r"\midrule"] + body + [r"\bottomrule", r"\end{tabular}"]
     if resize:
         tab = [r"\resizebox{\textwidth}{!}{%"] + tab + ["}"]
@@ -572,11 +573,13 @@ def table_e4(rows: List[Dict], outdir: str) -> None:
 # E5 and E5b: privacy sweeps
 # --------------------------------------------------------------------------- #
 def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[float] = None,
-             datasets: Optional[List[str]] = None) -> None:
-    """Rows are (epsilon, P); columns AUC and DPD per dataset. The statistics-noise-off
+             datasets: Optional[List[str]] = None, name: Optional[str] = None,
+             default_p: str = "P=10 for German, P=1 for Bail") -> None:
+    """Rows are (epsilon, P); columns AUC, DPD and fallback per dataset (the number of
+    seeds with no eligible feasible release after the warm-up). The statistics-noise-off
     run is merged in as epsilon = infinity. For e5b, the unconstrained ClipMean
     reference is a final row."""
-    name = "e5_privacy" if group == "e5" else f"{group}_privacy"
+    name = name or ("e5_privacy" if group == "e5" else f"{group}_privacy")
     dss = datasets or ["german", "bail"]
     if tau is not None:
         rows = [r for r in rows if r["tau"] == tau]
@@ -585,7 +588,13 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
         return _missing(outdir, name, group)
     header = ["$\\varepsilon$", "$P$"]
     for ds in dss:
-        header += [f"{DS_NAME[ds]} AUC", f"{DS_NAME[ds]} DPD"]
+        header += [f"{DS_NAME[ds]} AUC", f"{DS_NAME[ds]} DPD", "fallback"]
+
+    def cells(sel):
+        """AUC, DPD and the fallback count (seeds with selected_round None)."""
+        return [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
+                (pm(_ms([r["dpd"] for r in sel]), "dpd"), False),
+                (str(sum(1 for r in sel if r["selected"] is None)), False)]
     keys = sorted({(r["eps"], r["P"]) for r in rows
                    if r["method"] == MAIN and r["stat_dp"]})
     out = []
@@ -594,16 +603,13 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
         for ds in dss:
             sel = [r for r in rows if r["dataset"] == ds and r["method"] == MAIN
                    and r["stat_dp"] and r["eps"] == eps and r["P"] == P]
-            line += [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
-                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)]
+            line += cells(sel)
         out.append(line)
     off = [r for r in rows if r["method"] == MAIN and not r["stat_dp"]]
     if off:
         line = [("$\\infty$", False), ("--", False)]
         for ds in dss:
-            sel = [r for r in off if r["dataset"] == ds]
-            line += [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
-                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)]
+            line += cells([r for r in off if r["dataset"] == ds])
         out.append(line)
     ref = [r for r in rows if r["method"] == "clamp-clipmean"]
     if ref and group == "e5b":
@@ -611,15 +617,17 @@ def table_e5(rows: List[Dict], outdir: str, group: str = "e5", tau: Optional[flo
         for ds in dss:
             sel = [r for r in ref if r["dataset"] == ds]
             line += [(pm(_ms([r["auc"] for r in sel]), "auc"), False),
-                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False)]
+                     (pm(_ms([r["dpd"] for r in sel]), "dpd"), False), ("--", False)]
         out.append(line)
     budget = (f", fairness budget $\\tau={tau:g}$" if tau is not None else "")
     caption = ("Privacy: utility and fairness against the statistics budget $\\varepsilon$ and "
                "release period $P$" + budget + ". $\\varepsilon=\\infty$: statistics noise "
-               "off, default period (P=10 for German, P=1 for Bail). mean$\\pm$sd over seeds.")
+               f"off, default period ({default_p}). mean$\\pm$sd over seeds. Fallback: number of "
+               "seeds with no eligible feasible release after the warm-up, so the last model "
+               "is reported.")
     if group == "e5b":
         caption += " The ClipMean row is the unconstrained reference (no Lagrangian term)."
-    write_table(outdir, name, header, out, caption, size="footnotesize")
+    write_table(outdir, name, header, out, caption, size="footnotesize", tabsep="3pt")
 
 
 # --------------------------------------------------------------------------- #
@@ -644,7 +652,8 @@ def table_e6(rows: List[Dict], outdir: str) -> None:
                 "CLAMP ablations, one factor at a time around $C=1$, $\\eta=0.5$, "
                 "$\\sigma_u=0$, mean$\\pm$sd over seeds. The last two rows at the default "
                 "setting are the output-rule (last iterate) and direction-rule "
-                "(proportional) ablations.", size="footnotesize")
+                "(proportional) ablations.", size="footnotesize", tabsep="3pt",
+                colspec="lp{3.6cm}ccccc")
 
 
 # --------------------------------------------------------------------------- #
@@ -762,7 +771,9 @@ def main(argv=None):
     table_e2(data["e2"], outdir)
     table_e3(data["e3"], outdir)
     table_e4(data["e4"], outdir)
-    table_e5(data["e5"], outdir)
+    table_e5(data["e5"], outdir, datasets=["german", "bail"], name="e5_privacy")
+    table_e5(data["e5"], outdir, datasets=["credit"], name="e5_credit",
+             default_p="P=1")
     table_e5(data["e5b"], outdir, group="e5b", tau=0.005, datasets=["bail"])
     table_e6(data["e6"], outdir)
     privacy = os.path.join(args.root, "privacy")
