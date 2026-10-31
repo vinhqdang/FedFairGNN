@@ -1,0 +1,30 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\caption{Privacy: utility and fairness against the statistics budget $\varepsilon$ and release period $P$, fairness budget $\tau=0.005$. $\varepsilon=\infty$: statistics noise off, default period (P=1). mean$\pm$sd over 5 seeds. Fallback: number of seeds with no eligible feasible release after the warm-up, so the last model is reported. The ClipMean row is the unconstrained reference (no Lagrangian term).}
+\label{tab:e5b_privacy}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+$\varepsilon$ & $P$ & Bail AUC & Bail DPD & fallback \\
+\midrule
+1 & 1 & 0.78$\pm$0.03 & 0.015$\pm$0.007 & 0 \\
+1 & 5 & 0.78$\pm$0.03 & 0.018$\pm$0.008 & 0 \\
+1 & 10 & 0.77$\pm$0.04 & 0.016$\pm$0.007 & 0 \\
+2 & 1 & 0.78$\pm$0.03 & 0.018$\pm$0.008 & 0 \\
+2 & 5 & 0.78$\pm$0.03 & 0.017$\pm$0.008 & 0 \\
+2 & 10 & 0.77$\pm$0.04 & 0.013$\pm$0.005 & 0 \\
+4 & 1 & 0.78$\pm$0.03 & 0.019$\pm$0.007 & 0 \\
+4 & 5 & 0.78$\pm$0.03 & 0.018$\pm$0.007 & 0 \\
+4 & 10 & 0.77$\pm$0.04 & 0.014$\pm$0.007 & 1 \\
+8 & 1 & 0.79$\pm$0.03 & 0.018$\pm$0.008 & 0 \\
+8 & 5 & 0.78$\pm$0.03 & 0.018$\pm$0.008 & 2 \\
+8 & 10 & 0.77$\pm$0.03 & 0.014$\pm$0.008 & 1 \\
+16 & 1 & 0.78$\pm$0.03 & 0.018$\pm$0.007 & 0 \\
+16 & 5 & 0.78$\pm$0.03 & 0.018$\pm$0.008 & 2 \\
+16 & 10 & 0.78$\pm$0.03 & 0.016$\pm$0.008 & 2 \\
+$\infty$ & -- & 0.78$\pm$0.03 & 0.015$\pm$0.007 & 2 \\
+ClipMean & -- & 0.78$\pm$0.03 & 0.019$\pm$0.009 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,36 @@
+\documentclass[11pt]{letter}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\signature{Quang-Vinh Dang\\Corresponding author\\British University Vietnam, Hung Yen, Vietnam\\vinh.dq4@buv.edu.vn \quad ORCID: 0000-0002-3877-8024}
+\address{Quang-Vinh Dang\\British University Vietnam\\Hung Yen, Vietnam\\vinh.dq4@buv.edu.vn}
+\date{31 October 2026}
+
+\begin{document}
+\begin{letter}{The Editors-in-Chief\\Information Sciences\\Elsevier}
+
+\opening{Dear Editors,}
+
+We are pleased to submit our manuscript entitled \emph{``CLAMP: Fairness-Constrained Federated Graph Learning from Validated Sums with Private Group Statistics''} by Quang-Vinh Dang and Ngoc-Son-An Nguyen for consideration as a regular research article in \emph{Information Sciences}.
+
+Federated graph neural networks are trained by institutions, such as banks or courts, that cannot pool their graphs, and their models must be fair across demographic groups, must not expose sensitive attributes, and must withstand compromised participants. Many fair federated methods read per-client fairness reports in the clear, which conflicts with secure aggregation and gives malicious clients an easy target. Our manuscript shows that a server which only ever sees norm- and range-checked sums can still enforce a global group-fairness budget. The protocol, CLAMP, combines clipped secure aggregation of updates, privatised group statistics computed without reading the sensitive attribute, and a single broadcast Lagrange multiplier, and it returns the latest model whose released gap met the budget.
+
+The main contributions are:
+\begin{itemize}
+\item a fairness-control protocol for federated graph learning in which every server-side quantity is a checked sum, compatible with verifiable secure aggregation;
+\item formal results with explicitly stated scope: differential privacy of the statistics channel, a per-round bound on Byzantine influence, a bound on the influence of falsified statistics, and a fairness guarantee for the returned model;
+\item an evaluation on eight public benchmarks against eleven baselines with paired significance tests. CLAMP reduces the demographic-parity gap by 38--75\% to within the chosen budget where the budget binds, at an AUC within 0.01 of unconstrained clipped training, and it keeps the gap low under a fairness-poisoning attack that FedAvg, coordinate-wise robust aggregation rules and clipping alone do not stop.
+\end{itemize}
+We discuss the limitations openly, in particular small graphs and clients that falsify their fairness statistics. We believe the work fits the journal's interest in trustworthy and privacy-preserving intelligent systems.
+
+This manuscript is original, has not been published, and is not under consideration for publication elsewhere. The manuscript does not reuse the text or the method of our earlier conference paper on privacy- and fairness-aware federated GNNs for fraud detection (FedFairGNN, PMLR 2026), which is cited and discussed in the related work. All authors have approved the manuscript and agree with its submission. The authors declare no competing interests, and the research received no specific funding. The datasets are public benchmarks; the code and per-run results will be made publicly available upon publication.
+
+Thank you for considering our manuscript. We look forward to hearing from you.
+
+\closing{Yours sincerely,}
+
+\end{letter}
+\end{document}

@@ -1,0 +1,55 @@
+\begin{table}[tbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\caption{Update attacks on Pokec-z: mean$\pm$sd over 3 seeds, $K=10$ clients. AUC (two decimals) and DPD (three decimals) at $f=0$ (no attack, None row only), $f=2$ and $f=4$ Byzantine clients. Best AUC per attack and $f$ in bold. $^\dagger$: median, trimmed mean and Krum inspect individual client updates and cannot run under secure aggregation. ClipMean: clipped mean with no fairness controller, last iterate.}
+\label{tab:e3_pokec}
+\begin{tabular}{llcccccc}
+\toprule
+ & & \multicolumn{2}{c}{$f=0$} & \multicolumn{2}{c}{$f=2$} & \multicolumn{2}{c}{$f=4$} \\
+ & & AUC & DPD & AUC & DPD & AUC & DPD \\
+\midrule
+\multirow{6}{*}{None} & FedAvg & 0.75$\pm$0.01 & 0.035$\pm$0.010 & -- & -- & -- & -- \\
+ & Median$^\dagger$ & 0.75$\pm$0.01 & 0.033$\pm$0.009 & -- & -- & -- & -- \\
+ & Trimmed mean$^\dagger$ & 0.74$\pm$0.01 & 0.035$\pm$0.007 & -- & -- & -- & -- \\
+ & Krum$^\dagger$ & 0.74$\pm$0.02 & 0.033$\pm$0.014 & -- & -- & -- & -- \\
+ & CLAMP & \textbf{0.76$\pm$0.00} & 0.028$\pm$0.016 & -- & -- & -- & -- \\
+ & ClipMean & 0.76$\pm$0.00 & 0.045$\pm$0.007 & -- & -- & -- & -- \\
+\midrule
+\multirow{6}{*}{Sign-flip} & FedAvg & -- & -- & 0.50$\pm$0.01 & 0.001$\pm$0.002 & 0.49$\pm$0.01 & 0.001$\pm$0.001 \\
+ & Median$^\dagger$ & -- & -- & 0.74$\pm$0.01 & 0.034$\pm$0.010 & 0.65$\pm$0.06 & 0.015$\pm$0.009 \\
+ & Trimmed mean$^\dagger$ & -- & -- & 0.73$\pm$0.03 & 0.019$\pm$0.015 & 0.68$\pm$0.08 & 0.022$\pm$0.022 \\
+ & Krum$^\dagger$ & -- & -- & 0.74$\pm$0.02 & 0.029$\pm$0.007 & \textbf{0.72$\pm$0.01} & 0.033$\pm$0.009 \\
+ & CLAMP & -- & -- & 0.75$\pm$0.02 & 0.022$\pm$0.013 & 0.71$\pm$0.05 & 0.017$\pm$0.013 \\
+ & ClipMean & -- & -- & \textbf{0.75$\pm$0.02} & 0.032$\pm$0.014 & 0.71$\pm$0.05 & 0.016$\pm$0.011 \\
+\midrule
+\multirow{6}{*}{Scaling} & FedAvg & -- & -- & 0.64$\pm$0.01 & 0.029$\pm$0.025 & 0.57$\pm$0.13 & 0.031$\pm$0.025 \\
+ & Median$^\dagger$ & -- & -- & 0.76$\pm$0.01 & 0.033$\pm$0.003 & 0.76$\pm$0.01 & 0.036$\pm$0.014 \\
+ & Trimmed mean$^\dagger$ & -- & -- & 0.71$\pm$0.01 & 0.030$\pm$0.007 & 0.74$\pm$0.02 & 0.038$\pm$0.011 \\
+ & Krum$^\dagger$ & -- & -- & 0.73$\pm$0.01 & 0.034$\pm$0.004 & 0.71$\pm$0.03 & 0.031$\pm$0.003 \\
+ & CLAMP & -- & -- & 0.76$\pm$0.00 & 0.027$\pm$0.017 & 0.76$\pm$0.00 & 0.028$\pm$0.016 \\
+ & ClipMean & -- & -- & \textbf{0.76$\pm$0.00} & 0.045$\pm$0.007 & \textbf{0.76$\pm$0.00} & 0.045$\pm$0.007 \\
+\midrule
+\multirow{6}{*}{ALIE} & FedAvg & -- & -- & 0.74$\pm$0.00 & 0.032$\pm$0.012 & \textbf{0.75$\pm$0.02} & 0.031$\pm$0.009 \\
+ & Median$^\dagger$ & -- & -- & 0.74$\pm$0.01 & 0.032$\pm$0.013 & 0.72$\pm$0.01 & 0.029$\pm$0.010 \\
+ & Trimmed mean$^\dagger$ & -- & -- & 0.72$\pm$0.01 & 0.035$\pm$0.015 & 0.73$\pm$0.02 & 0.024$\pm$0.008 \\
+ & Krum$^\dagger$ & -- & -- & 0.74$\pm$0.01 & 0.034$\pm$0.010 & 0.74$\pm$0.01 & 0.017$\pm$0.012 \\
+ & CLAMP & -- & -- & \textbf{0.76$\pm$0.01} & 0.024$\pm$0.018 & 0.75$\pm$0.01 & 0.027$\pm$0.008 \\
+ & ClipMean & -- & -- & 0.75$\pm$0.00 & 0.039$\pm$0.010 & 0.75$\pm$0.01 & 0.038$\pm$0.007 \\
+\midrule
+\multirow{6}{*}{IPM} & FedAvg & -- & -- & 0.76$\pm$0.01 & 0.039$\pm$0.010 & 0.75$\pm$0.01 & 0.035$\pm$0.004 \\
+ & Median$^\dagger$ & -- & -- & 0.76$\pm$0.00 & 0.040$\pm$0.011 & 0.75$\pm$0.03 & 0.014$\pm$0.008 \\
+ & Trimmed mean$^\dagger$ & -- & -- & 0.75$\pm$0.00 & 0.039$\pm$0.010 & \textbf{0.77$\pm$0.01} & 0.027$\pm$0.004 \\
+ & Krum$^\dagger$ & -- & -- & 0.40$\pm$0.13 & 0.009$\pm$0.011 & 0.37$\pm$0.06 & 0.009$\pm$0.010 \\
+ & CLAMP & -- & -- & 0.77$\pm$0.00 & 0.028$\pm$0.014 & 0.76$\pm$0.02 & 0.026$\pm$0.005 \\
+ & ClipMean & -- & -- & \textbf{0.77$\pm$0.00} & 0.046$\pm$0.009 & 0.76$\pm$0.02 & 0.026$\pm$0.005 \\
+\midrule
+\multirow{6}{*}{Fairness-poison} & FedAvg & -- & -- & 0.71$\pm$0.03 & 0.124$\pm$0.027 & 0.69$\pm$0.03 & 0.137$\pm$0.068 \\
+ & Median$^\dagger$ & -- & -- & 0.72$\pm$0.00 & 0.108$\pm$0.025 & 0.72$\pm$0.02 & 0.111$\pm$0.031 \\
+ & Trimmed mean$^\dagger$ & -- & -- & 0.70$\pm$0.01 & 0.146$\pm$0.036 & 0.71$\pm$0.01 & 0.201$\pm$0.061 \\
+ & Krum$^\dagger$ & -- & -- & 0.72$\pm$0.02 & 0.034$\pm$0.011 & 0.71$\pm$0.04 & 0.086$\pm$0.099 \\
+ & CLAMP & -- & -- & 0.72$\pm$0.02 & 0.037$\pm$0.006 & 0.71$\pm$0.03 & 0.047$\pm$0.042 \\
+ & ClipMean & -- & -- & \textbf{0.75$\pm$0.00} & 0.137$\pm$0.017 & \textbf{0.73$\pm$0.00} & 0.125$\pm$0.103 \\
+\bottomrule
+\end{tabular}
+\end{table}

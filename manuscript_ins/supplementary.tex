@@ -1,0 +1,40 @@
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\clamp}{\textsc{Clamp}}
+\newcommand{\dpd}{\mathrm{DPD}}
+\newcommand{\eod}{\mathrm{EOD}}
+\newcommand{\ncap}{n_{\mathrm{cap}}}
+\renewcommand{\thetable}{S\arabic{table}}
+\begin{document}
+\begin{center}
+{\Large Supplementary material for}\\[4pt]
+{\large\textbf{CLAMP: Fairness-Constrained Federated Graph Learning from Validated Sums with Private Group Statistics}}\\[6pt]
+Quang-Vinh Dang, Ngoc-Son-An Nguyen
+\end{center}
+
+\section*{S1. Full results of the main comparison}
+Table~\ref{tab:e1_full} extends the main comparison with the backbone of each method, the hard demographic-parity gap at threshold 0.5, the equal-opportunity gap, the record $\lambda^{(R)}/(\eta R)$ of the dual update for the \clamp{} variants, and the number of seeds whose test gap is within the budget $\tau=0.03$.
+
+\input{tables/e1_full_appendix}
+
+\section*{S2. Update attacks, all attacker counts}
+Table~\ref{tab:e3_full} reports all attacker counts $f=0,\dots,4$ with standard deviations over three seeds ($K=10$ clients).
+
+\input{tables/e3_full_appendix}
+
+\section*{S3. Privacy budget and release period on the small graphs and Bail}
+\input{tables/e5_privacy}
+
+\section*{S4. Privacy budget with a binding budget on Bail}
+\input{tables/e5b_privacy}
+
+\section*{S5. Ablations}
+\input{tables/e6_ablation}
+
+\end{document}

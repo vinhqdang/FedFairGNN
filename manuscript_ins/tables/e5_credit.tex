@@ -1,0 +1,29 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\caption{Privacy: utility and fairness against the statistics budget $\varepsilon$ and release period $P$. $\varepsilon=\infty$: statistics noise off, default period (P=1). mean$\pm$sd over 5 seeds. Fallback: number of seeds with no eligible feasible release after the warm-up, so the last model is reported.}
+\label{tab:e5_credit}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+$\varepsilon$ & $P$ & Credit AUC & Credit DPD & fallback \\
+\midrule
+1 & 1 & 0.74$\pm$0.04 & 0.065$\pm$0.067 & 0 \\
+1 & 5 & 0.76$\pm$0.01 & 0.018$\pm$0.013 & 0 \\
+1 & 10 & 0.77$\pm$0.01 & 0.036$\pm$0.019 & 0 \\
+2 & 1 & 0.75$\pm$0.02 & 0.045$\pm$0.033 & 0 \\
+2 & 5 & 0.77$\pm$0.01 & 0.038$\pm$0.024 & 0 \\
+2 & 10 & 0.77$\pm$0.01 & 0.037$\pm$0.008 & 2 \\
+4 & 1 & 0.76$\pm$0.01 & 0.046$\pm$0.040 & 0 \\
+4 & 5 & 0.77$\pm$0.01 & 0.033$\pm$0.008 & 0 \\
+4 & 10 & 0.77$\pm$0.01 & 0.038$\pm$0.005 & 4 \\
+8 & 1 & 0.76$\pm$0.01 & 0.012$\pm$0.012 & 0 \\
+8 & 5 & 0.77$\pm$0.01 & 0.030$\pm$0.008 & 1 \\
+8 & 10 & 0.77$\pm$0.01 & 0.039$\pm$0.005 & 5 \\
+16 & 1 & 0.77$\pm$0.01 & 0.023$\pm$0.012 & 0 \\
+16 & 5 & 0.77$\pm$0.01 & 0.032$\pm$0.007 & 1 \\
+16 & 10 & 0.77$\pm$0.01 & 0.040$\pm$0.005 & 5 \\
+$\infty$ & -- & 0.77$\pm$0.01 & 0.028$\pm$0.007 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
