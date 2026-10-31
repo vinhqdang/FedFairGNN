@@ -1,5 +1,5 @@
 - Group-fairness control for federated GNNs where the server sees only checked sums
-- One broadcast Lagrange multiplier drives the parity gap to a chosen budget
+- One broadcast Lagrange multiplier drives the parity gap toward a chosen budget
 - Group statistics are computed s-blind and privatised with Gaussian noise
-- Gap cut by 38-75% to the budget at an AUC within 0.01 of unconstrained training
-- Counters fairness poisoning that median, trimmed mean and clipping do not stop
+- Parity gap of clipped training cut 38–75% to the budget, AUC within 0.01
+- Limits fairness poisoning on Pokec-z where median and trimmed mean do not
