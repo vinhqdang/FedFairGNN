@@ -153,6 +153,21 @@ METHODS = {
     "clamp-select":        dict(model="gat", aggregator="secagg_lagrangian",
                                 fair_mode="lagrangian", dp_enabled=False,
                                 r2_lambda_step=0.0, r2_output="feasible"),
+    # CLAMP-RT (docs/clamp_rt_design.md): trimmed mean of per-client gaps in place of
+    # the group sums. Everything else is identical to clamp / clamp-f / clamp-gcn-f.
+    "clamp-rt":            dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed"),
+    "clamp-rt-f":          dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible"),
+    # b = 0 ablation: plain mean of per-client gaps (no robustness).
+    "clamp-rt-b0-f":       dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_trim_b=0, r2_output="feasible"),
+    "clamp-rt-gcn-f":      dict(model="gcn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible"),
     # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
     "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
 }

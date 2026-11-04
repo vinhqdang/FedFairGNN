@@ -86,6 +86,15 @@ def _soft_dpd(pred, s):
     return torch.abs(m0 - m1)
 
 
+def client_floor(n_val: int, c: float) -> int:
+    """CLAMP-RT group-size floor n0_k = max(1, ceil(c * |V_k|)) (spec Section 3).
+
+    The max(., 1) only matters for a client with no validation nodes, where it
+    keeps the statistic defined. round(., 9) removes float noise before the ceil
+    (e.g. 0.1 * 30 = 3.000...04 must give 3, not 4)."""
+    return max(1, int(math.ceil(round(float(c) * int(n_val), 9))))
+
+
 class Client:
     def __init__(self, client_id: int, data, config, device="cpu", byzantine=False):
         self.id = client_id
@@ -581,15 +590,9 @@ class Client:
         return noisy
 
     @torch.no_grad()
-    def group_stats(self) -> Dict[str, float]:
-        """S_{k,a}, N_{k,a} on the validation split with the received model.
-
-        The forward pass is s-blind (s is withheld, as in ``_release_pred``), so
-        flipping s on a validation node changes no prediction and only that
-        node's group membership. A group larger than ``r2_n_cap`` is cut to its
-        first ``r2_n_cap`` nodes by index, which keeps the subset deterministic.
-        ``r2_n_cap`` <= 0 means no cap.
-        """
+    def _val_blind_pred(self):
+        """Validation predictions and s on the validation split, from the s-blind
+        forward pass shared by ``group_stats`` and ``local_gap``."""
         self.model.eval()
         mask = self.data.val_mask
         x, ei, s = self.data.x, self.data.edge_index, self.data.sensitive_attr
@@ -601,8 +604,38 @@ class Client:
                 pred = self.model(x, ei, None)
         else:
             pred = self.model(x, ei, s)
-        pred = pred[mask]
-        sv = s[mask]
+        return pred[mask], s[mask]
+
+    @torch.no_grad()
+    def local_gap(self) -> Dict[str, float]:
+        """CLAMP-RT statistic d_k (design spec Section 3), with the received model.
+
+        m_{k,a} = sum_{v in V_{k,a}} p_v / max(|V_{k,a}|, n0_k), n0_k = ceil(c |V_k|)
+        (c = ``r2_floor_frac``), d_k = clip(m_{k,1} - m_{k,0}, -1, 1). The forward
+        pass is the same s-blind pass as ``group_stats`` and no node cap is applied.
+        ``n0``, ``V0`` and ``V1`` are returned for diagnostics only and are never
+        sent to the server.
+        """
+        pred, sv = self._val_blind_pred()
+        n_val = int(pred.numel())
+        n0 = client_floor(n_val, self.cfg.r2_floor_frac)
+        p = pred.double()
+        V = [int((sv == a).sum()) for a in (0, 1)]
+        m = [float(p[sv == a].sum()) / max(V[a], n0, 1) for a in (0, 1)]
+        d = min(1.0, max(-1.0, m[1] - m[0]))
+        return {"d": d, "n0": n0, "V0": V[0], "V1": V[1]}
+
+    @torch.no_grad()
+    def group_stats(self) -> Dict[str, float]:
+        """S_{k,a}, N_{k,a} on the validation split with the received model.
+
+        The forward pass is s-blind (s is withheld, as in ``_release_pred``), so
+        flipping s on a validation node changes no prediction and only that
+        node's group membership. A group larger than ``r2_n_cap`` is cut to its
+        first ``r2_n_cap`` nodes by index, which keeps the subset deterministic.
+        ``r2_n_cap`` <= 0 means no cap.
+        """
+        pred, sv = self._val_blind_pred()
         cap = self.r2_n_cap if self.r2_n_cap > 0 else None   # 0 = no cap
         out = {}
         for a in (0, 1):

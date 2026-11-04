@@ -186,7 +186,8 @@ def poison_updates(attack: str, updates: List[torch.Tensor], metas: List[dict],
         :func:`alie_z_from_counts`, which is the actual attack. Pass a float to
         pin z for an ablation that sweeps it manually.
     """
-    if attack in ("none", None) or str(attack).startswith("stat_falsify") or not byzantine_ids:
+    if attack in ("none", None) or str(attack).startswith(("stat_falsify", "gap_")) \
+            or not byzantine_ids:
         return updates, metas
 
     updates = [u.clone() for u in updates]
@@ -270,6 +271,48 @@ def falsify_group_stats(stats: List[Dict[str, float]], byzantine_ids: List[int],
     out = list(stats)
     for i in byzantine_ids:
         out[i] = {**claim, "N0": float(n_cap), "N1": float(n_cap)}
+    return out
+
+
+GAP_ATTACK_MODES = ("hide", "inflate", "inlier", "zero")
+
+
+def falsify_gaps(gaps: List[float], byzantine_ids: List[int], mode: str) -> List[float]:
+    """``gap_*`` attacks on the CLAMP-RT statistics channel (design spec Section 6).
+
+    Each Byzantine client replaces its reported gap d_k. The attacker is omniscient
+    and every claim stays in [-1, 1], so the range check does not reject it. With
+    g^H the mean of the honest (pre-attack) gaps:
+
+    ``hide``     report -sign(g^H): pull the estimate toward, and past, 0.
+    ``inflate``  report +sign(g^H): force over-correction.
+    ``inlier``   report the honest value closest to 0 on the hiding side, i.e. the
+                 minimum honest gap if g^H > 0 and the maximum if g^H < 0. This is
+                 the strongest hiding claim that stays inside the honest range.
+    ``zero``     report 0 (claims perfect fairness).
+
+    Honest entries are returned unchanged. Honest values are read from ``gaps``
+    before any replacement, so the caller can compute diagnostics from the same list.
+    """
+    if mode not in GAP_ATTACK_MODES:
+        raise ValueError(f"unknown gap attack mode {mode!r}; expected one of {GAP_ATTACK_MODES}")
+    byz = set(byzantine_ids)
+    honest = [float(g) for i, g in enumerate(gaps) if i not in byz]
+    if not honest or not byz:
+        return list(gaps)
+    g_h = sum(honest) / len(honest)
+    sgn = (g_h > 0) - (g_h < 0)
+    if mode == "hide":
+        claim = -float(sgn)
+    elif mode == "inflate":
+        claim = float(sgn)
+    elif mode == "inlier":
+        claim = min(honest) if g_h > 0 else (max(honest) if g_h < 0 else 0.0)
+    else:  # zero
+        claim = 0.0
+    out = list(gaps)
+    for i in byzantine_ids:
+        out[i] = claim
     return out
 
 

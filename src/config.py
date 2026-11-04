@@ -88,6 +88,10 @@ class ExperimentConfig:
     r2_output: str = "last"          # last (final iterate) | feasible (last model with released Dhat <= tau)
     r2_select_warmup: float = 0.2    # feasible selection only uses rounds >= ceil(this * rounds)
     r2_update_noise: float = 0.0     # sigma_u on the update sum (T1b ablation only)
+    # CLAMP-RT statistics channel (docs/clamp_rt_design.md, Sections 3-4, 6).
+    r2_stat_channel: str = "sums"    # sums (CLAMP, group sums) | trimmed (CLAMP-RT, trimmed mean of d_k)
+    r2_trim_b: int = -1              # trimming level b per side; -1 = max(1, floor(0.2 K))
+    r2_floor_frac: float = 0.1       # c: public floor fraction, n0_k = ceil(c |V_k|) (trimmed channel)
     fedfdp_lambda: float = 0.5       # FedFDP: weight of the per-node loss-deviation factor
 
     # ---- FU-Shapley incentive aggregation (FairShare-GNN) ----

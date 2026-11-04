@@ -21,8 +21,9 @@ from ..models import build_model
 from ..utils.metrics import all_metrics
 from ..trust.privacy import PrivacyAccountant, calibrate_noise_multiplier
 from .aggregation import aggregate
-from .attacks import falsify_group_stats, poison_updates
-from .client import Client, flatten_state, load_flat_state, sampled_predict, _soft_dpd
+from .attacks import GAP_ATTACK_MODES, falsify_gaps, falsify_group_stats, poison_updates
+from .client import (Client, client_floor, flatten_state, load_flat_state,
+                     sampled_predict, _soft_dpd)
 
 
 def public_n_cap(clients_data) -> int:
@@ -51,6 +52,26 @@ def _honest_diagnostics(stats: List[Dict[str, float]], byzantine_ids: List[int],
     gap = r[1] - r[0]
     return {"gap_honest": gap, "dhat_honest": abs(gap), "t3_bound": b[0] + b[1],
             "n_cap": n_cap}
+
+
+def _trimmed_diagnostics(gaps: List[float], byzantine_ids: List[int], b: int) -> Dict[str, float]:
+    """CLAMP-RT T3 bracket from the honest clients' true gaps (diagnostics only).
+
+    With f Byzantine clients and f <= b, every kept value of the trimmed mean lies
+    in [h_(b-f+1), h_(K-b)], where h is the sorted honest gap list (1-based). For
+    f = 0 this is [h_(b+1), h_(K-b)]. For f > b the bracket is undefined (breakdown)
+    and None is returned."""
+    byz = set(byzantine_ids)
+    f = len(byz)
+    K = len(gaps)
+    hon = sorted(float(g) for i, g in enumerate(gaps) if i not in byz)
+    if f <= b and hon:
+        lo = hon[b - f]          # h_(b-f+1)
+        hi = hon[K - b - 1]      # h_(K-b)
+        spread = hi - lo
+    else:
+        lo = hi = spread = None
+    return {"honest_lo": lo, "honest_hi": hi, "honest_spread": spread}
 
 
 def _clip_to_norm(u: torch.Tensor, C: float) -> torch.Tensor:
@@ -107,12 +128,21 @@ class FederatedTrainer:
         # Warm-up for the feasible rule: round 1 is untrained and trivially feasible.
         self._select_warmup = math.ceil(round(config.r2_select_warmup * config.rounds, 9))
         self._secagg_sigma_s = 0.0
+        self._trimmed = False           # CLAMP-RT statistics channel (r2_stat_channel="trimmed")
+        self._trim_b = 0
+        self._sigma_d = 0.0
+        self._trim_info: Dict = {}
+        if config.r2_stat_channel not in ("sums", "trimmed"):
+            raise ValueError(f"r2_stat_channel must be 'sums' or 'trimmed', got {config.r2_stat_channel!r}")
         if config.r2_direction not in ("sign", "prop"):
             raise ValueError(f"r2_direction must be 'sign' or 'prop', got {config.r2_direction!r}")
         if config.r2_output not in ("last", "feasible"):
             raise ValueError(f"r2_output must be 'last' or 'feasible', got {config.r2_output!r}")
         self._secagg_gen = torch.Generator().manual_seed(config.seed)
-        if config.aggregator == "secagg_lagrangian":
+        if config.aggregator == "secagg_lagrangian" and config.r2_stat_channel == "trimmed":
+            self._trimmed = True
+            self._setup_trimmed(config)
+        elif config.aggregator == "secagg_lagrangian":
             if config.r2_n_cap > 0:
                 self._r2_n_cap = int(config.r2_n_cap)
             else:
@@ -125,6 +155,51 @@ class FederatedTrainer:
                 z = calibrate_noise_multiplier(config.dp_epsilon, steps=releases,
                                                delta=config.dp_delta)
                 self._secagg_sigma_s = 2.0 * z
+
+        if config.attack.startswith("gap_"):
+            if not self._trimmed:
+                raise ValueError("gap_* attacks need aggregator secagg_lagrangian with "
+                                 "r2_stat_channel='trimmed'")
+            if config.attack[len("gap_"):] not in GAP_ATTACK_MODES:
+                raise ValueError(f"unknown gap attack {config.attack!r}")
+        if config.attack.startswith("stat_falsify") and self._trimmed:
+            raise ValueError("stat_falsify attacks target the sums channel; use gap_* with "
+                             "r2_stat_channel='trimmed'")
+
+    def _setup_trimmed(self, config: ExperimentConfig) -> None:
+        """CLAMP-RT constants (design spec Sections 3-5): trimming level b, the floor
+        n0_k = ceil(c |V_k|), n0_min, and sigma_d = 2/(n0_min (K - 2b)) * z."""
+        K = len(self.clients_data)
+        if config.r2_trim_b == -1:
+            b = max(1, K // 5)           # floor(0.2 K), with K // 5 exact in integers
+        elif config.r2_trim_b < 0:
+            raise ValueError(f"r2_trim_b must be -1 (default) or >= 0, got {config.r2_trim_b}")
+        else:
+            b = int(config.r2_trim_b)
+        if K - 2 * b < 1:
+            raise ValueError(f"trimmed channel needs K - 2b >= 1; got K={K}, b={b}")
+        n0s, n_small = [], 0
+        for d in self.clients_data:
+            m = d.val_mask
+            s = d.sensitive_attr
+            n0 = client_floor(int(m.sum()), config.r2_floor_frac)
+            n0s.append(n0)
+            for a in (0, 1):
+                if int((m & (s == a)).sum()) < n0:
+                    n_small += 1
+        n0_min = min(n0s)
+        sigma_d = 0.0
+        if config.r2_stat_dp:
+            # One release per statistics round: ceil(R / P) of them. The sensitivity of
+            # the trimmed mean is 2 / (n0_min (K - 2b)) (spec T1).
+            releases = math.ceil(config.rounds / max(1, config.r2_stat_period))
+            z = calibrate_noise_multiplier(config.dp_epsilon, steps=releases,
+                                           delta=config.dp_delta)
+            sigma_d = 2.0 / (n0_min * (K - 2 * b)) * z
+        self._trim_b = b
+        self._sigma_d = sigma_d
+        self._trim_info = {"n0_min": n0_min, "trim_b": b, "sigma_d": sigma_d,
+                           "n_small_groups": n_small, "n_clients": K}
 
     # ----- global evaluation on pooled test nodes -----
     @torch.no_grad()
@@ -274,14 +349,17 @@ class FederatedTrainer:
         fedfdp = self.cfg.dp_mode == "fedfdp"
         lam_in = float(self._agg_state.get("r2_lambda", 0.0))
         dir_in = float(self._agg_state.get("r2_dir", 0))
-        updates, metas, stats = [], [], []
+        updates, metas, stats, gaps = [], [], [], []
         for c in self.clients:
             c.set_flat(self.global_flat)
             if r2:
                 c.lagrange = (lam_in, dir_in)
             if r2_release:
                 # Statistics are taken with the received model, before training.
-                stats.append(c.group_stats())
+                if self._trimmed:
+                    gaps.append(c.local_gap()["d"])
+                else:
+                    stats.append(c.group_stats())
             if fedfdp:
                 c.fedfdp_fbar = float(self._agg_state.get("fedfdp_fbar", 0.0))
             c.train()
@@ -297,7 +375,7 @@ class FederatedTrainer:
             self.accountant.step(self.cfg.local_epochs + (1 if fedfdp else 0))
 
         if self.byzantine_ids and self.cfg.attack not in ("none", "label_flip") \
-                and not self.cfg.attack.startswith("stat_falsify"):
+                and not self.cfg.attack.startswith(("stat_falsify", "gap_")):
             updates, metas = poison_updates(
                 self.cfg.attack, updates, metas, self.byzantine_ids,
                 self.cfg.attack_intensity,
@@ -306,21 +384,37 @@ class FederatedTrainer:
 
         secagg = None
         diag = None
+        agg_name = self.cfg.aggregator
+        gaps_in = None
         if r2:
             C = self.cfg.r2_clip_norm
-            if r2_release:
+            if r2_release and self._trimmed:
+                # Diagnostics use the honest clients' true gaps, before any falsification.
+                diag = _trimmed_diagnostics(gaps, self.byzantine_ids, self._trim_b)
+                if self.byzantine_ids and self.cfg.attack.startswith("gap_"):
+                    gaps = falsify_gaps(gaps, self.byzantine_ids, self.cfg.attack[len("gap_"):])
+                gaps_in = gaps
+            elif r2_release:
                 diag = _honest_diagnostics(stats, self.byzantine_ids, self._r2_n_cap)
-            if r2_release and self.byzantine_ids and self.cfg.attack.startswith("stat_falsify"):
+            if r2_release and not self._trimmed and self.byzantine_ids \
+                    and self.cfg.attack.startswith("stat_falsify"):
                 mode = "mid" if self.cfg.attack == "stat_falsify_mid" else "swap"
                 stats = falsify_group_stats(stats, self.byzantine_ids, self._r2_n_cap, mode=mode)
             # Every client clips to C (protocol step 3). A norm-aware update attacker
             # is rescaled to C the same way. Only a non-compliant client skips this,
             # and the server's norm check rejects it.
             updates = [_clip_to_norm(u, C) for u in updates]
-            secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, n_cap=self._r2_n_cap,
-                          sigma_s=self._secagg_sigma_s, sigma_u=self.cfg.r2_update_noise,
-                          generator=self._secagg_gen, release=r2_release,
-                          direction_rule=self.cfg.r2_direction)
+            if self._trimmed:
+                agg_name = "secagg_trimmed"
+                secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, b=self._trim_b,
+                              sigma_d=self._sigma_d, sigma_u=self.cfg.r2_update_noise,
+                              generator=self._secagg_gen, release=r2_release,
+                              direction_rule=self.cfg.r2_direction)
+            else:
+                secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, n_cap=self._r2_n_cap,
+                              sigma_s=self._secagg_sigma_s, sigma_u=self.cfg.r2_update_noise,
+                              generator=self._secagg_gen, release=r2_release,
+                              direction_rule=self.cfg.r2_direction)
 
         # FairShare-GNN: build the server target gradient on the pooled client
         # validation nodes (current global model), then let the FU-Shapley rule
@@ -355,7 +449,7 @@ class FederatedTrainer:
             fu_warmup = t < self.cfg.fu_warmup_rounds
 
         g_agg, info = aggregate(
-            self.cfg.aggregator, updates, metas,
+            agg_name, updates, metas,
             tau=self.cfg.fairness_budget, fw_iters=self.cfg.fw_iterations,
             dual_step=self.cfg.dual_step_size, trimmed_beta=self.cfg.trimmed_beta,
             krum_f=max(self.cfg.krum_f, len(self.byzantine_ids)),
@@ -367,7 +461,7 @@ class FederatedTrainer:
             fu_warmup=fu_warmup, fu_grad_clip=self.cfg.fu_grad_clip,
             fu_warmup_agg=self.cfg.fu_warmup_agg,
             bfwa_persist_dual=self.cfg.bfwa_persist_dual,
-            stats=stats if r2 else None, secagg=secagg)
+            stats=stats if r2 else None, secagg=secagg, gaps=gaps_in)
 
         if fedfdp:
             # Fbar^{t+1} = sum_i p_i Ftilde_i with p_i = n_i / n (spec Section 5).
@@ -402,7 +496,7 @@ class FederatedTrainer:
                     "bfwa_mu", "constraint_residual", "feasible",
                     "constraint_residual_preclamp", "feasible_preclamp",
                     # TrustFedGNN-R2 round log (secagg_lagrangian only)
-                    "lambda", "lambda_in", "direction", "dhat", "gap",
+                    "lambda", "lambda_in", "direction", "dhat", "gap", "tm_clean",
                     "n_accepted", "n_rejected", "u_norm"):
             if key in info:
                 rec[key] = info[key]
@@ -451,6 +545,8 @@ class FederatedTrainer:
         if self.accountant:
             final["epsilon"] = self.accountant.epsilon()
             final["delta"] = self.cfg.dp_delta
+        if self._trimmed:
+            final.update(self._trim_info)
         return {"final": final, "history": self.history,
                 "partition_stats": self.partition_stats,
                 "byzantine_ids": self.byzantine_ids}

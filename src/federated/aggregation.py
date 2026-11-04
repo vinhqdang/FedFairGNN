@@ -246,6 +246,19 @@ def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str
     gap = r1 - r0
     dhat = abs(gap)
 
+    lam, direction = _dual_step(gap, lam_in, state, tau=tau, eta_lambda=eta_lambda,
+                                direction_rule=direction_rule)
+    info.update({"lambda": lam, "direction": direction, "dhat": dhat, "gap": gap,
+                 "u_norm": float(U.norm(2))})
+    return (U / K_acc).view_as(updates[0]), info
+
+
+def _dual_step(gap: float, lam_in: float, state: Dict, *, tau: float, eta_lambda: float,
+               direction_rule: str) -> Tuple[float, float]:
+    """Shared R2 controller: lambda <- max(0, lambda + eta (|gap| - tau)) and the
+    direction from the gap. Persists both in ``state``. Used by the sums channel
+    and by the trimmed channel, so the two differ only in how ``gap`` is formed."""
+    dhat = abs(gap)
     lam = max(0.0, lam_in + eta_lambda * (dhat - tau))
     if direction_rule == "sign":
         # Dead zone: a gap within tau/2 of zero is treated as no direction.
@@ -257,9 +270,88 @@ def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str
         raise ValueError(f"unknown r2 direction rule {direction_rule!r}")
     state["r2_lambda"] = lam
     state["r2_dir"] = direction
+    return lam, direction
 
+
+def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], state: Dict, *,
+                   C: float, tau: float, eta_lambda: float, b: int, sigma_d: float,
+                   sigma_u: float, generator: torch.Generator = None, release: bool = True,
+                   direction_rule: str = "sign",
+                   ) -> Tuple[torch.Tensor, Dict]:
+    """CLAMP-RT server step (docs/clamp_rt_design.md, Sections 2 and 6).
+
+    Update channel: every submission is norm-checked; accepted updates are summed
+    and averaged over the accepted count, as in ``secagg_lagrangian``.
+
+    Statistics channel (release rounds only): each client reports one scalar gap
+    d_k. A client whose update fails the norm check, or whose gap lies outside
+    [-1 - tol, 1 + tol], is excluded from the update sum and its gap is replaced
+    by 0. The K gaps are sorted, the b smallest and b largest are dropped, and the
+    mean of the remaining K - 2b is taken (TM_b). Two independent N(0, sigma_d^2) draws are added (one per server).
+    The result g~ drives the same lambda / direction logic as the sums channel.
+
+    With ``release=False`` the statistics channel is not used: the round behaves
+    like an off-period round of ``secagg_lagrangian`` (norm check only, lambda and
+    direction unchanged, ``gaps`` may be None).
+
+    Raises ValueError when K - 2b < 1 (no order statistics left to keep).
+    """
+    K = len(updates)
+    if b < 0 or K - 2 * b < 1:
+        raise ValueError(f"trimmed channel needs b >= 0 and K - 2b >= 1; got K={K}, b={b}")
+    lam_in = float(state.get("r2_lambda", 0.0))
+    dir_in = state.get("r2_dir", 0)
+
+    accepted = []
+    for k, u in enumerate(updates):
+        ok = float(u.norm(2)) <= C * (1.0 + _R2_TOL)
+        if release:
+            # NaN fails both comparisons, so a NaN gap is rejected.
+            ok = ok and (-1.0 - _R2_TOL <= float(gaps[k]) <= 1.0 + _R2_TOL)
+        if ok:
+            accepted.append(k)
+    accepted_set = set(accepted)
+    K_acc = len(accepted)
+    info: Dict = {"weights": [1.0 / K_acc if k in accepted_set else 0.0 for k in range(K)],
+                  "n_accepted": K_acc, "n_rejected": K - K_acc,
+                  "lambda_in": lam_in}
+
+    if not release:
+        info.update({"lambda": lam_in, "direction": dir_in, "dhat": None,
+                     "gap": None, "tm_clean": None, "u_norm": 0.0})
+        if K_acc == 0:
+            return torch.zeros_like(updates[0].flatten()).view_as(updates[0]), info
+        U = torch.stack([updates[k].flatten() for k in accepted]).sum(0)
+        if sigma_u > 0:
+            U = U + torch.randn(U.shape, generator=generator, dtype=U.dtype) * sigma_u
+        info["u_norm"] = float(U.norm(2))
+        return (U / K_acc).view_as(updates[0]), info
+
+    if K_acc > 0:
+        U = torch.stack([updates[k].flatten() for k in accepted]).sum(0)
+    else:
+        U = torch.zeros_like(updates[0].flatten())
+    if sigma_u > 0:
+        U = U + torch.randn(U.shape, generator=generator, dtype=U.dtype) * sigma_u
+
+    # Rejected clients enter the sort as 0, so the sort always has K entries.
+    d = sorted(float(gaps[k]) if k in accepted_set else 0.0 for k in range(K))
+    kept = d[b:K - b]
+    tm_clean = sum(kept) / len(kept)
+    gap = tm_clean
+    if sigma_d > 0:
+        # Each of the two servers adds its own N(0, sigma_d^2); either one alone
+        # gives the DP guarantee, and the released value carries both.
+        xi = torch.randn(2, generator=generator, dtype=torch.float64) * sigma_d
+        gap = gap + float(xi.sum())
+    dhat = abs(gap)
+
+    lam, direction = _dual_step(gap, lam_in, state, tau=tau, eta_lambda=eta_lambda,
+                                direction_rule=direction_rule)
     info.update({"lambda": lam, "direction": direction, "dhat": dhat, "gap": gap,
-                 "u_norm": float(U.norm(2))})
+                 "tm_clean": tm_clean, "u_norm": float(U.norm(2))})
+    if K_acc == 0:
+        return torch.zeros_like(updates[0]), info
     return (U / K_acc).view_as(updates[0]), info
 
 
@@ -279,6 +371,7 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
               bfwa_persist_dual: bool = True,
               stats: List[Dict[str, float]] = None,
               secagg: Dict = None,
+              gaps: List[float] = None,
               ) -> Tuple[torch.Tensor, Dict]:
     """Aggregate client pseudo-gradients under ``method``.
 
@@ -714,6 +807,19 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
             **secagg)
         info.update(r2_info)
 
+    elif method == "secagg_trimmed":
+        # CLAMP-RT. ``secagg`` carries C, eta_lambda, b, sigma_d, sigma_u, the noise
+        # generator and release/direction_rule; ``gaps`` holds the per-client d_k
+        # (None in an off-period round). tau comes from the ``tau`` argument.
+        if secagg is None:
+            raise ValueError("secagg_trimmed needs secagg params")
+        if secagg.get("release", True) and gaps is None:
+            raise ValueError("secagg_trimmed needs per-client gaps in a release round")
+        agg, r2_info = secagg_trimmed(
+            updates, gaps, state if state is not None else {}, tau=tau,
+            **secagg)
+        info.update(r2_info)
+
     else:
         raise ValueError(f"Unknown aggregator '{method}'")
 
@@ -724,4 +830,4 @@ ROBUST_METHODS = {"krum", "multikrum", "median", "trimmed_mean", "robust_bfwa",
                   "robust_fu_shapley", "flame", "fltrust", "fltrust_ema"}
 FAIR_METHODS = {"bfwa", "fairfed", "qffl", "f2gnn", "fairgfl", "fedgraphfair",
                 "popets_fairfed", "fu_shapley", "robust_fu_shapley"}
-ALL_METHODS = {"fedavg", "cgsv", "secagg_lagrangian"} | FAIR_METHODS | ROBUST_METHODS
+ALL_METHODS = {"fedavg", "cgsv", "secagg_lagrangian", "secagg_trimmed"} | FAIR_METHODS | ROBUST_METHODS
