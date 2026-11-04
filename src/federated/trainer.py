@@ -156,7 +156,7 @@ class FederatedTrainer:
                                                delta=config.dp_delta)
                 self._secagg_sigma_s = 2.0 * z
 
-        if config.attack.startswith("gap_"):
+        if str(config.attack).startswith("gap_"):
             if not self._trimmed:
                 raise ValueError("gap_* attacks need aggregator secagg_lagrangian with "
                                  "r2_stat_channel='trimmed'")

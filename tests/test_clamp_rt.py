@@ -174,16 +174,36 @@ def test_insufficient_clients_for_trimming_raises():
                        b=2, sigma_d=0.0, sigma_u=0.0, release=True)
 
 
-def test_noise_is_one_gaussian_draw_on_the_trimmed_mean():
-    gen = torch.Generator().manual_seed(5)
+def test_noise_is_two_independent_server_draws_on_the_trimmed_mean():
     gaps = [0.1, 0.3, -0.2, 0.4]
+    gen = torch.Generator().manual_seed(5)
     _, info = secagg_trimmed([torch.zeros(2)] * 4, gaps, {}, C=1.0, tau=0.05,
                              eta_lambda=0.5, b=1, sigma_d=0.5, sigma_u=0.0,
                              generator=gen, release=True)
+    xi = torch.randn(2, generator=torch.Generator().manual_seed(5), dtype=torch.float64)
     assert info["tm_clean"] == pytest.approx((0.1 + 0.3) / 2)
-    assert info["gap"] != info["tm_clean"]
+    assert info["gap"] == pytest.approx(0.2 + 0.5 * float(xi.sum()))
     assert info["dhat"] == pytest.approx(abs(info["gap"]))
+    # Empirical variance is 2 sigma^2.
+    gen = torch.Generator().manual_seed(0)
+    vals = [secagg_trimmed([torch.zeros(2)] * 4, gaps, {}, C=1.0, tau=0.05, eta_lambda=0.5,
+                           b=1, sigma_d=0.5, sigma_u=0.0, generator=gen,
+                           release=True)[1]["gap"] - 0.2 for _ in range(4000)]
+    var = sum(v * v for v in vals) / len(vals)
+    assert var == pytest.approx(2 * 0.25, rel=0.1)
 
+
+def test_t1_bound_is_attained_when_the_floor_binds():
+    """A floor that binds and extreme predictions reach |Δd| = 2 / n0 exactly."""
+    n, c = 20, 0.5                               # n0 = 10
+    n0 = client_floor(n, c)
+    s = torch.tensor([0] * 4 + [1] * 16)         # |V_0| = 4 < n0, |V_1| = 16 >= n0
+    p = torch.tensor([1.0] * 4 + [0.0] * 16)
+    d0 = Client.local_gap(_stub_client(p, s, c))["d"]
+    s2 = s.clone(); s2[0] = 1                    # move a p = 1 node from group 0 to group 1
+    d1 = Client.local_gap(_stub_client(p, s2, c))["d"]
+    assert abs(d1 - d0) <= 2.0 / n0 + 1e-12
+    assert abs(d1 - d0) >= 1.0 / n0 + 1.0 / 17 - 1e-12
 
 # --------------------------------------------------------------------------- #
 # T1: sensitivity of the trimmed mean to one flipped validation node
