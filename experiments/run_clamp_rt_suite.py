@@ -28,6 +28,7 @@ GAP_ATTACKS = ["gap_hide", "gap_inflate", "gap_inlier", "gap_zero"]
 
 GROUPS = {
     "pilot": dict(seeds=range(2), datasets=["credit", "pokec_z", "bail"]),
+    "pilot2": dict(seeds=range(2), datasets=["credit", "pokec_z", "bail"]),
     "e1": dict(seeds=range(10), datasets=ALL8),
     "e3": dict(seeds=range(3), datasets=["bail", "pokec_z"]),
     "e4": dict(seeds=range(3), datasets=BIG),
@@ -68,6 +69,14 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                     add(MAIN, d, s, {"r2_stat_period": P})
                     add(MAIN, d, s, {"r2_stat_period": P, "attack": "gap_hide",
                                      "num_byzantine": 1})
+                    add(MAIN, d, s, {"r2_stat_period": P, "r2_stat_dp": False})
+            elif group == "pilot2":
+                # Floor c = 0.05 and EMA smoothing of the released gap.
+                for P in (1, 10):
+                    for m in (MAIN, "clamp-rt-ema-f"):
+                        add(m, d, s, {"r2_stat_period": P})
+                        add(m, d, s, {"r2_stat_period": P, "attack": "gap_hide",
+                                      "num_byzantine": 1})
                     add(MAIN, d, s, {"r2_stat_period": P, "r2_stat_dp": False})
             elif group == "e1":
                 for m in (MAIN, "clamp-rt-gcn-f"):
@@ -121,7 +130,7 @@ def main(argv=None):
     a = p.parse_args(argv)
     seeds = base._parse_seeds(a.seeds) if a.seeds else None
     dss = a.datasets.split(",") if a.datasets else None
-    groups = [g for g in GROUPS if g != "pilot"] if a.group == "all" else [a.group]
+    groups = [g for g in GROUPS if not g.startswith("pilot")] if a.group == "all" else [a.group]
     jobs = [j for g in groups for j in expand(g, dss, seeds)]
     print(f"total: {len(jobs)} jobs")
     if a.dry_run:

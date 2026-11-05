@@ -168,6 +168,11 @@ METHODS = {
     "clamp-rt-gcn-f":      dict(model="gcn", aggregator="secagg_lagrangian",
                                 fair_mode="lagrangian", dp_enabled=False,
                                 r2_stat_channel="trimmed", r2_output="feasible"),
+    # clamp-rt-f with EMA-smoothed gap (alpha = 0.3); pure post-processing, no DP change.
+    "clamp-rt-ema-f":      dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible",
+                                r2_gap_ema=0.3),
     # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
     "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
 }

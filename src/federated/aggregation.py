@@ -276,7 +276,7 @@ def _dual_step(gap: float, lam_in: float, state: Dict, *, tau: float, eta_lambda
 def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], state: Dict, *,
                    C: float, tau: float, eta_lambda: float, b: int, sigma_d: float,
                    sigma_u: float, generator: torch.Generator = None, release: bool = True,
-                   direction_rule: str = "sign",
+                   direction_rule: str = "sign", gap_ema: float = 1.0,
                    ) -> Tuple[torch.Tensor, Dict]:
     """CLAMP-RT server step (docs/clamp_rt_design.md, Sections 2 and 6).
 
@@ -288,7 +288,11 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
     [-1 - tol, 1 + tol], is excluded from the update sum and its gap is replaced
     by 0. The K gaps are sorted, the b smallest and b largest are dropped, and the
     mean of the remaining K - 2b is taken (TM_b). Two independent N(0, sigma_d^2) draws are added (one per server).
-    The result g~ drives the same lambda / direction logic as the sums channel.
+    The released value g~ is the raw gap. Optional smoothing (``gap_ema`` = alpha in
+    (0, 1], 1.0 = off) is pure post-processing of released values: the server keeps
+    ema = (1 - alpha) ema + alpha g~ in ``state["r2_gap_ema"]`` (the first release sets
+    ema = g~). The lambda / direction logic, dhat and the reported ``gap`` use the
+    smoothed ema; ``gap_raw`` is the released g~. Off-period rounds leave ema unchanged.
 
     With ``release=False`` the statistics channel is not used: the round behaves
     like an off-period round of ``secagg_lagrangian`` (norm check only, lambda and
@@ -299,6 +303,8 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
     K = len(updates)
     if b < 0 or K - 2 * b < 1:
         raise ValueError(f"trimmed channel needs b >= 0 and K - 2b >= 1; got K={K}, b={b}")
+    if not (0.0 < gap_ema <= 1.0):
+        raise ValueError(f"gap_ema must lie in (0, 1], got {gap_ema}")
     lam_in = float(state.get("r2_lambda", 0.0))
     dir_in = state.get("r2_dir", 0)
 
@@ -318,7 +324,7 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
 
     if not release:
         info.update({"lambda": lam_in, "direction": dir_in, "dhat": None,
-                     "gap": None, "tm_clean": None, "u_norm": 0.0})
+                     "gap": None, "gap_raw": None, "tm_clean": None, "u_norm": 0.0})
         if K_acc == 0:
             return torch.zeros_like(updates[0].flatten()).view_as(updates[0]), info
         U = torch.stack([updates[k].flatten() for k in accepted]).sum(0)
@@ -344,12 +350,19 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
         # gives the DP guarantee, and the released value carries both.
         xi = torch.randn(2, generator=generator, dtype=torch.float64) * sigma_d
         gap = gap + float(xi.sum())
-    dhat = abs(gap)
+    gap_raw = gap
+    prev = state.get("r2_gap_ema")
+    if prev is None or gap_ema >= 1.0:
+        ema = gap_raw
+    else:
+        ema = (1.0 - gap_ema) * float(prev) + gap_ema * gap_raw
+    state["r2_gap_ema"] = ema
+    dhat = abs(ema)
 
-    lam, direction = _dual_step(gap, lam_in, state, tau=tau, eta_lambda=eta_lambda,
+    lam, direction = _dual_step(ema, lam_in, state, tau=tau, eta_lambda=eta_lambda,
                                 direction_rule=direction_rule)
-    info.update({"lambda": lam, "direction": direction, "dhat": dhat, "gap": gap,
-                 "tm_clean": tm_clean, "u_norm": float(U.norm(2))})
+    info.update({"lambda": lam, "direction": direction, "dhat": dhat, "gap": ema,
+                 "gap_raw": gap_raw, "tm_clean": tm_clean, "u_norm": float(U.norm(2))})
     if K_acc == 0:
         return torch.zeros_like(updates[0]), info
     return (U / K_acc).view_as(updates[0]), info

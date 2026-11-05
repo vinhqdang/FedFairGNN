@@ -136,6 +136,8 @@ class FederatedTrainer:
             raise ValueError(f"r2_stat_channel must be 'sums' or 'trimmed', got {config.r2_stat_channel!r}")
         if config.r2_direction not in ("sign", "prop"):
             raise ValueError(f"r2_direction must be 'sign' or 'prop', got {config.r2_direction!r}")
+        if not (0.0 < config.r2_gap_ema <= 1.0):
+            raise ValueError(f"r2_gap_ema must lie in (0, 1], got {config.r2_gap_ema}")
         if config.r2_output not in ("last", "feasible"):
             raise ValueError(f"r2_output must be 'last' or 'feasible', got {config.r2_output!r}")
         self._secagg_gen = torch.Generator().manual_seed(config.seed)
@@ -409,7 +411,8 @@ class FederatedTrainer:
                 secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, b=self._trim_b,
                               sigma_d=self._sigma_d, sigma_u=self.cfg.r2_update_noise,
                               generator=self._secagg_gen, release=r2_release,
-                              direction_rule=self.cfg.r2_direction)
+                              direction_rule=self.cfg.r2_direction,
+                              gap_ema=self.cfg.r2_gap_ema)
             else:
                 secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, n_cap=self._r2_n_cap,
                               sigma_s=self._secagg_sigma_s, sigma_u=self.cfg.r2_update_noise,
@@ -496,7 +499,7 @@ class FederatedTrainer:
                     "bfwa_mu", "constraint_residual", "feasible",
                     "constraint_residual_preclamp", "feasible_preclamp",
                     # TrustFedGNN-R2 round log (secagg_lagrangian only)
-                    "lambda", "lambda_in", "direction", "dhat", "gap", "tm_clean",
+                    "lambda", "lambda_in", "direction", "dhat", "gap", "gap_raw", "tm_clean",
                     "n_accepted", "n_rejected", "u_norm"):
             if key in info:
                 rec[key] = info[key]

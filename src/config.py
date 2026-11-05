@@ -91,7 +91,8 @@ class ExperimentConfig:
     # CLAMP-RT statistics channel (docs/clamp_rt_design.md, Sections 3-4, 6).
     r2_stat_channel: str = "sums"    # sums (CLAMP, group sums) | trimmed (CLAMP-RT, trimmed mean of d_k)
     r2_trim_b: int = -1              # trimming level b per side; -1 = max(1, floor(0.2 K))
-    r2_floor_frac: float = 0.1       # c: public floor fraction, n0_k = ceil(c |V_k|) (trimmed channel)
+    r2_floor_frac: float = 0.05      # c: public floor fraction, n0_k = ceil(c |V_k|) (trimmed channel)
+    r2_gap_ema: float = 1.0          # alpha in (0, 1] for the smoothed trimmed gap; 1.0 = no smoothing
     fedfdp_lambda: float = 0.5       # FedFDP: weight of the per-node loss-deviation factor
 
     # ---- FU-Shapley incentive aggregation (FairShare-GNN) ----

@@ -311,7 +311,7 @@ def test_gap_attacks_do_not_touch_updates():
 # --------------------------------------------------------------------------- #
 def test_clamp_rt_registrations_mirror_clamp_settings():
     rt = {"clamp-rt": "clamp", "clamp-rt-f": "clamp-f", "clamp-rt-b0-f": "clamp-f",
-          "clamp-rt-gcn-f": "clamp-gcn-f"}
+          "clamp-rt-gcn-f": "clamp-gcn-f", "clamp-rt-ema-f": "clamp-f"}
     for name, base in rt.items():
         cfg, ref = ExperimentConfig(), ExperimentConfig()
         apply_method(cfg, name)
@@ -319,7 +319,7 @@ def test_clamp_rt_registrations_mirror_clamp_settings():
         assert cfg.aggregator == "secagg_lagrangian" and cfg.r2_stat_channel == "trimmed"
         assert cfg.fair_mode == "lagrangian" and cfg.dp_enabled is False
         for key in vars(ref):
-            if key in ("exp_name", "r2_stat_channel", "r2_trim_b"):
+            if key in ("exp_name", "r2_stat_channel", "r2_trim_b", "r2_gap_ema"):
                 continue
             assert getattr(cfg, key) == getattr(ref, key), (name, key)
     assert METHODS["clamp-rt"].get("r2_output") is None
@@ -327,7 +327,7 @@ def test_clamp_rt_registrations_mirror_clamp_settings():
     assert METHODS["clamp-rt-b0-f"]["r2_trim_b"] == 0
     assert METHODS["clamp-rt-gcn-f"]["model"] == "gcn"
     cfg = ExperimentConfig()
-    assert cfg.r2_stat_channel == "sums" and cfg.r2_trim_b == -1 and cfg.r2_floor_frac == 0.1
+    assert cfg.r2_stat_channel == "sums" and cfg.r2_trim_b == -1 and cfg.r2_floor_frac == 0.05 and cfg.r2_gap_ema == 1.0
 
 
 def test_sums_channel_registrations_are_unchanged():
@@ -425,3 +425,122 @@ def test_off_period_rounds_request_no_gaps(monkeypatch):
     assert hist[1]["lambda"] == hist[0]["lambda"] and hist[1]["direction"] == hist[0]["direction"]
     assert hist[1]["dhat"] is None and hist[3]["dhat"] is None
     assert hist[1]["n_accepted"] == 4
+
+
+# --------------------------------------------------------------------------- #
+# Gap EMA (post-processing of released gaps; alpha = r2_gap_ema)
+# --------------------------------------------------------------------------- #
+def _release(gaps, state, *, alpha=1.0, tau=0.05, eta=0.5, release=True):
+    """One trimmed release with noise off (raw gap = trimmed mean of the inputs)."""
+    updates = [torch.zeros(3)] * len(gaps)
+    _, info = secagg_trimmed(updates, gaps if release else None, state, C=1.0, tau=tau,
+                             eta_lambda=eta, b=0, sigma_d=0.0, sigma_u=0.0,
+                             release=release, direction_rule="sign", gap_ema=alpha)
+    return info
+
+
+def test_alpha_one_is_identical_to_unsmoothed_release():
+    seq = [[0.3, 0.1, -0.2], [-0.4, 0.0, 0.2], [0.5, 0.5, 0.5]]
+    default_state, explicit_state = {}, {}
+    for gaps in seq:
+        updates = [torch.zeros(3)] * len(gaps)
+        g_def, a = secagg_trimmed(updates, gaps, default_state, C=1.0, tau=0.05,
+                                  eta_lambda=0.5, b=0, sigma_d=0.0, sigma_u=0.0)
+        g_one, b = secagg_trimmed(updates, gaps, explicit_state, C=1.0, tau=0.05,
+                                  eta_lambda=0.5, b=0, sigma_d=0.0, sigma_u=0.0,
+                                  gap_ema=1.0)
+        assert torch.equal(g_def, g_one)
+        assert a["gap"] == b["gap"] == a["gap_raw"] == b["gap_raw"]
+        assert a["dhat"] == b["dhat"] and a["lambda"] == b["lambda"]
+        assert a["direction"] == b["direction"]
+        assert default_state == explicit_state
+        assert default_state["r2_gap_ema"] == pytest.approx(b["gap_raw"], abs=0.0)
+
+
+def test_ema_recursion_over_releases_with_off_period_round():
+    alpha = 0.3
+    state = {}
+    raws = [0.5, -0.1, 0.2, 0.9]
+    expected = None
+    for i, r in enumerate(raws):
+        info = _release([r, r, r], state, alpha=alpha)
+        expected = r if expected is None else (1 - alpha) * expected + alpha * r
+        assert state["r2_gap_ema"] == pytest.approx(expected, abs=1e-12)
+        assert info["gap_raw"] == pytest.approx(r) and info["gap"] == pytest.approx(expected)
+        if i == 1:
+            # Off-period round between releases: no release, the ema is unchanged.
+            before = dict(state)
+            off = _release([9.0, 9.0, 9.0], state, alpha=alpha, release=False)
+            assert state == before
+            assert off["gap"] is None and off["gap_raw"] is None and off["dhat"] is None
+
+
+def test_dhat_and_direction_use_the_smoothed_value():
+    tau, alpha, eta = 0.1, 0.3, 0.5
+    state = {}
+    _release([0.5] * 3, state, alpha=alpha, tau=tau)          # ema = 0.5
+    info = _release([-0.5] * 3, state, alpha=alpha, tau=tau)  # ema = 0.7*0.5 + 0.3*(-0.5) = 0.2
+    assert info["gap_raw"] == pytest.approx(-0.5)
+    assert info["gap"] == pytest.approx(0.2)
+    assert info["dhat"] == pytest.approx(0.2)
+    assert info["direction"] == 1                              # sign of the ema, not the raw gap
+    # lambda: lam_2 = max(0, lam_1 + eta (|ema_2| - tau)), with lam_1 from the first release.
+    state2 = {}
+    first = _release([0.5] * 3, state2, alpha=alpha, tau=tau)
+    second = _release([-0.5] * 3, state2, alpha=alpha, tau=tau)
+    assert second["lambda"] == pytest.approx(max(0.0, first["lambda"] + eta * (0.2 - tau)))
+
+
+def test_dead_zone_applies_to_the_smoothed_gap():
+    tau = 0.1
+    state = {}
+    _release([0.4] * 3, state, alpha=0.3, tau=tau)
+    info = _release([-0.4] * 3, state, alpha=0.3, tau=tau)    # ema = 0.28 - 0.12 = 0.16 > tau/2
+    assert info["direction"] == 1
+    state = {}
+    _release([0.1] * 3, state, alpha=0.3, tau=tau)
+    info = _release([-0.1] * 3, state, alpha=0.3, tau=tau)    # ema = 0.07 - 0.03 = 0.04 <= tau/2
+    assert info["direction"] == 0
+
+
+def test_sums_channel_does_not_read_or_write_the_gap_state():
+    from src.federated.aggregation import secagg_lagrangian
+    updates = [torch.zeros(3)] * 2
+    stats = [{"S0": 30.0, "N0": 100.0, "S1": 60.0, "N1": 100.0}] * 2
+    kw = dict(C=1.0, tau=0.05, eta_lambda=0.5, n_cap=1000, sigma_s=0.0, sigma_u=0.0)
+    g1, i1 = secagg_lagrangian(updates, stats, {}, **kw)
+    st = {"r2_gap_ema": 123.0}
+    g2, i2 = secagg_lagrangian(updates, stats, st, **kw)
+    assert torch.equal(g1, g2) and i1["gap"] == i2["gap"]
+    assert st["r2_gap_ema"] == 123.0
+    assert "gap_raw" not in i1
+
+
+def test_trainer_gap_follows_ema_recursion_and_skips_off_rounds():
+    cfg = _cfg("clamp-rt-ema-f", rounds=5, r2_stat_period=2)
+    assert cfg.r2_gap_ema == 0.3 and cfg.r2_output == "feasible"
+    hist = FederatedTrainer(cfg).run()["history"]
+    expected = None
+    released = 0
+    for h in hist:
+        if h["gap_raw"] is None:
+            assert h["gap"] is None and h["dhat"] is None
+            continue
+        released += 1
+        expected = h["gap_raw"] if expected is None else 0.7 * expected + 0.3 * h["gap_raw"]
+        assert h["gap"] == pytest.approx(expected, abs=1e-12)
+        assert h["dhat"] == pytest.approx(abs(expected), abs=1e-12)
+    assert released == 3
+
+
+def test_trainer_alpha_one_reports_raw_gap_as_smoothed():
+    hist = FederatedTrainer(_cfg("clamp-rt-f", rounds=3)).run()["history"]
+    for h in hist:
+        assert h["gap"] == h["gap_raw"]
+        assert h["dhat"] == pytest.approx(abs(h["gap_raw"]))
+
+
+def test_invalid_alpha_is_rejected():
+    for bad in (0.0, -0.1, 1.5):
+        with pytest.raises(ValueError):
+            FederatedTrainer(_cfg("clamp-rt-f", r2_gap_ema=bad))
