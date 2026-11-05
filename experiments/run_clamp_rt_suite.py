@@ -29,6 +29,7 @@ GAP_ATTACKS = ["gap_hide", "gap_inflate", "gap_inlier", "gap_zero"]
 GROUPS = {
     "pilot": dict(seeds=range(2), datasets=["credit", "pokec_z", "bail"]),
     "pilot2": dict(seeds=range(2), datasets=["credit", "pokec_z", "bail"]),
+    "pilot3": dict(seeds=range(2), datasets=["credit", "pokec_z", "bail"]),
     "e1": dict(seeds=range(10), datasets=ALL8),
     "e3": dict(seeds=range(3), datasets=["bail", "pokec_z"]),
     "e4": dict(seeds=range(3), datasets=BIG),
@@ -78,6 +79,13 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                         add(m, d, s, {"r2_stat_period": P, "attack": "gap_hide",
                                       "num_byzantine": 1})
                     add(MAIN, d, s, {"r2_stat_period": P, "r2_stat_dp": False})
+            elif group == "pilot3":
+                # Period-scaled lambda step (pf) and its tau = 0.02 controller variant (pt-f).
+                for m in ("clamp-rt-ema-pf", "clamp-rt-ema-pt-f"):
+                    add(m, d, s, {"r2_stat_period": 10})
+                    add(m, d, s, {"r2_stat_period": 10, "attack": "gap_hide",
+                                  "num_byzantine": 1})
+                add("clamp-rt-ema-pf", d, s, {"r2_stat_period": 10, "r2_stat_dp": False})
             elif group == "e1":
                 for m in (MAIN, "clamp-rt-gcn-f"):
                     add(m, d, s, {})

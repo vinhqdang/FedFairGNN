@@ -173,6 +173,16 @@ METHODS = {
                                 fair_mode="lagrangian", dp_enabled=False,
                                 r2_stat_channel="trimmed", r2_output="feasible",
                                 r2_gap_ema=0.3),
+    # clamp-rt-ema-f with the lambda step scaled by the release period P (per training round).
+    "clamp-rt-ema-pf":     dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible",
+                                r2_gap_ema=0.3, r2_eta_per_round=True),
+    # clamp-rt-ema-pf with the controller target 0.02 (feasible rule still uses fairness_budget).
+    "clamp-rt-ema-pt-f":   dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible",
+                                r2_gap_ema=0.3, r2_eta_per_round=True, r2_ctrl_tau=0.02),
     # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
     "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
 }

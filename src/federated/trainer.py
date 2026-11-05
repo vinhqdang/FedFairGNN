@@ -408,7 +408,14 @@ class FederatedTrainer:
             updates = [_clip_to_norm(u, C) for u in updates]
             if self._trimmed:
                 agg_name = "secagg_trimmed"
-                secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, b=self._trim_b,
+                # Controller target and step. Defaults reproduce the fairness_budget
+                # target and the per-release step r2_lambda_step. The feasible output
+                # rule (_final_metrics / the selection check below) keeps fairness_budget.
+                ctrl_tau = (self.cfg.r2_ctrl_tau if self.cfg.r2_ctrl_tau > 0
+                            else self.cfg.fairness_budget)
+                eta = self.cfg.r2_lambda_step * (max(1, self.cfg.r2_stat_period)
+                                                 if self.cfg.r2_eta_per_round else 1)
+                secagg = dict(C=C, eta_lambda=eta, b=self._trim_b, tau=ctrl_tau,
                               sigma_d=self._sigma_d, sigma_u=self.cfg.r2_update_noise,
                               generator=self._secagg_gen, release=r2_release,
                               direction_rule=self.cfg.r2_direction,

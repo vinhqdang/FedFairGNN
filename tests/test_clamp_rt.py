@@ -544,3 +544,55 @@ def test_invalid_alpha_is_rejected():
     for bad in (0.0, -0.1, 1.5):
         with pytest.raises(ValueError):
             FederatedTrainer(_cfg("clamp-rt-f", r2_gap_ema=bad))
+
+
+# --------------------------------------------------------------------------- #
+# Controller options: r2_eta_per_round (period-scaled lambda step) and
+# r2_ctrl_tau (controller target; the feasible output rule keeps fairness_budget)
+# --------------------------------------------------------------------------- #
+def _round0_record(**kw):
+    """One release round (t = 0) of the trimmed channel; returns the round record."""
+    trainer = FederatedTrainer(_cfg("clamp-rt-ema-pf", rounds=1, **kw))
+    return trainer._round(0)
+
+
+def test_eta_per_round_scales_lambda_change_by_period():
+    P = 5
+    # A tiny ctrl target keeps dhat above it, so the lambda change is not clipped at 0.
+    base = _round0_record(r2_stat_period=P, r2_eta_per_round=False, r2_ctrl_tau=1e-3)
+    scaled = _round0_record(r2_stat_period=P, r2_eta_per_round=True, r2_ctrl_tau=1e-3)
+    assert base["dhat"] > 1e-3 and base["lambda"] > 0.0
+    assert scaled["dhat"] == pytest.approx(base["dhat"])          # same released gap
+    assert scaled["lambda"] == pytest.approx(P * base["lambda"])   # lambda_in = 0
+
+
+def test_eta_per_round_is_a_no_op_at_period_one():
+    base = _round0_record(r2_stat_period=1, r2_eta_per_round=False)
+    scaled = _round0_record(r2_stat_period=1, r2_eta_per_round=True)
+    assert scaled["lambda"] == base["lambda"]
+
+
+def test_ctrl_tau_sets_the_dual_target_and_default_is_fairness_budget():
+    eta = ExperimentConfig().r2_lambda_step
+    rec = _round0_record(r2_ctrl_tau=1e-3)
+    assert rec["lambda"] == pytest.approx(max(0.0, eta * (rec["dhat"] - 1e-3)))
+    # Default (-1) falls back to fairness_budget (0.05 for clamp-rt-ema-pf).
+    rec = _round0_record()
+    cfg = _cfg("clamp-rt-ema-pf")
+    assert cfg.r2_ctrl_tau == -1.0 and cfg.fairness_budget == 0.05
+    assert rec["lambda"] == pytest.approx(max(0.0, eta * (rec["dhat"] - cfg.fairness_budget)))
+
+
+def test_feasible_selection_uses_fairness_budget_not_ctrl_tau():
+    # Controller target huge, fairness_budget tiny: no release is feasible under
+    # fairness_budget, so nothing is selected even though every dhat <= ctrl tau.
+    trainer = FederatedTrainer(_cfg("clamp-rt-ema-pt-f", rounds=2,
+                                    r2_ctrl_tau=10.0, fairness_budget=1e-9))
+    res = trainer.run()
+    assert res["history"][0]["dhat"] <= 10.0
+    assert trainer._feasible_flat is None and res["final"]["selected_round"] is None
+    # Controller target tiny, fairness_budget huge: every release is feasible.
+    trainer = FederatedTrainer(_cfg("clamp-rt-ema-pt-f", rounds=2,
+                                    r2_ctrl_tau=1e-9, fairness_budget=10.0))
+    res = trainer.run()
+    assert trainer._feasible_flat is not None and res["final"]["selected_round"] is not None

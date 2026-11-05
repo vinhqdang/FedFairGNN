@@ -828,9 +828,14 @@ def aggregate(method: str, updates: List[torch.Tensor], meta: List[dict],
             raise ValueError("secagg_trimmed needs secagg params")
         if secagg.get("release", True) and gaps is None:
             raise ValueError("secagg_trimmed needs per-client gaps in a release round")
+        # ``secagg`` may carry its own controller target ``tau`` (r2_ctrl_tau); it
+        # overrides the argument for the dual step only. Other consumers of ``tau``
+        # in this dispatcher are unaffected.
+        secagg_kw = dict(secagg)
+        tau_ctrl = secagg_kw.pop("tau", tau)
         agg, r2_info = secagg_trimmed(
-            updates, gaps, state if state is not None else {}, tau=tau,
-            **secagg)
+            updates, gaps, state if state is not None else {}, tau=tau_ctrl,
+            **secagg_kw)
         info.update(r2_info)
 
     else:
