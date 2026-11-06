@@ -41,7 +41,10 @@ GROUPS = {
     "pilot4": dict(seeds=range(3), datasets=["german", "nba", "facebook", "credit", "pokec_z", "bail"]),
     "e1db": dict(seeds=range(10), datasets=ALL8),
     "e5db": dict(seeds=range(3), datasets=["credit", "pokec_z", "pokec_n"]),
+    "e3db": dict(seeds=range(3), datasets=["bail", "pokec_z"]),
+    "e4db": dict(seeds=range(3), datasets=BIG),
 }
+DB_GROUPS = ("e1db", "e5db", "e3db", "e4db")
 
 
 RT_PERIOD = 10   # release period for every dataset (pilots 1-3: P = 1 is unusable under DP noise)
@@ -108,12 +111,20 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                 for eps in (1.0, 2.0, 4.0, 8.0):
                     for P in (1, 5, 10):
                         add("clamp-rt-db-f", d, s, {"dp_epsilon": eps, "r2_stat_period": P})
-            elif group == "e3":
-                add(MAIN, d, s, {"num_clients": 10, "attack": "none", "num_byzantine": 0})
+            elif group in ("e3", "e3db"):
+                mm = MAIN if group == "e3" else "clamp-rt-db-f"
+                add(mm, d, s, {"num_clients": 10, "attack": "none", "num_byzantine": 0})
                 for attack in base.E3_ATTACKS:
                     for f in (1, 2, 3, 4):
-                        add(MAIN, d, s, {"num_clients": 10, "attack": attack,
-                                         "num_byzantine": f})
+                        add(mm, d, s, {"num_clients": 10, "attack": attack,
+                                       "num_byzantine": f})
+            elif group == "e4db":
+                for K, fs in ((5, (1, 2)), (10, (1, 2, 3))):
+                    add("clamp-rt-db-f", d, s, {"num_clients": K})
+                    for f in fs:
+                        for a in GAP_ATTACKS:
+                            add("clamp-rt-db-f", d, s, {"num_clients": K, "attack": a,
+                                                        "num_byzantine": f})
             elif group == "e4":
                 for K, fs in ((5, (1, 2)), (10, (1, 2, 3))):
                     add(MAIN, d, s, {"num_clients": K})
@@ -150,7 +161,7 @@ def _pending(jobs):
 
 def main(argv=None):
     p = argparse.ArgumentParser()
-    p.add_argument("--group", default="pilot", choices=list(GROUPS) + ["all"])
+    p.add_argument("--group", default="pilot", choices=list(GROUPS) + ["all", "alldb"])
     p.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     p.add_argument("--seeds", default=None)
     p.add_argument("--datasets", default=None)
@@ -158,8 +169,9 @@ def main(argv=None):
     a = p.parse_args(argv)
     seeds = base._parse_seeds(a.seeds) if a.seeds else None
     dss = a.datasets.split(",") if a.datasets else None
-    groups = ([g for g in GROUPS if not g.startswith("pilot") and g not in ("e1db", "e5db")]
-              if a.group == "all" else [a.group])
+    groups = ([g for g in GROUPS if not g.startswith("pilot") and g not in DB_GROUPS]
+              if a.group == "all" else
+              list(DB_GROUPS) if a.group == "alldb" else [a.group])
     jobs = [j for g in groups for j in expand(g, dss, seeds)]
     print(f"total: {len(jobs)} jobs")
     if a.dry_run:
