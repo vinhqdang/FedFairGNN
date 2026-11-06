@@ -38,8 +38,11 @@ GROUPS = {
 }
 
 
+RT_PERIOD = 10   # release period for every dataset (pilots 1-3: P = 1 is unusable under DP noise)
+
+
 def period(dataset: str) -> int:
-    return base._clamp_period(dataset)
+    return RT_PERIOD
 
 
 def _job(group, method, dataset, seed, overrides) -> Dict:
@@ -98,13 +101,14 @@ def expand(group: str, datasets: Optional[List[str]] = None,
             elif group == "e4":
                 for K, fs in ((5, (1, 2)), (10, (1, 2, 3))):
                     add(MAIN, d, s, {"num_clients": K})
-                    add("clamp-f", d, s, {"num_clients": K})
+                    add("clamp-f", d, s, {"num_clients": K, "r2_stat_period": base._clamp_period(d)})
                     for f in fs:
                         for a in GAP_ATTACKS:
                             add(MAIN, d, s, {"num_clients": K, "attack": a, "num_byzantine": f})
                         # Old sums channel under the same budget of liars.
                         add("clamp-f", d, s, {"num_clients": K, "attack": "stat_falsify",
-                                              "num_byzantine": f})
+                                              "num_byzantine": f,
+                                              "r2_stat_period": base._clamp_period(d)})
             elif group == "e5":
                 for eps in (1.0, 2.0, 4.0, 8.0):
                     for P in (1, 5, 10):
