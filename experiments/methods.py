@@ -183,6 +183,15 @@ METHODS = {
                                 fair_mode="lagrangian", dp_enabled=False,
                                 r2_stat_channel="trimmed", r2_output="feasible",
                                 r2_gap_ema=0.3, r2_eta_per_round=True, r2_ctrl_tau=0.02),
+    # clamp-rt-f with the bias-corrected released magnitude (r2_debias; post-processing).
+    "clamp-rt-db-f":       dict(model="gat", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible",
+                                r2_debias=True),
+    "clamp-rt-db-gcn-f":   dict(model="gcn", aggregator="secagg_lagrangian",
+                                fair_mode="lagrangian", dp_enabled=False,
+                                r2_stat_channel="trimmed", r2_output="feasible",
+                                r2_debias=True),
     # TrustFedGNN as submitted: FSER + FTGD + robust_bfwa, for an honest comparison.
     "trustfedgnn-v1":      dict(model="trustfedgnn", aggregator="robust_bfwa", dp_enabled=True, dp_mode="ftgd"),
 }

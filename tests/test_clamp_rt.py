@@ -596,3 +596,97 @@ def test_feasible_selection_uses_fairness_budget_not_ctrl_tau():
                                     r2_ctrl_tau=1e-9, fairness_budget=10.0))
     res = trainer.run()
     assert trainer._feasible_flat is not None and res["final"]["selected_round"] is not None
+
+
+# --------------------------------------------------------------------------- #
+# Bias-corrected magnitude (r2_debias; post-processing of the released gap)
+# dhat = sqrt(max(0, g~^2 - 2 sigma_d^2)); the released g~ = TM + xi, xi = sum of two
+# N(0, sigma_d^2) draws. Hand-built cases fix xi by patching torch.randn.
+# --------------------------------------------------------------------------- #
+def _fixed_noise(monkeypatch, draws):
+    """Make the two server draws of each release equal to ``draws`` (a list of pairs)."""
+    it = iter(draws)
+    monkeypatch.setattr(torch, "randn", lambda *a, **k: torch.tensor(next(it), dtype=torch.float64))
+
+
+def _debias_release(gaps, state, *, sigma_d, debias, tau=0.05, eta=0.5):
+    updates = [torch.zeros(3)] * len(gaps)
+    _, info = secagg_trimmed(updates, gaps, state, C=1.0, tau=tau, eta_lambda=eta, b=0,
+                             sigma_d=sigma_d, sigma_u=0.0, release=True,
+                             direction_rule="sign", debias=debias)
+    return info
+
+
+def test_debias_dhat_matches_formula_and_is_zero_for_small_gap(monkeypatch):
+    sigma = 1.0
+    # TM = 0.9 (gaps inside [-1, 1]), xi = 1.0 + 0.0 -> g~ = 1.9
+    # -> dhat = sqrt(3.61 - 2) = sqrt(1.61).
+    _fixed_noise(monkeypatch, [(1.0, 0.0)])
+    info = _debias_release([0.9] * 3, {}, sigma_d=sigma, debias=True)
+    assert info["gap_raw"] == pytest.approx(1.9)
+    assert info["dhat"] == pytest.approx(math.sqrt(1.61), abs=1e-12)
+    assert info["dhat_raw"] == pytest.approx(1.9)
+    assert info["gap"] == pytest.approx(1.9)
+    assert info["direction"] == 1
+
+    # TM = 0.1, xi = 0.5 - 0.4 -> g~ = 0.2 -> g~^2 = 0.04 < 2 sigma^2: dhat = 0, no direction.
+    _fixed_noise(monkeypatch, [(0.5, -0.4)])
+    small = _debias_release([0.1] * 3, {}, sigma_d=sigma, debias=True)
+    assert small["gap_raw"] == pytest.approx(0.2)
+    assert small["dhat"] == 0.0
+    assert small["direction"] == 0
+
+
+def test_debias_lambda_does_not_move_on_pure_noise_release(monkeypatch):
+    sigma, tau, eta = 1.0, 0.05, 0.5
+    # mu = 0 and |xi| = |1.0 + 0.3| = 1.3 < sqrt(2) sigma on every release.
+    draws = [(1.0, 0.3)] * 5
+    _fixed_noise(monkeypatch, draws)
+    state = {}
+    for _ in range(5):
+        info = _debias_release([0.0] * 3, state, sigma_d=sigma, debias=True, tau=tau, eta=eta)
+        assert info["gap_raw"] == pytest.approx(1.3) and info["dhat"] == 0.0
+        assert info["lambda"] == 0.0 and info["direction"] == 0
+    assert state["r2_lambda"] == 0.0
+
+    # Contrast: the same releases without debias push lambda up on noise alone.
+    _fixed_noise(monkeypatch, draws)
+    raw_state = {}
+    for _ in range(5):
+        _debias_release([0.0] * 3, raw_state, sigma_d=sigma, debias=False, tau=tau, eta=eta)
+    assert raw_state["r2_lambda"] > 0.0
+
+
+def test_debias_default_is_identical_to_omitting_the_argument():
+    seq = [[0.3, 0.1, -0.2, 0.4], [-0.4, 0.0, 0.2, 0.1], [0.5, 0.5, 0.5, 0.5]]
+    updates = [torch.randn(3, generator=torch.Generator().manual_seed(k)) for k in range(4)]
+    omit_state, false_state = {}, {}
+    gen_a, gen_b = torch.Generator().manual_seed(11), torch.Generator().manual_seed(11)
+    for gaps in seq:
+        g_omit, a = secagg_trimmed(updates, gaps, omit_state, C=10.0, tau=0.05, eta_lambda=0.5,
+                                   b=1, sigma_d=0.7, sigma_u=0.1, generator=gen_a)
+        g_false, b = secagg_trimmed(updates, gaps, false_state, C=10.0, tau=0.05, eta_lambda=0.5,
+                                    b=1, sigma_d=0.7, sigma_u=0.1, generator=gen_b,
+                                    debias=False)
+        assert torch.equal(g_omit, g_false)
+        assert a == b
+        assert "dhat_raw" not in b
+        assert omit_state == false_state
+
+
+def test_debias_requires_unsmoothed_gap():
+    with pytest.raises(ValueError):
+        secagg_trimmed([torch.zeros(3)] * 3, [0.1, 0.2, 0.3], {}, C=1.0, tau=0.05,
+                       eta_lambda=0.5, b=0, sigma_d=0.5, sigma_u=0.0, gap_ema=0.3,
+                       debias=True)
+
+
+def test_debias_registrations_and_config_default():
+    assert ExperimentConfig().r2_debias is False
+    for name, base in (("clamp-rt-db-f", "clamp-rt-f"), ("clamp-rt-db-gcn-f", "clamp-rt-gcn-f")):
+        cfg = _cfg(name)
+        ref = _cfg(base)
+        assert cfg.r2_debias is True and ref.r2_debias is False
+        for key in vars(ref):
+            if key not in ("exp_name", "r2_debias"):
+                assert getattr(cfg, key) == getattr(ref, key), key

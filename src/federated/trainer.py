@@ -419,7 +419,7 @@ class FederatedTrainer:
                               sigma_d=self._sigma_d, sigma_u=self.cfg.r2_update_noise,
                               generator=self._secagg_gen, release=r2_release,
                               direction_rule=self.cfg.r2_direction,
-                              gap_ema=self.cfg.r2_gap_ema)
+                              gap_ema=self.cfg.r2_gap_ema, debias=self.cfg.r2_debias)
             else:
                 secagg = dict(C=C, eta_lambda=self.cfg.r2_lambda_step, n_cap=self._r2_n_cap,
                               sigma_s=self._secagg_sigma_s, sigma_u=self.cfg.r2_update_noise,

@@ -27,6 +27,7 @@ Rules
 """
 from __future__ import annotations
 
+import math
 from typing import Dict, List, Optional, Tuple
 import numpy as np
 
@@ -254,18 +255,23 @@ def secagg_lagrangian(updates: List[torch.Tensor], stats: Optional[List[Dict[str
 
 
 def _dual_step(gap: float, lam_in: float, state: Dict, *, tau: float, eta_lambda: float,
-               direction_rule: str) -> Tuple[float, float]:
+               direction_rule: str, dhat_override: Optional[float] = None) -> Tuple[float, float]:
     """Shared R2 controller: lambda <- max(0, lambda + eta (|gap| - tau)) and the
     direction from the gap. Persists both in ``state``. Used by the sums channel
-    and by the trimmed channel, so the two differ only in how ``gap`` is formed."""
-    dhat = abs(gap)
+    and by the trimmed channel, so the two differ only in how ``gap`` is formed.
+
+    ``dhat_override`` (trimmed channel, ``debias``) replaces |gap| as the magnitude
+    in the lambda step and the dead zone; the sign still comes from ``gap``, and for
+    the "prop" rule the gap is replaced by sign(gap) * dhat_override."""
+    dhat = abs(gap) if dhat_override is None else float(dhat_override)
     lam = max(0.0, lam_in + eta_lambda * (dhat - tau))
     if direction_rule == "sign":
         # Dead zone: a gap within tau/2 of zero is treated as no direction.
         direction = int((gap > 0) - (gap < 0)) if dhat > tau / 2.0 else 0
     elif direction_rule == "prop":
+        signed = gap if dhat_override is None else float((gap > 0) - (gap < 0)) * dhat
         # Continuous direction: proportional to the gap near the target, saturating at +-1.
-        direction = float(min(1.0, max(-1.0, gap / tau))) if tau > 0 else float((gap > 0) - (gap < 0))
+        direction = float(min(1.0, max(-1.0, signed / tau))) if tau > 0 else float((signed > 0) - (signed < 0))
     else:
         raise ValueError(f"unknown r2 direction rule {direction_rule!r}")
     state["r2_lambda"] = lam
@@ -277,6 +283,7 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
                    C: float, tau: float, eta_lambda: float, b: int, sigma_d: float,
                    sigma_u: float, generator: torch.Generator = None, release: bool = True,
                    direction_rule: str = "sign", gap_ema: float = 1.0,
+                   debias: bool = False,
                    ) -> Tuple[torch.Tensor, Dict]:
     """CLAMP-RT server step (docs/clamp_rt_design.md, Sections 2 and 6).
 
@@ -298,13 +305,22 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
     like an off-period round of ``secagg_lagrangian`` (norm check only, lambda and
     direction unchanged, ``gaps`` may be None).
 
-    Raises ValueError when K - 2b < 1 (no order statistics left to keep).
+    ``debias=True`` (post-processing of the released scalar, no privacy cost) replaces
+    the magnitude |g~| by dhat = sqrt(max(0, g~^2 - 2 sigma_d^2)), since
+    E[g~^2] = mu^2 + 2 sigma_d^2 for the two N(0, sigma_d^2) draws. The dual step and
+    the dead zone use dhat, the sign comes from g~, and ``info["dhat"]`` is dhat
+    (``info["dhat_raw"]`` = |g~|). It requires ``gap_ema == 1.0``.
+
+    Raises ValueError when K - 2b < 1 (no order statistics left to keep), or when
+    ``debias`` is set together with ``gap_ema != 1``.
     """
     K = len(updates)
     if b < 0 or K - 2 * b < 1:
         raise ValueError(f"trimmed channel needs b >= 0 and K - 2b >= 1; got K={K}, b={b}")
     if not (0.0 < gap_ema <= 1.0):
         raise ValueError(f"gap_ema must lie in (0, 1], got {gap_ema}")
+    if debias and gap_ema != 1.0:
+        raise ValueError(f"debias requires gap_ema == 1.0 (no smoothing), got {gap_ema}")
     lam_in = float(state.get("r2_lambda", 0.0))
     dir_in = state.get("r2_dir", 0)
 
@@ -358,10 +374,17 @@ def secagg_trimmed(updates: List[torch.Tensor], gaps: Optional[List[float]], sta
         ema = (1.0 - gap_ema) * float(prev) + gap_ema * gap_raw
     state["r2_gap_ema"] = ema
     dhat = abs(ema)
-
-    lam, direction = _dual_step(ema, lam_in, state, tau=tau, eta_lambda=eta_lambda,
-                                direction_rule=direction_rule)
-    info.update({"lambda": lam, "direction": direction, "dhat": dhat, "gap": ema,
+    if debias:
+        # gap_ema == 1 here, so ema == gap_raw. Known noise variance is 2 sigma_d^2.
+        dhat_c = math.sqrt(max(0.0, ema * ema - 2.0 * sigma_d * sigma_d))
+        lam, direction = _dual_step(ema, lam_in, state, tau=tau, eta_lambda=eta_lambda,
+                                    direction_rule=direction_rule, dhat_override=dhat_c)
+        info.update({"dhat_raw": dhat, "dhat": dhat_c})
+    else:
+        lam, direction = _dual_step(ema, lam_in, state, tau=tau, eta_lambda=eta_lambda,
+                                    direction_rule=direction_rule)
+        info.update({"dhat": dhat})
+    info.update({"lambda": lam, "direction": direction, "gap": ema,
                  "gap_raw": gap_raw, "tm_clean": tm_clean, "u_norm": float(U.norm(2))})
     if K_acc == 0:
         return torch.zeros_like(updates[0]), info
