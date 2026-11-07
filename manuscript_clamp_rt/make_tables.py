@@ -11,7 +11,8 @@ Sources (paths relative to the repository root):
   results/clamp/e1/runs/*.json         baselines and old CLAMP (per seed)
   results/clamp/e3/runs/*.json         update-attack baselines (per seed)
   results/clamp_rt/e1db/runs/*.json    per-seed CLAMP-RT values and channel diagnostics
-  results/clamp_rt/e4db/runs/*.json    per-round order-statistic diagnostics (Theorem 3 bracket)
+  results/clamp_rt/e5/runs/*.json      noise-free runs (r2_stat_dp = False) for the epsilon = inf row
+  results/clamp_rt/e4db/runs/*.json    per-round order-statistic diagnostics (Theorem 5 interval)
   src/trust/privacy.py                 noise calibration (calibrate_noise_multiplier)
 
 Usage (from the repository root):  python3 manuscript_clamp_rt/make_tables.py
@@ -123,6 +124,15 @@ def msl(xs, d=3):
     m = st.mean(xs)
     s = st.stdev(xs) if len(xs) > 1 else 0.0
     return f"{m:.{d}f}$\\pm${s:.{d}f}"
+
+
+def holm(ps):
+    order = sorted(range(len(ps)), key=lambda i: ps[i])
+    out, run = [0.0] * len(ps), 0.0
+    for rank, i in enumerate(order):
+        run = max(run, min(1.0, (len(ps) - rank) * ps[i]))
+        out[i] = run
+    return out
 
 
 def write(name, body):
@@ -239,8 +249,12 @@ def table_channel(summ, old, rt):
         u_old = [warmup_final(oldr[s])[1] for s in seeds]
         p_d = wilcoxon(a_rt, a_old).pvalue
         p_a = wilcoxon(u_rt, u_old).pvalue
-        rows.append((ds, min(n0), max(n0), min(sig), max(sig), tau_eff + r_R, frac, lamT,
-                     st.mean(a_old), st.mean(a_rt), p_d, st.mean(u_old), st.mean(u_rt), p_a))
+        rows.append([ds, min(n0), max(n0), min(sig), max(sig), tau_eff + r_R, frac, lamT,
+                     st.mean(a_old), st.mean(a_rt), p_d, st.mean(u_old), st.mean(u_rt), p_a])
+    for col in (10, 13):                       # Holm across the 8 datasets, per metric
+        adj = holm([r[col] for r in rows])
+        for r, a in zip(rows, adj):
+            r[col] = a
     body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
             "\\caption{Statistics channel of CLAMP-RT in the honest runs ($K=5$, $b=1$, $\\varepsilon=8$, "
             "$R=10$ releases, 10 seeds). $n_{0,\\min}$ and $\\sigma_d$: range over seeds. "
@@ -248,7 +262,7 @@ def table_channel(summ, old, rt):
             "and $\\beta=0.05$ (vacuous when $\\ge1$). "
             "$\\Dhat>0$: share of releases with a non-zero bias-corrected magnitude. $\\lambda^T$: mean final "
             "multiplier. Right block: mean test DPD and AUC of CLAMP (sums channel) and CLAMP-RT, with the "
-            "two-sided Wilcoxon signed-rank $p$-value paired by seed (unadjusted).}\n\\label{tab:channel}\n"
+            "two-sided Wilcoxon signed-rank $p$-value paired by seed, Holm-adjusted across the eight datasets per metric.}\n\\label{tab:channel}\n"
             "\\begin{tabular}{lccccc|ccc|ccc}\n\\toprule\n"
             "Dataset & $n_{0,\\min}$ & $\\sigma_d$ & Radius & $\\Dhat>0$ & $\\lambda^T$ & "
             "\\multicolumn{3}{c|}{DPD: CLAMP / RT / $p$} & \\multicolumn{3}{c}{AUC: CLAMP / RT / $p$} \\\\\n\\midrule\n")
@@ -264,17 +278,52 @@ def table_channel(summ, old, rt):
 # --------------------------------------------------------------------------- #
 # E4: falsified statistics
 # --------------------------------------------------------------------------- #
+def e4_context():
+    """ClipMean (same seeds 0-2, same K) and controller activity of the honest E4 runs."""
+    clip = {}
+    for pat, K in (("results/clamp/e1/runs/clamp-clipmean__*.json", 5),
+                   ("results/clamp/e3/runs/clamp-clipmean__*.json", 10)):
+        g = collections.defaultdict(list)
+        for path in glob.glob(os.path.join(ROOT, pat)):
+            with open(path) as f:
+                r = json.load(f)
+            c = r["config"]
+            if c["seed"] <= 2 and c["num_clients"] == K and c["attack"] == "none":
+                g[c["dataset"]].append(r["final"]["dpd"])
+        for ds, v in g.items():
+            if len(v) == 3:
+                clip[(ds, K)] = f"{st.mean(v):.3f}"
+    out = {}
+    g = collections.defaultdict(list)
+    for path in glob.glob(os.path.join(ROOT, "results/clamp_rt/e4db/runs/*.json")):
+        with open(path) as f:
+            r = json.load(f)
+        c = r["config"]
+        if c["attack"] != "none":
+            continue
+        rel = [x for x in r["history"] if x.get("dhat") is not None]
+        g[(c["dataset"], c["num_clients"])].append(
+            (r["history"][-1]["lambda"], sum(x["dhat"] > 0 for x in rel) / len(rel)))
+    for k, v in g.items():
+        out[k] = (clip.get(k, "--"), st.mean(x[0] for x in v), st.mean(x[1] for x in v))
+    return out
+
+
 def table_e4():
     s = parse_summary("db_e4.txt")
     nodb = parse_e4_nodb()
     dss = ["bail", "credit", "pokec_z", "pokec_n"]
+    ctx = e4_context()
     body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
             "\\caption{Falsified gap reports against CLAMP-RT: test DPD, mean$\\pm$sd over 3 seeds, for $f$ "
             "lying clients out of $K$. Trimming level $b=1$ ($K=5$) and $b=2$ ($K=10$); rows with $f>b$ "
             "(marked $\\ast$) are beyond the breakdown point. ``Honest'' is the same configuration with no "
-            "liars. AUC is in the supplementary material.}\n\\label{tab:e4}\n"
-            "\\begin{tabular}{llc" + "c" * 5 + "}\n\\toprule\n"
-            "Dataset & $K$ & $f$ & Honest & hide & inflate & inlier & zero \\\\\n\\midrule\n")
+            "liars. Context columns, for the honest run: ClipMean is clipped aggregation without a controller "
+            "on the same seeds and $K$ (earlier study; -- where no such run exists); $\\lambda^T$ is the mean "
+            "final multiplier of CLAMP-RT and $\\Dhat>0$ the share of its releases with a non-zero corrected "
+            "magnitude. AUC is in the supplementary material.}\n\\label{tab:e4}\n"
+            "\\begin{tabular}{llc" + "c" * 8 + "}\n\\toprule\n"
+            "Dataset & $K$ & $f$ & ClipMean & $\\lambda^T$ & $\\Dhat>0$ & Honest & hide & inflate & inlier & zero \\\\\n\\midrule\n")
     for ds in dss:
         for K in (5, 10):
             b = 1 if K == 5 else 2
@@ -284,7 +333,9 @@ def table_e4():
                 kl = str(K) if i == 0 else ""
                 hon = ms(s[(ds, K, "none", 0)]["dpd"]) if i == 0 else ""
                 star = "$^\\ast$" if f > b else ""
-                body += (f"{lab} & {kl} & {f}{star} & {hon} & "
+                cm, lam, fr = ctx[(ds, K)]
+                c3 = (f"{cm} & {lam:.3f} & {fr:.2f}") if i == 0 else " & & "
+                body += (f"{lab} & {kl} & {f}{star} & {c3} & {hon} & "
                          + " & ".join(ms(s[(ds, K, a, f)]["dpd"]) for a in ATT) + " \\\\\n")
         if ds != dss[-1]:
             body += "\\midrule\n"
@@ -433,12 +484,19 @@ def table_e5():
     dss = ["credit", "pokec_z", "pokec_n"]
     body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
             "\\caption{Privacy budget $\\varepsilon$ of the gap channel and release period $P$ ($K=5$, 3 seeds): "
-            "test DPD, mean$\\pm$sd. All other experiments use $\\varepsilon=8$ and $P=10$.}\n\\label{tab:e5}\n"
+            "test DPD, mean$\\pm$sd. Row $\\infty$: no noise on the gap ($\\sigma_d=0$, where the bias correction is the "
+            "identity); these runs were made with $P\\in\\{1,10\\}$ only. All other experiments use $\\varepsilon=8$ and $P=10$.}\n\\label{tab:e5}\n"
             "\\begin{tabular}{c" + "ccc" * len(dss) + "}\n\\toprule\n"
             " & " + " & ".join(f"\\multicolumn{{3}}{{c}}{{{DS_NAME[d]}}}" for d in dss) + " \\\\\n"
             "$\\varepsilon$ & " + " & ".join("$P=1$ & $P=5$ & $P=10$" for _ in dss) + " \\\\\n\\midrule\n")
     for eps in (1.0, 2.0, 4.0, 8.0):
         body += f"{int(eps)} & " + " & ".join(ms(s[(d, eps, P)]["dpd"]) for d in dss for P in (1, 5, 10)) + " \\\\\n"
+    nf = noise_free()
+    body += "\\midrule\n$\\infty$ & " + " & ".join(
+        (msl(nf[(d, P)]) if (d, P) in nf else "--") for d in dss for P in (1, 5, 10)) + " \\\\\n"
+    for d in dss:
+        for P in (1, 10):
+            macro(f"nf{DS_NAME[d].replace('-', '')}P{'one' if P == 1 else 'ten'}", f"{st.mean(nf[(d, P)]):.3f}")
     body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
     write("e5_privacy.tex", body)
     aucs = [v["auc"][0] for v in s.values()]
@@ -454,6 +512,47 @@ def table_e5():
         body += f"{int(eps)} & " + " & ".join(ms(s[(d, eps, P)]["auc"]) for d in dss for P in (1, 5, 10)) + " \\\\\n"
     body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
     write("s_e5_auc.tex", body)
+
+
+def noise_free():
+    g = collections.defaultdict(list)
+    for path in glob.glob(os.path.join(ROOT, "results/clamp_rt/e5/runs/*.json")):
+        with open(path) as f:
+            r = json.load(f)
+        c = r["config"]
+        if c["r2_stat_dp"] is False:
+            g[(c["dataset"], c["r2_stat_period"])].append(r["final"]["dpd_soft"])
+    return g
+
+
+def table_pilots():
+    """Development pilots (results/clamp_rt/pilot*), reported for disclosure."""
+    g = collections.defaultdict(list)
+    for d in ("pilot", "pilot2", "pilot3", "pilot4"):
+        for path in glob.glob(os.path.join(ROOT, f"results/clamp_rt/{d}/runs/*.json")):
+            with open(path) as f:
+                r = json.load(f)
+            c = r["config"]
+            key = (d, c["dataset"], c["r2_floor_frac"], c["r2_stat_period"], c.get("r2_gap_ema") or 1.0,
+                   bool(c.get("r2_eta_per_round")), c.get("r2_ctrl_tau") if (c.get("r2_ctrl_tau") or -1) > 0 else 0.03,
+                   bool(c.get("r2_debias")), bool(c["r2_stat_dp"]),
+                   "--" if c["attack"] == "none" else f"{c['attack'].replace('_', ' ')} {c['num_byzantine']}")
+            g[key].append((c["seed"], r["final"]["dpd_soft"], r["final"]["auc"]))
+    body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
+            "\\caption{Development pilots of CLAMP-RT ($K=5$), reported for disclosure: mean test DPD and AUC over the "
+            "runs of each configuration (seeds among 0--2; $n$ = number of runs). $c$: floor fraction; EMA: smoothing "
+            "factor of the released gap (1 = none); $\\eta/P$: multiplier step scaled by the release period; "
+            "$\\tau_c$: controller target; BC: bias correction; DP: noise on the gap ($\\varepsilon=8$) or none. "
+            "Configurations not adopted: $c=0.1$, EMA $0.3$, the scaled step and the target $0.02$.}\n"
+            "\\label{tab:s_pilot}\n\\begin{tabular}{llccccccclccc}\n\\toprule\n"
+            "Pilot & Dataset & $c$ & $P$ & EMA & $\\eta/P$ & $\\tau_c$ & BC & DP & Attack & $n$ & DPD & AUC \\\\\n\\midrule\n")
+    yn = lambda x: "yes" if x else "no"
+    for k in sorted(g, key=lambda k: (k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[8], k[9])):
+        v = g[k]
+        body += (f"{k[0]} & {DS_NAME[k[1]]} & {k[2]} & {k[3]} & {k[4]} & {yn(k[5])} & {k[6]} & {yn(k[7])} & "
+                 f"{yn(k[8])} & {k[9]} & {len(v)} & {st.mean(x[1] for x in v):.3f} & {st.mean(x[2] for x in v):.3f} \\\\\n")
+    body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    write("s_pilot.tex", body)
 
 
 def table_e6():
@@ -492,18 +591,30 @@ def table_mpc():
             "Bytes are those sent by one server as reported by CrypTen; rounds are communication rounds. "
             "Update channel: norm checks and masked sum of $K$ updates of dimension $d$. Gap channel: range "
             "checks, sort, trimmed mean and noise addition. Err: largest absolute fixed-point error of the "
-            "trimmed mean (noise switched off). Client-to-server input sharing is not included.}\n"
-            "\\label{tab:mpc}\n\\begin{tabular}{rrr rrr rrrr}\n\\toprule\n"
-            " & & & \\multicolumn{3}{c}{Update channel} & \\multicolumn{4}{c}{Gap channel} \\\\\n"
-            "$K$ & $b$ & $d$ & MB & rounds & s & KB & rounds & s & Err \\\\\n\\midrule\n")
+            "trimmed mean (noise switched off), and of the update sum in the update block. The gap channel uses the validity "
+            "bits of the update channel (a rejected update also removes the client's gap), so the full release round is "
+            "the sum of the two blocks. Client-to-server input sharing and Beaver-triple generation are not included.}\n"
+            "\\label{tab:mpc}\n\\begin{tabular}{rrr rrrc rrrc rr}\n\\toprule\n"
+            " & & & \\multicolumn{4}{c}{Update channel} & \\multicolumn{4}{c}{Gap channel} & \\multicolumn{2}{c}{Full round} \\\\\n"
+            "$K$ & $b$ & $d$ & MB & rounds & s & Err & KB & rounds & s & Err & MB & s \\\\\n\\midrule\n")
     for r in rows:
         body += (f"{r['K']} & {r['b']} & $10^{{{int(round(math.log10(r['d'])))}}}$ & {r['bytes_update'] / 1e6:.2f} & "
-                 f"{r['rounds_update']} & {r['t_update_s']:.2f} & {r['bytes_gap'] / 1e3:.1f} & {r['rounds_gap']} & "
-                 f"{r['t_gap_s']:.2f} & {r['max_abs_err_tm']:.1e} \\\\\n")
+                 f"{r['rounds_update']} & {r['t_update_s']:.2f} & {r['max_abs_err_sum']:.1e} & {r['bytes_gap'] / 1e3:.1f} & {r['rounds_gap']} & "
+                 f"{r['t_gap_s']:.2f} & {r['max_abs_err_tm']:.1e} & "
+                 f"{(r['bytes_update'] + r['bytes_gap']) / 1e6:.2f} & {r['t_update_s'] + r['t_gap_s']:.2f} \\\\\n")
     body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
-    body = body.replace("e-06", "$\\times10^{-6}$").replace("e-05", "$\\times10^{-5}$")
+    for e in ("07", "06", "05", "04", "03"):
+        body = body.replace("e-" + e, "$\\times10^{-" + e.lstrip("0") + "}$")
     write("mpc_cost.tex", body)
     macro("mpcErrMax", f"{max(r['max_abs_err_tm'] for r in rows) * 1e5:.1f}")
+    macro("mpcSumErrMax", f"{max(r['max_abs_err_sum'] for r in rows) * 1e3:.1f}")
+    big = [r for r in rows if r["K"] == 20 and r["d"] == 10 ** 6][0]
+    macro("mpcFullMB", f"{(big['bytes_update'] + big['bytes_gap']) / 1e6:.0f}")
+    macro("mpcFullS", f"{big['t_update_s'] + big['t_gap_s']:.1f}")
+    ten = [r for r in rows if r["K"] == 10 and r["d"] == 10 ** 4][0]
+    macro("mpcTenMB", f"{(ten['bytes_update'] + ten['bytes_gap']) / 1e6:.2f}")
+    macro("mpcTenS", f"{ten['t_update_s'] + ten['t_gap_s']:.1f}")
+    macro("mpcErrRatio", f"{0.012806798541356646 / max(r['max_abs_err_tm'] for r in rows):.0f}")
 
 
 def table_privacy_attack():
@@ -543,6 +654,7 @@ def main():
     table_e3()
     table_e5()
     table_e6()
+    table_pilots()
     table_mpc()
     table_privacy_attack()
     with open(os.path.join(OUT, "macros.tex"), "w") as f:

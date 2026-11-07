@@ -92,7 +92,7 @@ Fix $i$ with $b+1\le i\le K-b$.
 \end{itemize}
 Averaging $h_{(i-f)}\le\tilde d_{(i)}\le h_{(i)}$ over $i=b+1,\dots,K-b$ gives the two inner inequalities of Eq.~(6) of the main text; the outer ones follow from $h_{(i-f)}\ge h_{(b+1-f)}$ and $h_{(i)}\le h_{(K-b)}$ for kept $i$. \qed
 
-\emph{Consequences.} (i) is immediate. (ii) If all honest gaps except at most $b-f$ exceed $\tau'$, then $h_{(b-f+1)}>\tau'$ and so $\TM(\tilde d)>\tau'$; on the event $|\xi_A+\xi_B|\le r$ the released $\gt$ exceeds $\tau'-r$. (iii) $\TM(\tilde d)$ and the analogous honest-only quantity both lie in $[h_{(b-f+1)},h_{(K-b)}]$.
+\emph{Consequences.} (i) is immediate. (ii) If all honest gaps except at most $b-f$ exceed $\tau'$ (at $f=b$: all honest gaps), then $h_{(b-f+1)}>\tau'$ and so $\TM(\tilde d)>\tau'$; on the event $|\xi_A+\xi_B|\le r$ the released $\gt$ exceeds $\tau'-r$. (iii) Let $\mathrm{TM}_{b-f}(h)=\frac{1}{K-2b}\sum_{i=b-f+1}^{K-b}h_{(i)}$ be the trimmed mean of the $K-f$ honest gaps with $b-f$ values removed per side (it has $K-f-2(b-f)=K-2b$ terms). It lies in $[h_{(b-f+1)},h_{(K-b)}]$, as does $\TM(\tilde d)$, so $|\TM(\tilde d)-\mathrm{TM}_{b-f}(h)|\le h_{(K-b)}-h_{(b-f+1)}$. All three consequences concern the noise-free statistic; with the bias correction, the released magnitude is zero whenever $|\gt|\le\sqrt2\sigma_d$.
 
 \emph{Breakdown.} If $f=b+1$ and all liars report $-1$, the smallest $b+1$ entries are $-1$ (when no honest gap equals $-1$), one of them is kept, and $\TM$ is the average of $-1$ and $K-2b-1$ honest values, which can lie outside the honest range. Each kept liar value can shift $\TM$ by up to $2/(K-2b)$ relative to an honest value.
 
@@ -114,5 +114,6 @@ For one release, a test between $\mathcal{N}(\mu,s^2)$ and $\mathcal{N}(\mu+\Del
 \input{tables/s_e3_full}
 \input{tables/s_spread}
 \input{tables/s_e5_auc}
+\input{tables/s_pilot}
 
 \end{document}

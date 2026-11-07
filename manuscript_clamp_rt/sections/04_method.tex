@@ -35,7 +35,7 @@ The two servers run the following steps jointly in two-party computation.
 \end{equation}
 Each server adds its own noise $\xi_A,\xi_B\sim\mathcal{N}(0,\sigma_d^2)$ to its share, and the opened value is $\gt=\TM(\tilde d)+\xi_A+\xi_B$. We use $b=\max(1,\lfloor0.2K\rfloor)$, i.e.\ $b=1$ for $K=5$ and $b=2$ for $K=10$.
 \end{enumerate}
-The servers learn $U$ and $\gt$, and nothing else: neither the individual gaps, nor which clients were trimmed, nor any group size.
+The servers learn $U$, $\gt$ and the number $|A|$ of accepted clients, which is needed to average the update sum. In our implementation the validity bits stay secret-shared, so the identities of rejected clients are not opened; a deployment that informs rejected clients, or whose network layer shows which clients sent nothing, reveals them. The servers do not learn the individual gaps, which clients were trimmed, or any group size. The model $\theta^{t+1}$ is broadcast and therefore public.
 
 \paragraph{Controller}
 From the released $\gt$ the server forms a magnitude, updates the multiplier by projected dual ascent and sets the direction with a dead zone:
@@ -48,7 +48,7 @@ From the released $\gt$ the server forms a magnitude, updates the multiplier by 
 The first expression is a bias correction. Because $\E[\gt^{\,2}]=\TM^2+2\sigma_d^2$, the plain magnitude $|\gt|$ overestimates $|\TM|$ when $\sigma_d$ is comparable to the gap; in our first runs this drove the multiplier up on the small graphs and the controller destroyed the model there (Table~\ref{tab:e1}, row ``no bias correction''). We use the correction as a heuristic: $\Dhat$ is not an unbiased estimator of $|\TM|$, and we do not claim any optimality for it. It is a function of the released value and the public $\sigma_d$, so it costs no privacy. Outside release rounds, $\lambda$ and $\omega$ keep their last values.
 
 \paragraph{Output rule}
-The signed penalty makes the gap oscillate around the budget, so the last iterate lands at an arbitrary point of the oscillation. As in \clamp{}, the server stores the model $\theta^t$ of each release round $t\ge W$ with $\Dhat^t\le\tau$, and returns the most recently stored one, or the last model if none was stored. With the bias correction, $\Dhat\le\tau$ is equivalent to $|\gt|\le\sqrt{\tau^2+2\sigma_d^2}$, a looser test than $|\gt|\le\tau$; Section~\ref{sec:results} shows what this does on the small graphs. We use $W=\lceil0.2T\rceil$.
+The signed penalty makes the gap oscillate around the budget, so the last iterate lands at an arbitrary point of the oscillation. As in \clamp{}, the server stores the model $\theta^t$ of each release round with $t+1\ge W$ (rounds counted from $t=0$) and $\Dhat^t\le\tau$, and returns the most recently stored one, or the last model if none was stored. With the bias correction, $\Dhat\le\tau$ is equivalent to $|\gt|\le\sqrt{\tau^2+2\sigma_d^2}$, a looser test than $|\gt|\le\tau$; Section~\ref{sec:results} shows what this does on the small graphs. We use $W=\lceil0.2T\rceil$.
 
 \paragraph{Release period and noise}
 Statistics are released every $P$ rounds, $R=\lceil T/P\rceil$ times in total. The noise level is $\sigma_d=\DTM\,z$, where $\DTM=2/(n_{0,\min}(K-2b))$ with $n_{0,\min}=\min_k n_{0,k}$ is the sensitivity of Theorem~\ref{thm:dp} and $z$ is the smallest noise multiplier for which $R$ Gaussian releases are $(\varepsilon,\delta)$-differentially private under R\'enyi accounting. We use $P=10$, $\varepsilon=8$ and $\delta=10^{-5}$ on all datasets, which gives $R=10$ and $z=\zEight$.
