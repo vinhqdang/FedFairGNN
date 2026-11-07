@@ -1,0 +1,20 @@
+\section{Problem setting and threat model}\label{sec:problem}
+
+\paragraph{Federated node classification}
+$K$ clients each hold a subgraph $G_k=(V_k,E_k)$ with node features, binary labels $y_v$ and a binary sensitive attribute $s_v\in\{0,1\}$. Each client splits its labelled nodes into training, validation and test sets; we write $\mathcal{V}_k$ for its validation nodes and $\mathcal{V}_{k,a}=\{v\in\mathcal{V}_k:s_v=a\}$. A GNN $f_\theta$ maps each node to a probability $p_\theta(v)\in(0,1)$. The attribute is removed from the features, so the backbone never reads it. The server coordinates $T$ rounds of training of one global model.
+
+\paragraph{Fairness target}
+We evaluate the soft demographic-parity gap of the global model on the pooled test nodes,
+\begin{equation}\label{eq:dpd}
+\dpd(\theta)=\bigl|r_1(\theta)-r_0(\theta)\bigr|,\qquad r_a(\theta)=\frac{\sum_k\sum_{v\in V_k^{\mathrm{test}},s_v=a}p_\theta(v)}{\sum_k|\{v\in V_k^{\mathrm{test}}:s_v=a\}|},
+\end{equation}
+and the federation wants a model with $\dpd\le\tau$ at the smallest cost in utility. The controller of \rt{} does not see the pooled gap. It sees a trimmed mean of the clients' own validation gaps (Section~\ref{sec:method}), which is a robust proxy: under non-IID partitions a client's gap can differ in sign and size from the pooled one, and the trimmed mean of per-client gaps can differ from the pooled gap. We accept this mismatch as the cost of an order statistic, and we measure the result on the pooled test gap~\eqref{eq:dpd}.
+
+\paragraph{Servers}
+There are two aggregation servers, $A$ and $B$, which do not collude and follow the protocol (semi-honest); each may try to learn as much as possible from what it sees. This is the trust model of Prio~\citep{corrigangibbs2017prio}. The servers must not learn any individual client's update or gap, and what they release must not reveal any validation node's sensitive attribute beyond a differential-privacy budget. Our cost measurements use a semi-honest two-party protocol; protection against a malicious server would need a maliciously secure protocol and is not covered.
+
+\paragraph{Byzantine clients}
+Up to $f$ of the $K$ clients are Byzantine. They know the protocol, the public constants and the current global state, may coordinate, and may submit any model update and any gap. Submissions that fail the servers' validity checks (norm of the update, range of the gap) are discarded. We distinguish \emph{statistics attacks}, in which liars report false gaps to make the controller believe the model is fairer (or less fair) than it is, and \emph{update attacks}, in which they manipulate their model updates, including \emph{fairness poisoning}, where they train to widen the gap while still fitting the labels.
+
+\paragraph{Public constants}
+The number of clients $K$, the trimming level $b$, the floor fraction $c$, the sizes $|\mathcal{V}_k|$ of the clients' validation sets, the norm bound $C$, the budget $\tau$, the step $\eta$, the release period $P$ and the noise level $\sigma_d$ are public. The validation-set sizes do not depend on any sensitive attribute; the sizes of the groups $|\mathcal{V}_{k,a}|$ do, and they are never revealed.

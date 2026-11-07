@@ -1,0 +1,21 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Ablations of the trimmed channel ($K=5$, $\varepsilon=8$, $P=10$, 3 seeds, honest). These runs use the variant without bias correction. $\sigma_d$ is the per-server noise standard deviation (mean$\pm$sd over seeds).}
+\label{tab:e6}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l ccc ccc}
+\toprule
+ & \multicolumn{3}{c}{Credit} & \multicolumn{3}{c}{Pokec-z} \\
+Variant & AUC & DPD & $\sigma_d$ & AUC & DPD & $\sigma_d$ \\
+\midrule
+Default ($b=1$, $c=0.05$) & 0.755$\pm$0.012 & 0.026$\pm$0.017 & 0.063$\pm$0.014 & 0.754$\pm$0.032 & 0.041$\pm$0.001 & 0.028$\pm$0.002 \\
+Last iterate (no output rule) & 0.750$\pm$0.014 & 0.031$\pm$0.023 & 0.063$\pm$0.014 & 0.748$\pm$0.027 & 0.036$\pm$0.001 & 0.028$\pm$0.002 \\
+$b=0$ (plain mean, no robustness) & 0.762$\pm$0.007 & 0.027$\pm$0.008 & 0.038$\pm$0.008 & 0.752$\pm$0.027 & 0.039$\pm$0.002 & 0.017$\pm$0.001 \\
+$b=2$ (median of $K=5$) & 0.683$\pm$0.041 & 0.168$\pm$0.048 & 0.188$\pm$0.042 & 0.752$\pm$0.038 & 0.039$\pm$0.021 & 0.084$\pm$0.005 \\
+$c=0.2$ & 0.657$\pm$0.004 & 0.236$\pm$0.008 & 0.016$\pm$0.004 & 0.753$\pm$0.026 & 0.033$\pm$0.004 & 0.007$\pm$0.000 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

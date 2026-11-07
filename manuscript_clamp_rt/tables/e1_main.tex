@@ -1,0 +1,59 @@
+\begin{table}[tbp]
+\centering
+\scriptsize
+\caption{Honest runs ($K=5$): test AUC and soft DPD (lower is fairer), mean$\pm$sd over 10 seeds. Baselines and CLAMP (sums channel) are the runs of the earlier study, with the output-rule warm-up applied; CLAMP used $P=1$ on Bail, Credit, Pokec-z, Pokec-n and AMiner-S and $P=10$ on German, NBA and Facebook, whereas CLAMP-RT uses $P=10$ everywhere. $^{c}$: reads per-client fairness quantities or group rates in the clear. PUFFLE and FedFDP barely learn at their privacy level (AUC near 0.5).}
+\label{tab:e1}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{2}{c}{German} & \multicolumn{2}{c}{Bail} & \multicolumn{2}{c}{Credit} & \multicolumn{2}{c}{Pokec-z} \\
+ & AUC & DPD & AUC & DPD & AUC & DPD & AUC & DPD \\
+\midrule
+FedAvg-GAT & 0.76$\pm$0.05 & 0.110$\pm$0.058 & 0.80$\pm$0.04 & 0.019$\pm$0.011 & 0.77$\pm$0.01 & 0.078$\pm$0.010 & 0.74$\pm$0.02 & 0.031$\pm$0.013 \\
+FairFed$^{c}$ & 0.75$\pm$0.05 & 0.049$\pm$0.039 & 0.80$\pm$0.03 & 0.012$\pm$0.007 & 0.75$\pm$0.01 & 0.008$\pm$0.005 & 0.64$\pm$0.05 & 0.004$\pm$0.003 \\
+F$^2$GNN$^{c}$ & 0.73$\pm$0.02 & 0.042$\pm$0.030 & 0.78$\pm$0.03 & 0.012$\pm$0.008 & 0.76$\pm$0.01 & 0.006$\pm$0.007 & 0.74$\pm$0.02 & 0.008$\pm$0.007 \\
+FairGFL & 0.74$\pm$0.05 & 0.081$\pm$0.070 & 0.78$\pm$0.03 & 0.015$\pm$0.006 & 0.76$\pm$0.01 & 0.072$\pm$0.009 & 0.66$\pm$0.02 & 0.041$\pm$0.011 \\
+FedGraph-Fair & 0.66$\pm$0.09 & 0.080$\pm$0.051 & 0.76$\pm$0.03 & 0.010$\pm$0.007 & 0.75$\pm$0.01 & 0.075$\pm$0.014 & 0.64$\pm$0.03 & 0.039$\pm$0.013 \\
+FedFACT$^{c}$ & 0.72$\pm$0.04 & 0.078$\pm$0.064 & 0.80$\pm$0.03 & 0.013$\pm$0.008 & 0.75$\pm$0.01 & 0.070$\pm$0.016 & 0.63$\pm$0.04 & 0.024$\pm$0.014 \\
+PUFFLE & 0.49$\pm$0.08 & 0.011$\pm$0.007 & 0.50$\pm$0.06 & 0.003$\pm$0.003 & 0.46$\pm$0.13 & 0.016$\pm$0.008 & 0.55$\pm$0.11 & 0.008$\pm$0.009 \\
+FedFDP & 0.53$\pm$0.09 & 0.014$\pm$0.021 & 0.51$\pm$0.03 & 0.004$\pm$0.003 & 0.54$\pm$0.11 & 0.017$\pm$0.009 & 0.64$\pm$0.11 & 0.008$\pm$0.008 \\
+FairGNN & 0.57$\pm$0.06 & 0.111$\pm$0.082 & 0.56$\pm$0.09 & 0.019$\pm$0.020 & 0.67$\pm$0.09 & 0.100$\pm$0.055 & 0.54$\pm$0.08 & 0.005$\pm$0.013 \\
+FairSIN & 0.72$\pm$0.05 & 0.092$\pm$0.062 & 0.79$\pm$0.03 & 0.025$\pm$0.008 & 0.75$\pm$0.00 & 0.070$\pm$0.012 & 0.66$\pm$0.05 & 0.026$\pm$0.010 \\
+ClipMean (no controller) & 0.73$\pm$0.06 & 0.088$\pm$0.069 & 0.78$\pm$0.03 & 0.016$\pm$0.009 & 0.77$\pm$0.01 & 0.071$\pm$0.009 & 0.75$\pm$0.02 & 0.042$\pm$0.011 \\
+\midrule
+CLAMP (sums channel) & 0.72$\pm$0.06 & 0.058$\pm$0.044 & 0.78$\pm$0.03 & 0.016$\pm$0.009 & 0.76$\pm$0.01 & 0.018$\pm$0.015 & 0.75$\pm$0.02 & 0.026$\pm$0.004 \\
+CLAMP-GCN (sums channel) & 0.73$\pm$0.05 & 0.065$\pm$0.044 & 0.79$\pm$0.02 & 0.015$\pm$0.006 & 0.75$\pm$0.01 & 0.014$\pm$0.013 & 0.72$\pm$0.02 & 0.028$\pm$0.006 \\
+\midrule
+CLAMP-RT, no bias correction & 0.51$\pm$0.06 & 0.602$\pm$0.084 & 0.77$\pm$0.04 & 0.014$\pm$0.008 & 0.76$\pm$0.01 & 0.049$\pm$0.041 & 0.76$\pm$0.03 & 0.032$\pm$0.011 \\
+CLAMP-RT-GCN & 0.71$\pm$0.07 & 0.172$\pm$0.198 & 0.79$\pm$0.03 & 0.014$\pm$0.007 & 0.76$\pm$0.01 & 0.059$\pm$0.017 & 0.74$\pm$0.02 & 0.041$\pm$0.009 \\
+\textbf{CLAMP-RT} & 0.72$\pm$0.07 & 0.172$\pm$0.189 & 0.78$\pm$0.03 & 0.015$\pm$0.010 & 0.77$\pm$0.01 & 0.061$\pm$0.017 & 0.76$\pm$0.03 & 0.037$\pm$0.011 \\
+\bottomrule
+\end{tabular}}
+\vspace{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{2}{c}{Pokec-n} & \multicolumn{2}{c}{AMiner-S} & \multicolumn{2}{c}{NBA} & \multicolumn{2}{c}{Facebook} \\
+ & AUC & DPD & AUC & DPD & AUC & DPD & AUC & DPD \\
+\midrule
+FedAvg-GAT & 0.75$\pm$0.02 & 0.034$\pm$0.017 & 0.94$\pm$0.00 & 0.007$\pm$0.004 & 0.81$\pm$0.06 & 0.099$\pm$0.059 & 0.77$\pm$0.05 & 0.078$\pm$0.048 \\
+FairFed$^{c}$ & 0.62$\pm$0.06 & 0.006$\pm$0.004 & 0.94$\pm$0.00 & 0.005$\pm$0.003 & 0.80$\pm$0.05 & 0.081$\pm$0.062 & 0.76$\pm$0.03 & 0.049$\pm$0.031 \\
+F$^2$GNN$^{c}$ & 0.74$\pm$0.03 & 0.008$\pm$0.007 & 0.94$\pm$0.01 & 0.005$\pm$0.004 & 0.78$\pm$0.13 & 0.109$\pm$0.072 & 0.76$\pm$0.05 & 0.069$\pm$0.040 \\
+FairGFL & 0.65$\pm$0.03 & 0.044$\pm$0.007 & 0.94$\pm$0.01 & 0.003$\pm$0.002 & 0.76$\pm$0.04 & 0.078$\pm$0.044 & 0.75$\pm$0.05 & 0.080$\pm$0.040 \\
+FedGraph-Fair & 0.59$\pm$0.05 & 0.024$\pm$0.015 & 0.93$\pm$0.01 & 0.003$\pm$0.003 & 0.77$\pm$0.10 & 0.084$\pm$0.043 & 0.74$\pm$0.05 & 0.094$\pm$0.037 \\
+FedFACT$^{c}$ & 0.59$\pm$0.06 & 0.012$\pm$0.011 & 0.92$\pm$0.01 & 0.008$\pm$0.004 & 0.76$\pm$0.04 & 0.142$\pm$0.082 & 0.74$\pm$0.05 & 0.055$\pm$0.042 \\
+PUFFLE & 0.57$\pm$0.11 & 0.010$\pm$0.006 & 0.49$\pm$0.03 & 0.006$\pm$0.005 & 0.37$\pm$0.19 & 0.014$\pm$0.012 & 0.53$\pm$0.10 & 0.009$\pm$0.006 \\
+FedFDP & 0.66$\pm$0.08 & 0.010$\pm$0.008 & 0.49$\pm$0.03 & 0.006$\pm$0.004 & 0.39$\pm$0.20 & 0.015$\pm$0.010 & 0.54$\pm$0.08 & 0.013$\pm$0.009 \\
+FairGNN & 0.50$\pm$0.00 & 0.000$\pm$0.000 & 0.63$\pm$0.08 & 0.098$\pm$0.035 & 0.77$\pm$0.08 & 0.097$\pm$0.044 & 0.51$\pm$0.05 & 0.024$\pm$0.041 \\
+FairSIN & 0.64$\pm$0.06 & 0.043$\pm$0.014 & 0.92$\pm$0.01 & 0.005$\pm$0.003 & 0.73$\pm$0.08 & 0.087$\pm$0.059 & 0.74$\pm$0.05 & 0.070$\pm$0.033 \\
+ClipMean (no controller) & 0.75$\pm$0.02 & 0.052$\pm$0.016 & 0.94$\pm$0.01 & 0.005$\pm$0.004 & 0.78$\pm$0.08 & 0.093$\pm$0.068 & 0.77$\pm$0.06 & 0.086$\pm$0.043 \\
+\midrule
+CLAMP (sums channel) & 0.76$\pm$0.02 & 0.028$\pm$0.012 & 0.94$\pm$0.01 & 0.004$\pm$0.004 & 0.80$\pm$0.08 & 0.076$\pm$0.054 & 0.76$\pm$0.06 & 0.069$\pm$0.034 \\
+CLAMP-GCN (sums channel) & 0.71$\pm$0.02 & 0.027$\pm$0.008 & 0.94$\pm$0.00 & 0.002$\pm$0.002 & 0.78$\pm$0.07 & 0.077$\pm$0.044 & 0.76$\pm$0.04 & 0.078$\pm$0.030 \\
+\midrule
+CLAMP-RT, no bias correction & 0.77$\pm$0.02 & 0.041$\pm$0.014 & 0.94$\pm$0.01 & 0.007$\pm$0.005 & 0.68$\pm$0.10 & 0.203$\pm$0.101 & 0.65$\pm$0.08 & 0.114$\pm$0.063 \\
+CLAMP-RT-GCN & 0.72$\pm$0.03 & 0.046$\pm$0.012 & 0.94$\pm$0.01 & 0.002$\pm$0.002 & 0.76$\pm$0.08 & 0.116$\pm$0.065 & 0.75$\pm$0.06 & 0.073$\pm$0.025 \\
+\textbf{CLAMP-RT} & 0.76$\pm$0.02 & 0.047$\pm$0.015 & 0.94$\pm$0.01 & 0.004$\pm$0.004 & 0.79$\pm$0.08 & 0.067$\pm$0.050 & 0.76$\pm$0.06 & 0.080$\pm$0.054 \\
+\bottomrule
+\end{tabular}}
+\end{table}

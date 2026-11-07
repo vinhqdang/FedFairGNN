@@ -1,0 +1,18 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\caption{Balanced accuracy of the optimal test that distinguishes two attribute-neighbouring datasets from the released gap (closed form, worst case $|\Delta|=\Delta_{\mathrm{TM}}$; $R=10$ releases, $\delta=10^{-5}$). $z=\sigma_d/\Delta_{\mathrm{TM}}$ from the RDP calibration. Both servers honest: one release with variance $2\sigma_d^2$. One server colluding: it removes its own noise. All releases: the colluding server combines all $R$ releases of a target whose contribution is unchanged. Bound: $(e^{\varepsilon}+\delta)/(1+e^{\varepsilon})$.}
+\label{tab:attack}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{cccccc}
+\toprule
+$\varepsilon$ & $z$ & Both honest, one release & One server, one release & One server, all $R$ & Bound \\
+\midrule
+1 & 12.79 & 0.511 & 0.516 & 0.549 & 0.7311 \\
+2 & 6.80 & 0.521 & 0.529 & 0.592 & 0.8808 \\
+4 & 3.66 & 0.538 & 0.554 & 0.667 & 0.9820 \\
+8 & 2.02 & 0.570 & 0.598 & 0.783 & 0.9997 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

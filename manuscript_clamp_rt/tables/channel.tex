@@ -1,0 +1,23 @@
+\begin{table}[tbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Statistics channel of CLAMP-RT in the honest runs ($K=5$, $b=1$, $\varepsilon=8$, $R=10$ releases, 10 seeds). $n_{0,\min}$ and $\sigma_d$: range over seeds. Radius: $\sqrt{\tau^2+2\sigma_d^2}+r_R$ of Theorem~\ref{thm:output} at the median $\sigma_d$ and $\beta=0.05$ (vacuous when $\ge1$). $\Dhat>0$: share of releases with a non-zero bias-corrected magnitude. $\lambda^T$: mean final multiplier. Right block: mean test DPD and AUC of CLAMP (sums channel) and CLAMP-RT, with the two-sided Wilcoxon signed-rank $p$-value paired by seed (unadjusted).}
+\label{tab:channel}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{lccccc|ccc|ccc}
+\toprule
+Dataset & $n_{0,\min}$ & $\sigma_d$ & Radius & $\Dhat>0$ & $\lambda^T$ & \multicolumn{3}{c|}{DPD: CLAMP / RT / $p$} & \multicolumn{3}{c}{AUC: CLAMP / RT / $p$} \\
+\midrule
+German & 1--2 & 0.672--1.345 & 8.48 & 0.31 & 2.27 & 0.058 & 0.172 & 0.064 & 0.721 & 0.719 & 0.695 \\
+Bail & 13--26 & 0.052--0.103 & 0.59 & 0.29 & 0.09 & 0.016 & 0.015 & 0.193 & 0.778 & 0.776 & 0.922 \\
+Credit & 19--29 & 0.046--0.071 & 0.40 & 0.42 & 0.08 & 0.018 & 0.061 & 0.002 & 0.760 & 0.769 & 0.002 \\
+Pokec-z & 42--105 & 0.013--0.032 & 0.19 & 0.45 & 0.03 & 0.026 & 0.037 & 0.014 & 0.753 & 0.757 & 0.049 \\
+Pokec-n & 41--64 & 0.021--0.033 & 0.19 & 0.59 & 0.06 & 0.028 & 0.047 & 0.002 & 0.758 & 0.764 & 0.275 \\
+AMiner-S & 25--44 & 0.031--0.054 & 0.29 & 0.28 & 0.02 & 0.004 & 0.004 & 0.557 & 0.942 & 0.941 & 0.037 \\
+NBA & 1--1 & 1.345--1.345 & 8.48 & 0.29 & 2.86 & 0.076 & 0.067 & 0.492 & 0.796 & 0.788 & 0.391 \\
+Facebook & 1--2 & 0.672--1.345 & 8.48 & 0.28 & 2.85 & 0.069 & 0.080 & 0.557 & 0.762 & 0.764 & 0.557 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

@@ -1,0 +1,84 @@
+\section{Results}\label{sec:results}
+
+\input{tables/e1_main}
+\input{tables/channel}
+
+\subsection{Honest runs}\label{sec:main}
+
+Table~\ref{tab:e1} reports AUC and $\dpd$ of all methods without attack, and Table~\ref{tab:channel} the state of the gap channel and the paired comparison with \clamp{}.
+
+\paragraph{Where the budget binds, \rt{} controls the gap less tightly than \clamp{}}
+On Credit, Pokec-z and Pokec-n the unconstrained clipped model has a gap above $\tau=0.03$ (ClipMean 0.071, 0.042 and 0.052). \clamp{} brought it to 0.018, 0.026 and 0.028. \rt{} reaches 0.061, 0.037 and 0.047, significantly higher than \clamp{} on all three graphs ($p=0.002$, $0.014$ and $0.002$), with an AUC that is equal or slightly higher (0.769 against 0.760 on Credit, $p=0.002$; 0.757 against 0.753 on Pokec-z; 0.764 against 0.758 on Pokec-n). Against ClipMean the reduction is small (0.071 to 0.061 on Credit, 0.052 to 0.047 on Pokec-n), and on the two Pokec graphs plain FedAvg-GAT has a lower mean gap (0.031 and 0.034). In the honest setting, \rt{} is therefore a weaker fairness controller than \clamp{}. Two causes are visible in the logs. First, the multiplier stays small: its final value averages 0.03--0.08 on these graphs (Table~\ref{tab:channel}) against 0.17--0.89 for \clamp{} on Credit, because \rt{} updates it ten times instead of a hundred. Second, the noise on one trimmed scalar is large relative to the gap: $\sigma_d$ is 0.046--0.071 on Credit, larger than the budget, and after bias correction 42--59\% of the releases have a non-zero magnitude on these three graphs. The privacy sweep (Section~\ref{sec:privacy}) separates the two causes in part: with per-round releases at $\varepsilon=8$, \rt{} reaches 0.028 and 0.029 on Pokec-z and Pokec-n, the level of \clamp{}, but on Credit per-round releases are worse (0.090). The baselines that read per-client fairness quantities in the clear reach lower gaps than both protocols (F$^2$GNN 0.006--0.008 on these graphs), as in the earlier study.
+
+\paragraph{Where the budget does not bind}
+On Bail and AMiner-S the unconstrained gap is already below $\tau$ (0.016 and 0.005), and \rt{}, \clamp{} and ClipMean are within seed noise of each other (\rt{} 0.015 and 0.004).
+
+\paragraph{Small graphs: the gap channel carries almost no signal}
+On German, NBA and Facebook some client has at most 20--40 validation nodes, so $n_{0,\min}=1$ or $2$ and $\sigma_d=0.67$--$1.34$, far above the honest trimmed gaps, whose mean magnitude before noise is 0.04--0.17. At $\varepsilon=8$ the released gap is essentially noise. Without bias correction the inflated magnitude $|\gt|$ drove the multiplier up, no release round after the warm-up was feasible in 10, 9 and 10 of 10 runs (German, NBA, Facebook), and the returned last model was damaged (German AUC 0.51, gap 0.602). With the correction, $\Dhat=0$ in about 70\% of the releases, but the remaining releases still push the multiplier to 2.3--2.9 on average, with a random direction. The correction also loosens the feasibility test to $|\gt|\le\sqrt{\tau^2+2\sigma_d^2}\approx0.95$--$1.9$, which almost every release passes, so the output rule returned a model from the last release rounds (round 91 in 7 of 10 runs) instead of falling back. Much of the improvement over the uncorrected variant on these graphs therefore comes from the output rule, not from better control. The result is a gap of 0.067 on NBA and 0.080 on Facebook, close to \clamp{} (0.076, 0.069) and ClipMean (0.093, 0.086), and 0.172 $\pm$ 0.189 on German, worse and far more variable than \clamp{} (0.058 $\pm$ 0.044; $p=0.064$). We do not consider \rt{} usable on graphs of this size at this privacy level. (Without the output-rule warm-up, the \clamp{} runs give 0.052 on German and 0.067 on Facebook; the other values are unchanged.)
+
+\paragraph{Backbone}
+\rt{}-GCN behaves like \rt{} on every dataset (Table~\ref{tab:e1}).
+
+\subsection{Falsified statistics}\label{sec:statattack}
+
+\input{tables/e4_gap}
+\input{tables/e4_oldnew}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_liars}
+\caption{Test $\dpd$ against the number of lying clients $f$ (mean over 3 seeds). Shaded: $f>b$, beyond the breakdown point of the trimmed channel. Dashed: \clamp{} (sums channel, $P=1$) under the swap attack.}\label{fig:liars}
+\end{figure}
+
+\paragraph{Up to the breakdown point, liars have no measurable effect}
+Table~\ref{tab:e4} and Figure~\ref{fig:liars} report the four gap attacks. For every dataset, $K$, attack and $f\le b$, the mean test gap stays within 0.009 of the honest run with the same seeds, which is less than its seed-to-seed standard deviation; the largest change is on Credit with $K=5$ and one hiding client (0.043 to 0.052). AUC changes by less than 0.01 (Table~S1). In all \nTthreeRounds{} attacked release rounds with $f\le b$ the pre-noise trimmed mean lay inside the interval of Theorem~\ref{thm:falsify}, as it must; this checks the implementation, not the theorem.
+
+\paragraph{Beyond the breakdown point, the hiding and inflating attacks succeed}
+With $f=b+1$ one false value survives the trimming. The \emph{hide} attack, which reports a gap of full size with the opposite sign, then flips the sign of the estimate, and the controller pushes the model the wrong way: the gap rises to 0.276--0.304 with $K=5$ and to 0.112--0.127 with $K=10$ on Credit and the Pokec graphs, above the unconstrained level. The \emph{inflate} attack forces over-correction; on Credit it raises the gap to 0.315 ($K=5$) and 0.234 ($K=10$) and costs 0.09--0.14 AUC, whereas on the Pokec graphs with $K=10$ it lowers the gap below the honest level (0.015 and 0.030) at a cost of about 0.01 AUC. The \emph{inlier} and \emph{zero} attacks, whose claims stay close to the honest values, have no clear effect even beyond the breakdown point (at most 0.062 against 0.043 on Credit). On Bail, where the budget does not bind, no attack has an effect.
+
+\paragraph{Comparison with the sums channel}
+Table~\ref{tab:oldnew} compares the two channels. With the sums channel a single liar out of ten raised the gap from \oldCreditKtenHon{} to \oldCreditKtenOne{} on Credit, from \oldPokeczKtenHon{} to \oldPokeczKtenOne{} on Pokec-z and from \oldPokecnKtenHon{} to \oldPokecnKtenOne{} on Pokec-n, i.e.\ to roughly the level of training without control, and additional liars did not change this. With the trimmed channel, one or two liars out of ten leave the gap at the honest level. The comparison has to be read with Table~\ref{tab:e1} in mind: because the honest level of \rt{} is itself higher, the attacked gap of \rt{} is lower than the attacked gap of \clamp{} only on Credit (0.041 against 0.065 for $f=1$, $K=10$); on the Pokec graphs the two are equal (0.046 against 0.045 and 0.049). What \rt{} gains is predictability: up to $b$ liars, its fairness under attack is its fairness without attack. With $K=5$ and two liars both channels fail.
+
+\subsection{Update attacks and fairness poisoning}\label{sec:byz}
+
+\input{tables/e3_poison}
+
+The trimmed channel does not change the update channel, and the results confirm it. Under the four update attacks that target utility, \rt{} behaves like the clipped mean of the earlier study (Table~S2): scaling has no effect because scaled updates are clipped; sign flipping lowers AUC gradually from 0.743 to 0.661 on Bail and from 0.768 to 0.710 on Pokec-z as $f$ grows from 0 to 4; ALIE and IPM cost at most 0.033 AUC.
+
+Fairness poisoning is different (Table~\ref{tab:e3}). On Pokec-z it raises the gap of \rt{} to 0.118, 0.151 and 0.106 for $f=2,3,4$, close to ClipMean (0.137, 0.172, 0.125) and FedAvg (0.124--0.137). \clamp{} with per-round releases held the same attack at 0.037--0.049. In this respect \rt{} is a regression. The poisoning clients report their true gaps, so the gap channel does see the growing gap, but the multiplier of \rt{} reached at most 0.39 at the end of these runs, whereas that of \clamp{} reached 0.56--4.04 in eight of its nine runs with $f\ge2$. We attribute the difference mainly to the release period ($P=10$ gives the controller ten updates instead of a hundred), but we did not run \rt{} with $P=1$ under this attack, so this explanation is untested. Among the rules that need individual updates, only Krum held the gap (0.034--0.035 up to $f=3$). On Bail the attack raises the gap of every method by at most 0.014.
+
+\subsection{Cost of the secure computation}\label{sec:mpc}
+
+\input{tables/mpc_cost}
+
+We implemented the server step (validity checks, masked update sum, sort, trimming and noise) in CrypTen~\citep{knott2021crypten}: semi-honest two-party computation over $\mathbb{Z}_{2^{64}}$ with 16 fractional bits, Beaver triples from a trusted dealer, two processes on one machine, and an odd-even transposition sorting network ($K$ passes). Table~\ref{tab:mpc} reports one release round.
+
+The gap channel does not depend on the model size. It takes 64, 109 and 199 communication rounds and 9.3, 30.2 and 106.7\,KB for $K=5$, 10 and 20 clients, and 0.30--1.12\,s on the local machine. The update channel takes 12 rounds for any size, and its traffic grows linearly with $K\cdot d$: 4.96\,MB and 0.88\,s for $K=10$, $d=10^4$, and 496\,MB and 4.5\,s for $d=10^6$. In the gap channel the round count dominates over a wide-area network; at 50\,ms round-trip time, 199 rounds would add about 10\,s per release, a figure we computed and did not measure. The largest fixed-point error of the trimmed mean was $1.5\times10^{-5}$, three orders of magnitude below $\sigma_d$ on every dataset.
+
+The measurement has clear limits. It is semi-honest, so a server that deviates from the protocol is not covered; ELSA-style malicious security~\citep{rathee2023elsa} would cost more. The trusted dealer and the clients' input sharing are not included. The noise was switched off in the error measurement, and the noise of the protocol is a continuous Gaussian sampled in floating point and then shared, not a discrete mechanism over the ring. A sorting network with lower depth than odd-even transposition would reduce the round count for larger $K$; we did not implement one. Finally, the training experiments did not run inside CrypTen; they execute the same arithmetic in plaintext.
+
+\subsection{Privacy}\label{sec:privacy}
+
+\input{tables/privacy_attack}
+\input{tables/e5_privacy}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_privacy}
+\caption{Test $\dpd$ of \rt{} against the privacy budget of the gap channel for three release periods (mean $\pm$ sd over 3 seeds; dotted: budget $\tau=0.03$).}\label{fig:privacy}
+\end{figure}
+
+\paragraph{What the released gap reveals}
+For a single release, the best test between two neighbouring datasets observes $\gt$ with mean $\TM$ or $\TM+\Delta$, $|\Delta|\le\DTM$, and noise $\mathcal{N}(0,2\sigma_d^2)$; its balanced accuracy is $\Phi(\Delta/(2\sqrt2\sigma_d))\le\Phi(1/(2\sqrt2 z))$, independent of the dataset because $\sigma_d=z\DTM$. Table~\ref{tab:attack} evaluates it. At $\varepsilon=8$ it is \accBothEight{} with both servers honest, \accOneEight{} if one server colludes and removes its own noise, and \accAllEight{} if the colluding server also combines all ten releases of a node whose contribution does not change, the worst case the accounting covers. The $(\varepsilon,\delta)$ bound, $(e^\varepsilon+\delta)/(1+e^\varepsilon)=\boundEight$, is uninformative at this level; the closed form is the more useful description. These values are for the worst case $|\Delta|=\DTM$; a node in a group much larger than $n_{0,k}$ changes the trimmed mean by less.
+
+\paragraph{Privacy budget and release period}
+Table~\ref{tab:e5} and Figure~\ref{fig:privacy} vary $\varepsilon$ and $P$. On Pokec-z and Pokec-n, per-round releases work best once $\varepsilon\ge4$ (0.028--0.032), matching \clamp{}, while $P=10$ stays at 0.039--0.043; at $\varepsilon\le2$ all periods give 0.044--0.056. On Credit no setting reaches the budget: the gap is 0.044--0.090, with the largest values and spread at $P=1$, $\varepsilon=8$ (0.090 $\pm$ 0.056), and at $\varepsilon\le4$ the results are noisy at every period. AUC is \eFiveAucMin--\eFiveAucMax{} throughout (Table~S4). Our uniform choice $P=10$ is therefore not the best choice on the Pokec graphs. We nevertheless report all other experiments with $P=10$, because no single period was better on all three graphs.
+
+\paragraph{What the model reveals}
+Theorem~\ref{thm:dp} does not cover the trained model. The earlier study probed the final models of FedAvg, ClipMean and \clamp{} (last iterate) with a logistic-regression attribute probe on hidden representations: on German the probe reached AUC 0.86--0.87 for all three, against 0.85 for the raw features and 0.91 for an untrained GAT, and on Bail 0.54 against 0.61 for the raw features. We did not repeat the probe for \rt{}. Its model is trained by the same loop with a different multiplier, and we expect, but have not verified, similar values. Demographic-parity control does not remove the attribute from the representation, and neither protocol claims that it does.
+
+\subsection{Ablations}\label{sec:ablation}
+
+\input{tables/e6_ablation}
+
+Table~\ref{tab:e6} varies the trimming level, the floor fraction and the output rule on Credit and Pokec-z (variant without bias correction, three seeds). Trimming costs little in honest runs: the plain mean ($b=0$) has a smaller $\sigma_d$ (0.038 against 0.063 on Credit) and a gap within seed noise of the default (0.027 against 0.026). Two settings are clearly bad. With $b=2$ at $K=5$ the statistic is the median, its sensitivity triples ($\sigma_d=0.188$ on Credit), and the Credit gap rises to 0.168 with AUC 0.683. With $c=0.2$ the noise is smaller ($\sigma_d=0.016$), but the Credit gap is 0.236 with AUC 0.657. The likely reason is the floor: the protected group is 9\% of Credit's nodes, so with $c=0.2$ it is smaller than $n_{0,k}$ on most clients, its rate is shrunk toward zero, and the estimated gap is biased in one direction; on Pokec-z, whose groups are larger than the floor, $c=0.2$ works (0.033). The floor fraction must therefore stay below the smallest group share, which is a constraint the federation has to set from public knowledge. Returning the last iterate instead of the stored model changes the gap by less than the seed noise in these runs (0.031 against 0.026 on Credit, 0.036 against 0.041 on Pokec-z).

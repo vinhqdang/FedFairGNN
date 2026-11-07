@@ -1,0 +1,20 @@
+\begin{table}[tbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Privacy sweep: test AUC, mean$\pm$sd over 3 seeds.}
+\label{tab:s_e5auc}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{cccccccccc}
+\toprule
+ & \multicolumn{3}{c}{Credit} & \multicolumn{3}{c}{Pokec-z} & \multicolumn{3}{c}{Pokec-n} \\
+$\varepsilon$ & $P=1$ & $P=5$ & $P=10$ & $P=1$ & $P=5$ & $P=10$ & $P=1$ & $P=5$ & $P=10$ \\
+\midrule
+1 & 0.757$\pm$0.011 & 0.765$\pm$0.004 & 0.766$\pm$0.006 & 0.747$\pm$0.019 & 0.749$\pm$0.025 & 0.751$\pm$0.032 & 0.770$\pm$0.026 & 0.773$\pm$0.030 & 0.774$\pm$0.029 \\
+2 & 0.757$\pm$0.011 & 0.766$\pm$0.004 & 0.767$\pm$0.006 & 0.753$\pm$0.018 & 0.749$\pm$0.031 & 0.756$\pm$0.029 & 0.770$\pm$0.022 & 0.766$\pm$0.026 & 0.775$\pm$0.031 \\
+4 & 0.755$\pm$0.015 & 0.766$\pm$0.005 & 0.766$\pm$0.004 & 0.759$\pm$0.030 & 0.754$\pm$0.023 & 0.755$\pm$0.025 & 0.768$\pm$0.027 & 0.764$\pm$0.024 & 0.770$\pm$0.031 \\
+8 & 0.763$\pm$0.007 & 0.766$\pm$0.005 & 0.765$\pm$0.005 & 0.752$\pm$0.026 & 0.753$\pm$0.020 & 0.749$\pm$0.030 & 0.767$\pm$0.029 & 0.771$\pm$0.032 & 0.774$\pm$0.033 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

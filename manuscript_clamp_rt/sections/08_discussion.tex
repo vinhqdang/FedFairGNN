@@ -1,0 +1,25 @@
+\section{Discussion and limitations}\label{sec:discussion}
+
+\paragraph{What the redesign buys and what it costs}
+The trimmed channel answers the main weakness of the sums channel: up to $b$ liars cannot move the fairness estimate outside the range of honest values (Theorem~\ref{thm:falsify}), and in our attacks they did not measurably change the test gap. The price is paid in the honest case. A trimmed mean of $K$ per-client gaps has sensitivity $2/(n_{0,\min}(K-2b))$, which is set by the smallest client's validation set, whereas the pooled gap of \clamp{} had a sensitivity set by pooled counts. At the same $\varepsilon$ the trimmed channel is noisier, and with ten releases it controlled the gap less tightly than \clamp{} on Credit and the Pokec graphs. A federation that expects no liars has no reason to prefer \rt{}; one that cannot rule out a minority of liars obtains bounded behaviour at a higher, but predictable, gap.
+
+\paragraph{The proxy}
+The controller acts on a trimmed mean of per-client gaps, not on the pooled gap. Under strongly non-IID partitions the two can differ, and a client whose local gap has the opposite sign to the pooled one pulls the estimate the wrong way even when honest. We did not measure how much of the honest-case shortfall this accounts for. A robust estimate of the pooled gap would need robust aggregation of per-client rate pairs, weighted by group sizes that are themselves sensitive; we leave this open.
+
+\paragraph{Breakdown and the choice of $b$}
+Robustness holds only for $f\le b$, and beyond it the hiding attack turns the controller against its purpose (Section~\ref{sec:statattack}). Larger $b$ raises the breakdown point but also the sensitivity: at $K=5$, $b=2$ already made the channel unusable on Credit. Small federations therefore cannot tolerate more than one liar with this design, and $b$ must be chosen from an assumption about $f$ that the protocol cannot verify.
+
+\paragraph{Small graphs}
+With 20--40 validation nodes on the smallest client, the floor $n_{0,\min}$ is 1 or 2 and the noise at $\varepsilon=8$ exceeds any gap. On German, NBA and Facebook the controller of \rt{} acts on noise, and the improvement of the bias-corrected variant over the uncorrected one there is mostly an effect of the output rule. Larger validation sets, a lower privacy level for the gap channel, or excluding clients with tiny validation sets from the floor would be needed; each has costs we have not evaluated.
+
+\paragraph{Fairness poisoning through updates}
+The trimmed channel does not touch the update channel. Under fairness poisoning on Pokec-z, \rt{} behaved like clipped aggregation without control, whereas \clamp{} with per-round releases held the gap. The slower controller is the likely cause, and the privacy sweep suggests that per-round releases would help on Pokec, but we have not tested this under attack. Combining the robust gap channel with a faster controller, or with robust aggregation of updates in secure computation, is an open problem.
+
+\paragraph{Secure computation and noise}
+The training experiments simulate the two-party protocol in plaintext, and its cost was measured separately in a semi-honest setting with a trusted dealer. A deployment needs a maliciously secure protocol if the servers cannot be trusted to follow it, input validation of the shares, and a discrete noise mechanism over the ring, for which the sensitivity must include fixed-point rounding and the privacy accounting of Theorem~\ref{thm:dp} must be redone~\citep{canonne2020discrete,kairouz2021distributed}. We do not claim that our continuous-noise analysis transfers unchanged.
+
+\paragraph{Scope of privacy}
+Theorem~\ref{thm:dp} protects the attribute of each validation node with respect to the released gaps. It does not protect training-node attributes, which enter the update sum, and it does not make the model differentially private. The value $\varepsilon=8$ gives a weak worst-case bound; the closed-form attack accuracy of Table~\ref{tab:attack} (0.57--0.78 at $\varepsilon=8$, depending on collusion and on how many releases the attacker combines) is a more concrete description.
+
+\paragraph{Scope of the experiments}
+The attack studies, the privacy sweep and the ablations use three seeds, so only large differences are meaningful there. All statistics attacks are omniscient but use simple fixed strategies; an adaptive adversary may do more damage than these strategies, but for $f\le b$ it cannot place the estimate outside the interval of Theorem~\ref{thm:falsify}, although it can choose its position within that interval in every release. We evaluated one binary attribute and demographic parity only.

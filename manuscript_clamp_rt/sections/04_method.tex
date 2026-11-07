@@ -1,0 +1,77 @@
+\section{The \rt{} protocol}\label{sec:method}
+
+\rt{} keeps the training loop of \clamp{}: clipped updates are summed, and one broadcast Lagrange multiplier $\lambda$ with one broadcast direction $\omega\in\{-1,0,1\}$ adds a signed fairness penalty to every client's loss. It replaces the statistics channel. Algorithm~\ref{alg:rt} lists one round.
+
+\subsection{Client side}
+
+\paragraph{Local gap}
+In a release round the client evaluates the received model $\theta^t$ on its validation nodes with a forward pass that does not read $s$, and computes
+\begin{equation}\label{eq:gap}
+\begin{gathered}
+m_{k,a}=\frac{\sum_{v\in\mathcal{V}_{k,a}}p_{\theta^t}(v)}{\max\bigl(|\mathcal{V}_{k,a}|,\,n_{0,k}\bigr)},\qquad d_k=\mathrm{clip}\bigl(m_{k,1}-m_{k,0},\,-1,\,1\bigr),\\
+n_{0,k}=\max\bigl(1,\lceil c\,|\mathcal{V}_k|\rceil\bigr).
+\end{gathered}
+\end{equation}
+The floor $n_{0,k}$ depends only on the public size of the client's validation set. For a group with at least $n_{0,k}$ nodes, $m_{k,a}$ is the group's mean prediction; a smaller group is shrunk toward zero, which biases $d_k$ but bounds its sensitivity (Lemma~\ref{lem:dk}). We use $c=0.05$. The clip never binds for an honest client, since $m_{k,a}\in[0,1]$.
+
+\paragraph{Lagrangian local objective}
+Starting from $\theta^t$, the client runs $E$ local epochs on its training nodes with
+\begin{equation}\label{eq:local}
+\mathcal{L}_k(\theta)=\mathrm{BCE}_w\bigl(p_\theta,y\bigr)+\lambda^t\omega^t\bigl(\bar p_{k,1}(\theta)-\bar p_{k,0}(\theta)\bigr),
+\end{equation}
+where $\mathrm{BCE}_w$ is class-weighted cross-entropy and $\bar p_{k,a}$ is the mean prediction over the client's training nodes in group $a$. It then clips its pseudo-gradient, $\Delta_k\leftarrow(\theta^t-\theta_k)\min(1,C/\|\theta^t-\theta_k\|_2)$.
+
+\paragraph{Submission}
+The client splits $\Delta_k$ and, in a release round, $d_k$ into additive secret shares over the ring $\mathbb{Z}_{2^{64}}$ with fixed-point encoding, and sends one share to each server. Neither server alone learns anything about $\Delta_k$ or $d_k$.
+
+\subsection{Server side}
+The two servers run the following steps jointly in two-party computation.
+\begin{enumerate}
+\item \emph{Validity checks.} Client $k$ is accepted if $\|\Delta_k\|_2\le C$ and, in a release round, $-1\le d_k\le1$. A rejected client is removed from the update sum, and its gap is replaced by $0$, so that the sort always has $K$ entries. Honest clients are always accepted.
+\item \emph{Update channel.} The servers open $U=\sum_{k\in A}\Delta_k$ for the accepted set $A$ and set $\theta^{t+1}=\theta^t-U/|A|$.
+\item \emph{Gap channel (release rounds).} The servers sort the $K$ entries $\tilde d_k$ ($d_k$ if accepted, else $0$), keep the middle $K-2b$ values and compute
+\begin{equation}\label{eq:tm}
+\TM(\tilde d)=\frac{1}{K-2b}\sum_{i=b+1}^{K-b}\tilde d_{(i)} .
+\end{equation}
+Each server adds its own noise $\xi_A,\xi_B\sim\mathcal{N}(0,\sigma_d^2)$ to its share, and the opened value is $\gt=\TM(\tilde d)+\xi_A+\xi_B$. We use $b=\max(1,\lfloor0.2K\rfloor)$, i.e.\ $b=1$ for $K=5$ and $b=2$ for $K=10$.
+\end{enumerate}
+The servers learn $U$ and $\gt$, and nothing else: neither the individual gaps, nor which clients were trimmed, nor any group size.
+
+\paragraph{Controller}
+From the released $\gt$ the server forms a magnitude, updates the multiplier by projected dual ascent and sets the direction with a dead zone:
+\begin{equation}\label{eq:ctrl}
+\begin{gathered}
+\Dhat=\sqrt{\max\bigl(0,\;\gt^{\,2}-2\sigma_d^2\bigr)},\qquad \lambda^{t+1}=\max\bigl(0,\lambda^t+\eta(\Dhat-\tau)\bigr),\\
+\omega^{t+1}=\begin{cases}\mathrm{sign}(\gt)&\text{if }\Dhat>\tau/2,\\0&\text{otherwise.}\end{cases}
+\end{gathered}
+\end{equation}
+The first expression is a bias correction. Because $\E[\gt^{\,2}]=\TM^2+2\sigma_d^2$, the plain magnitude $|\gt|$ overestimates $|\TM|$ when $\sigma_d$ is comparable to the gap; in our first runs this drove the multiplier up on the small graphs and the controller destroyed the model there (Table~\ref{tab:e1}, row ``no bias correction''). We use the correction as a heuristic: $\Dhat$ is not an unbiased estimator of $|\TM|$, and we do not claim any optimality for it. It is a function of the released value and the public $\sigma_d$, so it costs no privacy. Outside release rounds, $\lambda$ and $\omega$ keep their last values.
+
+\paragraph{Output rule}
+The signed penalty makes the gap oscillate around the budget, so the last iterate lands at an arbitrary point of the oscillation. As in \clamp{}, the server stores the model $\theta^t$ of each release round $t\ge W$ with $\Dhat^t\le\tau$, and returns the most recently stored one, or the last model if none was stored. With the bias correction, $\Dhat\le\tau$ is equivalent to $|\gt|\le\sqrt{\tau^2+2\sigma_d^2}$, a looser test than $|\gt|\le\tau$; Section~\ref{sec:results} shows what this does on the small graphs. We use $W=\lceil0.2T\rceil$.
+
+\paragraph{Release period and noise}
+Statistics are released every $P$ rounds, $R=\lceil T/P\rceil$ times in total. The noise level is $\sigma_d=\DTM\,z$, where $\DTM=2/(n_{0,\min}(K-2b))$ with $n_{0,\min}=\min_k n_{0,k}$ is the sensitivity of Theorem~\ref{thm:dp} and $z$ is the smallest noise multiplier for which $R$ Gaussian releases are $(\varepsilon,\delta)$-differentially private under R\'enyi accounting. We use $P=10$, $\varepsilon=8$ and $\delta=10^{-5}$ on all datasets, which gives $R=10$ and $z=\zEight$.
+
+\begin{algorithm}[t]
+\caption{One round $t$ of \rt{}}\label{alg:rt}
+\begin{algorithmic}[1]
+\REQUIRE $\theta^t,\lambda^t,\omega^t$; public $C,\tau,\eta,b,c,|\mathcal{V}_k|,\sigma_d,P,W$
+\STATE Servers broadcast $(\theta^t,\lambda^t,\omega^t)$
+\FOR{each client $k$ \textbf{in parallel}}
+  \IF{$t\bmod P=0$} \STATE compute $d_k$ with $\theta^t$ by Eq.~\eqref{eq:gap} \ENDIF
+  \STATE $\theta_k\leftarrow E$ local epochs on $\mathcal{L}_k$, Eq.~\eqref{eq:local}; $\Delta_k\leftarrow(\theta^t-\theta_k)\min(1,C/\|\theta^t-\theta_k\|_2)$
+  \STATE secret-share $\Delta_k$ (and $d_k$) between servers $A$ and $B$
+\ENDFOR
+\STATE \emph{In 2PC:} validity checks; open $U=\sum_{k\in A}\Delta_k$; $\theta^{t+1}\leftarrow\theta^t-U/|A|$
+\IF{$t\bmod P=0$}
+  \STATE \emph{In 2PC:} sort $\tilde d$, trim $b$ per side, add $\xi_A+\xi_B$, open $\gt$
+  \STATE update $\Dhat,\lambda^{t+1},\omega^{t+1}$ by Eq.~\eqref{eq:ctrl}
+  \STATE \textbf{if} $t+1\ge W$ \textbf{and} $\Dhat\le\tau$ \textbf{then} store $\hat\theta\leftarrow\theta^t$
+\ELSE \STATE $(\lambda^{t+1},\omega^{t+1})\leftarrow(\lambda^t,\omega^t)$ \ENDIF
+\STATE \textbf{after round $T$:} return $\hat\theta$, or $\theta^T$ if nothing was stored
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{What changed relative to \clamp{}}
+\clamp{} released four noisy sums $(S_0,S_1,N_0,N_1)$ and formed the pooled gap $S_1/N_1-S_0/N_0$. Its sensitivity was set by a cap on group sizes, and its only defence against liars was the range check $0\le S_a\le N_a\le n_{\mathrm{cap}}$. \rt{} releases one noisy order-statistic average of per-client gaps. The price is that the controller targets a proxy of the pooled gap and that the noise is added to a statistic whose sensitivity scales with $1/(n_{0,\min}(K-2b))$ rather than with the inverse of the pooled group size.
