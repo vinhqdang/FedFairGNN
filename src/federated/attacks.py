@@ -274,10 +274,17 @@ def falsify_group_stats(stats: List[Dict[str, float]], byzantine_ids: List[int],
     return out
 
 
-GAP_ATTACK_MODES = ("hide", "inflate", "inlier", "zero")
+GAP_ATTACK_MODES = ("hide", "inflate", "inlier", "zero", "opt")
 
 
-def falsify_gaps(gaps: List[float], byzantine_ids: List[int], mode: str) -> List[float]:
+def _trimmed_mean(vals: List[float], b: int) -> float:
+    v = sorted(vals)
+    kept = v[b:len(v) - b] if len(v) - 2 * b >= 1 else v
+    return sum(kept) / len(kept)
+
+
+def falsify_gaps(gaps: List[float], byzantine_ids: List[int], mode: str,
+                 b: int = 1) -> List[float]:
     """``gap_*`` attacks on the CLAMP-RT statistics channel (design spec Section 6).
 
     Each Byzantine client replaces its reported gap d_k. The attacker is omniscient
@@ -290,6 +297,10 @@ def falsify_gaps(gaps: List[float], byzantine_ids: List[int], mode: str) -> List
                  minimum honest gap if g^H > 0 and the maximum if g^H < 0. This is
                  the strongest hiding claim that stays inside the honest range.
     ``zero``     report 0 (claims perfect fairness).
+    ``opt``      adaptive: all liars report the common value v in [-1, 1] (grid of 0.01
+                 plus every honest value) that minimises sign(g^H) * TM_b of the full
+                 vector, i.e. the myopically optimal hiding claim against the trimmed
+                 mean with public b.
 
     Honest entries are returned unchanged. Honest values are read from ``gaps``
     before any replacement, so the caller can compute diagnostics from the same list.
@@ -308,6 +319,14 @@ def falsify_gaps(gaps: List[float], byzantine_ids: List[int], mode: str) -> List
         claim = float(sgn)
     elif mode == "inlier":
         claim = min(honest) if g_h > 0 else (max(honest) if g_h < 0 else 0.0)
+    elif mode == "opt":
+        cands = [i / 100.0 for i in range(-100, 101)] + honest
+        def score(v):
+            trial = list(gaps)
+            for i in byzantine_ids:
+                trial[i] = v
+            return (sgn if sgn else 1) * _trimmed_mean(trial, b)
+        claim = min(cands, key=score)
     else:  # zero
         claim = 0.0
     out = list(gaps)

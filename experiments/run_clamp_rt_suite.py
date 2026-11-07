@@ -43,8 +43,12 @@ GROUPS = {
     "e5db": dict(seeds=range(3), datasets=["credit", "pokec_z", "pokec_n"]),
     "e3db": dict(seeds=range(3), datasets=["bail", "pokec_z"]),
     "e4db": dict(seeds=range(3), datasets=BIG),
+    # Adaptive (opt) gap attack at P=10 and the full gap-attack set at P=1 (active control).
+    "e7": dict(seeds=range(3), datasets=BIG),
+    "e8": dict(seeds=range(3), datasets=["credit", "pokec_z", "pokec_n"]),
 }
 DB_GROUPS = ("e1db", "e5db", "e3db", "e4db")
+NEW_GROUPS = ("e7", "e8")
 
 
 RT_PERIOD = 10   # release period for every dataset (pilots 1-3: P = 1 is unusable under DP noise)
@@ -125,6 +129,17 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                         for a in GAP_ATTACKS:
                             add("clamp-rt-db-f", d, s, {"num_clients": K, "attack": a,
                                                         "num_byzantine": f})
+            elif group == "e7":
+                for K, fs in ((5, (1, 2)), (10, (1, 2, 3))):
+                    for f in fs:
+                        add("clamp-rt-db-f", d, s, {"num_clients": K, "attack": "gap_opt",
+                                                    "num_byzantine": f})
+            elif group == "e8":
+                P1 = {"num_clients": 10, "r2_stat_period": 1}
+                add("clamp-rt-db-f", d, s, dict(P1))
+                for f in (1, 2, 3):
+                    for a in ("gap_hide", "gap_inflate", "gap_inlier", "gap_opt"):
+                        add("clamp-rt-db-f", d, s, {**P1, "attack": a, "num_byzantine": f})
             elif group == "e4":
                 for K, fs in ((5, (1, 2)), (10, (1, 2, 3))):
                     add(MAIN, d, s, {"num_clients": K})
@@ -161,7 +176,7 @@ def _pending(jobs):
 
 def main(argv=None):
     p = argparse.ArgumentParser()
-    p.add_argument("--group", default="pilot", choices=list(GROUPS) + ["all", "alldb"])
+    p.add_argument("--group", default="pilot", choices=list(GROUPS) + ["all", "alldb", "allnew"])
     p.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     p.add_argument("--seeds", default=None)
     p.add_argument("--datasets", default=None)
@@ -169,9 +184,10 @@ def main(argv=None):
     a = p.parse_args(argv)
     seeds = base._parse_seeds(a.seeds) if a.seeds else None
     dss = a.datasets.split(",") if a.datasets else None
-    groups = ([g for g in GROUPS if not g.startswith("pilot") and g not in DB_GROUPS]
+    groups = ([g for g in GROUPS if not g.startswith("pilot") and g not in DB_GROUPS and g not in NEW_GROUPS]
               if a.group == "all" else
-              list(DB_GROUPS) if a.group == "alldb" else [a.group])
+              list(DB_GROUPS) if a.group == "alldb" else
+              list(NEW_GROUPS) if a.group == "allnew" else [a.group])
     jobs = [j for g in groups for j in expand(g, dss, seeds)]
     print(f"total: {len(jobs)} jobs")
     if a.dry_run:

@@ -281,6 +281,17 @@ def test_trimmed_diagnostics_match_the_bracket_and_undefined_past_breakdown():
 # --------------------------------------------------------------------------- #
 # Gap attacks (Section 6)
 # --------------------------------------------------------------------------- #
+def test_falsify_gaps_opt_is_best_single_claim():
+    import itertools
+    gaps = [0.0, 0.3, 0.1, 0.5, 0.4, 0.2]
+    out = falsify_gaps(gaps, [0], "opt", b=1)
+    tm = lambda v: sum(sorted(v)[1:-1]) / (len(v) - 2)
+    for v in [-1.0, 0.0, 0.1, 0.3, 1.0]:
+        alt = list(gaps); alt[0] = v
+        assert tm(out) <= tm(alt) + 1e-12
+    assert out[1:] == gaps[1:]
+
+
 def test_falsify_gaps_modes():
     gaps = [0.3, 0.1, -0.2, 0.5, 0.0]
     byz = [0]                                 # honest: 0.1, -0.2, 0.5, 0.0 -> mean 0.1 > 0
@@ -381,8 +392,8 @@ def test_end_to_end_clamp_rt_logs_round_fields_and_bracket(monkeypatch):
     seen = []
     orig = tr.falsify_gaps
 
-    def spy(gaps, byz, mode):
-        out = orig(gaps, byz, mode)
+    def spy(gaps, byz, mode, b=1):
+        out = orig(gaps, byz, mode, b=b)
         seen.append((list(gaps), list(out), mode))
         return out
 

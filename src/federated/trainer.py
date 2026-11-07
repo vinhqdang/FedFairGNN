@@ -394,7 +394,8 @@ class FederatedTrainer:
                 # Diagnostics use the honest clients' true gaps, before any falsification.
                 diag = _trimmed_diagnostics(gaps, self.byzantine_ids, self._trim_b)
                 if self.byzantine_ids and self.cfg.attack.startswith("gap_"):
-                    gaps = falsify_gaps(gaps, self.byzantine_ids, self.cfg.attack[len("gap_"):])
+                    gaps = falsify_gaps(gaps, self.byzantine_ids, self.cfg.attack[len("gap_"):],
+                                         b=self._trim_b)
                 gaps_in = gaps
             elif r2_release:
                 diag = _honest_diagnostics(stats, self.byzantine_ids, self._r2_n_cap)
