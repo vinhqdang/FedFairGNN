@@ -197,3 +197,19 @@ Pilot first (before the full campaign): Credit, Pokec-z, Bail, 2 seeds,
 ε = 8, P ∈ {1, 10}, b default, honest and `gap_hide` f = 1. Go / no-go: the
 honest soft DPD of clamp-rt-f should be within 0.01 of clamp-f, and the
 `gap_hide` f = 1 DPD should stay below 0.04 on Credit and Pokec-z.
+
+## Addendum: bias-corrected magnitude (clamp-rt-db-f)
+
+Pilots showed that with a small validation set the release noise sigma_d is as
+large as the gap itself (sigma_d about 1.1-1.3 on German, NBA, Facebook). Then
+|g~| is dominated by noise, the multiplier lambda grows without bound and the
+model collapses. The magnitude fed to the dual step is therefore replaced by
+
+    Dhat = sqrt( max(0, g~^2 - 2 sigma_d^2) )
+
+where 2 sigma_d^2 is the total noise variance of the two servers. This uses
+only the released value and public sigma_d, so it is post-processing and has no
+privacy cost. The direction still uses sign(g~) with the dead zone. It requires
+gap_ema = 1 (no smoothing). Option `r2_debias`; method name `clamp-rt-db-f`.
+The uncorrected variant (`clamp-rt-f`) stays as an ablation. Groups e1db, e3db,
+e4db, e5db hold the corrected runs. Summaries: `results/clamp_rt/summary/`.

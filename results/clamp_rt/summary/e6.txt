@@ -1,0 +1,10 @@
+('credit', 'clamp-rt', -1, 0.05) n 3 dpd_soft 0.031±0.023 auc 0.750±0.014 sigma_d 0.063±0.014
+('credit', 'clamp-rt-b0-f', 0, 0.05) n 3 dpd_soft 0.027±0.008 auc 0.762±0.007 sigma_d 0.038±0.008
+('credit', 'clamp-rt-f', -1, 0.05) n 3 dpd_soft 0.026±0.017 auc 0.755±0.012 sigma_d 0.063±0.014
+('credit', 'clamp-rt-f', -1, 0.2) n 3 dpd_soft 0.236±0.008 auc 0.657±0.004 sigma_d 0.016±0.004
+('credit', 'clamp-rt-f', 2, 0.05) n 3 dpd_soft 0.168±0.048 auc 0.683±0.041 sigma_d 0.188±0.042
+('pokec_z', 'clamp-rt', -1, 0.05) n 3 dpd_soft 0.036±0.001 auc 0.748±0.027 sigma_d 0.028±0.002
+('pokec_z', 'clamp-rt-b0-f', 0, 0.05) n 3 dpd_soft 0.039±0.002 auc 0.752±0.027 sigma_d 0.017±0.001
+('pokec_z', 'clamp-rt-f', -1, 0.05) n 3 dpd_soft 0.041±0.001 auc 0.754±0.032 sigma_d 0.028±0.002
+('pokec_z', 'clamp-rt-f', -1, 0.2) n 3 dpd_soft 0.033±0.004 auc 0.753±0.026 sigma_d 0.007±0.000
+('pokec_z', 'clamp-rt-f', 2, 0.05) n 3 dpd_soft 0.039±0.021 auc 0.752±0.038 sigma_d 0.084±0.005
