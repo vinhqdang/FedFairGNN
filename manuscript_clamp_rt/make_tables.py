@@ -7,6 +7,9 @@ Sources (paths relative to the repository root):
   results/clamp_rt/summary/db_e3.txt   update attacks on CLAMP-RT
   results/clamp_rt/summary/db_e5.txt   privacy budget x release period
   results/clamp_rt/summary/e6.txt      ablations
+  results/clamp_rt/summary/e7.txt      adaptive gap attack (gap_opt) at P = 10
+  results/clamp_rt/summary/e8.txt      gap attacks at P = 1, K = 10
+  results/clamp_rt/e7|e8/runs/*.json   final multiplier and release diagnostics
   results/clamp_rt/mpc_cost.json       two-party computation cost
   results/clamp/e1/runs/*.json         baselines and old CLAMP (per seed)
   results/clamp/e3/runs/*.json         update-attack baselines (per seed)
@@ -525,6 +528,103 @@ def noise_free():
     return g
 
 
+def run_diag(group):
+    """(dataset, K, P, attack, f) -> (mean final lambda, share of releases with Dhat > 0, fallbacks)."""
+    g = collections.defaultdict(list)
+    for path in glob.glob(os.path.join(ROOT, f"results/clamp_rt/{group}/runs/*.json")):
+        with open(path) as f:
+            r = json.load(f)
+        c = r["config"]
+        rel = [x for x in r["history"] if x.get("dhat") is not None]
+        g[(c["dataset"], c["num_clients"], c["r2_stat_period"], c["attack"], c["num_byzantine"])].append(
+            (r["history"][-1]["lambda"], sum(x["dhat"] > 0 for x in rel) / len(rel),
+             r["final"]["selected_round"] is None))
+    return {k: (st.mean(x[0] for x in v), st.mean(x[1] for x in v), sum(x[2] for x in v)) for k, v in g.items()}
+
+
+def table_e7_e8():
+    e4 = parse_summary("db_e4.txt")
+    e7 = parse_summary("e7.txt")
+    e8 = parse_summary("e8.txt")
+    d7, d8, d4 = run_diag("e7"), run_diag("e8"), run_diag("e4db")
+    dss = ["bail", "credit", "pokec_z", "pokec_n"]
+    # main: adaptive attack at P = 10
+    body = ("\\begin{table}[tbp]\n\\centering\n\\footnotesize\n\\setlength{\\tabcolsep}{3pt}\n"
+            "\\caption{Adaptive gap attack (\\emph{opt}: all liars report the common value that minimises the "
+            "signed trimmed mean, Section~\\ref{sec:setup}) at $P=10$: test DPD, mean$\\pm$sd over 3 seeds. "
+            "Honest: same seeds without liars (Table~\\ref{tab:e4}). $\\ast$: $f>b$. AUC in Table~S6.}\n"
+            "\\label{tab:e7}\n\\begin{tabular}{llcccc}\n\\toprule\n"
+            "Dataset & $K$ & Honest & $f=1$ & $f=2$ & $f=3$ \\\\\n\\midrule\n")
+    for ds in dss:
+        for K in (5, 10):
+            b = 1 if K == 5 else 2
+            cells = []
+            for f in (1, 2, 3):
+                if (ds, K, "gap_opt", f) in e7:
+                    cells.append(ms(e7[(ds, K, "gap_opt", f)]["dpd"]) + ("$^\\ast$" if f > b else ""))
+                else:
+                    cells.append("--")
+            body += (f"{DS_NAME[ds] if K == 5 else ''} & {K} & {ms(e4[(ds, K, 'none', 0)]['dpd'])} & "
+                     + " & ".join(cells) + " \\\\\n")
+    body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    write("e7_opt.tex", body)
+    # main: P = 1 attack study
+    att = ["gap_hide", "gap_inflate", "gap_inlier", "gap_opt"]
+    body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
+            "\\caption{Gap attacks with per-round releases ($P=1$, $R=100$, $K=10$, $b=2$, $\\varepsilon=8$): test DPD, "
+            "mean over 3 seeds. Left block: honest runs at $P=1$ and, for comparison, at $P=10$ (Table~\\ref{tab:e4}) "
+            "and ClipMean on the same seeds where it was run; $\\lambda^T$ and $\\Dhat>0$ as in Table~\\ref{tab:e4}. "
+            "$f\\le b$: largest mean DPD over the four attacks. $f=3>b$: each attack. Full table with sd and AUC: "
+            "Table~S7.}\n\\label{tab:e8}\n\\begin{tabular}{lccccc|cc|cccc}\n\\toprule\n"
+            " & \\multicolumn{5}{c|}{Honest} & \\multicolumn{2}{c|}{worst, $f\\le b$} & \\multicolumn{4}{c}{$f=3$ (beyond breakdown)} \\\\\n"
+            "Dataset & $P=1$ & $\\lambda^T$ & $\\Dhat>0$ & $P=10$ & ClipMean & $f=1$ & $f=2$ & hide & inflate & inlier & opt \\\\\n\\midrule\n")
+    ctx = e4_context()
+    for ds in ["credit", "pokec_z", "pokec_n"]:
+        lam, fr, _ = d8[(ds, 10, 1, "none", 0)]
+        worst = [max(e8[(ds, 10, 1, a, f)]["dpd"][0] for a in att) for f in (1, 2)]
+        body += (f"{DS_NAME[ds]} & {e8[(ds, 10, 1, 'none', 0)]['dpd'][0]:.3f} & {lam:.2f} & {fr:.2f} & "
+                 f"{e4[(ds, 10, 'none', 0)]['dpd'][0]:.3f} & {ctx[(ds, 10)][0]} & "
+                 + " & ".join(f"{w:.3f}" for w in worst) + " & "
+                 + " & ".join(f"{e8[(ds, 10, 1, a, 3)]['dpd'][0]:.3f}" for a in att) + " \\\\\n")
+        macro(f"eEight{DS_NAME[ds].replace('-', '')}Lam", f"{lam:.2f}")
+        macro(f"eEightPten{DS_NAME[ds].replace('-', '')}Lam", f"{d4[(ds, 10, 10, 'none', 0)][0]:.2f}")
+    body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    write("e8_p1.tex", body)
+    # supplement: full E7 with AUC and multiplier
+    body = ("\\begin{table}[tbp]\n\\centering\n\\footnotesize\n"
+            "\\caption{Adaptive attack \\emph{opt} at $P=10$ (3 seeds): DPD and AUC (mean$\\pm$sd), mean final "
+            "multiplier $\\lambda^T$ and number of runs (of 3) in which the output rule fell back to the last model. "
+            "$\\ast$: $f>b$.}\n\\label{tab:s_e7}\n\\begin{tabular}{llccccc}\n\\toprule\n"
+            "Dataset & $K$ & $f$ & DPD & AUC & $\\lambda^T$ & fallback \\\\\n\\midrule\n")
+    for ds in dss:
+        for K in (5, 10):
+            b = 1 if K == 5 else 2
+            for f in ((1, 2) if K == 5 else (1, 2, 3)):
+                r = e7[(ds, K, "gap_opt", f)]
+                lam, _, fb = d7[(ds, K, 10, "gap_opt", f)]
+                body += (f"{DS_NAME[ds] if (K == 5 and f == 1) else ''} & {K if f == 1 else ''} & "
+                         f"{f}{'$^\\ast$' if f > b else ''} & {ms(r['dpd'])} & {ms(r['auc'])} & {lam:.2f} & {fb} \\\\\n")
+    body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    write("s_e7.tex", body)
+    # supplement: full E8
+    body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
+            "\\caption{Gap attacks at $P=1$ ($K=10$, $b=2$, 3 seeds): DPD (mean$\\pm$sd) / AUC (mean), and mean "
+            "final multiplier in brackets. $\\ast$: $f>b$.}\n\\label{tab:s_e8}\n"
+            "\\begin{tabular}{llccc}\n\\toprule\nDataset & Attack & $f=1$ & $f=2$ & $f=3^\\ast$ \\\\\n\\midrule\n")
+    for ds in ["credit", "pokec_z", "pokec_n"]:
+        h = e8[(ds, 10, 1, "none", 0)]
+        body += (f"{DS_NAME[ds]} & none & \\multicolumn{{3}}{{l}}{{DPD {ms(h['dpd'])}, AUC {h['auc'][0]:.3f} "
+                 f"[{d8[(ds, 10, 1, 'none', 0)][0]:.2f}]}} \\\\\n")
+        for a in att:
+            body += (f" & {ATT_NAME.get(a, 'opt')} & " + " & ".join(
+                f"{ms(e8[(ds, 10, 1, a, f)]['dpd'])} / {e8[(ds, 10, 1, a, f)]['auc'][0]:.3f} "
+                f"[{d8[(ds, 10, 1, a, f)][0]:.2f}]" for f in (1, 2, 3)) + " \\\\\n")
+        if ds != "pokec_n":
+            body += "\\midrule\n"
+    body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    write("s_e8.tex", body)
+
+
 def table_pilots():
     """Development pilots (results/clamp_rt/pilot*), reported for disclosure."""
     g = collections.defaultdict(list)
@@ -538,7 +638,7 @@ def table_pilots():
                    bool(c.get("r2_debias")), bool(c["r2_stat_dp"]),
                    "--" if c["attack"] == "none" else f"{c['attack'].replace('_', ' ')} {c['num_byzantine']}")
             g[key].append((c["seed"], r["final"]["dpd_soft"], r["final"]["auc"]))
-    body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
+    body = ("\\begin{table}[p]\n\\centering\n\\tiny\n\\renewcommand{\\arraystretch}{0.85}\\setlength{\\tabcolsep}{3pt}\n"
             "\\caption{Development pilots of CLAMP-RT ($K=5$), reported for disclosure: mean test DPD and AUC over the "
             "runs of each configuration (seeds among 0--2; $n$ = number of runs). $c$: floor fraction; EMA: smoothing "
             "factor of the released gap (1 = none); $\\eta/P$: multiplier step scaled by the release period; "
@@ -655,6 +755,7 @@ def main():
     table_e5()
     table_e6()
     table_pilots()
+    table_e7_e8()
     table_mpc()
     table_privacy_attack()
     with open(os.path.join(OUT, "macros.tex"), "w") as f:

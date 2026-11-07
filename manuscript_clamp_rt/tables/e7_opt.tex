@@ -1,0 +1,23 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Adaptive gap attack (\emph{opt}: all liars report the common value that minimises the signed trimmed mean, Section~\ref{sec:setup}) at $P=10$: test DPD, mean$\pm$sd over 3 seeds. Honest: same seeds without liars (Table~\ref{tab:e4}). $\ast$: $f>b$. AUC in Table~S6.}
+\label{tab:e7}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{llcccc}
+\toprule
+Dataset & $K$ & Honest & $f=1$ & $f=2$ & $f=3$ \\
+\midrule
+Bail & 5 & 0.023$\pm$0.004 & 0.023$\pm$0.004 & 0.028$\pm$0.014$^\ast$ & -- \\
+ & 10 & 0.008$\pm$0.002 & 0.009$\pm$0.002 & 0.009$\pm$0.002 & 0.006$\pm$0.007$^\ast$ \\
+Credit & 5 & 0.043$\pm$0.019 & 0.052$\pm$0.014 & 0.275$\pm$0.028$^\ast$ & -- \\
+ & 10 & 0.038$\pm$0.008 & 0.041$\pm$0.007 & 0.043$\pm$0.005 & 0.112$\pm$0.030$^\ast$ \\
+Pokec-z & 5 & 0.041$\pm$0.004 & 0.042$\pm$0.006 & 0.279$\pm$0.029$^\ast$ & -- \\
+ & 10 & 0.046$\pm$0.008 & 0.046$\pm$0.008 & 0.046$\pm$0.008 & 0.116$\pm$0.013$^\ast$ \\
+Pokec-n & 5 & 0.042$\pm$0.012 & 0.045$\pm$0.011 & 0.304$\pm$0.031$^\ast$ & -- \\
+ & 10 & 0.046$\pm$0.001 & 0.046$\pm$0.002 & 0.047$\pm$0.003 & 0.126$\pm$0.006$^\ast$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
