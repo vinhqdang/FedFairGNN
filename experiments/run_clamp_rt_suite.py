@@ -46,9 +46,11 @@ GROUPS = {
     # Adaptive (opt) gap attack at P=10 and the full gap-attack set at P=1 (active control).
     "e7": dict(seeds=range(3), datasets=BIG),
     "e8": dict(seeds=range(3), datasets=["credit", "pokec_z", "pokec_n"]),
+    # Combined attack: the same f liars poison the update and falsify the gap (K=10).
+    "e9": dict(seeds=range(3), datasets=["bail", "credit", "pokec_z"]),
 }
 DB_GROUPS = ("e1db", "e5db", "e3db", "e4db")
-NEW_GROUPS = ("e7", "e8")
+NEW_GROUPS = ("e7", "e8", "e9")
 
 
 RT_PERIOD = 10   # release period for every dataset (pilots 1-3: P = 1 is unusable under DP noise)
@@ -140,6 +142,16 @@ def expand(group: str, datasets: Optional[List[str]] = None,
                 for f in (1, 2, 3):
                     for a in ("gap_hide", "gap_inflate", "gap_inlier", "gap_opt"):
                         add("clamp-rt-db-f", d, s, {**P1, "attack": a, "num_byzantine": f})
+            elif group == "e9":
+                for f in (1, 2, 3):
+                    for ua in ("fairness_poison", "sign_flip", "alie"):
+                        add("clamp-rt-db-f", d, s, {"num_clients": 10, "attack": ua,
+                                                    "num_byzantine": f, "r2_gap_attack": "opt"})
+                        if d == "credit":      # update-only reference (e3db has bail, pokec_z)
+                            add("clamp-rt-db-f", d, s, {"num_clients": 10, "attack": ua,
+                                                        "num_byzantine": f})
+                    add("clamp-rt-db-f", d, s, {"num_clients": 10, "attack": "fairness_poison",
+                                                "num_byzantine": f, "r2_gap_attack": "hide"})
             elif group == "e4":
                 for K, fs in ((5, (1, 2)), (10, (1, 2, 3))):
                     add(MAIN, d, s, {"num_clients": K})

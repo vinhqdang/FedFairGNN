@@ -701,3 +701,30 @@ def test_debias_registrations_and_config_default():
         for key in vars(ref):
             if key not in ("exp_name", "r2_debias"):
                 assert getattr(cfg, key) == getattr(ref, key), key
+
+
+def test_combined_update_and_gap_attack(monkeypatch):
+    import src.federated.trainer as tr
+    modes, upd = [], []
+    orig_g, orig_u = tr.falsify_gaps, tr.poison_updates
+
+    def spy_g(gaps, byz, mode, b=1):
+        modes.append(mode)
+        return orig_g(gaps, byz, mode, b=b)
+
+    def spy_u(attack, *a, **k):
+        upd.append(attack)
+        return orig_u(attack, *a, **k)
+
+    monkeypatch.setattr(tr, "falsify_gaps", spy_g)
+    monkeypatch.setattr(tr, "poison_updates", spy_u)
+    cfg = _cfg("clamp-rt-f", rounds=3, num_byzantine=1, attack="fairness_poison",
+               r2_gap_attack="opt")
+    res = FederatedTrainer(cfg).run()
+    assert modes and all(m == "opt" for m in modes)
+    assert upd and all(a == "fairness_poison" for a in upd)
+    assert math.isfinite(res["final"]["auc"])
+    with pytest.raises(ValueError):
+        FederatedTrainer(_cfg("clamp-rt-f", num_byzantine=1, attack="gap_hide", r2_gap_attack="opt"))
+    with pytest.raises(ValueError):
+        FederatedTrainer(_cfg("clamp-rt-f", num_byzantine=1, attack="alie", r2_gap_attack="bogus"))

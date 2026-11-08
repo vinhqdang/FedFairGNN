@@ -93,6 +93,7 @@ class ExperimentConfig:
     r2_trim_b: int = -1              # trimming level b per side; -1 = max(1, floor(0.2 K))
     r2_floor_frac: float = 0.05      # c: public floor fraction, n0_k = ceil(c |V_k|) (trimmed channel)
     r2_gap_ema: float = 1.0          # alpha in (0, 1] for the smoothed trimmed gap; 1.0 = no smoothing
+    r2_gap_attack: str = ""          # gap falsification mode (hide/inflate/inlier/zero/opt) combined with the update attack in `attack`
     r2_debias: bool = False          # bias-corrected |gap| using the known release noise variance
                                      #   dhat = sqrt(max(0, g~^2 - 2 sigma_d^2)); post-processing, requires r2_gap_ema = 1
     r2_eta_per_round: bool = False   # if True, lambda step on a release round is r2_lambda_step * r2_stat_period

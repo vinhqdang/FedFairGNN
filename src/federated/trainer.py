@@ -158,6 +158,13 @@ class FederatedTrainer:
                                                delta=config.dp_delta)
                 self._secagg_sigma_s = 2.0 * z
 
+        if config.r2_gap_attack:
+            if not self._trimmed:
+                raise ValueError("r2_gap_attack needs r2_stat_channel='trimmed'")
+            if config.r2_gap_attack not in GAP_ATTACK_MODES:
+                raise ValueError(f"unknown r2_gap_attack {config.r2_gap_attack!r}")
+            if str(config.attack).startswith(("gap_", "stat_falsify")):
+                raise ValueError("r2_gap_attack combines with an update attack, not gap_*")
         if str(config.attack).startswith("gap_"):
             if not self._trimmed:
                 raise ValueError("gap_* attacks need aggregator secagg_lagrangian with "
@@ -393,9 +400,10 @@ class FederatedTrainer:
             if r2_release and self._trimmed:
                 # Diagnostics use the honest clients' true gaps, before any falsification.
                 diag = _trimmed_diagnostics(gaps, self.byzantine_ids, self._trim_b)
-                if self.byzantine_ids and self.cfg.attack.startswith("gap_"):
-                    gaps = falsify_gaps(gaps, self.byzantine_ids, self.cfg.attack[len("gap_"):],
-                                         b=self._trim_b)
+                gap_mode = self.cfg.r2_gap_attack or (
+                    self.cfg.attack[len("gap_"):] if self.cfg.attack.startswith("gap_") else "")
+                if self.byzantine_ids and gap_mode:
+                    gaps = falsify_gaps(gaps, self.byzantine_ids, gap_mode, b=self._trim_b)
                 gaps_in = gaps
             elif r2_release:
                 diag = _honest_diagnostics(stats, self.byzantine_ids, self._r2_n_cap)
