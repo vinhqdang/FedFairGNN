@@ -20,3 +20,7 @@ elif w=="e5":
     rows=load("results/clamp_rt/e5db/runs/*.json"); table(rows,lambda m,c:(c["dataset"],c["dp_epsilon"],c["r2_stat_period"]))
 elif w=="e4":
     rows=load("results/clamp_rt/e4db/runs/*.json"); table(rows,lambda m,c:(c["dataset"],c["num_clients"],c["attack"],c["num_byzantine"]))
+elif w=="e9":
+    rows=load("results/clamp_rt/e9/runs/*.json"); table(rows,lambda m,c:(c["dataset"],c["attack"],c["num_byzantine"],c["r2_gap_attack"] or "none"))
+elif w=="e3ref":
+    rows=[r for r in load("results/clamp_rt/e3db/runs/*.json") if r[1]["num_clients"]==10 and r[1]["dataset"] in("bail","credit","pokec_z")]; table(rows,lambda m,c:(c["dataset"],c["attack"],c["num_byzantine"],"update-only"))
