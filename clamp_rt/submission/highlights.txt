@@ -1,0 +1,5 @@
+- Each client's fairness gap is secret-shared, trimmed and privatised by two servers
+- Up to b lying clients cannot move the estimate outside the honest range
+- Attribute-level privacy with sensitivity fixed by public validation-set sizes
+- Fixed, adaptive and combined attacks with f <= b leave the outcome at honest level
+- Measured two-party cost per release round: 1.1-10.5 s, dominated by norm checks

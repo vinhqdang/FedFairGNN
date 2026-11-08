@@ -1,0 +1,290 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{kipf2016semi}
+T.~N. Kipf, M.~Welling,
+  \href{https://openreview.net/forum?id=SJU4ayYgl}{Semi-supervised
+  classification with graph convolutional networks}, in: International
+  Conference on Learning Representations (ICLR), 2017.
+\newline\urlprefix\url{https://openreview.net/forum?id=SJU4ayYgl}
+
+\bibitem{velickovic2017graph}
+P.~Veli{\v{c}}kovi{\'c}, G.~Cucurull, A.~Casanova, A.~Romero, P.~Li{\`o},
+  Y.~Bengio, \href{https://openreview.net/forum?id=rJXMpikCZ}{Graph attention
+  networks}, in: International Conference on Learning Representations (ICLR),
+  2018.
+\newline\urlprefix\url{https://openreview.net/forum?id=rJXMpikCZ}
+
+\bibitem{mcmahan2017communication}
+B.~McMahan, E.~Moore, D.~Ramage, S.~Hampson, B.~Ag{\"u}era~y Arcas,
+  \href{https://proceedings.mlr.press/v54/mcmahan17a.html}{Communication-efficient
+  learning of deep networks from decentralized data}, in: Artificial
+  Intelligence and Statistics (AISTATS), Vol.~54, 2017, pp. 1273--1282.
+\newline\urlprefix\url{https://proceedings.mlr.press/v54/mcmahan17a.html}
+
+\bibitem{dai2021say}
+E.~Dai, S.~Wang, Say no to the discrimination: Learning fair graph neural
+  networks with limited sensitive attribute information, in: ACM International
+  Conference on Web Search and Data Mining (WSDM), 2021, pp. 680--688.
+\newblock \href {https://doi.org/10.1145/3437963.3441752}
+  {\path{doi:10.1145/3437963.3441752}}.
+
+\bibitem{agarwal2021towards}
+C.~Agarwal, H.~Lakkaraju, M.~Zitnik, Towards a unified framework for fair and
+  stable graph representation learning, in: Uncertainty in Artificial
+  Intelligence (UAI), PMLR, 2021, pp. 2114--2124.
+
+\bibitem{abadi2016deep}
+M.~Abadi, A.~Chu, I.~Goodfellow, H.~B. McMahan, I.~Mironov, K.~Talwar,
+  L.~Zhang, Deep learning with differential privacy, in: ACM SIGSAC Conference
+  on Computer and Communications Security (CCS), 2016, pp. 308--318.
+\newblock \href {https://doi.org/10.1145/2976749.2978318}
+  {\path{doi:10.1145/2976749.2978318}}.
+
+\bibitem{mcmahan2018learning}
+H.~B. McMahan, D.~Ramage, K.~Talwar, L.~Zhang,
+  \href{https://openreview.net/forum?id=BJ0hF1Z0b}{Learning differentially
+  private recurrent language models}, in: International Conference on Learning
+  Representations (ICLR), 2018.
+\newline\urlprefix\url{https://openreview.net/forum?id=BJ0hF1Z0b}
+
+\bibitem{blanchard2017krum}
+P.~Blanchard, E.~M. El~Mhamdi, R.~Guerraoui, J.~Stainer,
+  \href{https://proceedings.neurips.cc/paper/2017/hash/f4b9ec30ad9f68f89b29639786cb62ef-Abstract.html}{Machine
+  learning with adversaries: Byzantine tolerant gradient descent}, in: Advances
+  in Neural Information Processing Systems (NeurIPS), 2017, pp. 119--129.
+\newline\urlprefix\url{https://proceedings.neurips.cc/paper/2017/hash/f4b9ec30ad9f68f89b29639786cb62ef-Abstract.html}
+
+\bibitem{yin2018byzantine}
+D.~Yin, Y.~Chen, K.~Ramchandran, P.~L. Bartlett,
+  \href{https://proceedings.mlr.press/v80/yin18a.html}{Byzantine-robust
+  distributed learning: Towards optimal statistical rates}, in: International
+  Conference on Machine Learning (ICML), Vol.~80, 2018, pp. 5650--5659.
+\newline\urlprefix\url{https://proceedings.mlr.press/v80/yin18a.html}
+
+\bibitem{baruch2019little}
+G.~Baruch, M.~Baruch, Y.~Goldberg,
+  \href{https://proceedings.neurips.cc/paper/2019/hash/ec1c59141046cd1866bbbcdfb6ae31d4-Abstract.html}{A
+  little is enough: Circumventing defenses for distributed learning}, in:
+  Advances in Neural Information Processing Systems (NeurIPS), 2019, pp.
+  8632--8642.
+\newline\urlprefix\url{https://proceedings.neurips.cc/paper/2019/hash/ec1c59141046cd1866bbbcdfb6ae31d4-Abstract.html}
+
+\bibitem{ezzeldin2023fairfed}
+Y.~H. Ezzeldin, S.~Yan, C.~He, E.~Ferrara, A.~S. Avestimehr, {FairFed}:
+  Enabling group fairness in federated learning, in: AAAI Conference on
+  Artificial Intelligence, Vol.~37, 2023, pp. 7494--7502.
+\newblock \href {https://doi.org/10.1609/aaai.v37i6.25911}
+  {\path{doi:10.1609/aaai.v37i6.25911}}.
+
+\bibitem{li2020fair}
+T.~Li, M.~Sanjabi, A.~Beirami, V.~Smith,
+  \href{https://openreview.net/forum?id=ByexElSYDr}{Fair resource allocation in
+  federated learning}, in: International Conference on Learning Representations
+  (ICLR), 2020.
+\newline\urlprefix\url{https://openreview.net/forum?id=ByexElSYDr}
+
+\bibitem{fedfact2025}
+L.~Zhang, Z.~Han, X.~Feng, J.~Zhang, Y.~Li, C.~Chen,
+  \href{https://arxiv.org/abs/2506.03777}{{FedFACT}: A provable framework for
+  controllable group-fairness calibration in federated learning}, in: Advances
+  in Neural Information Processing Systems (NeurIPS), 2025.
+\newline\urlprefix\url{https://arxiv.org/abs/2506.03777}
+
+\bibitem{bonawitz2017practical}
+K.~Bonawitz, V.~Ivanov, B.~Kreuter, A.~Marcedone, H.~B. McMahan, S.~Patel,
+  D.~Ramage, A.~Segal, K.~Seth, Practical secure aggregation for
+  privacy-preserving machine learning, in: Proceedings of the 2017 ACM SIGSAC
+  Conference on Computer and Communications Security (CCS), 2017, pp.
+  1175--1191.
+\newblock \href {https://doi.org/10.1145/3133956.3133982}
+  {\path{doi:10.1145/3133956.3133982}}.
+
+\bibitem{corrigangibbs2017prio}
+H.~Corrigan-Gibbs, D.~Boneh, Prio: Private, robust, and scalable computation of
+  aggregate statistics, in: 14th USENIX Symposium on Networked Systems Design
+  and Implementation (NSDI), 2017, pp. 259--282.
+
+\bibitem{rathee2023elsa}
+M.~Rathee, C.~Shen, S.~Wagh, R.~A. Popa, {ELSA}: Secure aggregation for
+  federated learning with malicious actors, in: 2023 IEEE Symposium on Security
+  and Privacy (SP), 2023.
+\newblock \href {https://doi.org/10.1109/SP46215.2023.10179468}
+  {\path{doi:10.1109/SP46215.2023.10179468}}.
+
+\bibitem{mironov2017renyi}
+I.~Mironov, R{\'e}nyi differential privacy, in: IEEE Computer Security
+  Foundations Symposium (CSF), 2017, pp. 263--275.
+\newblock \href {https://doi.org/10.1109/CSF.2017.11}
+  {\path{doi:10.1109/CSF.2017.11}}.
+
+\bibitem{cotter2019optimization}
+A.~Cotter, H.~Jiang, M.~Gupta, S.~Wang, T.~Narayan, S.~You, K.~Sridharan,
+  Optimization with non-differentiable constraints with applications to
+  fairness, recall, churn, and other goals, Journal of Machine Learning
+  Research 20~(172) (2019) 1--59.
+
+\bibitem{knott2021crypten}
+B.~Knott, S.~Venkataraman, A.~Hannun, S.~Sengupta, M.~Ibrahim, L.~van~der
+  Maaten, {CrypTen}: Secure multi-party computation meets machine learning, in:
+  Advances in Neural Information Processing Systems (NeurIPS), Vol.~34, 2021.
+
+\bibitem{dong2022edits}
+Y.~Dong, N.~Liu, B.~Jalaian, J.~Li, {EDITS}: Modeling and mitigating data bias
+  for graph neural networks, in: The Web Conference (WWW), 2022, pp.
+  1259--1269.
+\newblock \href {https://doi.org/10.1145/3485447.3512173}
+  {\path{doi:10.1145/3485447.3512173}}.
+
+\bibitem{yang2024fairsin}
+C.~Yang, J.~Liu, Y.~Yan, C.~Shi, {FairSIN}: Achieving fairness in graph neural
+  networks through sensitive information neutralization, in: AAAI Conference on
+  Artificial Intelligence, Vol.~38, 2024, pp. 9241--9249.
+\newblock \href {https://doi.org/10.1609/aaai.v38i8.28776}
+  {\path{doi:10.1609/aaai.v38i8.28776}}.
+
+\bibitem{li2024fairgb}
+Z.~Li, Y.~Dong, Q.~Liu, J.~X. Yu, Rethinking fair graph neural networks from
+  re-balancing, in: ACM SIGKDD Conference on Knowledge Discovery and Data
+  Mining (KDD), 2024, pp. 1736--1745.
+\newblock \href {https://doi.org/10.1145/3637528.3671826}
+  {\path{doi:10.1145/3637528.3671826}}.
+
+\bibitem{zhu2024fairinv}
+Y.~Zhu, J.~Li, Y.~Bian, Z.~Zheng, L.~Chen, One fits all: Learning fair graph
+  neural networks for various sensitive attributes, in: ACM SIGKDD Conference
+  on Knowledge Discovery and Data Mining (KDD), 2024.
+\newblock \href {https://doi.org/10.1145/3637528.3672029}
+  {\path{doi:10.1145/3637528.3672029}}.
+
+\bibitem{corbucci2024puffle}
+L.~Corbucci, M.~A. Heikkil{\"a}, D.~Solans~Noguero, A.~Monreale, N.~Kourtellis,
+  {PUFFLE}: Balancing privacy, utility, and fairness in federated learning, in:
+  European Conference on Artificial Intelligence (ECAI), Vol. 392 of Frontiers
+  in Artificial Intelligence and Applications, 2024, pp. 1639--1647.
+\newblock \href {https://doi.org/10.3233/FAIA240671}
+  {\path{doi:10.3233/FAIA240671}}.
+
+\bibitem{ling2024feddp}
+X.~Ling, J.~Fu, K.~Wang, H.~Li, T.~Cheng, Z.~Chen,
+  \href{https://arxiv.org/abs/2402.16028}{{FedFDP}: Fairness-aware federated
+  learning with differential privacy}, arXiv preprint arXiv:2402.16028 (2024).
+\newline\urlprefix\url{https://arxiv.org/abs/2402.16028}
+
+\bibitem{f2gnn2023}
+N.~Cui, X.~Wang, W.~H. Wang, V.~Chen, Y.~Ning, Equipping federated graph neural
+  networks with structure-aware group fairness, in: IEEE International
+  Conference on Data Mining (ICDM), 2023.
+\newblock \href {https://doi.org/10.1109/ICDM58522.2023.00111}
+  {\path{doi:10.1109/ICDM58522.2023.00111}}.
+
+\bibitem{fairgfl2026}
+Z.~Zhou, S.~Yang, F.~Zhao, X.~Ren, {FairGFL}: Privacy-preserving fairness-aware
+  federated learning with overlapping subgraphs, IEEE Transactions on Parallel
+  and Distributed Systems 37~(3) (2026).
+\newblock \href {https://doi.org/10.1109/TPDS.2025.3649863}
+  {\path{doi:10.1109/TPDS.2025.3649863}}.
+
+\bibitem{fedgraphfair2026}
+K.~Khan, {FedGraph-Fair}: Federated learning with personalization and fairness
+  via dynamic graphs and distributionally robust optimization, Information
+  Sciences 728 (2026) 122710.
+\newblock \href {https://doi.org/10.1016/j.ins.2025.122710}
+  {\path{doi:10.1016/j.ins.2025.122710}}.
+
+\bibitem{bendoukha2025popets}
+A.-A. Bendoukha, D.~Demirag, N.~Kaaniche, A.~Boudguiga, R.~Sirdey, S.~Gambs,
+  Towards privacy-preserving and fairness-aware federated learning framework,
+  Proceedings on Privacy Enhancing Technologies (PoPETs) 2025~(1) (2025)
+  845--865.
+\newblock \href {https://doi.org/10.56553/popets-2025-0044}
+  {\path{doi:10.56553/popets-2025-0044}}.
+
+\bibitem{dang2026fedfairgnn}
+Q.-V. Dang, N.-S.-A. Nguyen,
+  \href{https://proceedings.mlr.press/v319/dang26a.html}{{FedFairGNN}: A
+  privacy-preserving and fairness-aware federated graph neural network for
+  fraud detection}, in: Proceedings of IndabaX Nigeria 2026: Building Scalable
+  AI That Works: From Research to Deployment in Resource-Constrained
+  Environments, Vol. 319 of Proceedings of Machine Learning Research, 2026, pp.
+  74--86.
+\newline\urlprefix\url{https://proceedings.mlr.press/v319/dang26a.html}
+
+\bibitem{mhamdi2018hidden}
+E.~M. El~Mhamdi, R.~Guerraoui, S.~Rouault,
+  \href{https://proceedings.mlr.press/v80/mhamdi18a.html}{The hidden
+  vulnerability of distributed learning in byzantium}, in: International
+  Conference on Machine Learning (ICML), Vol.~80, 2018, pp. 3521--3530.
+\newline\urlprefix\url{https://proceedings.mlr.press/v80/mhamdi18a.html}
+
+\bibitem{cao2021fltrust}
+X.~Cao, M.~Fang, J.~Liu, N.~Z. Gong, {FLTrust}: Byzantine-robust federated
+  learning via trust bootstrapping, in: Network and Distributed System Security
+  Symposium (NDSS), 2021.
+\newblock \href {https://doi.org/10.14722/ndss.2021.24434}
+  {\path{doi:10.14722/ndss.2021.24434}}.
+
+\bibitem{xie2019fall}
+C.~Xie, O.~Koyejo, I.~Gupta,
+  \href{https://proceedings.mlr.press/v115/xie20a.html}{Fall of empires:
+  Breaking byzantine-tolerant {SGD} by inner product manipulation}, in:
+  Uncertainty in Artificial Intelligence (UAI), Vol. 115, 2019, pp. 261--270.
+\newline\urlprefix\url{https://proceedings.mlr.press/v115/xie20a.html}
+
+\bibitem{lycklama2023rofl}
+H.~Lycklama, L.~Burkhalter, A.~Viand, N.~K{\"u}chler, A.~Hithnawi, {RoFL}:
+  Robustness of secure federated learning, in: 2023 IEEE Symposium on Security
+  and Privacy (SP), 2023, pp. 453--476.
+\newblock \href {https://doi.org/10.1109/SP46215.2023.10179400}
+  {\path{doi:10.1109/SP46215.2023.10179400}}.
+
+\bibitem{so2021byzantine}
+J.~So, B.~G{\"u}ler, A.~S. Avestimehr, Byzantine-resilient secure federated
+  learning, IEEE Journal on Selected Areas in Communications 39~(7) (2021)
+  2168--2181.
+\newblock \href {https://doi.org/10.1109/JSAC.2020.3041404}
+  {\path{doi:10.1109/JSAC.2020.3041404}}.
+
+\bibitem{kairouz2021distributed}
+P.~Kairouz, Z.~Liu, T.~Steinke, The distributed discrete {Gaussian} mechanism
+  for federated learning with secure aggregation, in: Proceedings of the 38th
+  International Conference on Machine Learning (ICML), Vol. 139 of Proceedings
+  of Machine Learning Research, 2021, pp. 5201--5212.
+
+\bibitem{dwork2009robust}
+C.~Dwork, J.~Lei, Differential privacy and robust statistics, in: Proceedings
+  of the 41st Annual ACM Symposium on Theory of Computing (STOC), 2009, pp.
+  371--380.
+
+\bibitem{solans2020poisoning}
+D.~Solans, B.~Biggio, C.~Castillo, Poisoning attacks on algorithmic fairness,
+  in: Machine Learning and Knowledge Discovery in Databases (ECML PKDD 2020),
+  Vol. 12457 of Lecture Notes in Computer Science, 2020, pp. 162--177.
+
+\bibitem{mehrabi2021exacerbating}
+N.~Mehrabi, M.~Naveed, F.~Morstatter, A.~Galstyan, Exacerbating algorithmic
+  bias through fairness attacks, in: Proceedings of the AAAI Conference on
+  Artificial Intelligence, Vol.~35, 2021, pp. 8930--8938.
+
+\bibitem{canonne2020discrete}
+C.~L. Canonne, G.~Kamath, T.~Steinke, The discrete {Gaussian} for differential
+  privacy, in: Advances in Neural Information Processing Systems (NeurIPS),
+  Vol.~33, 2020, pp. 15676--15688.
+
+\bibitem{mcauley2012learning}
+J.~McAuley, J.~Leskovec, Learning to discover social circles in ego networks,
+  in: Advances in Neural Information Processing Systems (NIPS), Vol.~25, 2012.
+
+\bibitem{dong2023fairness}
+Y.~Dong, Z.~Lei, Z.~Zheng, S.~Wang, J.~Ma, A.~J. Huang, C.~Chen, J.~Li,
+  {PyGDebias}: A {Python} library for debiasing in graph learning, in:
+  Companion Proceedings of the ACM Web Conference 2024 (WWW '24 Companion),
+  2024, pp. 1019--1022.
+\newblock \href {https://doi.org/10.1145/3589335.3651239}
+  {\path{doi:10.1145/3589335.3651239}}.
+
+\end{thebibliography}
