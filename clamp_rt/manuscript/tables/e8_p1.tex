@@ -1,0 +1,19 @@
+\begin{table}[tbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Gap attacks with per-round releases ($P=1$, $R=100$, $K=10$, $b=2$, $\varepsilon=8$): test DPD, mean over 3 seeds. Left block: honest runs at $P=1$ and, for comparison, at $P=10$ (Table~\ref{tab:e4}) and ClipMean on the same seeds where it was run; $\lambda^T$ and $\Dhat>0$ as in Table~\ref{tab:e4}. $f\le b$: largest mean DPD over the four attacks. $f=3>b$: each attack. Full table with sd and AUC: Table~S7.}
+\label{tab:e8}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{lccccc|cc|cccc}
+\toprule
+ & \multicolumn{5}{c|}{Honest} & \multicolumn{2}{c|}{worst, $f\le b$} & \multicolumn{4}{c}{$f=3$ (beyond breakdown)} \\
+Dataset & $P=1$ & $\lambda^T$ & $\Dhat>0$ & $P=10$ & ClipMean & $f=1$ & $f=2$ & hide & inflate & inlier & opt \\
+\midrule
+Credit & 0.053 & 1.68 & 0.34 & 0.038 & -- & 0.059 & 0.059 & 0.096 & 0.066 & 0.053 & 0.095 \\
+Pokec-z & 0.035 & 0.30 & 0.37 & 0.046 & 0.045 & 0.039 & 0.041 & 0.161 & 0.035 & 0.042 & 0.161 \\
+Pokec-n & 0.037 & 0.30 & 0.36 & 0.046 & -- & 0.041 & 0.043 & 0.164 & 0.010 & 0.046 & 0.164 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

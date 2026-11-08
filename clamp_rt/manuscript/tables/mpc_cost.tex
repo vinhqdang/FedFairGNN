@@ -1,0 +1,25 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Measured cost of one release round of the server-side protocol in semi-honest two-party computation (CrypTen, two processes on one machine, local network; median of 3 repetitions). Bytes are those sent by one server as reported by CrypTen; rounds are communication rounds. Update channel: norm checks and masked sum of $K$ updates of dimension $d$. Gap channel: range checks, sort, trimmed mean and noise addition. Err: largest absolute fixed-point error of the trimmed mean (noise switched off), and of the update sum in the update block. The gap channel uses the validity bits of the update channel (a rejected update also removes the client's gap), so the full release round is the sum of the two blocks. Client-to-server input sharing and Beaver-triple generation are not included.}
+\label{tab:mpc}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{rrr rrrc rrrc rr}
+\toprule
+ & & & \multicolumn{4}{c}{Update channel} & \multicolumn{4}{c}{Gap channel} & \multicolumn{2}{c}{Full round} \\
+$K$ & $b$ & $d$ & MB & rounds & s & Err & KB & rounds & s & Err & MB & s \\
+\midrule
+5 & 1 & $10^{4}$ & 2.56 & 12 & 0.79 & 4.5$\times10^{-7}$ & 9.3 & 64 & 0.33 & 5.9$\times10^{-6}$ & 2.57 & 1.12 \\
+5 & 1 & $10^{5}$ & 25.60 & 12 & 1.44 & 3.2$\times10^{-3}$ & 9.3 & 64 & 0.30 & 1.0$\times10^{-5}$ & 25.61 & 1.74 \\
+5 & 1 & $10^{6}$ & 256.00 & 12 & 3.12 & 1.0$\times10^{-3}$ & 9.3 & 64 & 0.33 & 1.5$\times10^{-5}$ & 256.01 & 3.44 \\
+10 & 2 & $10^{4}$ & 4.96 & 12 & 0.88 & 9.1$\times10^{-7}$ & 30.2 & 109 & 0.54 & 1.0$\times10^{-5}$ & 4.99 & 1.42 \\
+10 & 2 & $10^{5}$ & 49.60 & 12 & 1.33 & 3.2$\times10^{-3}$ & 30.2 & 109 & 0.51 & 1.1$\times10^{-5}$ & 49.63 & 1.84 \\
+10 & 2 & $10^{6}$ & 496.00 & 12 & 4.51 & 1.0$\times10^{-3}$ & 30.2 & 109 & 0.42 & 6.4$\times10^{-6}$ & 496.03 & 4.94 \\
+20 & 4 & $10^{4}$ & 9.77 & 12 & 0.73 & 1.6$\times10^{-6}$ & 106.7 & 199 & 0.92 & 9.7$\times10^{-6}$ & 9.88 & 1.65 \\
+20 & 4 & $10^{5}$ & 97.61 & 12 & 1.47 & 5.4$\times10^{-7}$ & 106.7 & 199 & 1.12 & 1.2$\times10^{-5}$ & 97.72 & 2.59 \\
+20 & 4 & $10^{6}$ & 976.01 & 12 & 9.55 & 1.0$\times10^{-3}$ & 106.7 & 199 & 0.95 & 1.5$\times10^{-5}$ & 976.12 & 10.50 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

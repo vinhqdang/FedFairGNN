@@ -1,0 +1,24 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Sums channel (CLAMP) versus trimmed channel (CLAMP-RT) under falsified statistics: test DPD, mean over 3 seeds. CLAMP: swap falsification of the four group sums with the public cap ($P=1$). CLAMP-RT: largest mean DPD over the four gap attacks ($P=10$). $f=2$ at $K=5$ exceeds the breakdown point $b=1$ of CLAMP-RT.}
+\label{tab:oldnew}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{llccc|ccc}
+\toprule
+ & & \multicolumn{3}{c|}{CLAMP (sums)} & \multicolumn{3}{c}{CLAMP-RT (trimmed)} \\
+Dataset & $K$ & $f=0$ & $f=1$ & $f=2$ & $f=0$ & $f=1$ & $f=2$ \\
+\midrule
+Bail & 5 & 0.023 & 0.023 & 0.023 & 0.023 & 0.023 & 0.027 \\
+ & 10 & 0.010 & 0.009 & 0.009 & 0.008 & 0.009 & 0.009 \\
+Credit & 5 & 0.007 & 0.070 & 0.209 & 0.043 & 0.052 & 0.315 \\
+ & 10 & 0.011 & 0.065 & 0.065 & 0.038 & 0.041 & 0.043 \\
+Pokec-z & 5 & 0.026 & 0.046 & 0.257 & 0.041 & 0.042 & 0.281 \\
+ & 10 & 0.027 & 0.045 & 0.045 & 0.046 & 0.046 & 0.046 \\
+Pokec-n & 5 & 0.027 & 0.042 & 0.187 & 0.042 & 0.047 & 0.304 \\
+ & 10 & 0.032 & 0.049 & 0.050 & 0.046 & 0.046 & 0.047 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

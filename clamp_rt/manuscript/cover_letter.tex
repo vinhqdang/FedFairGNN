@@ -1,0 +1,30 @@
+\documentclass[11pt]{letter}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\signature{Quang-Vinh Dang\\Corresponding author\\British University Vietnam, Hung Yen, Vietnam\\vinh.dq4@buv.edu.vn \quad ORCID: 0000-0002-3877-8024}
+\address{Quang-Vinh Dang\\British University Vietnam\\Hung Yen, Vietnam\\vinh.dq4@buv.edu.vn}
+\date{\today}
+
+\begin{document}
+\begin{letter}{The Editor-in-Chief\\Engineering Applications of Artificial Intelligence\\Elsevier}
+
+\opening{Dear Editor,}
+
+We submit the manuscript \emph{``CLAMP-RT: Falsification-Robust Fairness Control for Federated Graph Learning via a Two-Server Trimmed Statistic with Attribute-Level Differential Privacy''} by Quang-Vinh Dang and Ngoc-Son-An Nguyen for consideration as a research article in \emph{Engineering Applications of Artificial Intelligence}.
+
+\paragraph{Problem and contribution.} Institutions such as lenders or courts that train a graph neural network together without pooling their data must keep the model fair across demographic groups, protect sensitive attributes and withstand compromised participants. Enforcing group fairness requires statistics from the clients, and a client can falsify them. The manuscript proposes CLAMP-RT, in which each client secret-shares one scalar fairness gap between two non-colluding servers that sort, trim and privatise it in two-party computation; the released value drives a single fairness multiplier. We prove that up to $b$ lying clients cannot move the estimate outside the range of honest values, that the release is differentially private at the level of one validation node's sensitive attribute with a sensitivity set by public quantities, and a bound on the returned model. We evaluate the protocol on eight public graph benchmarks against eleven baselines, under fixed, adaptive and combined update-and-statistics attacks, and we measure the cost of the server-side computation in a two-party computation framework.
+
+\paragraph{Fit with the journal.} The work is an engineering application of artificial intelligence to a deployment problem: federated graph learning for decision systems in which fairness, privacy and security must hold together. It combines established components (secret sharing, robust statistics, differential privacy, constrained learning) into a working protocol, implements it, and reports its measured cost and its failure modes, which we expect to interest readers who build such systems.
+
+\paragraph{Limitations stated in the manuscript.} With privacy noise, the protocol controls the fairness gap less tightly than a non-robust summed-statistics design on the graphs where the fairness budget binds; on very small graphs the noise exceeds the signal; robustness ends at the breakdown point of the trimmed mean; fairness poisoning through model updates is not countered; and the training experiments run the secure computation in plaintext with continuous Gaussian noise, whose replacement by a discrete mechanism is left for future work.
+
+This manuscript is original, has not been published, and is not under consideration elsewhere. Our earlier conference paper on privacy- and fairness-aware federated graph neural networks for fraud detection (FedFairGNN, PMLR 2026) is cited in the related work; the present method and text are not taken from it. All authors have approved the submission. The authors declare no competing interests, and the research received no funding. The datasets are public benchmarks, and the code and per-run results will be made available upon publication.
+
+\closing{Yours sincerely,}
+
+\end{letter}
+\end{document}

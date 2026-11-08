@@ -1,0 +1,90 @@
+\section{Guarantees}\label{sec:guarantees}
+
+This section states four results, one per channel or property, together with their scope. Full proofs are in Section~S1 of the supplementary material; we give the key steps here. None of the results is a convergence theorem for GNN training. We write $x_{(1)}\le\dots\le x_{(K)}$ for the sorted entries of $x\in\R^K$.
+
+\subsection{Two facts about order statistics}
+
+\begin{lemma}[Order statistics under a change of one entry]\label{lem:sort}
+Let $x,y\in\R^K$ differ only in entry $j$. Then $x_{(i)}-y_{(i)}$ has the same sign for every $i$ (or is zero), and $\sum_{i=1}^K|x_{(i)}-y_{(i)}|=|x_j-y_j|$. Consequently $|\TM(x)-\TM(y)|\le|x_j-y_j|/(K-2b)$. Moreover, for any $x,y\in\R^K$, $\max_i|x_{(i)}-y_{(i)}|\le\max_i|x_i-y_i|$, so $\TM$ is 1-Lipschitz in $\ell_\infty$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+Each order statistic $x_{(i)}=\max_{|S|=K-i+1}\min_{l\in S}x_l$ is non-decreasing in every entry. If $y_j\ge x_j$, then $y_{(i)}\ge x_{(i)}$ for all $i$, and summing gives $\sum_i(y_{(i)}-x_{(i)})=\sum_i y_i-\sum_i x_i=y_j-x_j$. Restricting the sum of non-negative terms to the kept indices and dividing by $K-2b$ gives the bound on $\TM$. For the second claim, $y\le x+\epsilon\mathbf 1$ entrywise implies $y_{(i)}\le x_{(i)}+\epsilon$ by monotonicity and translation equivariance, and symmetrically.
+\end{proof}
+
+\begin{lemma}[Sensitivity of a client's gap]\label{lem:dk}
+Fix the predictions $p_\theta(v)$ of client $k$'s validation nodes. Changing the sensitive attribute of one validation node changes $d_k$ in~\eqref{eq:gap} by at most $2/n_{0,k}$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+The node, with prediction $p\in[0,1]$, leaves one group and joins the other. For the group it joins, with $N$ nodes and prediction mass $S\in[0,N]$ before the change, either $N+1\le n_0$, so that both denominators equal $n_0$ and the rate changes by $p/n_0$, or $N\ge n_0$, so that the change is $|(S+p)/(N+1)-S/N|=|pN-S|/(N(N+1))\le1/(N+1)\le1/n_0$. The group it leaves is the same computation in reverse. Hence each of $m_{k,0},m_{k,1}$ moves by at most $1/n_{0,k}$, their difference by at most $2/n_{0,k}$, and the clip is 1-Lipschitz.
+\end{proof}
+
+\subsection{Attribute-level differential privacy of the gap channel}
+
+\begin{definition}[Attribute-neighbouring datasets]
+Two federated datasets are \emph{neighbouring} if they are identical except for the sensitive attribute $s_v$ of a single validation node $v$ of one honest client.
+\end{definition}
+
+\begin{theorem}[Privacy of the released gaps]\label{thm:dp}
+Let $\DTM=2/(n_{0,\min}(K-2b))$, $\sigma_d=z\DTM$ and $R=\lceil T/P\rceil$. Fix all training data, the initialisation and the randomness of local training, and let the Byzantine clients' submissions be arbitrary functions of public information and of their own data. If at least one server is honest, the sequence $(\gt^{(1)},\dots,\gt^{(R)})$ of released gaps satisfies $(\alpha,R\alpha/(2z^2))$-R\'enyi differential privacy~\citep{mironov2017renyi} for every $\alpha>1$ with respect to attribute-neighbouring datasets, and therefore $(\varepsilon,\delta)$-differential privacy with $\varepsilon=\min_{\alpha>1}\bigl[R\alpha/(2z^2)+\log\frac{\alpha-1}{\alpha}-\frac{\log\delta+\log\alpha}{\alpha-1}\bigr]$~\citep{canonne2020discrete}. The same holds for $\Dhat$, $\lambda$, $\omega$, the models and the returned model, which are post-processing of the releases and of the update channel.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Consider one release with a fixed history of earlier releases. The changed node's attribute is not read by the backbone or by local training (which uses training nodes only), so every model, every update and the acceptance decision of every client are identical in the two datasets; only $d_k$ changes, by at most $2/n_{0,k}\le2/n_{0,\min}$ (Lemma~\ref{lem:dk}). By Lemma~\ref{lem:sort} the trimmed mean changes by at most $\DTM$. The honest server's noise $\mathcal{N}(0,\sigma_d^2)$ alone makes the release a Gaussian mechanism with sensitivity $\DTM$, which is $(\alpha,\alpha\DTM^2/(2\sigma_d^2))=(\alpha,\alpha/(2z^2))$-RDP; the other server's noise can only help, and if that server is the adversary it knows its own noise, which is why the analysis uses $\sigma_d$ and not $\sqrt2\sigma_d$. Under the two-party protocol, a server's view is simulatable from the opened values. Adaptive composition over $R$ releases and the conversion of~\citep{canonne2020discrete} give the claim.
+\end{proof}
+
+\begin{remark}[Public versus attribute-dependent caps]
+The only constant that fixes the sensitivity is $n_{0,\min}$, which is computed from the validation-set sizes $|\mathcal{V}_k|$. These sizes do not depend on any attribute and are public in our model; the group sizes $|\mathcal{V}_{k,a}|$ are never used outside the secure computation. The experiments compute $n_{0,k}$ in exactly this way, so the theorem applies to every run reported here, unlike an attribute-dependent cap. The price is the shrinkage of groups smaller than $n_{0,k}$; in our honest runs this happened for no client-group except four on NBA (over ten seeds).
+\end{remark}
+
+\begin{remark}[Scope]
+The guarantee covers the attributes of validation nodes, which are a quarter of the labelled nodes in our splits. Training-node attributes enter the local penalty~\eqref{eq:local} and therefore the update sum $U$ and the broadcast models. Secure computation hides each client's individual update, but $U$ and the models are revealed to the servers (the models to every client), and they are not differentially private. The test nodes are not used. At $\varepsilon=8$ the guarantee is weak as a bound on an attacker's success, which Section~\ref{sec:privacy} quantifies. The analysis assumes continuous Gaussian noise added to a real-valued trimmed mean. A deployment over $\mathbb{Z}_{2^{64}}$ must add discrete noise, for example the discrete Gaussian~\citep{canonne2020discrete,kairouz2021distributed}, to a fixed-point value; the sensitivity then includes the rounding error and the accounting changes accordingly. We have not implemented or analysed this version.
+\end{remark}
+
+\subsection{Per-round influence of Byzantine updates}
+
+\begin{theorem}[Update influence]\label{thm:update}
+Fix the state at round $t$. Let $A$ be the accepted set and $B\subseteq A$ the accepted Byzantine clients, $|B|=f'\le f$, and $H=A\setminus B$. If all honest clients are accepted, then $\bigl\|U/|A|-\frac{1}{|H|}\sum_{k\in H}\Delta_k\bigr\|_2\le 2f'C/|A|\le2fC/(K-f)$.
+\end{theorem}
+
+This is the bound of any clipped mean, unchanged from \clamp{} (proof in Section~S1). It is per round, against a same-state counterfactual, and not small: at $f=4$ of $K=10$ it is $1.33C$. The trimmed gap channel does not improve it.
+
+\subsection{Falsified gaps}
+
+\begin{theorem}[Falsified gaps cannot leave the honest range]\label{thm:falsify}
+Suppose $f\le b$ clients are Byzantine and all honest clients are accepted. Let $h_{(1)}\le\dots\le h_{(K-f)}$ be the sorted honest gaps. Whatever values in $[-1,1]$ the Byzantine clients submit (a value outside fails the range check and enters as $0$), every kept order statistic satisfies $h_{(i-f)}\le\tilde d_{(i)}\le h_{(i)}$ for $b+1\le i\le K-b$, and therefore
+\begin{equation}\label{eq:t3}
+h_{(b-f+1)}\;\le\;\frac{1}{K-2b}\sum_{i=b+1}^{K-b}h_{(i-f)}\;\le\;\TM(\tilde d)\;\le\;\frac{1}{K-2b}\sum_{i=b+1}^{K-b}h_{(i)}\;\le\;h_{(K-b)} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Fix $i$ with $b+1\le i\le K-b$. At least $i$ entries are $\le\tilde d_{(i)}$, and at most $f$ of them are Byzantine, so at least $i-f\ge b-f+1\ge1$ honest gaps are $\le\tilde d_{(i)}$, i.e.\ $h_{(i-f)}\le\tilde d_{(i)}$. At least $K-i+1$ entries are $\ge\tilde d_{(i)}$, at most $f$ of them Byzantine, so at least $K-f-i+1\ge b-f+1\ge1$ honest gaps are $\ge\tilde d_{(i)}$, i.e.\ $\tilde d_{(i)}\le h_{(i)}$ (note $i\le K-b\le K-f$). Average over the kept indices and use monotonicity of $h_{(\cdot)}$.
+\end{proof}
+
+The bound is an interval between honest values. In this qualitative sense it is not vacuous, unlike a weight-share bound for summed statistics, which allows the estimate to move anywhere in $[0,1]$ once the liars' share is large; quantitatively, as (iii) shows, it is not informative at the scale of the budget. All statements concern the noise-free statistic $\TM(\tilde d)$. Three consequences follow.
+\begin{enumerate}
+\item[(i)] Liars cannot place the estimate outside $[h_{(b-f+1)},h_{(K-b)}]$.
+\item[(ii)] If all honest gaps except at most $b-f$ exceed $\tau'$, then $\TM(\tilde d)>\tau'$, whatever the liars send. At $f=b$ this requires \emph{every} honest gap to exceed $\tau'$, a strong condition under non-IID partitions. With noise, on the event $|\xi_A+\xi_B|\le r$ the released $|\gt|$ exceeds $\tau'-r$, but this does not guarantee that the controller acts: the bias-corrected magnitude $\Dhat$ is zero whenever $|\gt|\le\sqrt2\sigma_d$, which is 0.065--0.100 on Credit, above the budget. In the honest runs on Credit, Pokec-z and Pokec-n only 42--59\% of releases had $\Dhat>0$ (Table~\ref{tab:channel}). The statement therefore says that liars cannot \emph{hide} a gap that all honest clients see, not that the controller will respond to it.
+\item[(iii)] Let $\mathrm{TM}_{b-f}(h)$ be the trimmed mean of the $K-f$ honest gaps with $b-f$ values removed per side; it averages $h_{(b-f+1)},\dots,h_{(K-b)}$ and so lies in the same interval as $\TM(\tilde d)$. Hence $|\TM(\tilde d)-\mathrm{TM}_{b-f}(h)|\le h_{(K-b)}-h_{(b-f+1)}$: the effect of the liars relative to this honest-only comparator is at most the honest inner spread, which the server cannot observe but our logs record. In the attacked release rounds with $f\le b$ its mean was \spreadMin--\spreadMax{} and its maximum \spreadMaxAll{} (Table~S3), comparable to the budget $\tau=0.03$. The bound is therefore informative but not tight compared with $\tau$.
+\end{enumerate}
+The theorem, not any experiment, is the statement about the worst case over adaptive strategies for $f\le b$; Section~\ref{sec:adaptive} evaluates one concrete adaptive attacker. For $f>b$ at least one Byzantine value can be kept, and each kept value can move the trimmed mean by up to $2/(K-2b)$ (e.g.\ $2/3$ for $K=5$, $b=1$): this is the breakdown point, and Section~\ref{sec:statattack} shows that it is reached in practice. The theorem says nothing about the update channel; a Byzantine client that reports an honest gap but poisons its update is covered only by Theorem~\ref{thm:update}.
+
+\subsection{The released gap of the returned model}
+
+\begin{theorem}[Returned model]\label{thm:output}
+Let $r_R=2\sigma_d\sqrt{\ln(2R/\beta)}$ and $\tau_{\mathrm{eff}}=\sqrt{\tau^2+2\sigma_d^2}$. With probability at least $1-\beta$ over the noise of the $R$ releases, simultaneously for all release rounds, $|\gt-\TM(\tilde d)|\le r_R$. On this event, if the output rule returns a stored model $\hat\theta$ (no fallback), then $|\TM(\tilde d(\hat\theta))|\le\tau_{\mathrm{eff}}+r_R$, and if $f\le b$ the honest gaps of $\hat\theta$ satisfy $h_{(b-f+1)}(\hat\theta)\le\tau_{\mathrm{eff}}+r_R$ and $h_{(K-b)}(\hat\theta)\ge-(\tau_{\mathrm{eff}}+r_R)$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Since $\xi_A+\xi_B\sim\mathcal{N}(0,2\sigma_d^2)$, we have $\Pr[|\xi_A+\xi_B|>r_R]\le\beta/R$; a union bound over the $R$ releases gives the event. The stored model satisfies $\Dhat\le\tau$, i.e.\ $|\gt|\le\tau_{\mathrm{eff}}$, hence $|\TM|\le\tau_{\mathrm{eff}}+r_R$ on the event. The last claim is Theorem~\ref{thm:falsify} applied to $\hat\theta$.
+\end{proof}
+
+Compared with the analogous statement for summed statistics, there is one noisy scalar per release instead of four, and the bound does not depend on unobservable honest group masses. It is, however, a statement about validation gaps of the per-client statistic, it is conditional on the rule not falling back to the last model, and it is loose. The fallback is observable; it did not occur in any honest run (E1, E5), occurred in 7 of 126 update-attack runs (E3), never occurred in the falsification runs with $f\le b$, and occurred in 35 of the 96 falsification runs beyond the breakdown point, where the multiplier ran away (Section~\ref{sec:statattack}). Table~\ref{tab:channel} evaluates the radius $\tau_{\mathrm{eff}}+r_R$ at the noise levels of our runs ($\beta=0.05$): 0.19 on the Pokec graphs, \radCredit{} on Credit and \radBail{} on Bail, and above 1, hence vacuous, on German, NBA and Facebook.
+
+\begin{proposition}[From validation to population, under an independence assumption]\label{prop:pop}
+Suppose that, conditionally on the group sizes $n_{k,a}=|\mathcal{V}_{k,a}|\ge n_{0,k}$, client $k$'s validation nodes of group $a$ are i.i.d.\ draws from a distribution with mean prediction $\mu_{k,a}(\hat\theta)$ under the returned model, and that $\hat\theta$ is independent of these draws. Then with probability at least $1-\beta'$, $|m_{k,a}-\mu_{k,a}(\hat\theta)|\le\sqrt{\ln(4K/\beta')/(2n_{k,a})}=:e_{k,a}$ for all $k,a$, and the trimmed mean of the population gaps $\mu_{k,1}-\mu_{k,0}$ is within $2\max_{k,a}e_{k,a}$ of $\TM(d(\hat\theta))$.
+\end{proposition}
+
+The proof is Hoeffding's inequality with a union bound over the $2K$ client-groups and the $\ell_\infty$ Lipschitz property of Lemma~\ref{lem:sort}. The independence assumption does \emph{not} hold exactly for \rt{}: the returned model is chosen using the releases, and the training trajectory depends on earlier releases, which depend on the validation nodes. A union bound over the $R$ candidate models does not repair this, because the candidates themselves depend on the validation data. We therefore present Proposition~\ref{prop:pop} as a description of the sampling error that the validation statistic carries, not as a guarantee of the protocol, and we evaluate the gap on held-out test nodes. 
