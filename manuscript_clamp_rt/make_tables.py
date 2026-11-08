@@ -10,6 +10,8 @@ Sources (paths relative to the repository root):
   results/clamp_rt/summary/e7.txt      adaptive gap attack (gap_opt) at P = 10
   results/clamp_rt/summary/e8.txt      gap attacks at P = 1, K = 10
   results/clamp_rt/e7|e8/runs/*.json   final multiplier and release diagnostics
+  results/clamp_rt/summary/e9.txt      combined update + gap attacks (K = 10, P = 10); update-only
+                                       references from db_e3.txt (Bail, Pokec-z) and e9 rows with gap 'none' (Credit)
   results/clamp_rt/mpc_cost.json       two-party computation cost
   results/clamp/e1/runs/*.json         baselines and old CLAMP (per seed)
   results/clamp/e3/runs/*.json         update-attack baselines (per seed)
@@ -93,7 +95,7 @@ def parse_e4_nodb():
 def warmup_final(rec):
     """Final metrics with the warm-up rule of the output rule (selected round >= W).
     Old CLAMP runs were made before the warm-up existed; a selection below W is
-    replaced by the last model (history[-1]), as in the earlier manuscript."""
+    replaced by the last model (history[-1]), as for CLAMP-RT."""
     fin, cfg = rec["final"], rec["config"]
     sel = fin.get("selected_round")
     dpd = fin.get("dpd_soft", fin["dpd"])
@@ -218,7 +220,7 @@ def table_e1():
 
     body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n"
             "\\caption{Honest runs ($K=5$): test AUC and soft DPD (lower is fairer), mean$\\pm$sd over 10 seeds. "
-            "Baselines and CLAMP (sums channel) are the runs of the earlier study, with the output-rule warm-up "
+            "Baselines and CLAMP (sums channel) use the same seeds and splits, with the output-rule warm-up "
             "applied; CLAMP used $P=1$ on Bail, Credit, Pokec-z, Pokec-n and AMiner-S and $P=10$ on German, NBA and "
             "Facebook, whereas CLAMP-RT uses $P=10$ everywhere. "
             "$^{c}$: reads per-client fairness quantities or group rates in the clear. "
@@ -322,7 +324,7 @@ def table_e4():
             "lying clients out of $K$. Trimming level $b=1$ ($K=5$) and $b=2$ ($K=10$); rows with $f>b$ "
             "(marked $\\ast$) are beyond the breakdown point. ``Honest'' is the same configuration with no "
             "liars. Context columns, for the honest run: ClipMean is clipped aggregation without a controller "
-            "on the same seeds and $K$ (earlier study; -- where no such run exists); $\\lambda^T$ is the mean "
+            "on the same seeds and $K$ (-- where no such run exists); $\\lambda^T$ is the mean "
             "final multiplier of CLAMP-RT and $\\Dhat>0$ the share of its releases with a non-zero corrected "
             "magnitude. AUC is in the supplementary material.}\n\\label{tab:e4}\n"
             "\\begin{tabular}{llc" + "c" * 8 + "}\n\\toprule\n"
@@ -369,7 +371,7 @@ def table_e4():
 
     # old vs new: worst case over attacks
     body = ("\\begin{table}[tbp]\n\\centering\n\\footnotesize\n\\setlength{\\tabcolsep}{4pt}\n"
-            "\\caption{Old sums channel versus trimmed channel under falsified statistics: test DPD, mean over "
+            "\\caption{Sums channel (CLAMP) versus trimmed channel (CLAMP-RT) under falsified statistics: test DPD, mean over "
             "3 seeds. CLAMP: swap falsification of the four group sums with the public cap ($P=1$). "
             "CLAMP-RT: largest mean DPD over the four gap attacks ($P=10$). $f=2$ at $K=5$ exceeds "
             "the breakdown point $b=1$ of CLAMP-RT.}\n\\label{tab:oldnew}\n"
@@ -439,7 +441,7 @@ def table_e3():
             (("clamp-clipmean", "secagg_lagrangian"), "ClipMean"), (("clamp-f", "secagg_lagrangian"), "CLAMP")]
     body = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
             "\\caption{Fairness poisoning through updates ($K=10$): test DPD (AUC in parentheses), mean over 3 "
-            "seeds. Baselines and CLAMP (sums channel, $P=1$) are from the earlier study; $^\\dagger$ needs "
+            "seeds. CLAMP (sums channel) uses $P=1$; $^\\dagger$ needs "
             "individual updates and cannot run under secure aggregation. CLAMP-RT uses $P=10$.}\n"
             "\\label{tab:e3}\n\\begin{tabular}{lc" + "c" * (len(cols) + 1) + "}\n\\toprule\n"
             "Dataset & $f$ & " + " & ".join(c[1] for c in cols) + " & CLAMP-RT \\\\\n\\midrule\n")
@@ -625,6 +627,48 @@ def table_e7_e8():
     write("s_e8.tex", body)
 
 
+def table_e9():
+    e9 = parse_summary("e9.txt")
+    e3 = parse_summary("db_e3.txt")
+    upd = ["fairness_poison", "sign_flip", "alie"]
+    un = {"fairness_poison": "Fair.\\ poison", "sign_flip": "Sign flip", "alie": "ALIE"}
+
+    def ref(ds, a, f):
+        if (ds, a, f, "none") in e9:
+            return e9[(ds, a, f, "none")]
+        return e3[(ds, a, f)]
+
+    body = ("\\begin{table}[tbp]\n\\centering\n\\footnotesize\n\\setlength{\\tabcolsep}{4pt}\n"
+            "\\caption{Combined attack ($K=10$, $b=2$, $P=10$): the same $f$ clients poison their updates and report the "
+            "adaptive \\emph{opt} gap. Test DPD, mean over 3 seeds, as update-only $\\to$ combined. Update-only "
+            "references: Table~S2 (Bail, Pokec-z) and dedicated runs (Credit). $f=3>b$. Full table with sd and AUC: "
+            "Table~S8.}\n\\label{tab:e9}\n\\begin{tabular}{llccc}\n\\toprule\n"
+            "Dataset & Update attack & $f=1$ & $f=2$ & $f=3$ \\\\\n\\midrule\n")
+    full = ("\\begin{table}[tbp]\n\\centering\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
+            "\\caption{Combined update and gap attacks ($K=10$, $b=2$, $P=10$, 3 seeds): DPD mean$\\pm$sd / AUC mean. "
+            "``update only'': gap reported honestly; ``+opt'', ``+hide'': with the adaptive or hiding gap claim.}\n"
+            "\\label{tab:s_e9}\n\\begin{tabular}{lllccc}\n\\toprule\n"
+            "Dataset & Update attack & Gap & $f=1$ & $f=2$ & $f=3$ \\\\\n\\midrule\n")
+    for ds in ["bail", "credit", "pokec_z"]:
+        for i, a in enumerate(upd):
+            body += (f"{DS_NAME[ds] if i == 0 else ''} & {un[a]} & " + " & ".join(
+                f"{ref(ds, a, f)['dpd'][0]:.3f} $\\to$ {e9[(ds, a, f, 'opt')]['dpd'][0]:.3f}" for f in (1, 2, 3))
+                + " \\\\\n")
+            rows = [("update only", lambda f: ref(ds, a, f)), ("+opt", lambda f: e9[(ds, a, f, "opt")])]
+            if (ds, a, 1, "hide") in e9:
+                rows.append(("+hide", lambda f: e9[(ds, a, f, "hide")]))
+            for j, (lab, fn) in enumerate(rows):
+                full += (f"{DS_NAME[ds] if (i == 0 and j == 0) else ''} & {un[a] if j == 0 else ''} & {lab} & "
+                         + " & ".join(f"{ms(fn(f)['dpd'])} / {fn(f)['auc'][0]:.3f}" for f in (1, 2, 3)) + " \\\\\n")
+        if ds != "pokec_z":
+            body += "\\midrule\n"
+            full += "\\midrule\n"
+    body += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    full += "\\bottomrule\n\\end{tabular}\n\\end{table}\n"
+    write("e9_combined.tex", body)
+    write("s_e9.tex", full)
+
+
 def table_pilots():
     """Development pilots (results/clamp_rt/pilot*), reported for disclosure."""
     g = collections.defaultdict(list)
@@ -756,6 +800,7 @@ def main():
     table_e6()
     table_pilots()
     table_e7_e8()
+    table_e9()
     table_mpc()
     table_privacy_attack()
     with open(os.path.join(OUT, "macros.tex"), "w") as f:

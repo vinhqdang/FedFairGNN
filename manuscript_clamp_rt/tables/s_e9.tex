@@ -1,0 +1,38 @@
+\begin{table}[tbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{Combined update and gap attacks ($K=10$, $b=2$, $P=10$, 3 seeds): DPD mean$\pm$sd / AUC mean. ``update only'': gap reported honestly; ``+opt'', ``+hide'': with the adaptive or hiding gap claim.}
+\label{tab:s_e9}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{lllccc}
+\toprule
+Dataset & Update attack & Gap & $f=1$ & $f=2$ & $f=3$ \\
+\midrule
+Bail & Fair.\ poison & update only & 0.010$\pm$0.002 / 0.739 & 0.009$\pm$0.008 / 0.721 & 0.015$\pm$0.009 / 0.713 \\
+ &  & +opt & 0.010$\pm$0.002 / 0.738 & 0.010$\pm$0.008 / 0.721 & 0.021$\pm$0.006 / 0.702 \\
+ &  & +hide & 0.010$\pm$0.002 / 0.738 & 0.010$\pm$0.008 / 0.721 & 0.021$\pm$0.006 / 0.702 \\
+ & Sign flip & update only & 0.009$\pm$0.003 / 0.726 & 0.009$\pm$0.009 / 0.692 & 0.009$\pm$0.009 / 0.676 \\
+ &  & +opt & 0.009$\pm$0.003 / 0.726 & 0.009$\pm$0.008 / 0.692 & 0.002$\pm$0.001 / 0.671 \\
+ & ALIE & update only & 0.010$\pm$0.004 / 0.738 & 0.007$\pm$0.002 / 0.721 & 0.006$\pm$0.001 / 0.724 \\
+ &  & +opt & 0.010$\pm$0.003 / 0.738 & 0.007$\pm$0.002 / 0.721 & 0.005$\pm$0.008 / 0.717 \\
+\midrule
+Credit & Fair.\ poison & update only & 0.040$\pm$0.008 / 0.758 & 0.045$\pm$0.008 / 0.758 & 0.051$\pm$0.010 / 0.757 \\
+ &  & +opt & 0.044$\pm$0.006 / 0.759 & 0.051$\pm$0.003 / 0.758 & 0.138$\pm$0.021 / 0.754 \\
+ &  & +hide & 0.044$\pm$0.005 / 0.759 & 0.051$\pm$0.004 / 0.758 & 0.138$\pm$0.021 / 0.754 \\
+ & Sign flip & update only & 0.037$\pm$0.007 / 0.757 & 0.036$\pm$0.013 / 0.754 & 0.038$\pm$0.010 / 0.747 \\
+ &  & +opt & 0.041$\pm$0.005 / 0.757 & 0.046$\pm$0.004 / 0.755 & 0.112$\pm$0.032 / 0.747 \\
+ & ALIE & update only & 0.037$\pm$0.008 / 0.759 & 0.037$\pm$0.009 / 0.758 & 0.041$\pm$0.009 / 0.757 \\
+ &  & +opt & 0.040$\pm$0.006 / 0.759 & 0.042$\pm$0.007 / 0.758 & 0.112$\pm$0.034 / 0.757 \\
+\midrule
+Pokec-z & Fair.\ poison & update only & 0.059$\pm$0.003 / 0.767 & 0.118$\pm$0.013 / 0.753 & 0.151$\pm$0.023 / 0.737 \\
+ &  & +opt & 0.062$\pm$0.003 / 0.765 & 0.122$\pm$0.013 / 0.754 & 0.212$\pm$0.012 / 0.729 \\
+ &  & +hide & 0.061$\pm$0.004 / 0.765 & 0.123$\pm$0.012 / 0.753 & 0.214$\pm$0.014 / 0.730 \\
+ & Sign flip & update only & 0.043$\pm$0.008 / 0.764 & 0.032$\pm$0.015 / 0.752 & 0.025$\pm$0.015 / 0.739 \\
+ &  & +opt & 0.042$\pm$0.008 / 0.763 & 0.032$\pm$0.016 / 0.754 & 0.062$\pm$0.027 / 0.737 \\
+ & ALIE & update only & 0.045$\pm$0.008 / 0.765 & 0.042$\pm$0.011 / 0.761 & 0.036$\pm$0.016 / 0.754 \\
+ &  & +opt & 0.046$\pm$0.009 / 0.766 & 0.042$\pm$0.013 / 0.758 & 0.106$\pm$0.018 / 0.747 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

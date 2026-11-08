@@ -1,0 +1,26 @@
+\begin{table}[tbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Combined attack ($K=10$, $b=2$, $P=10$): the same $f$ clients poison their updates and report the adaptive \emph{opt} gap. Test DPD, mean over 3 seeds, as update-only $\to$ combined. Update-only references: Table~S2 (Bail, Pokec-z) and dedicated runs (Credit). $f=3>b$. Full table with sd and AUC: Table~S8.}
+\label{tab:e9}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{llccc}
+\toprule
+Dataset & Update attack & $f=1$ & $f=2$ & $f=3$ \\
+\midrule
+Bail & Fair.\ poison & 0.010 $\to$ 0.010 & 0.009 $\to$ 0.010 & 0.015 $\to$ 0.021 \\
+ & Sign flip & 0.009 $\to$ 0.009 & 0.009 $\to$ 0.009 & 0.009 $\to$ 0.002 \\
+ & ALIE & 0.010 $\to$ 0.010 & 0.007 $\to$ 0.007 & 0.006 $\to$ 0.005 \\
+\midrule
+Credit & Fair.\ poison & 0.040 $\to$ 0.044 & 0.045 $\to$ 0.051 & 0.051 $\to$ 0.138 \\
+ & Sign flip & 0.037 $\to$ 0.041 & 0.036 $\to$ 0.046 & 0.038 $\to$ 0.112 \\
+ & ALIE & 0.037 $\to$ 0.040 & 0.037 $\to$ 0.042 & 0.041 $\to$ 0.112 \\
+\midrule
+Pokec-z & Fair.\ poison & 0.059 $\to$ 0.062 & 0.118 $\to$ 0.122 & 0.151 $\to$ 0.212 \\
+ & Sign flip & 0.043 $\to$ 0.042 & 0.032 $\to$ 0.032 & 0.025 $\to$ 0.062 \\
+ & ALIE & 0.045 $\to$ 0.046 & 0.042 $\to$ 0.042 & 0.036 $\to$ 0.106 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
